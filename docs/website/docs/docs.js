@@ -47,6 +47,17 @@
     revealTargets.forEach((node) => observer.observe(node));
   }
 
+  /* Accent theme rotates every THEME_STEP px of scroll. */
+  const THEME_STEP = 600;
+  const THEME_THEMES = [
+    ["#9fe870", "159,232,112", "#71d6ff", "113,214,255"],
+    ["#71d6ff", "113,214,255", "#b392ff", "179,146,255"],
+    ["#b392ff", "179,146,255", "#ff7aa8", "255,122,168"],
+    ["#ff7aa8", "255,122,168", "#ffbd66", "255,189,102"],
+    ["#ffbd66", "255,189,102", "#9fe870", "159,232,112"],
+  ];
+  let themeStep = -1;
+
   let scrollFrame = 0;
   const updateScroll = () => {
     scrollFrame = 0;
@@ -54,6 +65,13 @@
     const max = document.documentElement.scrollHeight - window.innerHeight;
     const ratio = max > 0 ? Math.min(1, Math.max(0, top / max)) : 0;
     root.style.setProperty("--scroll", ratio.toFixed(4));
+    const step = Math.floor(top / THEME_STEP) % THEME_THEMES.length;
+    if (step !== themeStep) {
+      themeStep = step;
+      const [a, ar, b, br] = THEME_THEMES[step];
+      [["--accent", a], ["--accent-rgb", ar], ["--accent-2", b], ["--accent-2-rgb", br]]
+        .forEach(([k, v]) => { body.style.setProperty(k, v); root.style.setProperty(k, v); });
+    }
     if (!reducedMotion) {
       root.style.setProperty("--hero-shift", `${Math.min(22, top * 0.028)}px`);
     }

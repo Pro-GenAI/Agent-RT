@@ -76,3 +76,9 @@ body[data-doc-section="reference"]{--accent:#b392ff;--accent-rgb:179,146,255;--a
 
 /* Highlight.js integrates with the existing code-block chrome. */
 pre code.hljs{display:block;overflow-x:auto;padding:0;background:transparent;color:inherit}
+
+html{scrollbar-width:thin;scrollbar-color:var(--accent) #080a10}
+body{transition:background-color .3s}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:#080a10}
+::-webkit-scrollbar-thumb{background:var(--accent);border:3px solid #080a10;border-radius:999px}
+.header-links a:hover,.header-links a:focus-visible{color:var(--accent)}

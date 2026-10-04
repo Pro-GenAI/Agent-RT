@@ -1,5 +1,3 @@
-<!-- # Agent RT — Agent Runtime -->
-
 ![Agent RT — AI agent runtime](./docs/assets/banner.jpg)
 
 **A fast, lightweight runtime for building production AI agents in Python and TypeScript.** ⚡
@@ -108,6 +106,7 @@ Arguments are validated against the schema, tools outside the grant never run, a
 | State & memory | [State, memory, checkpoints, and artifacts](docs/website/docs/concepts/state-memory.html) |
 | Production | [Sandboxing, observability, evaluation, and deployment](docs/website/docs/guides/production.html) |
 | Migration | [LangChain, LlamaIndex, OpenAI, and Anthropic migration](docs/website/docs/guides/migration.html) |
+| Runtime guide | [Providers, API server, CLI, sandboxes, skills, and migration entry points](docs/website/docs/guides/runtime-guide.html) |
 | Features | [Features, defaults, and configuration](docs/website/docs/reference/features-defaults.html) |
 | Architecture | [Architecture and extension contracts](docs/website/docs/reference/architecture.html) |
 | Development | [Contributor setup and test workflows](docs/website/docs/reference/development.html) |

@@ -17,6 +17,7 @@
 - [Migration guide](https://agent-rt-pro.github.io/docs/guides/migration.html)
 - [Production guide](https://agent-rt-pro.github.io/docs/guides/production.html)
 - [Vector databases](https://agent-rt-pro.github.io/docs/guides/vector-databases.html)
+- [Runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html)
 - [Features and defaults](https://agent-rt-pro.github.io/docs/reference/features-defaults.html)
 - [Comparison](https://agent-rt-pro.github.io/docs/reference/comparison.html)
 - [Architecture](https://agent-rt-pro.github.io/docs/reference/architecture.html)

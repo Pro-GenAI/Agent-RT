@@ -117,6 +117,11 @@
     if (reducedMotion) wordNodes.forEach((node) => node.classList.add("lit"));
   }
 
+  /* Accent theme (logo, nav, scrollbar, highlights) rotates every THEME_STEP px of scroll. */
+  const THEME_STEP = 600;
+  const THEME_COLORS = ["#c8ff4d", "#5ee0f1", "#6a9fff", "#a98bff", "#ff7ab8", "#ffc76a"];
+  let themeStep = -1;
+
   let scrollFrame = 0;
   const updateScroll = () => {
     scrollFrame = 0;
@@ -126,6 +131,11 @@
     const ratio = max > 0 ? clamp(scrollTop / max, 0, 1) : 0;
 
     header?.classList.toggle("scrolled", scrollTop > 24);
+    const step = Math.floor(scrollTop / THEME_STEP) % THEME_COLORS.length;
+    if (step !== themeStep) {
+      themeStep = step;
+      root.style.setProperty("--acid", THEME_COLORS[step]);
+    }
     if (progressBar) progressBar.style.width = `${ratio * 100}%`;
 
     if (reducedMotion) return;
