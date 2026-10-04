@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-rt"
-version = "0.0.1"
+version = "0.0.2"
 description = "Lightweight utilities for building AI agent harnesses"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
