@@ -1,0 +1,15 @@
+{
+  "name": "agent-rt-typescript-comparison",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@langchain/anthropic": "1.5.12",
+    "@langchain/openai": "1.6.0",
+    "@llamaindex/anthropic": "0.3.27",
+    "@llamaindex/openai": "0.4.23",
+    "langchain": "1.5.12",
+    "llamaindex": "0.12.1",
+    "ws": "8.22.0"
+  }
+}

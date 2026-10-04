@@ -1,0 +1,4 @@
+framework,packages,installed_bytes,installed_mib
+Agent RT,agent-rt@0.0.1,1300735,1.24
+LangChain.js,langchain@1.5.12;@langchain/openai@1.6.0;@langchain/anthropic@1.5.12,86441694,82.44
+LlamaIndex.TS,llamaindex@0.12.1;@llamaindex/openai@0.4.23;@llamaindex/anthropic@0.3.27,63310404,60.38

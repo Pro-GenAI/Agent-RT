@@ -1,0 +1,4 @@
+framework,packages,empty_venv_bytes,installed_venv_bytes,installed_bytes,installed_mib
+Agent RT,../../python,31539,48718994,48687455,46.43
+LangChain,langchain==1.4.2;langchain-openai==1.6.6;langchain-anthropic==1.7.5,31544,73298968,73267424,69.87
+LlamaIndex,llama-index==0.14.25;llama-index-llms-openai==0.7.10;llama-index-llms-anthropic==0.12.2;nltk @ git+https://github.com/nltk/nltk.git@d51c48a09765e9e3e97e7de36c2588c676d788d6,31549,230622238,230590689,219.91

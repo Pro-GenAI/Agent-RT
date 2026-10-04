@@ -1,0 +1,14 @@
+1. Read `AGENTS.md` in the `python/`, `typescript/`, and `comparison/` folders before changing those implementations.
+2. Keep `AGENTS.md` and relevant `README.md` files updated when features, requirements, usage, testing, packaging, or developer workflows change.
+3. When making a product/runtime change, generally implement it in both language implementations unless the change is language-specific.
+4. Read and maintain `./docs/` for durable architecture, concepts, design principles, and developer documentation. Start with `./docs/Introduction-to-Harness.md`. Keep the `./docs/README.md` index in sync when docs are added, renamed, or removed.
+5. Do not put implementation progress, completed-task status, or roadmap tracking in `docs/Introduction-to-Harness.md`. Keep that document conceptual and durable.
+6. Use the root and package `README.md` files for current user-facing capabilities, requirements, usage, testing commands, packaging, and developer workflows.
+7. When you add new repository-level components outside `python/` and `typescript/`, document their durable maintenance requirements here when no more specific guidance applies.
+8. The static project website lives under `./docs/website/` and is deployed directly without a build step. Keep it dependency-free unless there is a concrete need for a build tool, preserve responsive/keyboard/reduced-motion behavior, and keep product copy aligned with repository documentation.
+9.  Product terminology: Agent-RT stands for "Agent Runtime" and is designed to provide a fast, lightweight, and efficient runtime environment for AI agents. Refer to Laya and other Jev-compatible models as "Decision models" in project documentation.
+10. Cross-platform CI lives at `./.github/workflows/cross-platform.yml` and must keep both runtime implementations covered on Linux, macOS, and Windows.
+11. Repository security scans and offline adversarial runtime scans must stay deterministic and must never call a real LLM or external model API. Cross-platform CI must fail on medium-or-higher static findings or any adversarial scenario failure. Adversarial scans should use deterministic malicious provider doubles and assert the runtime prevents hidden-tool execution, malformed arguments, permission/approval bypass, restricted-data exfiltration, and budget abuse.
+12. CircleCI configuration lives at `.circleci/config.yml` and is intentionally Apple-silicon macOS only. Keep every CircleCI job on the `m4pro.medium` macOS resource class (or a documented successor Apple-silicon class), preserve an explicit `arm64` architecture assertion, run the supported Python and Node regression matrices, and keep the repository security gates deterministic/offline with respect to real LLM/model endpoints.
+
+Feel free to use `TODO-list.md` for implementation plans, task status, and work progress. Once all tasks are done, clear the file to avoid confusion.

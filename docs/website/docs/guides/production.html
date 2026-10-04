@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Production AI Agent Patterns — Agent RT Docs</title>
+  <meta name="description" content="Production patterns for Agent RT covering runtime budgets, durable execution, idempotency, sandboxing, observability, evaluation, optimization, and deployment.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/guides/production.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Production AI Agent Patterns — Agent RT Docs">
+  <meta property="og:description" content="Production patterns for Agent RT covering runtime budgets, durable execution, idempotency, sandboxing, observability, evaluation, optimization, and deployment.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/guides/production.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Production AI Agent Patterns — Agent RT Docs">
+  <meta name="twitter:description" content="Production patterns for Agent RT covering runtime budgets, durable execution, idempotency, sandboxing, observability, evaluation, optimization, and deployment.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/guides/production.html#page","url":"https://agent-rt-pro.github.io/docs/guides/production.html","name":"Production AI Agent Patterns — Agent RT Docs","headline":"Production AI Agent Patterns — Agent RT Docs","description":"Production patterns for Agent RT covering runtime budgets, durable execution, idempotency, sandboxing, observability, evaluation, optimization, and deployment.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/guides/production.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Guides"},{"@type":"ListItem","position":4,"name":"Production patterns","item":"https://agent-rt-pro.github.io/docs/guides/production.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html" aria-current="page">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html" aria-current="page">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Guides<span>/</span>Production patterns</div><section class="section-intro"><span class="eyebrow">Guides</span><h1 class="doc-title">Production patterns</h1><p class="doc-lede">Moving an agent from demo to system means making execution limits, side effects, recovery, isolation, and quality controls explicit. Agent RT provides these as runtime primitives.</p></section>
+<h2>Bound every run</h2><p>Define turn, tool-call, elapsed-time, and token budgets. Cancellation should propagate through model calls, streaming, and tool execution rather than being simulated in application code.</p>
+<h2>Make side effects resumable</h2><p>For long-running work, pair checkpoints with an append-only event history and stable idempotency keys. Retries and resumed runs can then reuse earlier side-effect results instead of duplicating them.</p>
+<h2>Execute code behind a sandbox</h2><p>Command and code execution belongs behind an injected sandbox boundary with explicit workspace, resource, and network policy. Agent RT supports restricted native execution, Docker, and optional managed/remote backends; unsupported isolation requirements should fail closed.</p>
+<h2>Observe and evaluate</h2><p>Production operations include traces, logs, metrics, usage/cost accounting, deterministic graders, model judges, tool-use and trajectory grading, safety suites, golden datasets, and controlled experiments.</p>
+<h2>Separate deployment from agent logic</h2><p>Deployment and optimization primitives cover configuration overlays, feature flags, prompt rollout/rollback, workers, quotas, schema migrations, caching, batching, latency optimization, and multiple deployment targets. These concerns can evolve without changing the agent's provider-neutral core contracts.</p>
+<div class="page-nav"><a class="next-link" href="./migration.html"><small>Previous</small><strong>← Migration</strong></a><a class="next-link" href="./vector-databases.html"><small>Next</small><strong>Vector databases →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

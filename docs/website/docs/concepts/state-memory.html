@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Agent State, Memory &amp; Checkpoints — Agent RT Docs</title>
+  <meta name="description" content="Learn Agent RT workflow state, model context, scoped memory, checkpoints, files, artifacts, persistence, and resumable durable agent execution.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/concepts/state-memory.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="AI Agent State, Memory &amp; Checkpoints — Agent RT Docs">
+  <meta property="og:description" content="Learn Agent RT workflow state, model context, scoped memory, checkpoints, files, artifacts, persistence, and resumable durable agent execution.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/concepts/state-memory.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI Agent State, Memory &amp; Checkpoints — Agent RT Docs">
+  <meta name="twitter:description" content="Learn Agent RT workflow state, model context, scoped memory, checkpoints, files, artifacts, persistence, and resumable durable agent execution.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/concepts/state-memory.html#page","url":"https://agent-rt-pro.github.io/docs/concepts/state-memory.html","name":"AI Agent State, Memory & Checkpoints — Agent RT Docs","headline":"AI Agent State, Memory & Checkpoints — Agent RT Docs","description":"Learn Agent RT workflow state, model context, scoped memory, checkpoints, files, artifacts, persistence, and resumable durable agent execution.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/concepts/state-memory.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Core concepts"},{"@type":"ListItem","position":4,"name":"State & memory","item":"https://agent-rt-pro.github.io/docs/concepts/state-memory.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html" aria-current="page">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html" aria-current="page">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Core concepts<span>/</span>State &amp; memory</div><section class="section-intro"><span class="eyebrow">Core concepts</span><h1 class="doc-title">State &amp; memory</h1><p class="doc-lede">Reliable agents need more than chat history. Agent RT separates model context, typed workflow state, persistent memory, checkpoints, files, artifacts, and execution history so each can have its own lifecycle and policy.</p></section>
+<h2>Model context</h2><p>Each model request can combine instructions, selected history, workflow state, retrieved knowledge, files, observations, tools, and runtime metadata. Context selection is explicit; durable state remains separate from what the model sees on a particular turn.</p>
+<h2>Workflow state</h2><p>Typed state can hold task variables, plan state, counters, approvals, tool results, artifacts, and execution metadata. This avoids reconstructing operational state from natural-language messages.</p>
+<h2>Memory scopes</h2><p>Short-term memory is scoped by stable session and thread identities. Persistent memory adds explicit CRUD/search semantics, retention and expiration, and policies for what should be written or retrieved. Semantic, episodic, and procedural memory can share the same scoped boundary while using different ranking or storage implementations.</p>
+<h2>Checkpoints and resumption</h2><p>Checkpoints preserve enough execution state to continue after interruption, including messages, durable workflow state, and already-consumed budgets. Resumed work therefore does not silently reset turn, tool, or token limits.</p>
+<h2>Files and artifacts</h2><p>The filesystem abstraction provides controlled workspace operations. Artifacts treat reports, code, datasets, images, and other outputs as first-class objects with revisions, lineage, retention, and provenance.</p>
+<div class="page-nav"><a class="next-link" href="./tools-policy.html"><small>Previous</small><strong>← Tools &amp; policy</strong></a><a class="next-link" href="../guides/migration.html"><small>Next</small><strong>Migration →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent RT Features, Defaults &amp; Usage Reference</title>
+  <meta name="description" content="Complete Agent RT reference for defaults and usage: loop, tools, guardrails, permissions, memory, orchestration, sandboxing, retrieval, observability, and APIs.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/reference/features-defaults.html">
+  <meta property="og:type" content="article"><meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Agent RT Features, Defaults &amp; Usage Reference">
+  <meta property="og:description" content="Understand what Agent RT includes, what is enabled by default, what is opt-in, and how each major runtime capability is used.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/reference/features-defaults.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent RT Features, Defaults &amp; Usage Reference">
+  <meta name="twitter:description" content="Understand what Agent RT includes, what is enabled by default, what is opt-in, and how each major runtime capability is used.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/reference/features-defaults.html#page","url":"https://agent-rt-pro.github.io/docs/reference/features-defaults.html","name":"Agent RT Features, Defaults & Usage Reference","headline":"Agent RT Features, Defaults & Usage Reference","description":"Complete Agent RT reference for defaults and usage: loop, tools, guardrails, permissions, memory, orchestration, sandboxing, retrieval, observability, and APIs.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/reference/features-defaults.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Reference"},{"@type":"ListItem","position":4,"name":"Features & defaults","item":"https://agent-rt-pro.github.io/docs/reference/features-defaults.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body data-doc-section="reference">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="./features-defaults.html" aria-current="page">Features & defaults</a><a href="./architecture.html">Architecture</a><a href="./development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="./features-defaults.html" aria-current="page">Features & defaults</a><a href="./architecture.html">Architecture</a><a href="./development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Reference<span>/</span>Features &amp; defaults</div>
+<section class="section-intro"><span class="eyebrow">Reference</span><h1 class="doc-title">Features, defaults<br>&amp; usage</h1><p class="doc-lede">A self-contained map of Agent RT. Use this page to understand what the runtime does, what happens by default, what requires explicit configuration, and which object or setting controls each capability.</p></section>
+
+<div class="note"><strong>Default does not always mean enabled.</strong>Agent RT distinguishes built-in safe defaults from optional integrations. For example, conservative conversation-boundary input/output guardrails are enabled by default, while the model-backed tool-input guardrail is opt-in. When enabled, its default model is <code>agent-action-guard</code>.</div>
+
+<h2>Default behavior at a glance</h2>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Default</th><th>How to change it</th></tr></thead><tbody>
+<tr><td>Run turns</td><td><code>16</code> maximum model turns</td><td>Set <code>AgentRunLimits.max_turns</code> / <code>maxTurns</code>.</td></tr>
+<tr><td>Tool calls</td><td><code>64</code> maximum tool calls per run</td><td>Set <code>AgentRunLimits.max_tool_calls</code> / <code>maxToolCalls</code>.</td></tr>
+<tr><td>Concurrent tool calls</td><td>Off</td><td>Enable in run limits. Sequential tools still act as barriers.</td></tr>
+<tr><td>Run timeout</td><td>No run-level timeout unless configured</td><td>Set run limits, a <code>Deadline</code>, and/or tool-local timeouts.</td></tr>
+<tr><td>Total-token cap</td><td>No explicit run cap unless configured</td><td>Set <code>max_total_tokens</code> / <code>maxTotalTokens</code>.</td></tr>
+<tr><td>Conversation-boundary input guardrail</td><td>Enabled</td><td>Customize <code>BoundaryGuardrailPolicy</code>; pass <code>None</code>/<code>null</code> to disable the built-in layer.</td></tr>
+<tr><td>Input character limit</td><td><code>1,000,000</code> characters across user content</td><td>Change <code>max_input_characters</code> / equivalent TS policy field.</td></tr>
+<tr><td>Output character limit</td><td><code>1,000,000</code> characters</td><td>Change <code>max_output_characters</code>.</td></tr>
+<tr><td>Content-part limit</td><td><code>1024</code></td><td>Change <code>max_content_parts</code>.</td></tr>
+<tr><td>Control characters</td><td>Sanitized at model input/output boundaries</td><td>Set <code>sanitize_control_characters=False</code> if intentionally required.</td></tr>
+<tr><td>Assistant output role</td><td>Required</td><td>Change <code>require_assistant_output</code> in the boundary policy.</td></tr>
+<tr><td>Model-backed tool-input guardrail</td><td>Off unless enabled</td><td>Enable it on <code>ToolRegistry</code>. The default model/backend is <code>agent-action-guard</code>.</td></tr>
+<tr><td>Prompt-injection defense object</td><td>Created by default by <code>AgentLoop</code></td><td>Inject a custom <code>PromptInjectionDefense</code>.</td></tr>
+<tr><td>Sandbox network mode</td><td><code>none</code></td><td>Set <code>AGENT_RT_SANDBOX_NETWORK_MODE</code> to <code>allowlist</code> or <code>unrestricted</code> where the backend can enforce it.</td></tr>
+<tr><td>Sandbox backend selection</td><td><code>native</code> when env selection is unset</td><td>Use <code>AGENT_RT_SANDBOX_BACKEND</code>; supported backends include Docker and optional managed integrations.</td></tr>
+<tr><td>Memory, persistence, schedulers, queues</td><td>Explicitly configured</td><td>Inject the relevant store/manager; Agent RT does not silently persist application data.</td></tr>
+<tr><td>Permissions and approvals</td><td>Explicitly configured where your application needs them</td><td>Use <code>PermissionEngine</code>, capability grants, <code>ApprovalManager</code>, and policy rules.</td></tr>
+<tr><td>OpenAI-compatible base URL</td><td><code>https://api.openai.com/v1</code></td><td>Configure the provider/base URL or environment.</td></tr>
+<tr><td>Anthropic base URL</td><td><code>https://api.anthropic.com</code></td><td>Configure the provider/base URL or environment.</td></tr>
+</tbody></table></div>
+
+<h2>Tutorial: build an agent one capability at a time</h2>
+<p>The fastest way to learn Agent RT is to start with a minimal agent and add one runtime capability at a time. The snippets below use the same public API shapes as the repository examples, but they are embedded here so you do not need to leave the documentation.</p>
+
+<h3>Step 1 — run a basic agent in Python</h3>
+<pre><code class="language-python">import asyncio
+import os
+
+from agent_rt import (
+    AgentConfig,
+    AgentLoop,
+    ContentPart,
+    ModelMessage,
+    ModelSettings,
+    load_model,
+)
+
+
+async def main():
+    model = os.environ.get("OPENAI_MODEL") or os.environ.get("ANTHROPIC_MODEL")
+    if not model:
+        raise RuntimeError("Set OPENAI_MODEL or ANTHROPIC_MODEL")
+    provider = load_model()
+
+    agent = AgentConfig(
+        name="basic",
+        instructions="Answer clearly and concisely. Do not use tools.",
+        model=ModelSettings(model=model),
+    )
+
+    message = ModelMessage(
+        role="user",
+        content=(
+            ContentPart(
+                type="text",
+                text="Explain what an agent runtime does in two sentences.",
+            ),
+        ),
+    )
+
+    result = await AgentLoop(provider).run(agent, [message])
+
+    text = "".join(
+        part.text or ""
+        for part in result.final_response.message.content
+        if part.type == "text"
+    )
+    print(text)
+    print("termination:", result.termination_reason)
+    print("turns:", result.turns)
+
+
+asyncio.run(main())</code></pre>
+
+<h3>Step 1 — the same agent in TypeScript</h3>
+<pre><code class="language-javascript">const { AgentLoop, loadModel } = require("agent-rt");
+
+async function main() {
+  const model = process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL;
+  if (!model) throw new Error("Set OPENAI_MODEL or ANTHROPIC_MODEL");
+
+  const provider = await loadModel();
+
+  const agent = {
+    name: "basic",
+    instructions: "Answer clearly and concisely. Do not use tools.",
+    model: { model },
+  };
+
+  const messages = [{
+    role: "user",
+    content: [{
+      type: "text",
+      text: "Explain what an agent runtime does in two sentences.",
+    }],
+  }];
+
+  const result = await new AgentLoop(provider).run(agent, messages);
+
+  const text = result.finalResponse.message.content
+    .filter((part) => part.type === "text")
+    .map((part) => part.text || "")
+    .join("");
+
+  console.log(text);
+  console.log("termination:", result.terminationReason);
+  console.log("turns:", result.turns);
+}
+
+main();</code></pre>
+
+<h3>Step 2 — add a tool</h3>
+<p>Tools are schemas plus handlers. The model only proposes the call; Agent RT validates and dispatches it.</p>
+<pre><code class="language-python">from agent_rt import AgentLoop, ToolDefinition, ToolRegistry, load_model
+
+registry = ToolRegistry()
+
+async def weather(arguments, cancellation_token):
+    city = arguments["city"]
+    return {"city": city, "temperature_c": 28, "condition": "clear"}
+
+registry.register(
+    ToolDefinition(
+        name="get_weather",
+        description="Get the current weather for a city.",
+        input_schema={
+            "type": "object",
+            "required": ["city"],
+            "properties": {"city": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        side_effect="read",
+    ),
+    handler=weather,
+)
+
+loop = AgentLoop(load_model(), tool_registry=registry)</code></pre>
+
+<pre><code class="language-javascript">const { AgentLoop, ToolRegistry, loadModel } = require("agent-rt");
+
+const registry = new ToolRegistry();
+
+registry.register(
+  {
+    name: "get_weather",
+    description: "Get the current weather for a city.",
+    inputSchema: {
+      type: "object",
+      required: ["city"],
+      properties: { city: { type: "string" } },
+      additionalProperties: false,
+    },
+    sideEffect: "read",
+  },
+  {
+    handler: async (args) => ({
+      city: args.city,
+      temperature_c: 28,
+      condition: "clear",
+    }),
+  },
+);
+
+const provider = await loadModel();
+const loop = new AgentLoop(provider, undefined, registry);</code></pre>
+
+<h3>Step 3 — stream output</h3>
+<pre><code class="language-python">async def on_event(event):
+    if event.type == "text_delta" and event.text:
+        print(event.text, end="", flush=True)
+
+result = await AgentLoop(provider).run_streaming(
+    agent,
+    [user_message("Give me three practical uses for an agent runtime.")],
+    on_event,
+)</code></pre>
+
+<pre><code class="language-javascript">const result = await new AgentLoop(provider).runStreaming(
+  agent,
+  [message("user", "Give me three practical uses for an agent runtime.")],
+  (event) => {
+    if (event.type === "text_delta" && event.text) {
+      process.stdout.write(event.text);
+    }
+  },
+);</code></pre>
+
+<h3>Step 4 — require structured JSON</h3>
+<pre><code class="language-python">from agent_rt import AgentConfig, AgentOutputRequirements, ModelSettings
+
+agent = AgentConfig(
+    name="extractor",
+    instructions="Return only valid JSON.",
+    model=ModelSettings(model=configured_model()),
+    output=AgentOutputRequirements(
+        format="json",
+        schema={
+            "type": "object",
+            "required": ["language", "difficulty", "topics"],
+            "properties": {
+                "language": {"type": "string"},
+                "difficulty": {"type": "string"},
+                "topics": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        },
+        max_repair_attempts=1,
+    ),
+)</code></pre>
+
+<pre><code class="language-javascript">const agent = {
+  name: "extractor",
+  instructions: "Return only valid JSON.",
+  model: { model: configuredModel() },
+  output: {
+    format: "json",
+    schema: {
+      type: "object",
+      required: ["language", "difficulty", "topics"],
+      properties: {
+        language: { type: "string" },
+        difficulty: { type: "string" },
+        topics: { type: "array", items: { type: "string" } },
+      },
+      additionalProperties: false,
+    },
+    maxRepairAttempts: 1,
+  },
+};</code></pre>
+
+<h3>Step 5 — bound the run</h3>
+<pre><code class="language-python">from agent_rt import AgentRunLimits
+
+limits = AgentRunLimits(
+    max_turns=4,
+    max_tool_calls=8,
+    timeout_seconds=30,
+    max_total_tokens=4_000,
+)
+
+result = await AgentLoop(provider).run(
+    agent,
+    messages,
+    limits=limits,
+)</code></pre>
+
+<pre><code class="language-javascript">const result = await new AgentLoop(provider).run(
+  agent,
+  messages,
+  {
+    maxTurns: 4,
+    maxToolCalls: 8,
+    timeoutMs: 30_000,
+    maxTotalTokens: 4_000,
+  },
+);</code></pre>
+
+<h3>Step 6 — use the registry directly, without a model</h3>
+<pre><code class="language-python">from agent_rt import ToolCall, ToolDefinition, ToolRegistry
+
+registry = ToolRegistry()
+
+async def search(arguments, cancellation_token):
+    return {"query": arguments["query"], "matches": ["alpha", "beta"]}
+
+registry.register(
+    ToolDefinition(
+        name="search",
+        description="Search a demo catalog.",
+        input_schema={
+            "type": "object",
+            "required": ["query"],
+            "properties": {"query": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        side_effect="read",
+    ),
+    namespace="catalog",
+    handler=search,
+)
+
+result = await registry.execute(
+    ToolCall(
+        id="demo-1",
+        name="catalog.search",
+        arguments={"query": "agent"},
+    )
+)</code></pre>
+
+<div class="note"><strong>What this tutorial establishes</strong>The basic model call, tools, streaming, structured output, run limits, and registry behavior are all separate pieces. You can adopt only the pieces you need, then add policy, persistence, orchestration, sandboxing, and observability incrementally.</div>
+
+<h2>1. Agent definition and provider layer</h2>
+<p>An agent combines instructions, model/provider configuration, tools, output expectations, and runtime policy. The provider layer is intentionally separate from the loop, so the same agent runtime can use OpenAI-compatible, Anthropic-compatible, custom, routed, aliased, or fallback providers without moving policy into provider-specific application code.</p>
+<p><strong>Use it when:</strong> you need to switch model vendors, expose the same agent through several interfaces, apply routing, or keep tool/state semantics stable while models change.</p>
+<pre><code class="language-python"># Python: conceptual minimal setup
+agent = AgentConfig(name="assistant", instructions="Help the user.")
+loop = AgentLoop(provider)
+result = loop.run(agent, messages)
+
+# Add AgentRunLimits(...) when you need custom execution bounds.</code></pre>
+
+<h2>2. Core agent loop</h2>
+<p>The loop performs model request → tool-call dispatch → tool results → model continuation until the model completes or a runtime termination condition is reached. Termination is explicit: turn limits, tool-call limits, cancellation, timeout/deadline, token budget, loop detection, model failure classification, or normal completion.</p>
+<p>The default limits are intentionally bounded for turns and tool calls: 16 turns and 64 tool calls. Concurrency is off by default so tool execution is deterministic unless the application explicitly opts into concurrent batches.</p>
+
+<h2>3. Structured output and streaming</h2>
+<p>Agent RT supports provider-neutral streaming events and structured output validation/repair. Structured output is useful when downstream code needs a schema rather than free-form text. Streaming is useful when interfaces need incremental model text, tool activity, or status events without changing the runtime’s execution semantics.</p>
+<p><strong>How to use:</strong> define the output schema/validator on the agent or request path, and use the streaming run API when your UI or service consumes events incrementally.</p>
+
+<h2>4. Tools and tool registry</h2>
+<p>A tool is a runtime capability with a name, description, argument schema, optional output schema, side-effect classification, timeout/resource information, and a handler. <code>ToolRegistry</code> provides registration, lookup, namespaces, enable/disable, replacement, deferred loading, contextual/async handlers, validation, guardrails, lifecycle hooks, and dependency-injected execution context.</p>
+<p><strong>Execution order:</strong> visibility → model call → tool-call transform → tool-input guardrails → argument validation → permissions/capability checks → approvals/policy → handler execution → tool-output guardrails → result marshaling → model continuation.</p>
+<div class="note"><strong>Why visibility and dispatch are separate</strong>Hiding a tool from the model reduces capability exposure, but dispatch still re-checks execution policy. A stale or malformed call cannot rely on having seen an older schema.</div>
+
+<h2>5. Tool selection, visibility, and discovery</h2>
+<p><code>ToolSelectionPolicy</code> can allow, deny, require, or prefer tools. Runtime visibility filters can narrow the visible set per turn. Deferred tools keep schemas out of context until loaded. <code>CapabilityCatalog</code> provides cross-kind capability discovery, and Decision models can be used to select/rank capabilities without making the main model consume the entire catalog.</p>
+<p><strong>Use it when:</strong> your application has many tools, tenant-specific capabilities, task phases, specialist agents, or expensive schemas that should not appear on every turn.</p>
+
+<h2>6. Guardrails: four different boundaries</h2>
+<p>“Guardrail” is a family of hooks, not one feature. Agent RT distinguishes four execution boundaries:</p>
+<div class="table-wrap"><table><thead><tr><th>Guardrail</th><th>Runs when</th><th>Built-in default</th><th>Typical use</th></tr></thead><tbody>
+<tr><td>User/model-boundary input</td><td>Before user messages enter the model request/history path</td><td>Yes: size/content-part checks and control-character sanitization</td><td>Input size limits, sanitization, application-specific input policy</td></tr>
+<tr><td>Model output</td><td>Before assistant output becomes final/history state</td><td>Yes: role, size, part-count, and control-character checks</td><td>Output policy, schema/content checks, redaction</td></tr>
+<tr><td>Tool input</td><td>After call transforms, before argument validation and side effects</td><td>No model-backed classifier unless enabled. If enabled, default = <code>agent-action-guard</code></td><td>Harmful-action detection, exfiltration prevention, argument transformation</td></tr>
+<tr><td>Tool output</td><td>Before tool results are exposed back to the model</td><td>Custom/optional</td><td>Prompt-injection filtering, secret redaction, restricted-data egress checks</td></tr>
+</tbody></table></div>
+
+<h3>Default conversation-boundary guardrails</h3>
+<p><code>AgentLoop</code> creates a default <code>BoundaryGuardrailPolicy</code>. It permits up to 1,000,000 input characters, 1,000,000 output characters, and 1024 content parts; sanitizes disallowed control characters; and requires final model output to use the assistant role. Application guardrails are added on top of this built-in layer.</p>
+<pre><code class="language-python"># Python: customize the built-in input/output boundary policy
+policy = BoundaryGuardrailPolicy(
+    max_input_characters=200_000,
+    max_output_characters=100_000,
+    max_content_parts=256,
+    sanitize_control_characters=True,
+    require_assistant_output=True,
+)
+loop = AgentLoop(provider, boundary_guardrail_policy=policy)
+
+# Disable only the built-in boundary layer if your application deliberately
+# replaces it with its own input/output guardrails:
+loop = AgentLoop(provider, boundary_guardrail_policy=None)</code></pre>
+
+<h3>Agent Action Guard: the default model-backed tool-input model</h3>
+<p>Agent Action Guard protects <em>tool calls</em>, not raw user messages. The integration is optional because it adds a model dependency. When model-backed tool-input screening is enabled, <code>DEFAULT_TOOL_INPUT_GUARDRAIL_MODEL</code> is <code>agent-action-guard</code>. Screening happens before argument validation and before the tool handler can cause side effects.</p>
+<pre><code class="language-python"># Python
+registry = ToolRegistry(enable_model_tool_input_guardrail=True)
+
+# Install the optional integration:
+# pip install 'agent-rt[guardrails]'
+
+# Tests/private deployments can inject a classifier instead of downloading
+# the default model:
+registry = ToolRegistry(
+    enable_model_tool_input_guardrail=True,
+    tool_input_guardrail_classifier=my_classifier,
+)</code></pre>
+<p>Custom tool-input and tool-output guardrails can return allow, transform, or block results. Blocking raises a guardrail violation; transforming changes the value passed to the next runtime stage while preserving tool-call identity.</p>
+
+<h2>7. Permissions, authorization, credentials, and tenancy</h2>
+<p><code>PermissionEngine</code> and <code>PermissionRule</code> implement deny-overrides permission checks for agents, tools, filesystem paths, network targets, operations, data classes, and side-effect classes. <code>CapabilityGrant</code> narrows the capabilities visible/usable by a run. Authentication and authorization objects carry identity, scopes, roles, tenant membership, delegated access, credential metadata, and expiry without embedding secret values into model-visible text.</p>
+<p><strong>Rule:</strong> authorization is runtime state, not prompt text. A model saying “the user approved this” does not grant a capability.</p>
+<pre><code class="language-python">from agent_rt import PermissionEngine, PermissionRule, ToolRegistry
+
+permissions = PermissionEngine((
+    PermissionRule(
+        effect="allow",
+        operations=("execute",),
+        tools=("safe.*",),
+    ),
+    PermissionRule(
+        effect="deny",
+        operations=("execute",),
+        side_effects=("destructive",),
+    ),
+))
+
+registry = ToolRegistry(permission_engine=permissions)</code></pre>
+<p>Deny rules override broad allows. The same engine can enforce path-level rules:</p>
+<pre><code class="language-python">permissions = PermissionEngine((
+    PermissionRule(
+        effect="allow",
+        operations=("read",),
+        paths=("workspace/**",),
+    ),
+    PermissionRule(
+        effect="deny",
+        operations=("read", "write"),
+        paths=("workspace/secrets/**",),
+    ),
+    PermissionRule(
+        effect="allow",
+        operations=("write",),
+        paths=("workspace/output/**",),
+    ),
+))</code></pre>
+
+<h2>8. Human approvals and consequential actions</h2>
+<p><code>ApprovalManager</code> can pause consequential or destructive tool calls before side effects. Approval stores can represent allow-once, deny-once, session, durable grants, and revocation. The agent loop can surface a waiting-for-approval state rather than pretending the run completed.</p>
+<p>Dry-run request context can preview side effects without executing a handler or consuming an approval. <code>SideEffectTransaction</code> separates prepare from commit and supports compensation after partial failure.</p>
+<pre><code class="language-python">from agent_rt import ApprovalManager, ToolDefinition, ToolRegistry
+
+approvals = ApprovalManager()
+registry = ToolRegistry(approval_manager=approvals)
+
+registry.register(
+    ToolDefinition(
+        name="publish",
+        description="Publish a release.",
+        input_schema={"type": "object"},
+        side_effect="consequential",
+    ),
+    handler=publish_release,
+)
+
+# Executing a consequential tool can raise ApprovalRequiredError.
+# Present that request to a reviewer, then resolve it:
+approvals.resolve(
+    approval_request,
+    "allow",
+    actor_id="reviewer-2",
+)</code></pre>
+
+<h2>9. Prompt injection and data exfiltration controls</h2>
+<p><code>ContextItem</code> is untrusted unless explicitly marked trusted. <code>PromptInjectionDefense</code> preserves that trust distinction and can remove write/consequential capabilities when untrusted external context is present. <code>DataExfiltrationPolicy</code> classifies data and can be attached to tool-input/tool-output guardrails to block restricted information from disallowed model, tool, network, or logging channels.</p>
+<p>This is separate from Agent Action Guard: one controls trust and egress boundaries; the other can classify proposed tool actions.</p>
+
+<h2>10. Context engineering</h2>
+<p><code>ContextAssembler</code>, <code>ContextItem</code>, and <code>ContextSelectionPolicy</code> build provider requests from instructions, selected history, state, retrieved knowledge, files, observations, tools, and metadata. Context selection can narrow subwork without deleting durable history. Compaction can summarize older turns, oversized context can be offloaded to artifact storage, and prompt-cache hints separate stable prefixes from volatile turn content.</p>
+
+<h2>11. Workflow state and short-term memory</h2>
+<p><code>WorkflowState</code> is a versioned JSON-safe durable state envelope. It is separate from conversational messages so applications can store counters, decisions, plan state, approval state, intermediate outputs, and other structured execution data without reconstructing them from chat.</p>
+<p><code>SessionRef</code> identifies stable session/thread scope. <code>ShortTermSessionMemory</code> stores bounded recent messages and workflow state per thread.</p>
+<pre><code class="language-python">from agent_rt import SessionRef, ShortTermSessionMemory, WorkflowState
+
+session = SessionRef("session-42", "main")
+memory = ShortTermSessionMemory(max_messages=20)
+
+state = WorkflowState(
+    state_type="order_workflow",
+    version=1,
+    data={
+        "step": "review",
+        "approved": False,
+        "attempts": 1,
+    },
+)
+
+memory.set_workflow_state(session, state)
+memory.append_messages(session, messages)
+
+snapshot = memory.snapshot(session)
+print(snapshot.workflow_state.data)
+print(len(snapshot.messages))</code></pre>
+
+<h2>12. Long-term, semantic, episodic, and procedural memory</h2>
+<p>Memory stores use provider-neutral read/write/update/delete/search contracts. <code>SemanticMemory</code> adds embedding-based ranking; <code>EpisodicMemory</code> records task actions and outcomes; <code>ProceduralMemory</code> stores reusable instructions, scripts, templates, and workflows. Write/retrieval policies can filter by relevance, sensitivity, confidence, duplication, scope, recency, and kind. Scoped/lifecycle wrappers enforce isolation, expiry, purge, compaction provenance, and schema migrations.</p>
+<p><strong>Default:</strong> persistent memory is not silently enabled. Choose and inject the memory layer appropriate for your application.</p>
+
+<h2>13. Checkpoints, events, idempotency, and durable execution</h2>
+<p><code>AgentCheckpoint</code> captures messages, workflow state, and already-consumed run counters so a resumed run does not reset execution limits. <code>EventStore</code> provides append-only task events. Idempotency stores let repeated tool-call identifiers reuse prior results within a task/tool scope instead of duplicating external side effects.</p>
+<p><code>TaskLifecycle</code> validates submitted, queued, running, waiting, completed, failed, and canceled transitions. Background task, queue, scheduler, and trigger abstractions support longer-running execution patterns when the application needs them.</p>
+
+<h2>14. Planning, verification, reflection, and multi-agent orchestration</h2>
+<p>Agent RT includes explicit plans, dependency-aware plan steps, acceptance criteria, progress tracking, versioned replanning, verification, reflection/repair, critic panels, specialist agents as tools, handoffs, isolated subagents, supervisor/worker patterns, teams, parallel fan-out, map-reduce, and speculative alternatives.</p>
+<p>Child work can receive a narrowed context, tool scope, capability grant, and budget so delegation does not automatically inherit every parent capability.</p>
+
+<h2>15. Filesystems, workspaces, and artifacts</h2>
+<p>The filesystem layer is backend-neutral and supports list/read/write/delete/move/copy/glob/search. <code>WorkspaceFiles</code> adds safe text creation, exact replacements, and context-checked patching. Persistent workspace stores retain workspace identity across reopen/resume flows.</p>
+<p>Artifacts are versioned first-class outputs for reports, code, datasets, documents, images, and archives. Revisions can track parentage, metadata, diffs, provenance, retention, lifecycle state, and locations.</p>
+
+<h2>16. Sandboxed shell and code execution</h2>
+<p><code>SandboxBackend</code> and <code>SandboxSession</code> keep generated execution behind an injected isolation boundary. Backends can expose shell tools and language runtimes while carrying explicit workspace, environment, package state, resource limits, network policy, snapshots, and restore/clone behavior.</p>
+<p>Environment-driven sandbox selection defaults to <code>native</code> when <code>AGENT_RT_SANDBOX_BACKEND</code> is unset; supported deployments can select Docker or optional managed backends. Values that attempt to disable sandboxing through the backend selector are rejected. The native backend is POSIX-oriented and requires an explicitly restricted identity; use a backend capable of enforcing the isolation dimensions you require.</p>
+<p>Network mode defaults to <code>none</code>. Allowlists and unrestricted access require explicit configuration, and backends that cannot enforce a requested network policy fail closed rather than silently weakening it.</p>
+<pre><code class="language-bash"># Native sandbox: use a restricted OS identity.
+export AGENT_RT_SANDBOX_BACKEND=native
+export AGENT_RT_SANDBOX_UID=1234
+export AGENT_RT_SANDBOX_GID=1235
+
+# Network access is disabled by default.
+export AGENT_RT_SANDBOX_NETWORK_MODE=none</code></pre>
+<pre><code class="language-python">from agent_rt import (
+    SandboxCommand,
+    SandboxResourceLimits,
+    SandboxSession,
+    sandbox_backend_from_env,
+)
+
+backend = sandbox_backend_from_env()
+session = SandboxSession(
+    "build-session",
+    backend,
+    limits=SandboxResourceLimits(memory_bytes=512 * 1024 * 1024),
+)
+
+result = await session.execute(
+    SandboxCommand(argv=("python", "--version"))
+)
+
+print(result.exit_code)
+print(result.stdout.decode())</code></pre>
+
+<h2>17. Retrieval, browser, computer, multimodal, and realtime interfaces</h2>
+<p><code>RetrievalRegistry</code> normalizes web, enterprise, file, knowledge, and database search behind one result contract. Browser and computer sessions provide controlled navigation/search/form/download and screenshot/pointer/keyboard capabilities. Multimodal messages support text, image, PDF, audio, video, document, file, and JSON parts. Realtime sessions cover low-latency audio/text events, speech turn markers, completion, interruption, and cleanup.</p>
+<pre><code class="language-python">from agent_rt import RetrievalQuery, RetrievalRegistry, RetrievalResult
+
+class KnowledgeBase:
+    kind = "knowledge"
+
+    async def search(self, query):
+        return (
+            RetrievalResult("1", "Agent runtime", "Runtime overview", score=0.95),
+            RetrievalResult("2", "Policies", "Policy overview", score=0.82),
+        )
+
+retrieval = RetrievalRegistry()
+retrieval.register("docs", KnowledgeBase())
+
+results = await retrieval.search(
+    "docs",
+    RetrievalQuery("guardrails", limit=2),
+)</code></pre>
+
+<h2>18. Vector databases</h2>
+<p>The project includes provider-neutral vector-store support and compatibility surfaces for Chroma, Milvus, Pinecone, Qdrant, and Weaviate, including environment-driven switching and LangChain/LlamaIndex-compatible imports. See the <a href="../guides/vector-databases.html">vector database guide</a> for concrete setup.</p>
+
+<h2>19. Provider routing and Decision models</h2>
+<p>Model aliases, fallback chains, routing policies, cost/latency-aware selection, and provider-neutral metadata let applications select a generation model without rewriting the loop. Decision models—including Laya and other Jev-compatible models—can be used for bounded routing/selection tasks such as capability choice.</p>
+
+<h2>20. MCP, connectors, and remote agents</h2>
+<p><code>MCPClient</code> negotiates capabilities before consuming remote tools, resources, and prompts. Authorized MCP access can combine authentication scopes, credential grants, deny-overrides policy rules, and per-kind filters. Protocol and connector registries separate protocol mechanics from service-specific operations. Remote-agent support covers discovery, capability negotiation, task state, artifacts, streaming events, cancellation, and callbacks.</p>
+
+<h2>21. Reliability: retries, recovery, rate limits, budgets, deadlines, loops</h2>
+<p>Failure classification separates transient dependency failures, model-correctable failures, user-correctable issues, policy failures, and terminal system failures. Retry executors provide bounded backoff; recovery routing can choose repair, alternate tools, model fallback, user input, or escalation. Circuit breakers provide closed/open/half-open behavior.</p>
+<p><code>RateLimiter</code>, <code>ExecutionBudget</code>, <code>Deadline</code>, and <code>LoopDetector</code> provide independent controls for quotas, model/retry/subagent/cost budgets, nested deadlines, and repeated trajectories.</p>
+<pre><code class="language-python">from agent_rt import ExecutionBudget, ExecutionBudgetLimits
+
+budget = ExecutionBudget(
+    ExecutionBudgetLimits(
+        max_model_calls=12,
+        max_retries=3,
+        max_subagents=4,
+        max_cost=2.50,
+    )
+)
+
+loop = AgentLoop(
+    provider,
+    execution_budget=budget,
+)</code></pre>
+
+<h2>22. Observability, auditing, privacy, tokens, and cost</h2>
+<p>Tracing records task/agent/turn/model/tool/subagent/guardrail/queue/remote spans. Structured logging supports privacy redaction before persistence. Runtime metrics cover latency, throughput, errors, retries, queue time, and completion. Token and cost ledgers can attribute usage to users, tenants, tasks, agents, models, tools, storage, compute, and external services.</p>
+<p>Audit trails record actor-attributed request/authorization/execution outcomes. Retention-aware event storage supports TTL, purge, archival, ephemeral runs, and logging suppression where policy requires it.</p>
+<pre><code class="language-python">from agent_rt import TraceRecorder
+
+traces = TraceRecorder()
+
+task_span = traces.start(
+    span_id="span-task",
+    trace_id="trace-42",
+    name="task",
+    kind="task",
+    task_id="task-42",
+)
+
+agent_span = traces.start(
+    span_id="span-agent",
+    trace_id="trace-42",
+    name="agent",
+    kind="agent",
+    parent_span_id=task_span.span_id,
+    task_id="task-42",
+)</code></pre>
+
+<h2>23. Evaluation, replay, and testing</h2>
+<p>Evaluation APIs support deterministic harness assessment and regression workflows. Debug/replay primitives reconstruct captured state, events, and checkpoints while substituting recorded model/tool/external outputs. Repository security scans and adversarial runtime tests are designed to run offline against deterministic malicious-provider doubles rather than real external models.</p>
+
+<h2>24. API server, CLI, IDE, and chat surfaces</h2>
+<p>The runtime can be exposed through a CLI, a stable application API, or an optional OpenAI/Anthropic-compatible server surface. Interface layers are adapters over the same runtime rather than separate execution engines, so tools, guardrails, routing, run limits, state, and policy remain consistent.</p>
+<p>IDE integration can pass current-file, selection, diagnostics, and diff context into workspace operations. Chat bridges preserve channel identity and thread state. Approval presentation provides standardized consequence/diff/allow-or-deny UI data.</p>
+
+<h2>25. Compatibility and migration</h2>
+<p>Compatibility modules support common LangChain and LlamaIndex integration patterns, while OpenAI- and Anthropic-compatible HTTP surfaces ease application migration. Use compatibility layers to keep surrounding application code familiar while moving policy, tools, limits, state, and execution control into Agent RT.</p>
+
+<h2>26. Production deployment checklist</h2>
+<div class="table-wrap"><table><thead><tr><th>Before production</th><th>Recommended action</th></tr></thead><tbody>
+<tr><td>Tools</td><td>Expose the minimum schemas; classify side effects; set per-tool timeouts/resource needs.</td></tr>
+<tr><td>Guardrails</td><td>Keep default boundary guardrails unless you deliberately replace them; add application-specific input/output and tool guardrails.</td></tr>
+<tr><td>Tool action screening</td><td>Enable Agent Action Guard or another classifier when model-backed tool-action screening is part of your threat model.</td></tr>
+<tr><td>Permissions</td><td>Use deny-overrides rules and scoped capability grants outside the prompt.</td></tr>
+<tr><td>Approvals</td><td>Gate consequential/destructive operations before side effects.</td></tr>
+<tr><td>Untrusted data</td><td>Mark external context untrusted; restrict consequential capabilities and data egress.</td></tr>
+<tr><td>Execution</td><td>Use a sandbox backend that can actually enforce your filesystem, process, resource, and network requirements.</td></tr>
+<tr><td>Network</td><td>Keep no-network or explicit allowlists where possible.</td></tr>
+<tr><td>Durability</td><td>Use checkpoints, events, idempotency, queues/schedulers only where your workload needs them.</td></tr>
+<tr><td>Limits</td><td>Set run, token, time, retry, rate, and monetary budgets appropriate to the workload.</td></tr>
+<tr><td>Observability</td><td>Enable traces/metrics/audit while redacting sensitive data before persistence.</td></tr>
+<tr><td>Testing</td><td>Use deterministic provider/tool doubles for failure, security, replay, and regression tests.</td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>Mental model</strong>The model proposes. Agent RT controls context, capabilities, validation, policy, execution, persistence, budgets, and observability. Optional integrations extend those boundaries; they do not replace them.</div>
+
+<div class="page-nav"><a class="next-link" href="./architecture.html"><small>Related</small><strong>Architecture</strong></a><a class="next-link" href="../guides/production.html"><small>Next</small><strong>Production patterns →</strong></a></div>
+</article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

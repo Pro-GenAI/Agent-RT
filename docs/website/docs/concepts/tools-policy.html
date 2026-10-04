@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Agent Tools, Permissions &amp; Policy — Agent RT Docs</title>
+  <meta name="description" content="Learn how Agent RT handles tool registries, schemas, validation, tool visibility, permissions, approvals, guardrails, and least-privilege execution.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/concepts/tools-policy.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="AI Agent Tools, Permissions &amp; Policy — Agent RT Docs">
+  <meta property="og:description" content="Learn how Agent RT handles tool registries, schemas, validation, tool visibility, permissions, approvals, guardrails, and least-privilege execution.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/concepts/tools-policy.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI Agent Tools, Permissions &amp; Policy — Agent RT Docs">
+  <meta name="twitter:description" content="Learn how Agent RT handles tool registries, schemas, validation, tool visibility, permissions, approvals, guardrails, and least-privilege execution.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/concepts/tools-policy.html#page","url":"https://agent-rt-pro.github.io/docs/concepts/tools-policy.html","name":"AI Agent Tools, Permissions & Policy — Agent RT Docs","headline":"AI Agent Tools, Permissions & Policy — Agent RT Docs","description":"Learn how Agent RT handles tool registries, schemas, validation, tool visibility, permissions, approvals, guardrails, and least-privilege execution.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/concepts/tools-policy.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Core concepts"},{"@type":"ListItem","position":4,"name":"Tools & policy","item":"https://agent-rt-pro.github.io/docs/concepts/tools-policy.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html" aria-current="page">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html" aria-current="page">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Core concepts<span>/</span>Tools &amp; policy</div><section class="section-intro"><span class="eyebrow">Core concepts</span><h1 class="doc-title">Tools &amp; policy</h1><p class="doc-lede">Tools are explicit capabilities with schemas and execution behavior. Policy determines which of those capabilities are visible and allowed in a given runtime context.</p></section>
+<h2>Tool contract</h2><p>A tool describes identity, input/output schemas, metadata, side-effect classification, and error behavior. Registries add namespaces, enable/disable controls, typed validation, contextual handlers, deadlines, lifecycle hooks, and dependency-injected runtime context.</p>
+<h2>Visibility before execution</h2><p>Large tool catalogs should not be pushed into every model request. Agent RT supports static policy, runtime visibility filters, deferred schemas, capability search, and Decision-model selection so the active tool set can be narrowed before the model sees it.</p>
+<h2>Validate twice conceptually</h2><p>Capability visibility controls what the model can discover; dispatch checks what the runtime will actually execute. Keeping those boundaries separate helps prevent stale or malformed model calls from bypassing the current policy.</p>
+<h2>Guardrails and approvals</h2><p>Agent RT has four distinct guardrail boundaries: user/model-boundary input, model output, tool input, and tool output. The built-in conversation boundary layer is enabled by default and checks message size, content-part count, control characters, and assistant output role. Model-backed tool-input screening is separate and opt-in; when enabled, its default model is <code>agent-action-guard</code> (Agent Action Guard), and it runs before argument validation and before tool side effects.</p><p>Human-in-the-loop flows can pause execution for missing information, review, edits, or approval rather than encoding consequential authorization inside model text. See <a href="../reference/features-defaults.html">Features &amp; defaults</a> for execution order, exact defaults, configuration examples, prompt-injection defenses, exfiltration policy, permissions, and production guidance.</p>
+<div class="note"><strong>Least privilege</strong>Expose only the capabilities needed for the current task. Authorization and side-effect policy should remain outside model-generated instructions.</div>
+<div class="page-nav"><a class="next-link" href="./runtime.html"><small>Previous</small><strong>← Runtime model</strong></a><a class="next-link" href="./state-memory.html"><small>Next</small><strong>State &amp; memory →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

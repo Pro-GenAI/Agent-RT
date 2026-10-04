@@ -1,0 +1,75 @@
+name: Cross-platform tests
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  python:
+    name: Python 3.13 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, macos-15-intel, windows]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./python[dev]"
+
+      - name: Run Python tests
+        working-directory: python
+        run: pytest -q
+
+      - name: Run Python static security gate
+        working-directory: python
+        run: python scripts/security_scan.py --fail-on medium
+
+      - name: Run Python offline adversarial security gate
+        working-directory: python
+        run: python scripts/security_attack_scan.py
+
+      - name: Run third-party Python developer security gate
+        working-directory: python
+        run: python scripts/dev_security_scan.py
+
+  typescript:
+    name: Node 22 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, macos-15-intel, windows]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+
+      - name: Install TypeScript dependencies
+        working-directory: typescript
+        run: npm ci
+
+      - name: Run TypeScript tests
+        working-directory: typescript
+        run: npm test
+
+      - name: Run TypeScript security gate
+        working-directory: typescript
+        run: npm run security:gate

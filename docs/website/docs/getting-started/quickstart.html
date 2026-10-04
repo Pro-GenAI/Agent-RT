@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent RT Quickstart — Build Your First AI Agent</title>
+  <meta name="description" content="Build your first Agent RT agent in Python or TypeScript with runnable examples for tool calling, streaming, structured output, runtime limits, and registries.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/getting-started/quickstart.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Agent RT Quickstart — Build Your First AI Agent">
+  <meta property="og:description" content="Build your first Agent RT agent in Python or TypeScript with runnable examples for tool calling, streaming, structured output, runtime limits, and registries.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/getting-started/quickstart.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent RT Quickstart — Build Your First AI Agent">
+  <meta name="twitter:description" content="Build your first Agent RT agent in Python or TypeScript with runnable examples for tool calling, streaming, structured output, runtime limits, and registries.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/getting-started/quickstart.html#page","url":"https://agent-rt-pro.github.io/docs/getting-started/quickstart.html","name":"Agent RT Quickstart — Build Your First AI Agent","headline":"Agent RT Quickstart — Build Your First AI Agent","description":"Build your first Agent RT agent in Python or TypeScript with runnable examples for tool calling, streaming, structured output, runtime limits, and registries.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/getting-started/quickstart.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Getting started"},{"@type":"ListItem","position":4,"name":"Quickstart","item":"https://agent-rt-pro.github.io/docs/getting-started/quickstart.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../../docs/">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../../docs/">Overview</a><a href="../../docs/getting-started/installation.html">Installation</a><a href="../../docs/getting-started/quickstart.html" aria-current="page">Quickstart</a><a href="../../docs/concepts/runtime.html">Runtime model</a><a href="../../docs/concepts/tools-policy.html">Tools & policy</a><a href="../../docs/concepts/state-memory.html">State & memory</a><a href="../../docs/guides/migration.html">Migration</a><a href="../../docs/guides/production.html">Production patterns</a><a href="../../docs/guides/vector-databases.html">Vector databases</a><a href="../../docs/reference/features-defaults.html">Features & defaults</a><a href="../../docs/reference/architecture.html">Architecture</a><a href="../../docs/reference/development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../../docs/">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../../docs/getting-started/installation.html">Installation</a><a href="../../docs/getting-started/quickstart.html" aria-current="page">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../../docs/concepts/runtime.html">Runtime model</a><a href="../../docs/concepts/tools-policy.html">Tools & policy</a><a href="../../docs/concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../../docs/guides/migration.html">Migration</a><a href="../../docs/guides/production.html">Production patterns</a><a href="../../docs/guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="../../docs/reference/features-defaults.html">Features & defaults</a><a href="../../docs/reference/architecture.html">Architecture</a><a href="../../docs/reference/development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Getting started<span>/</span>Quickstart</div><section class="section-intro"><span class="eyebrow">Getting started</span><h1 class="doc-title">Quickstart</h1><p class="doc-lede">The repository examples are deliberately incremental. Start with one agent call, then add the capabilities that matter to production behavior without introducing another framework layer.</p></section>
+<h2>Minimal Python agent</h2><p>This is the smallest self-contained Python example: configure a model name, create an agent, create a user message, and run the loop.</p><pre><code class="language-python">import asyncio
+import os
+
+from agent_rt import (
+    AgentConfig,
+    AgentLoop,
+    ContentPart,
+    ModelMessage,
+    ModelSettings,
+    load_model,
+)
+
+async def main():
+    model = os.environ.get("OPENAI_MODEL") or os.environ.get("ANTHROPIC_MODEL")
+    if not model:
+        raise RuntimeError("Set OPENAI_MODEL or ANTHROPIC_MODEL")
+    provider = load_model()
+
+    agent = AgentConfig(
+        name="assistant",
+        instructions="Answer clearly and concisely.",
+        model=ModelSettings(model=model),
+    )
+    message = ModelMessage(
+        role="user",
+        content=(ContentPart(type="text", text="What does Agent RT do?"),),
+    )
+
+    result = await AgentLoop(provider).run(agent, [message])
+    print(result.termination_reason)
+
+asyncio.run(main())</code></pre>
+<h2>Minimal TypeScript agent</h2><pre><code class="language-javascript">const { AgentLoop, loadModel } = require("agent-rt");
+
+async function main() {
+  const model = process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL;
+  if (!model) throw new Error("Set OPENAI_MODEL or ANTHROPIC_MODEL");
+
+  const provider = await loadModel();
+  const agent = {
+    name: "assistant",
+    instructions: "Answer clearly and concisely.",
+    model: { model },
+  };
+  const messages = [{
+    role: "user",
+    content: [{ type: "text", text: "What does Agent RT do?" }],
+  }];
+
+  const result = await new AgentLoop(provider).run(agent, messages);
+  console.log(result.terminationReason);
+}
+
+main();</code></pre>
+<div class="note"><strong>Continue as a tutorial</strong>The <a href="../reference/features-defaults.html">Features &amp; defaults</a> reference now includes copyable Python and TypeScript examples for tools, streaming, structured output, limits, guardrails, permissions, approvals, state/memory, sandboxing, retrieval, budgets, and observability.</div>
+<h2>Recommended path</h2><div class="table-wrap"><table><thead><tr><th>Example</th><th>What it adds</th></tr></thead><tbody><tr><td><code>01_basic_agent</code></td><td>A minimal run against a configured provider.</td></tr><tr><td><code>02_tool_calling</code></td><td>A read-only tool and the model → tool → model continuation loop.</td></tr><tr><td><code>03_streaming</code></td><td>Provider-neutral text delta consumption.</td></tr><tr><td><code>04_structured_output</code></td><td>Schema-validated JSON with a bounded repair attempt.</td></tr><tr><td><code>05_run_limits</code></td><td>Turn, tool-call, elapsed-time, and token limits.</td></tr><tr><td><code>06_tool_registry</code></td><td>Namespaces, direct execution, and enable/disable controls without a model provider.</td></tr><tr><td><code>07_vector_db</code></td><td>Environment-driven Chroma, Milvus, Pinecone, Qdrant, or Weaviate retrieval without changing application code.</td></tr></tbody></table></div>
+<h2>Run the Python examples</h2><pre><code class="language-bash">cd python
+uv sync
+uv run python examples/01_basic_agent.py
+uv run python examples/02_tool_calling.py
+uv run python examples/07_vector_db.py</code></pre>
+<h2>Run the TypeScript examples</h2><pre><code class="language-bash">cd typescript
+npm ci
+npm run build
+node examples/01_basic_agent.js
+node examples/02_tool_calling.js
+node examples/07_vector_db.js</code></pre>
+<div class="note"><strong>Offline check</strong>The tool-registry example is fully offline in both implementations, so it is useful for validating local setup without model credentials.</div>
+<h2>What to learn next</h2><p>Once the basic loop is clear, read the runtime model before adding more capabilities. It explains where Agent RT draws boundaries between model behavior, tool execution, workflow state, policy, and termination.</p>
+<div class="page-nav"><a class="next-link" href="./installation.html"><small>Previous</small><strong>← Installation</strong></a><a class="next-link" href="../../docs/concepts/runtime.html"><small>Next</small><strong>Runtime model →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

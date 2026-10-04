@@ -1,0 +1,1 @@
+"""Internal compatibility implementation helpers."""

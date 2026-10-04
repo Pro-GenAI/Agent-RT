@@ -1,0 +1,204 @@
+version: 2.1
+
+parameters:
+  run_mac_ci:
+    type: boolean
+    default: false
+
+executors:
+  apple_silicon:
+    macos:
+      xcode: "27.0.0"
+    resource_class: m4pro.medium
+
+commands:
+  verify_apple_silicon:
+    steps:
+      - run:
+          name: Verify Apple Silicon runner
+          command: |
+            set -euo pipefail
+            echo "macOS: $(sw_vers -productVersion)"
+            echo "arch:  $(uname -m)"
+            test "$(uname -m)" = "arm64"
+
+  install_uv:
+    steps:
+      - run:
+          name: Install uv
+          command: |
+            set -euo pipefail
+            if ! command -v uv >/dev/null 2>&1; then
+              brew install uv
+            fi
+            uv --version
+
+  install_nvm:
+    steps:
+      - run:
+          name: Install nvm
+          command: |
+            set -euo pipefail
+            if ! brew list nvm >/dev/null 2>&1; then
+              brew install nvm
+            fi
+            mkdir -p "$HOME/.nvm"
+            {
+              echo 'export NVM_DIR="$HOME/.nvm"'
+              echo 'source "$(brew --prefix nvm)/nvm.sh"'
+            } >> "$BASH_ENV"
+            source "$(brew --prefix nvm)/nvm.sh"
+            nvm --version
+
+jobs:
+  python_tests:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_uv
+      - restore_cache:
+          keys:
+            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-
+      - run:
+          name: Run Python 3.10-3.14 regression matrix
+          command: |
+            set -euo pipefail
+            cd python
+            ./scripts/test-matrix.sh
+      - save_cache:
+          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          paths:
+            - ~/.cache/uv
+
+  python_security:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_uv
+      - restore_cache:
+          keys:
+            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-
+      - run:
+          name: Install Python 3.13 dev/security environment
+          command: |
+            set -euo pipefail
+            cd python
+            uv python install 3.13
+            uv sync --python 3.13 --extra dev --locked
+      - run:
+          name: Run built-in static security gate
+          command: |
+            set -euo pipefail
+            cd python
+            uv run --python 3.13 --extra dev python scripts/security_scan.py --fail-on medium
+      - run:
+          name: Run offline adversarial security gate
+          command: |
+            set -euo pipefail
+            cd python
+            uv run --python 3.13 --extra dev python scripts/security_attack_scan.py
+      - run:
+          name: Run third-party developer security gate
+          command: |
+            set -euo pipefail
+            cd python
+            uv run --python 3.13 --extra dev python scripts/dev_security_scan.py
+      - run:
+          name: Run Python 3.12 security gate including ModelScan
+          command: |
+            set -euo pipefail
+            cd python
+            uv python install 3.12
+            uv sync --python 3.12 --extra dev --locked
+            uv run --python 3.12 --extra dev python scripts/dev_security_scan.py
+      - save_cache:
+          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          paths:
+            - ~/.cache/uv
+
+  typescript_tests:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_nvm
+      - restore_cache:
+          keys:
+            - npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+            - npm-v1-{{ arch }}-
+      - run:
+          name: Run Node 20, 22, 24, and 26 regression matrix
+          command: |
+            set -euo pipefail
+            cd typescript
+            ./scripts/test-matrix.sh
+      - save_cache:
+          key: npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+          paths:
+            - ~/.npm
+            - ~/.nvm/.cache
+
+  typescript_security:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_nvm
+      - restore_cache:
+          keys:
+            - npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+            - npm-v1-{{ arch }}-
+      - run:
+          name: Install Node 22 and locked dependencies
+          command: |
+            set -euo pipefail
+            nvm install 22 --no-progress
+            nvm use 22
+            cd typescript
+            npm ci
+      - run:
+          name: Run TypeScript quality gate
+          command: |
+            set -euo pipefail
+            nvm use 22
+            cd typescript
+            npm run quality:check
+      - run:
+          name: Run deterministic TypeScript security gate
+          command: |
+            set -euo pipefail
+            nvm use 22
+            cd typescript
+            npm run security:gate
+      - run:
+          name: Run TypeScript AI-agent static security scan
+          command: |
+            set -euo pipefail
+            nvm use 22
+            cd typescript
+            npm run security:ai:static
+      - run:
+          name: Generate and validate TypeScript security SBOM
+          command: |
+            set -euo pipefail
+            nvm use 22
+            cd typescript
+            npm run security:sbom
+      - save_cache:
+          key: npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+          paths:
+            - ~/.npm
+            - ~/.nvm/.cache
+
+workflows:
+  apple_silicon_ci:
+    when: << pipeline.parameters.run_mac_ci >>
+    jobs:
+      - python_tests
+      - python_security
+      - typescript_tests
+      - typescript_security

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent RT vs LangChain vs LlamaIndex — Comparison</title>
+  <meta name="description" content="Compare Agent RT with LangChain and LlamaIndex across runtime controls, guardrails, APIs, sandboxing, checkpoints, vector databases, latency, and memory usage.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/reference/comparison.html">
+  <meta property="og:type" content="article"><meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Agent RT vs LangChain vs LlamaIndex — Comparison">
+  <meta property="og:description" content="A concise feature, latency, and memory comparison of Agent RT, LangChain, and LlamaIndex.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/reference/comparison.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent RT vs LangChain vs LlamaIndex — Comparison">
+  <meta name="twitter:description" content="A concise feature, latency, and memory comparison of Agent RT, LangChain, and LlamaIndex.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/reference/comparison.html#page","url":"https://agent-rt-pro.github.io/docs/reference/comparison.html","name":"Agent RT vs LangChain vs LlamaIndex — Comparison","headline":"Agent RT vs LangChain vs LlamaIndex — Comparison","description":"A concise feature, latency, and memory comparison of Agent RT, LangChain, and LlamaIndex.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/reference/comparison.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Reference"},{"@type":"ListItem","position":4,"name":"Comparison","item":"https://agent-rt-pro.github.io/docs/reference/comparison.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body data-doc-section="reference">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools &amp; policy</a><a href="../concepts/state-memory.html">State &amp; memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="./features-defaults.html">Features &amp; defaults</a><a href="./comparison.html" aria-current="page">Comparison</a><a href="./architecture.html">Architecture</a><a href="./development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools &amp; policy</a><a href="../concepts/state-memory.html">State &amp; memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="./features-defaults.html">Features &amp; defaults</a><a href="./comparison.html" aria-current="page">Comparison</a><a href="./architecture.html">Architecture</a><a href="./development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content wide">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Reference<span>/</span>Comparison</div>
+<section class="section-intro"><span class="eyebrow">Reference</span><h1 class="doc-title">Framework<br>comparison</h1><p class="doc-lede">A concise comparison of Agent RT, LangChain, and LlamaIndex across runtime features plus checked-in installation footprint, latency, and memory measurements.</p></section>
+<div class="note"><strong>How to read this table</strong>✅ means built in, ◐ means available or integration-dependent, and — means it is not a primary built-in focus. Benchmark figures are scenario-specific measurements from the repository comparison suite, not universal framework rankings. Python fresh-install footprint is the 2026-10-03 Python 3.13.13 clean-<code>uv venv</code> measurement above the empty-venv baseline. TypeScript fresh-install footprint is the 2026-10-03 Node.js 22.22.2/npm 10.9.7 clean-project measurement of logical <code>node_modules</code> bytes. Both include transitive dependencies.</div>
+<h2>⚖️ Quick comparison</h2>
+<div class="table-wrap"><table><thead><tr><th></th><th>⚡ Agent RT</th><th>🦜 LangChain</th><th>🗂️ LlamaIndex</th></tr></thead><tbody>
+<tr><td><strong>🎯 Primary focus</strong></td><td>🧠 Agent runtime</td><td>🧩 App/orchestration framework</td><td>📚 Data &amp; RAG framework</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/python.svg" alt="Python"> Python + <img class="language-logo" src="../../assets/typescript.svg" alt="TypeScript"> TypeScript</strong></td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>🛠️ Tools &amp; agent loop</strong></td><td>✅ Built-in</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>🔐 Permissions &amp; approvals</strong></td><td>✅ Built-in</td><td>◐</td><td>◐</td></tr>
+<tr><td><strong>🧰 API &amp; CLI tools</strong></td><td>✅ Built-in (optional packages)</td><td>—</td><td>—</td></tr>
+<tr><td><strong>🌐 OpenAI + Anthropic compatible API</strong></td><td>✅ Built-in server adapters</td><td>◐ Integration-dependent</td><td>◐ Integration-dependent</td></tr>
+<tr><td><strong>🛡️ Agent Action Guard</strong></td><td>✅ Built-in integration (opt-in)</td><td>—</td><td>—</td></tr>
+<tr><td><strong>🧠 Decision-model control gates</strong></td><td>✅ Tool pruning, memory/retrieval gates, failure classification</td><td>—</td><td>—</td></tr>
+<tr><td><strong>🧠 Harmful-memory guard</strong></td><td>✅ Decision-model screening before memory persistence and retrieval exposure; detects harmful-action influence, misleading authority, instruction hijacking, and safeguard bypass attempts</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
+<tr><td><strong>🔎 Tool/skill pre-registration safety scan</strong></td><td>✅ Deterministic scan of names, descriptions, schemas/metadata, skill frontmatter/instructions, embedded tools, and string resources</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
+<tr><td><strong>🚧 Decision approval for external tools/skills</strong></td><td>✅ Fail-closed Decision-model scan before filesystem skill activation; checked registration path for untrusted tools</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
+<tr><td><strong>✂️ Tool catalog pruning before model call</strong></td><td>✅ Built-in</td><td>◐ Integration-dependent</td><td>◐ Integration-dependent</td></tr>
+<tr><td><strong>📦 Sandboxing</strong></td><td>✅ Fail-closed backend selection</td><td>◐</td><td>◐</td></tr>
+<tr><td><strong>♻️ Budget-preserving checkpoints</strong></td><td>✅ Resume with prior turn/tool/token budgets</td><td>◐</td><td>◐</td></tr>
+<tr><td><strong>💾 Memory &amp; checkpoints</strong></td><td>✅ Built-in</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>🗃️ Switch vector DBs</strong></td><td>✅ Simple env/registry switch</td><td>◐ Integration-dependent</td><td>◐ Integration-dependent</td></tr>
+<tr><td><strong>🔌 Provider-neutral</strong></td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>🪶 Lightweight runtime focus</strong></td><td>✅</td><td>◐</td><td>◐</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/python.svg" alt="Python"> Fresh install footprint</strong></td><td><strong>46.43 MiB</strong></td><td>69.87 MiB</td><td>219.91 MiB</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/python.svg" alt="Python"> Warm latency</strong></td><td><strong>1.56 ms</strong></td><td>9.03 ms</td><td>4.26 ms</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/python.svg" alt="Python"> Runtime memory</strong></td><td><strong>+5.86 MiB</strong></td><td>+19.77 MiB</td><td>+22.42 MiB</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/typescript.svg" alt="TypeScript"> Fresh install footprint</strong></td><td><strong>1.24 MiB</strong></td><td>82.44 MiB</td><td>60.38 MiB</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/typescript.svg" alt="TypeScript"> Warm latency</strong></td><td><strong>1.85 ms</strong></td><td>2.60 ms</td><td>2.23 ms</td></tr>
+<tr><td><strong><img class="language-logo" src="../../assets/typescript.svg" alt="TypeScript"> Runtime memory</strong></td><td><strong>+14.33 MiB</strong></td><td>+17.27 MiB</td><td>+16.79 MiB</td></tr>
+</tbody></table></div>
+<p>📊 For benchmark methodology, environment, raw measured outputs, startup results, tool-loop measurements, and schema-token analysis, see the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/comparison/README.md">reproducible framework benchmarks ↗</a>.</p>
+<div class="page-nav"><a class="next-link" href="./features-defaults.html"><small>Previous</small><strong>← Features &amp; defaults</strong></a><a class="next-link" href="./architecture.html"><small>Next</small><strong>Architecture →</strong></a></div>
+</article><footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

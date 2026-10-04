@@ -1,0 +1,244 @@
+{
+	"name": "agent-rt",
+	"version": "0.0.1",
+	"description": "Lightweight utilities for building AI agent harnesses",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./evaluation": {
+			"types": "./dist/ext/evaluation.d.ts",
+			"default": "./dist/ext/evaluation.js"
+		},
+		"./management": {
+			"types": "./dist/ext/management.d.ts",
+			"default": "./dist/ext/management.js"
+		},
+		"./extensions": {
+			"types": "./dist/ext/extensions.d.ts",
+			"default": "./dist/ext/extensions.js"
+		},
+		"./decisions": {
+			"types": "./dist/ext/decisions.d.ts",
+			"default": "./dist/ext/decisions.js"
+		},
+		"./registration-safety": {
+			"types": "./dist/ext/registration_safety.d.ts",
+			"default": "./dist/ext/registration_safety.js"
+		},
+		"./deployment": {
+			"types": "./dist/ext/deployment.d.ts",
+			"default": "./dist/ext/deployment.js"
+		},
+		"./optimization/runtime": {
+			"types": "./dist/ext/optimization/runtime.d.ts",
+			"default": "./dist/ext/optimization/runtime.js"
+		},
+		"./optimization/latency": {
+			"types": "./dist/ext/optimization/latency.d.ts",
+			"default": "./dist/ext/optimization/latency.js"
+		},
+		"./optimization/cost": {
+			"types": "./dist/ext/optimization/cost.d.ts",
+			"default": "./dist/ext/optimization/cost.js"
+		},
+		"./operations": {
+			"types": "./dist/ext/operations.d.ts",
+			"default": "./dist/ext/operations.js"
+		},
+		"./openai": {
+			"types": "./dist/ext/compat/openai.d.ts",
+			"default": "./dist/ext/compat/openai.js"
+		},
+		"./anthropic": {
+			"types": "./dist/ext/compat/anthropic.d.ts",
+			"default": "./dist/ext/compat/anthropic.js"
+		},
+		"./langchain": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./llamaindex": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@langchain/openai": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/anthropic": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@llamaindex/openai": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@llamaindex/anthropic": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@anthropic-ai/sdk": {
+			"types": "./dist/ext/compat/anthropic.d.ts",
+			"default": "./dist/ext/compat/anthropic.js"
+		},
+		"./@openai/agents": {
+			"types": "./dist/ext/compat/openai_agents.d.ts",
+			"default": "./dist/ext/compat/openai_agents.js"
+		},
+		"./openai-agents": {
+			"types": "./dist/ext/compat/openai_agents.d.ts",
+			"default": "./dist/ext/compat/openai_agents.js"
+		},
+		"./@langchain/chroma": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/pinecone": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/qdrant": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/milvus": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/weaviate": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@llamaindex/chroma": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@llamaindex/pinecone": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@llamaindex/qdrant": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@llamaindex/milvus": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@llamaindex/weaviate": {
+			"types": "./dist/ext/compat/llamaindex.d.ts",
+			"default": "./dist/ext/compat/llamaindex.js"
+		},
+		"./@langchain/community/vectorstores/chroma": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/community/vectorstores/pinecone": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/community/vectorstores/qdrant": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/community/vectorstores/milvus": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		},
+		"./@langchain/community/vectorstores/weaviate": {
+			"types": "./dist/ext/compat/langchain.d.ts",
+			"default": "./dist/ext/compat/langchain.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"test": "npm run build && node --test tests/test.js tests/migration.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js",
+		"evaluate": "node scripts/evaluate-harness.js --scope all",
+		"evaluate:evals": "node scripts/evaluate-harness.js --scope evals",
+		"evaluate:tests": "node scripts/evaluate-harness.js --scope tests",
+		"evaluate:benchmark": "node scripts/evaluate-harness.js --scope benchmark",
+		"evaluate:performance": "node scripts/evaluate-harness.js --scope benchmark --benchmark performance",
+		"security:scan": "node scripts/security-scan.mjs",
+		"security:scan:gate": "node scripts/security-scan.mjs --fail-on medium",
+		"security:attacks": "npm run build && node scripts/security-attack-scan.mjs",
+		"security:gate": "npm run security:scan:gate && npm run security:attacks && npm run security:deps && npm run security:secrets && npm run security:mcp",
+		"test:matrix": "bash scripts/test-matrix.sh",
+		"lint": "eslint src scripts",
+		"lint:fix": "eslint src scripts --fix",
+		"format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.{js,mjs}\"",
+		"format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.{js,mjs}\"",
+		"quality:dead-code": "knip --include dependencies,unlisted,unresolved",
+		"quality:check": "npm run typecheck && npm run lint && npm run quality:dead-code",
+		"security:deps": "audit-ci --moderate",
+		"security:secrets": "node scripts/security-secret-scan.mjs",
+		"security:sbom": "node scripts/security-generate-sbom.mjs && npm run security:sbom:summary",
+		"security:sbom:summary": "node scripts/security-sbom-summary.mjs sbom.cdx.json",
+		"security:ai:static": "te-agent-security scan src --severity high",
+		"security:mcp": "mcp-scan scan src --output text"
+	},
+	"license": "MIT",
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"devDependencies": {
+		"@anthropic-ai/sdk": "^0.128.0",
+		"@copilotkit/aimock": "^1.43.0",
+		"@empowered-humanity/agent-security": "^2.0.0",
+		"@eslint/js": "^10.0.1",
+		"@syntrophy/mcp-scan": "^0.1.0",
+		"@types/ws": "^8.18.1",
+		"audit-ci": "^7.1.0",
+		"eslint": "^10.11.0",
+		"eslint-plugin-security": "^4.1.0",
+		"knip": "^6.38.0",
+		"openai": "^6.49.0",
+		"prettier": "^3.9.9",
+		"typescript": "^5.9.2",
+		"typescript-eslint": "^8.71.0"
+	},
+	"dependencies": {
+		"ws": "^8.22.0"
+	},
+	"peerDependencies": {
+		"@anthropic-ai/sdk": "^0.128.0",
+		"@traceloop/node-server-sdk": "^0.27.0",
+		"agent-action-guard": "^1.2.1",
+		"e2b": ">=1.4.0 <3",
+		"microsandbox": ">=0.7.4 <0.8",
+		"openai": "^6.49.0 || ^7.0.0"
+	},
+	"peerDependenciesMeta": {
+		"@anthropic-ai/sdk": {
+			"optional": true
+		},
+		"agent-action-guard": {
+			"optional": true
+		},
+		"e2b": {
+			"optional": true
+		},
+		"microsandbox": {
+			"optional": true
+		},
+		"openai": {
+			"optional": true
+		},
+		"@traceloop/node-server-sdk": {
+			"optional": true
+		}
+	},
+	"engines": {
+		"node": ">=20 <27"
+	},
+	"overrides": {
+		"@empowered-humanity/agent-security": {
+			"glob": "13.0.6"
+		}
+	}
+}

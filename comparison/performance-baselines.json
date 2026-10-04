@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "framework": "Agent RT",
+  "languages": {
+    "python": {
+      "import_runs": 30,
+      "runtime_runs": 30,
+      "values": {
+        "cold_import_median_ms": 175.4774200016982,
+        "first_construction_median_ms": 0.08327200339408591,
+        "warm_construction_median_ms": 0.010601499525364488,
+        "first_completion_median_ms": 84.89321000524797,
+        "warm_completion_median_ms": 1.284469497477403,
+        "warm_completion_p95_ms": 1.5770009995321743,
+        "first_text_median_ms": 2.1700490033254027,
+        "stream_total_median_ms": 2.4883379992388655,
+        "stream_total_p95_ms": 3.5695290061994456,
+        "five_turn_median_ms": 7.849229499697685,
+        "five_turn_p95_ms": 9.171511002932675,
+        "runtime_rss_delta_mib": 5.890625,
+        "rss_after_first_completion_mib": 33.44140625,
+        "rss_after_five_turn_loop_mib": 33.97265625
+      }
+    },
+    "typescript": {
+      "import_runs": 30,
+      "runtime_runs": 30,
+      "values": {
+        "cold_import_median_ms": 62.417146,
+        "first_construction_median_ms": 0.5828479999999843,
+        "warm_construction_median_ms": 0.006336500000088563,
+        "first_completion_median_ms": 47.298291000000006,
+        "warm_completion_median_ms": 2.1133729999999957,
+        "warm_completion_p95_ms": 2.600549000000001,
+        "first_text_median_ms": 2.3549355000000105,
+        "stream_total_median_ms": 2.4546220000000005,
+        "stream_total_p95_ms": 3.719020999999998,
+        "five_turn_median_ms": 9.16483199999999,
+        "five_turn_p95_ms": 16.772812000000044,
+        "runtime_rss_delta_mib": 12.671875,
+        "rss_after_first_completion_mib": 65.3828125,
+        "rss_after_five_turn_loop_mib": 77.3828125
+      }
+    }
+  }
+}

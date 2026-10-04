@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent RT Documentation — Python &amp; TypeScript AI Agent Runtime</title>
+  <meta name="description" content="Learn Agent RT for Python and TypeScript: installation, quickstarts, tools, memory, migration, production patterns, architecture, and development.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Agent RT Documentation — Python &amp; TypeScript AI Agent Runtime">
+  <meta property="og:description" content="Learn Agent RT for Python and TypeScript: installation, quickstarts, tools, memory, migration, production patterns, architecture, and development.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent RT Documentation — Python &amp; TypeScript AI Agent Runtime">
+  <meta name="twitter:description" content="Learn Agent RT for Python and TypeScript: installation, quickstarts, tools, memory, migration, production patterns, architecture, and development.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"CollectionPage","@id":"https://agent-rt-pro.github.io/docs/#page","url":"https://agent-rt-pro.github.io/docs/","name":"Agent RT Documentation — Python & TypeScript AI Agent Runtime","headline":"Agent RT Documentation — Python & TypeScript AI Agent Runtime","description":"Learn Agent RT for Python and TypeScript: installation, quickstarts, tools, memory, migration, production patterns, architecture, and development.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"}]}]}</script>
+  <meta name="theme-color" content="#07090d">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="./docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="./docs.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="docs-header">
+    <div class="header-inner">
+      <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+      <span class="docs-label">Documentation</span>
+      <nav class="header-links" aria-label="Global"><a href="../">Home</a><a href="./" aria-current="page">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+    </div>
+  </header>
+
+  <div class="mobile-nav">
+    <details>
+      <summary>Documentation menu</summary>
+      <div class="mobile-links">
+        <a href="./">Overview</a>
+        <a href="./getting-started/installation.html">Installation</a>
+        <a href="./getting-started/quickstart.html">Quickstart</a>
+        <a href="./concepts/runtime.html">Runtime model</a>
+        <a href="./concepts/tools-policy.html">Tools &amp; policy</a>
+        <a href="./concepts/state-memory.html">State &amp; memory</a>
+        <a href="./guides/migration.html">Migration</a>
+        <a href="./guides/production.html">Production patterns</a><a href="./guides/vector-databases.html">Vector databases</a>
+        <a href="./reference/features-defaults.html">Features &amp; defaults</a>
+        <a href="./reference/comparison.html">Comparison</a>
+        <a href="./reference/architecture.html">Architecture</a>
+        <a href="./reference/development.html">Development</a>
+      </div>
+    </details>
+  </div>
+
+  <div class="docs-shell">
+    <aside class="sidebar" aria-label="Documentation navigation">
+      <a class="sidebar-home" href="./" aria-current="page">Documentation home</a>
+      <div class="nav-group"><h2>Getting started</h2><a href="./getting-started/installation.html">Installation</a><a href="./getting-started/quickstart.html">Quickstart</a></div>
+      <div class="nav-group"><h2>Core concepts</h2><a href="./concepts/runtime.html">Runtime model</a><a href="./concepts/tools-policy.html">Tools &amp; policy</a><a href="./concepts/state-memory.html">State &amp; memory</a></div>
+      <div class="nav-group"><h2>Guides</h2><a href="./guides/migration.html">Migration</a><a href="./guides/production.html">Production patterns</a><a href="./guides/vector-databases.html">Vector databases</a></div>
+      <div class="nav-group"><h2>Reference</h2><a href="./reference/features-defaults.html">Features & defaults</a><a href="./reference/comparison.html">Comparison</a><a href="./reference/architecture.html">Architecture</a><a href="./reference/development.html">Development</a></div>
+    </aside>
+
+    <main class="docs-main" id="main">
+      <article class="content wide">
+        <section class="section-intro">
+          <span class="eyebrow">Agent RT documentation</span>
+          <h1 class="doc-title">Agent RT<br>Documentation</h1>
+          <p class="doc-lede">Start with a runnable agent, then move into tools, state, policy, production operations, and extension contracts. The website documentation is organized by task instead of repository layout.</p>
+        </section>
+
+        <section>
+          <h2>Start here</h2>
+          <div class="path"><span class="path-number">01</span><div><a href="./getting-started/installation.html">Install Agent RT</a><span>Choose Python or TypeScript and configure a model provider.</span></div></div>
+          <div class="path"><span class="path-number">02</span><div><a href="./getting-started/quickstart.html">Run your first agent</a><span>Move from a minimal call to tools, streaming, structured output, and limits.</span></div></div>
+          <div class="path"><span class="path-number">03</span><div><a href="./concepts/runtime.html">Understand the runtime loop</a><span>See how model requests, tool execution, state, budgets, and termination fit together.</span></div></div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-heading"><div><span class="eyebrow">Section 1</span><h2>Getting started</h2></div><p>From install to first run.</p></div>
+          <div class="docs-grid">
+            <a class="card" href="./getting-started/installation.html"><span class="arrow">↗</span><small>Setup</small><strong>Installation</strong><p>Supported runtimes, package installation, and provider environment.</p></a>
+            <a class="card" href="./getting-started/quickstart.html"><span class="arrow">↗</span><small>First run</small><strong>Quickstart</strong><p>Incremental examples for agents, tools, streaming, schemas, and limits.</p></a>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-heading"><div><span class="eyebrow">Section 2</span><h2>Core concepts</h2></div><p>The mental model behind Agent RT.</p></div>
+          <div class="docs-grid">
+            <a class="card" href="./concepts/runtime.html"><span class="arrow">↗</span><small>Execution</small><strong>Runtime model</strong><p>The model → tool → model loop, routing, limits, and cancellation.</p></a>
+            <a class="card" href="./concepts/tools-policy.html"><span class="arrow">↗</span><small>Capabilities</small><strong>Tools &amp; policy</strong><p>Registries, validation, visibility, permissions, approvals, and guardrails.</p></a>
+            <a class="card" href="./concepts/state-memory.html"><span class="arrow">↗</span><small>Persistence</small><strong>State &amp; memory</strong><p>Messages, workflow state, memory scopes, checkpoints, artifacts, and resumption.</p></a>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-heading"><div><span class="eyebrow">Section 3</span><h2>Guides</h2></div><p>Common adoption and deployment paths.</p></div>
+          <div class="docs-grid">
+            <a class="card" href="./guides/migration.html"><span class="arrow">↗</span><small>Adoption</small><strong>Migration</strong><p>Compatibility surfaces for LangChain, LlamaIndex, OpenAI, and Anthropic applications.</p></a>
+            <a class="card" href="./guides/production.html"><span class="arrow">↗</span><small>Operations</small><strong>Production patterns</strong><p>Boundaries, durable execution, sandboxing, observability, evaluation, and deployment.</p></a>
+            <a class="card" href="./guides/vector-databases.html"><span class="arrow">↗</span><small>Retrieval</small><strong>Vector databases</strong><p>Switch Chroma, Milvus, Pinecone, Qdrant, or Weaviate with environment variables, or use LangChain/LlamaIndex-compatible vector-store imports.</p></a>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-heading"><div><span class="eyebrow">Section 4</span><h2>Reference</h2></div><p>Architecture and contributor workflows.</p></div>
+          <div class="docs-grid">
+            <a class="card" href="./reference/features-defaults.html"><span class="arrow">↗</span><small>Complete reference</small><strong>Features & defaults</strong><p>Every major capability, what is enabled by default, what is opt-in, execution order, and how to configure it.</p></a>
+            <a class="card" href="./reference/comparison.html"><span class="arrow">↗</span><small>Framework comparison</small><strong>Agent RT vs alternatives</strong><p>Compare runtime features, latency, memory, guardrails, APIs, sandboxing, and portability.</p></a>
+            <a class="card" href="./reference/architecture.html"><span class="arrow">↗</span><small>Extensions</small><strong>Architecture</strong><p>Module boundaries and the extension contracts that keep the runtime provider-neutral.</p></a>
+            <a class="card" href="./reference/development.html"><span class="arrow">↗</span><small>Contributing</small><strong>Development</strong><p>Repository setup, test matrices, and language-specific workflows.</p></a>
+          </div>
+        </section>
+      </article>
+      <footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer>
+    </main>
+  </div>
+</body>
+</html>

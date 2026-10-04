@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Migrate LangChain, LlamaIndex, OpenAI &amp; Anthropic to Agent RT</title>
+  <meta name="description" content="Migrate LangChain, LlamaIndex, OpenAI, or Anthropic applications to Agent RT, including Chroma, Pinecone, Qdrant, Milvus, and Weaviate vector-store compatibility.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/guides/migration.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Migrate LangChain, LlamaIndex, OpenAI &amp; Anthropic to Agent RT">
+  <meta property="og:description" content="Migrate LangChain, LlamaIndex, OpenAI, or Anthropic applications to Agent RT, including vector-store compatibility for five popular vector databases.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/guides/migration.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Migrate LangChain, LlamaIndex, OpenAI &amp; Anthropic to Agent RT">
+  <meta name="twitter:description" content="Migrate LangChain, LlamaIndex, OpenAI, or Anthropic applications to Agent RT, including vector-store compatibility for five popular vector databases.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/guides/migration.html#page","url":"https://agent-rt-pro.github.io/docs/guides/migration.html","name":"Migrate LangChain, LlamaIndex, OpenAI & Anthropic to Agent RT","headline":"Migrate LangChain, LlamaIndex, OpenAI & Anthropic to Agent RT","description":"Migrate LangChain, LlamaIndex, OpenAI, or Anthropic applications to Agent RT, including Chroma, Pinecone, Qdrant, Milvus, and Weaviate vector-store compatibility.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/guides/migration.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Guides"},{"@type":"ListItem","position":4,"name":"Migration","item":"https://agent-rt-pro.github.io/docs/guides/migration.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html" aria-current="page">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html" aria-current="page">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Guides<span>/</span>Migration</div><section class="section-intro"><span class="eyebrow">Guides</span><h1 class="doc-title">Migration</h1><p class="doc-lede">Python and TypeScript applications can adopt Agent RT incrementally through compatibility entry points, then move toward native runtime contracts when they need deeper control over tools, state, policy, or execution.</p></section>
+<h2>Compatibility surfaces</h2>
+<p>For common imports, migration can be as small as changing the module prefix. Keep the class or symbol you already use and point the import at Agent RT's compatibility layer.</p>
+<h3>Python</h3>
+<div class="compat-grid" aria-label="Python compatibility import replacements">
+  <div class="compat-card">
+    <div class="compat-label">LangChain</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from langchain_openai import ChatOpenAI</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>langchain_openai import ChatOpenAI</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">LlamaIndex</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from llama_index.llms.openai import OpenAI</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>llama_index.llms.openai import OpenAI</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">LangChain · Qdrant</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from langchain_qdrant import QdrantVectorStore</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>langchain_qdrant import QdrantVectorStore</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">LlamaIndex · Qdrant</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from llama_index.vector_stores.qdrant import QdrantVectorStore</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>llama_index.vector_stores.qdrant import QdrantVectorStore</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">OpenAI</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from openai import AsyncOpenAI</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt</span>.openai import AsyncOpenAI</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">Anthropic</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from anthropic import AsyncAnthropic</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt</span>.anthropic import AsyncAnthropic</code></div>
+  </div>
+</div>
+<h3>TypeScript / JavaScript</h3>
+<div class="compat-grid" aria-label="TypeScript compatibility import replacements">
+  <div class="compat-card"><div class="compat-label">LangChain</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { ChatOpenAI } from "@langchain/openai";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { ChatOpenAI } from "<span class="diff-new">agent-rt/</span>@langchain/openai";</code></div></div>
+  <div class="compat-card"><div class="compat-label">LlamaIndex</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { OpenAI } from "@llamaindex/openai";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { OpenAI } from "<span class="diff-new">agent-rt/</span>@llamaindex/openai";</code></div></div>
+  <div class="compat-card"><div class="compat-label">LangChain · Qdrant</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { QdrantVectorStore } from "@langchain/qdrant";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { QdrantVectorStore } from "<span class="diff-new">agent-rt/</span>@langchain/qdrant";</code></div></div>
+  <div class="compat-card"><div class="compat-label">LlamaIndex · Qdrant</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { QdrantVectorStore } from "@llamaindex/qdrant";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { QdrantVectorStore } from "<span class="diff-new">agent-rt/</span>@llamaindex/qdrant";</code></div></div>
+  <div class="compat-card"><div class="compat-label">OpenAI</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import OpenAI from "openai";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import OpenAI from "<span class="diff-new">agent-rt/</span>openai";</code></div></div>
+  <div class="compat-card"><div class="compat-label">Anthropic</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import Anthropic from "@anthropic-ai/sdk";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import Anthropic from "<span class="diff-new">agent-rt/</span>@anthropic-ai/sdk";</code></div></div>
+</div>
+<h2>Adopt in layers</h2><p>Start at the compatibility entry point closest to the code you already have. Once behavior is stable, move runtime-sensitive concerns—tools, run limits, sandboxing, retrieval, memory, policy, and checkpoints—onto Agent RT-native contracts where the control boundary is explicit.</p>
+<h2>Supported compatibility themes</h2><p>The migration layer covers common chat/completion entry points, streaming, tool history, OpenAI Responses continuation, file-search integration through Agent RT retrieval providers, web retrieval integration, reasoning/thinking controls, batch lifecycle compatibility, and read/query vector-store adapters for Chroma, Pinecone, Qdrant, Milvus, and Weaviate.</p><p>LangChain compatibility exposes vendor-shaped imports such as <code>agent_rt.langchain_qdrant</code> and <code>agent-rt/@langchain/qdrant</code>. LlamaIndex compatibility exposes <code>agent_rt.llama_index.vector_stores.qdrant</code> and <code>agent-rt/@llamaindex/qdrant</code>, including integration with <code>VectorStoreIndex.from_vector_store()</code> / <code>fromVectorStore()</code>. These adapters query existing collections; vendor write/admin lifecycle APIs remain outside the compatibility layer. See the <a href="./vector-databases.html">vector database guide</a> for the complete mapping.</p>
+<div class="note"><strong>Detailed source guide</strong>This web page is the navigation-oriented overview. The repository's <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md">complete migration guide ↗</a> remains the source of truth for exact API coverage and code-level migration examples.</div>
+<div class="page-nav"><a class="next-link" href="../concepts/state-memory.html"><small>Previous</small><strong>← State &amp; memory</strong></a><a class="next-link" href="./production.html"><small>Next</small><strong>Production patterns →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent RT Architecture &amp; Extension Contracts — Reference</title>
+  <meta name="description" content="Explore Agent RT architecture and extension contracts for model providers, tools, state, policy, execution, deployment, evaluation, and operations.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/reference/architecture.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Agent RT Architecture &amp; Extension Contracts — Reference">
+  <meta property="og:description" content="Explore Agent RT architecture and extension contracts for model providers, tools, state, policy, execution, deployment, evaluation, and operations.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/reference/architecture.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent RT Architecture &amp; Extension Contracts — Reference">
+  <meta name="twitter:description" content="Explore Agent RT architecture and extension contracts for model providers, tools, state, policy, execution, deployment, evaluation, and operations.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/reference/architecture.html#page","url":"https://agent-rt-pro.github.io/docs/reference/architecture.html","name":"Agent RT Architecture & Extension Contracts — Reference","headline":"Agent RT Architecture & Extension Contracts — Reference","description":"Explore Agent RT architecture and extension contracts for model providers, tools, state, policy, execution, deployment, evaluation, and operations.","inLanguage":"en","dateModified":"2026-10-04","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/reference/architecture.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Reference"},{"@type":"ListItem","position":4,"name":"Architecture","item":"https://agent-rt-pro.github.io/docs/reference/architecture.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html" aria-current="page">Architecture</a><a href="../reference/development.html">Development</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html" aria-current="page">Architecture</a><a href="../reference/development.html">Development</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Reference<span>/</span>Architecture</div><section class="section-intro"><span class="eyebrow">Reference</span><h1 class="doc-title">Architecture</h1><p class="doc-lede">Agent RT is organized around narrow, provider-neutral contracts. The goal is to let model providers, tools, memory, sandboxes, evaluators, deployment targets, and optimization layers change without collapsing into one opaque framework surface.</p></section>
+<h2>Conceptual planes</h2><div class="table-wrap"><table><thead><tr><th>Plane</th><th>Responsibilities</th></tr></thead><tbody><tr><td>Control</td><td>Agent definition, routing, policy, budgets, approvals.</td></tr><tr><td>Model</td><td>Providers, context assembly, structured I/O, streaming.</td></tr><tr><td>Execution</td><td>Tools, files, shell/code, sandboxes, remote capabilities.</td></tr><tr><td>State</td><td>Messages, sessions, memory, checkpoints, tasks, event history.</td></tr><tr><td>Reliability / governance</td><td>Permissions, guardrails, retry, idempotency, secrets, isolation.</td></tr><tr><td>Operations / quality</td><td>Tracing, metrics, evaluation, cost, deployment, optimization.</td></tr></tbody></table></div>
+<h2>Extension principle</h2><p>Each replaceable subsystem should have a small contract that expresses runtime semantics rather than provider-specific behavior. That applies to model providers, routing policies, tool registries, memory stores, retrieval, sandboxes, artifacts, evaluators, deployment targets, and operational middleware.</p>
+<h2>Vector retrieval boundary</h2><p>External vector databases implement the same Agent RT retrieval contract as other knowledge providers. <code>VectorDBProviderRegistry</code> and the environment-backed provider resolve Chroma, Milvus, Pinecone, Qdrant, or Weaviate without moving vendor SDKs into core. LangChain and LlamaIndex compatibility classes are thin read/query adapters over that boundary, so framework-shaped imports do not create a second retrieval architecture.</p><h2>Cross-language alignment</h2><p>The Python and TypeScript implementations intentionally track the same core concepts and behavior. Exact APIs differ where language conventions demand it, but the runtime model should remain recognizable across both packages.</p>
+<div class="note"><strong>Complete contract reference</strong>See <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Architecture-and-Extensions.md">Architecture and Extension Contracts ↗</a> for module-level interfaces and implementation detail.</div>
+<div class="page-nav"><a class="next-link" href="../guides/production.html"><small>Previous</small><strong>← Production patterns</strong></a><a class="next-link" href="./development.html"><small>Next</small><strong>Development →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+</div>
+</body></html>

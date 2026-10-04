@@ -1,0 +1,4 @@
+framework,specifier,successful_runs,failed_runs,median_import_ms,p95_import_ms,median_process_total_ms,median_cpu_ms,median_cpu_percent,median_rss_delta_mib,max_observed_rss_mib,error
+Agent RT,__LOCAL_AGENT_HARNESS__,30,0,64.420364,77.14570499999999,152.20089350000015,120.043,185.0717216950266,13.27734375,60.75,
+LangChain.js,langchain,30,0,496.45031350000005,616.10713,577.3521015000001,690.488,137.13347294876905,41.89453125,89.71875,
+LlamaIndex.TS,llamaindex,30,0,983.6082185,1387.177909,1075.5826655,1498.2555,149.90051802031877,138.3671875,192.75390625,

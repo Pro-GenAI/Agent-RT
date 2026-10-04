@@ -1,0 +1,6 @@
+tool_count,scenario_count,avg_selected_tools,avg_decision_requests,all_tools_main_tokens,agent_rt_main_tokens_avg,main_tokens_saved_avg,main_reduction_pct,decision_model_input_tokens_avg,agent_rt_combined_tokens_avg,combined_delta_vs_all_avg,encoding
+8,4,1,1,861,112,749,86.99186991869918,1056.5,1168.5,307.5,o200k_base
+16,4,1,1,1717,112,1605,93.47699475829936,2040.5,2152.5,435.5,o200k_base
+32,4,2,2,3429,219,3210,93.61329833770779,4081,4300,871,o200k_base
+64,4,4,4,6853,433,6420,93.68159929957682,8162,8595,1742,o200k_base
+128,4,8,8,13765,865,12900,93.71594624046494,16388,17253,3488,o200k_base
