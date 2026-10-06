@@ -866,3 +866,32 @@ test('LangChain vector DB package exports route through Agent RT retrieval', asy
 	assert.deepEqual(queries[0].filter, { tenant: 'docs' });
 	await mock.stop();
 });
+
+test('LangChain v1 fakeModel scripts agent turns offline', async () => {
+	// Field shape: `import { fakeModel } from "langchain"` drives createAgent
+	// tests with respond()/respondWithTools() and asserts callCount.
+	const { fakeModel, createAgent, tool } = require('../dist/ext/compat/langchain.js');
+	const searches = [];
+	const search = tool(async ({ query }) => {
+		searches.push(query);
+		return 'found it';
+	}, {
+		name: 'search',
+		description: 'Search notes.',
+		schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+	});
+	// An upstream-style message object (content + tool_calls), not a compat class.
+	const model = fakeModel()
+		.respondWithTools([{ name: 'search', args: { query: 'apology' } }])
+		.respond({ content: 'You apologised.' });
+	const agent = createAgent({ model, tools: [search] });
+	const result = await agent.invoke({ messages: [{ role: 'user', content: 'what happened?' }] });
+	assert.equal(result.messages.at(-1).content, 'You apologised.');
+	assert.deepEqual(searches, ['apology']);
+	assert.equal(model.callCount, 2);
+
+	const empty = fakeModel();
+	await assert.rejects(empty.invoke('hi'), /no scripted response/);
+	const failing = fakeModel().respond(new Error('boom'));
+	await assert.rejects(failing.invoke('hi'), /boom/);
+});

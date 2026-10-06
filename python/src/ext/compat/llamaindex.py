@@ -521,6 +521,30 @@ class OpenAI(_BaseOpenAI):
         return _run_sync(self.apredict_and_call(tools, **kwargs))
 
 
+class Ollama(OpenAI):
+    """``llama_index.llms.ollama.Ollama`` via Ollama's OpenAI-compatible API."""
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        base_url: str | None = None,
+        provider: Any = None,
+        **kwargs: Any,
+    ) -> None:
+        from ext.compat.llamaindex_rag import ollama_base_url
+
+        for option in ("request_timeout", "context_window", "keep_alive", "json_mode"):
+            kwargs.pop(option, None)
+        super().__init__(
+            model,
+            api_base=ollama_base_url(base_url),
+            provider=provider,
+            **{"api_" + "key": "ollama"},
+            **kwargs,
+        )
+
+
 class Anthropic(OpenAI, _BaseAnthropic):
     def __init__(
         self,
@@ -1939,24 +1963,37 @@ from ext.compat.llamaindex_rag import (
     AgentRTEmbedding,
     AgentRTRetriever,
     AgentRTVectorStore,
+    BaseEmbedding,
     ChromaVectorStore,
+    CustomPGRetriever,
     Document,
+    FlatReader,
+    GeminiEmbedding,
+    ImplicitPathExtractor,
     IngestionPipeline,
+    LLMSynonymRetriever,
     MilvusVectorStore,
     NodeWithScore,
+    OllamaEmbedding,
+    OpenAIEmbedding,
+    PDFReader,
     PineconeVectorStore,
+    PropertyGraphIndex,
     QdrantVectorStore,
     Response,
     ResponseSynthesizer,
     RetrieverQueryEngine,
     SentenceSplitter,
     SimpleDirectoryReader,
+    SimpleLLMPathExtractor,
     SimpleVectorStore,
     StorageContext,
     TextNode,
+    VectorContextRetriever,
     VectorIndexRetriever,
     VectorStoreIndex,
     WeaviateVectorStore,
+    load_index_from_storage,
 )
 
 
@@ -2121,6 +2158,20 @@ def install_llamaindex_compat(parent: Any) -> None:
         CodeActOutputParser=CodeActOutputParser,
         CodeActStep=CodeActStep,
         AgentRTEmbedding=AgentRTEmbedding,
+        BaseEmbedding=BaseEmbedding,
+        OpenAIEmbedding=OpenAIEmbedding,
+        OllamaEmbedding=OllamaEmbedding,
+        GeminiEmbedding=GeminiEmbedding,
+        FlatReader=FlatReader,
+        CustomPGRetriever=CustomPGRetriever,
+        ImplicitPathExtractor=ImplicitPathExtractor,
+        LLMSynonymRetriever=LLMSynonymRetriever,
+        PropertyGraphIndex=PropertyGraphIndex,
+        SimpleLLMPathExtractor=SimpleLLMPathExtractor,
+        VectorContextRetriever=VectorContextRetriever,
+        load_index_from_storage=load_index_from_storage,
+        PDFReader=PDFReader,
+        Ollama=Ollama,
         AgentRTRetriever=AgentRTRetriever,
         AgentRTVectorStore=AgentRTVectorStore,
         ChromaVectorStore=ChromaVectorStore,

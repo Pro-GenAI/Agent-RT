@@ -2766,7 +2766,9 @@ export function makeAgentActionGuardToolInputGuardrail(
 	return async (call) => {
 		if (!classifier) {
 			try {
-				const module = await import('agent-action-guard');
+				const module = await importOptionalPeer<typeof import('agent-action-guard')>(
+					'agent-action-guard',
+				);
 				classifier = module.isActionHarmful;
 			} catch (error) {
 				if (
@@ -4224,6 +4226,27 @@ export interface StructuredOutputRequirement {
 	strict?: boolean;
 }
 
+/**
+ * JSON mode (OpenAI `response_format: { type: 'json_object' }`): any JSON
+ * object, without a schema. OpenAI-compatible providers send JSON mode for it.
+ */
+export const JSON_OBJECT_OUTPUT: StructuredOutputRequirement = Object.freeze({
+	schema: Object.freeze({ type: 'object' }),
+	strict: false,
+});
+
+export function isJsonObjectOutput(
+	requirement: StructuredOutputRequirement | undefined,
+): boolean {
+	return (
+		requirement !== undefined &&
+		requirement.strict === false &&
+		requirement.name === undefined &&
+		Object.keys(requirement.schema).length === 1 &&
+		requirement.schema.type === 'object'
+	);
+}
+
 export interface ReasoningConfig {
 	effort?: string;
 	summary?: string;
@@ -4275,6 +4298,11 @@ export interface OpenAIProviderSettings {
 	defaultModel?: string;
 	transport?: 'compatible' | 'sdk';
 	websocket?: boolean;
+	/**
+	 * HTTP implementation for every request (the SDKs' `fetch` option); test
+	 * doubles and offline transports depend on it. Defaults to global fetch.
+	 */
+	fetch?: typeof fetch;
 }
 
 export interface ResolvedOpenAIProviderSettings {
@@ -4283,18 +4311,25 @@ export interface ResolvedOpenAIProviderSettings {
 	defaultModel?: string;
 	transport?: 'compatible' | 'sdk';
 	websocket: boolean;
+	fetch?: typeof fetch;
 }
 
 export interface AnthropicProviderSettings {
 	baseUrl?: string;
 	apiKey?: string;
 	defaultModel?: string;
+	/**
+	 * HTTP implementation for every request (the SDKs' `fetch` option); test
+	 * doubles and offline transports depend on it. Defaults to global fetch.
+	 */
+	fetch?: typeof fetch;
 }
 
 export interface ResolvedAnthropicProviderSettings {
 	baseUrl: string;
 	apiKey?: string;
 	defaultModel?: string;
+	fetch?: typeof fetch;
 }
 
 export type OpenAIEnvironment = Readonly<Record<string, string | undefined>>;
@@ -4405,7 +4440,10 @@ export function resolveOpenAIProviderSettings(
 		...(apiKey ? { apiKey } : {}),
 		...(defaultModel ? { defaultModel } : {}),
 		...(settings.transport ? { transport } : {}),
-		websocket: settings.websocket ?? true,
+		// An injected fetch must carry every request; the WebSocket transport
+		// would bypass it.
+		websocket: settings.fetch ? false : (settings.websocket ?? true),
+		...(settings.fetch ? { fetch: settings.fetch } : {}),
 	};
 }
 
@@ -4431,6 +4469,7 @@ export function resolveAnthropicProviderSettings(
 		baseUrl,
 		...(credential ? { apiKey: credential } : {}),
 		...(defaultModel ? { defaultModel } : {}),
+		...(settings.fetch ? { fetch: settings.fetch } : {}),
 	};
 }
 
@@ -4446,7 +4485,8 @@ export async function validateOpenAIProviderSettings(
 	let factory = options.clientFactory;
 	if (!factory) {
 		try {
-			const { default: OpenAI } = await import('openai');
+			const { default: OpenAI } =
+				await importOptionalPeer<typeof import('openai')>('openai');
 			factory = (clientOptions) =>
 				new OpenAI(clientOptions) as unknown as ModelListClient;
 		} catch (error) {
@@ -4512,7 +4552,9 @@ export async function validateAnthropicProviderSettings(
 	let factory = options.clientFactory;
 	if (!factory) {
 		try {
-			const { default: Anthropic } = await import('@anthropic-ai/sdk');
+			const { default: Anthropic } = await importOptionalPeer<
+				typeof import('@anthropic-ai/sdk')
+			>('@anthropic-ai/sdk');
 			factory = (clientOptions) =>
 				new Anthropic(clientOptions) as unknown as ModelListClient;
 		} catch (error) {
@@ -4531,14 +4573,21 @@ export async function validateAnthropicProviderSettings(
 			throw error;
 		}
 	}
+	const client = factory({
+		baseURL: resolved.baseUrl,
+		apiKey: resolved.apiKey ?? 'not-provided',
+	});
+	// The optional peer range starts at the Messages API (0.14); the models
+	// API that validation needs arrived in 0.39.
+	if (typeof client.models?.list !== 'function') {
+		throw new Error(
+			"Anthropic startup validation needs the models API: upgrade '@anthropic-ai/sdk' " +
+				'to 0.39.0 or newer, or pass clientFactory explicitly.',
+		);
+	}
 	let modelIds: string[];
 	try {
-		modelIds = modelListIds(
-			await factory({
-				baseURL: resolved.baseUrl,
-				apiKey: resolved.apiKey ?? 'not-provided',
-			}).models.list(),
-		);
+		modelIds = modelListIds(await client.models.list());
 	} catch (error) {
 		throw new Error(
 			`Anthropic startup validation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -4934,6 +4983,7 @@ function openAIToolParams(tools: ToolDefinition[]): Record<string, unknown>[] {
 function openAIResponseFormat(
 	requirement: StructuredOutputRequirement,
 ): Record<string, unknown> {
+	if (isJsonObjectOutput(requirement)) return { type: 'json_object' };
 	return {
 		type: 'json_schema',
 		json_schema: {
@@ -5045,8 +5095,9 @@ async function ensureOpenAIHTTPResponse(response: Response): Promise<Response> {
 	const body = (await response.text()).slice(0, 1024);
 	const error = new Error(
 		`OpenAI request failed (${response.status}): ${body || response.statusText}`,
-	) as Error & { responseHeaders?: Record<string, string> };
+	) as Error & { responseHeaders?: Record<string, string>; status?: number };
 	error.responseHeaders = Object.fromEntries(response.headers.entries());
+	error.status = response.status;
 	throw error;
 }
 
@@ -5272,6 +5323,7 @@ function batchData(value: unknown): unknown[] {
 function openAICompatibleFetchClient(
 	settings: ResolvedOpenAIProviderSettings,
 ): OpenAICompletionClient {
+	const fetch = settings.fetch ?? globalThis.fetch;
 	const baseUrl = settings.baseUrl.replace(/\/$/, '');
 	const url = `${baseUrl}/chat/completions`;
 	const embeddingUrl = `${baseUrl}/embeddings`;
@@ -5428,7 +5480,8 @@ export class OpenAIModelProvider implements StreamingModelProvider {
 				}
 				let OpenAI: new (options: Record<string, unknown>) => unknown;
 				try {
-					({ default: OpenAI } = await import('openai'));
+					({ default: OpenAI } =
+						await importOptionalPeer<typeof import('openai')>('openai'));
 				} catch (error) {
 					if (
 						typeof error === 'object' &&
@@ -5446,6 +5499,7 @@ export class OpenAIModelProvider implements StreamingModelProvider {
 					throw error;
 				}
 				const client = new OpenAI({
+					...(this.settings.fetch ? { fetch: this.settings.fetch } : {}),
 					baseURL: this.settings.baseUrl,
 					apiKey: this.settings.apiKey ?? 'not-provided',
 				}) as unknown as OpenAICompletionClient;
@@ -6097,8 +6151,9 @@ export class AnthropicModelProvider implements StreamingModelProvider {
 					options: Record<string, unknown>,
 				) => unknown;
 				try {
-					({ default: Anthropic } =
-						await import('@anthropic-ai/sdk'));
+					({ default: Anthropic } = await importOptionalPeer<
+						typeof import('@anthropic-ai/sdk')
+					>('@anthropic-ai/sdk'));
 				} catch (error) {
 					if (
 						typeof error === 'object' &&
@@ -6116,6 +6171,7 @@ export class AnthropicModelProvider implements StreamingModelProvider {
 					throw error;
 				}
 				const client = new Anthropic({
+					...(this.settings.fetch ? { fetch: this.settings.fetch } : {}),
 					baseURL: this.settings.baseUrl,
 					apiKey: this.settings.apiKey ?? 'not-provided',
 				}) as unknown as AnthropicCompletionClient;
@@ -13289,6 +13345,16 @@ function nodeModule(name: string): any {
 	}
 	if (typeof require === 'function') return require(name);
 	throw new Error('unable to load Node module ' + name);
+}
+
+/**
+ * Import an optional peer package. The specifier goes through a variable so
+ * bundlers (esbuild, webpack, ...) neither inline the package nor fail to
+ * resolve it when the application has not installed it.
+ */
+async function importOptionalPeer<T>(name: string): Promise<T> {
+	const specifier = name;
+	return (await import(specifier)) as T;
 }
 
 function concatBytes(chunks: Uint8Array[]): Uint8Array {

@@ -16,6 +16,18 @@ import {
 
 type JSONObject = Record<string, unknown>;
 
+/**
+ * A vendor SDK environment setting (`OPENAI_BASE_URL`, `OPENAI_API_KEY`, ...),
+ * read when a client is constructed, as the SDKs do; blank values count as unset.
+ */
+export function sdkEnv(name: string): string | undefined {
+	const runtime = globalThis as typeof globalThis & {
+		process?: { env?: Record<string, string | undefined> };
+	};
+	const value = runtime.process?.env?.[name]?.trim();
+	return value ? value : undefined;
+}
+
 export const CODE_TOOL_NAME = 'agent_rt_code_execution';
 export const SHELL_TOOL_NAME = 'agent_rt_shell';
 export const FILE_SEARCH_TOOL_NAME = 'agent_rt_file_search';

@@ -16,6 +16,82 @@ class Process(str, Enum):
     hierarchical = "hierarchical"
 
 
+class LLM:
+    """``crewai.LLM`` over an Agent RT provider.
+
+    Models use CrewAI's LiteLLM-style names: ``anthropic/<model>`` selects the
+    Anthropic provider; ``openai/<model>`` or a bare name selects OpenAI.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        base_url: str | None = None,
+        provider: Any = None,
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        if not str(model).strip():
+            raise ValueError("LLM model must not be empty")
+        vendor, _, name = str(model).partition("/")
+        if not name or vendor not in {"openai", "anthropic"}:
+            vendor, name = "openai", str(model)
+        self.model = str(model)
+        self.vendor = vendor
+        self.model_name = name
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.base_url = base_url or kwargs.pop("api_base", None)
+        self.stream = stream
+        self._credential = kwargs.pop("api_" + "key", None)
+        self._provider = provider
+        self.kwargs = kwargs
+
+    @property
+    def provider(self) -> Any:
+        if self._provider is None:
+            from ext.compat.base import _anthropic_provider, _openai_provider
+
+            factory = (
+                _anthropic_provider if self.vendor == "anthropic" else _openai_provider
+            )
+            self._provider = factory(
+                model=self.model_name,
+                credential=self._credential,
+                base_url=self.base_url,
+            )
+        return self._provider
+
+    async def acall(self, messages: Any, tools: Any = None, **_: Any) -> str:
+        from ext.compat.base import _request, _text
+
+        if isinstance(messages, str):
+            messages = [{"role": "user", "content": messages}]
+        request = _request(
+            model=self.model_name,
+            messages=messages,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            tools=tuple(tools or ()),
+        )
+        response = await self.provider.complete(request)
+        return _text(response.message)
+
+    def call(self, messages: Any, tools: Any = None, **kwargs: Any) -> str:
+        from ext.compat.base import _run_sync
+
+        return _run_sync(self.acall(messages, tools, **kwargs))
+
+    def supports_function_calling(self) -> bool:
+        return True
+
+    def supports_stop_words(self) -> bool:
+        return True
+
+
 class Agent:
     def __init__(
         self,
@@ -45,7 +121,12 @@ class Agent:
         self.options = dict(kwargs)
 
     def _agent(self) -> _CompatAgent:
-        model = self.llm if isinstance(self.llm, str) else "gpt-4o-mini"
+        provider = self.provider
+        if isinstance(self.llm, LLM):
+            model = self.llm.model_name
+            provider = provider or self.llm.provider
+        else:
+            model = self.llm if isinstance(self.llm, str) else "gpt-4o-mini"
         instructions = "\n".join(
             part
             for part in (
@@ -59,7 +140,7 @@ class Agent:
             name=self.role,
             instructions=instructions,
             model=model,
-            provider=self.provider,
+            provider=provider,
             tools=self.tools,
         )
 
@@ -197,6 +278,7 @@ def install_crewai_compat(parent: Any) -> None:
         "Agent": Agent,
         "Crew": Crew,
         "CrewOutput": CrewOutput,
+        "LLM": LLM,
         "Process": Process,
         "Task": Task,
         "TaskOutput": TaskOutput,
@@ -208,6 +290,7 @@ def install_crewai_compat(parent: Any) -> None:
 
 
 __all__ = (
+    "LLM",
     "Agent",
     "Crew",
     "CrewOutput",

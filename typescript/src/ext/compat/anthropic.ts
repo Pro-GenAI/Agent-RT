@@ -8,6 +8,7 @@ import {
   type ModelProvider,
   type ModelRequest,
   type ModelResponse,
+  type StreamingModelProvider,
   type ReasoningConfig,
   type RetrievalProvider,
   type SandboxSession,
@@ -22,19 +23,58 @@ import {
   type MCPMigrationClient,
   type WebSearchExecutionRecord,
   validateAnthropicMCPServers,
+  sdkEnv,
 } from "./migration_tools.js";
+import type * as AnthropicTypes from "./anthropic_types.js";
+import { createSDKErrors, withSDKErrors } from "./sdk_errors.js";
+import { MessageStream, rawMessageStream } from "./anthropic_stream.js";
+
+export { MessageStream } from "./anthropic_stream.js";
 
 type JSONObject = Record<string, unknown>;
 
+const errors = createSDKErrors("Anthropic");
+export const AnthropicError = errors.BaseError;
+export const APIError = errors.APIError;
+export const APIUserAbortError = errors.APIUserAbortError;
+export const APIConnectionError = errors.APIConnectionError;
+export const APIConnectionTimeoutError = errors.APIConnectionTimeoutError;
+export const BadRequestError = errors.BadRequestError;
+export const AuthenticationError = errors.AuthenticationError;
+export const PermissionDeniedError = errors.PermissionDeniedError;
+export const NotFoundError = errors.NotFoundError;
+export const ConflictError = errors.ConflictError;
+export const UnprocessableEntityError = errors.UnprocessableEntityError;
+export const RateLimitError = errors.RateLimitError;
+export const InternalServerError = errors.InternalServerError;
+export type AnthropicError = InstanceType<typeof AnthropicError>;
+export type APIError = InstanceType<typeof APIError>;
+export type APIConnectionError = InstanceType<typeof APIConnectionError>;
+export type RateLimitError = InstanceType<typeof RateLimitError>;
+export type * from "./anthropic_types.js";
+
+let messageSequence = 0;
+
 type AnthropicClientOptions = {
-  apiKey?: string;
-  baseURL?: string;
-  provider?: ModelProvider;
-  defaultModel?: string;
-  sandboxSession?: SandboxSession;
-  maxCodeToolRounds?: number;
-  mcpClients?: Record<string, MCPMigrationClient>;
-  webSearchProvider?: RetrievalProvider;
+  apiKey?: string | undefined;
+  baseURL?: string | undefined;
+  provider?: ModelProvider | undefined;
+  defaultModel?: string | undefined;
+  sandboxSession?: SandboxSession | undefined;
+  maxCodeToolRounds?: number | undefined;
+  mcpClients?: Record<string, MCPMigrationClient> | undefined;
+  webSearchProvider?: RetrievalProvider | undefined;
+  // Vendor SDK client options accepted so migrated constructors type-check;
+  // retries, timeouts, and transport come from the Agent RT provider.
+  timeout?: number | undefined;
+  maxRetries?: number | undefined;
+  defaultHeaders?: Record<string, string | null | undefined> | undefined;
+  defaultQuery?: Record<string, string | undefined> | undefined;
+  fetch?: unknown | undefined;
+  dangerouslyAllowBrowser?: boolean | undefined;
+  logLevel?: string | undefined;
+  logger?: unknown | undefined;
+  authToken?: string | null | undefined;
 };
 
 function isObject(value: unknown): value is JSONObject {
@@ -101,10 +141,16 @@ function textFromContent(content: unknown): string {
   }).join("");
 }
 
+function toolResultText(content: unknown): string {
+  if (typeof content === "string") return content;
+  return textFromContent(content);
+}
+
 function messagesFromAnthropic(messages: unknown, system?: unknown): ModelMessage[] {
   const result: ModelMessage[] = [];
-  if (typeof system === "string" && system) {
-    result.push({ role: "system", content: [{ type: "text", text: system }] });
+  const systemText = textFromContent(system);
+  if (systemText) {
+    result.push({ role: "system", content: [{ type: "text", text: systemText }] });
   }
   if (!Array.isArray(messages)) throw new TypeError("messages must be an array");
   for (const item of messages) {
@@ -114,10 +160,45 @@ function messagesFromAnthropic(messages: unknown, system?: unknown): ModelMessag
     if (item.role !== "user" && item.role !== "assistant") {
       throw new TypeError(`unsupported Anthropic message role ${JSON.stringify(item.role)}`);
     }
-    result.push({
-      role: item.role,
-      content: [{ type: "text", text: textFromContent(item.content) }],
-    });
+    if (!Array.isArray(item.content)) {
+      result.push({
+        role: item.role,
+        content: [{ type: "text", text: textFromContent(item.content) }],
+      });
+      continue;
+    }
+    // Block content: tool_use blocks become assistant tool calls and
+    // tool_result blocks become tool messages, as the provider expects.
+    const text: string[] = [];
+    const toolCalls: NonNullable<ModelMessage["toolCalls"]> = [];
+    const toolResults: ModelMessage[] = [];
+    for (const block of item.content) {
+      if (typeof block === "string") {
+        text.push(block);
+      } else if (isObject(block) && block.type === "tool_use") {
+        toolCalls.push({
+          id: String(block.id ?? ""),
+          name: String(block.name ?? ""),
+          arguments: isObject(block.input) ? block.input : {},
+        });
+      } else if (isObject(block) && block.type === "tool_result") {
+        toolResults.push({
+          role: "tool",
+          toolCallId: String(block.tool_use_id ?? ""),
+          content: [{ type: "text", text: toolResultText(block.content) }],
+        });
+      } else if (isObject(block) && typeof block.text === "string") {
+        text.push(block.text);
+      }
+    }
+    if (text.length || toolCalls.length || !toolResults.length) {
+      result.push({
+        role: item.role,
+        content: text.length ? [{ type: "text", text: text.join("") }] : [],
+        ...(toolCalls.length ? { toolCalls } : {}),
+      });
+    }
+    result.push(...toolResults);
   }
   return result;
 }
@@ -167,6 +248,21 @@ function anthropicModelShape(entry: ModelCatalogEntry) {
 
 function responseText(response: ModelResponse): string {
   return response.message.content.map((part) => part.text ?? "").join("");
+}
+
+/** Map an Agent RT finish reason back to Anthropic's `stop_reason`. */
+function anthropicStopReason(response: ModelResponse): AnthropicTypes.StopReason {
+  if (response.message.toolCalls?.length) return "tool_use";
+  switch (response.finishReason) {
+    case "tool_calls":
+      return "tool_use";
+    case "length":
+      return "max_tokens";
+    case "content_filter":
+      return "refusal";
+    default:
+      return "end_turn";
+  }
 }
 
 function anthropicShape(
@@ -230,8 +326,9 @@ function anthropicShape(
       },
     },
   ]);
+  messageSequence += 1;
   return {
-    id: undefined,
+    id: `msg_agent_rt_${messageSequence}`,
     type: "message",
     role: "assistant",
     model: response.model,
@@ -240,25 +337,70 @@ function anthropicShape(
       ...webSearchContent,
       ...executionContent,
       ...(text ? [{ type: "text" as const, text }] : []),
+      ...(response.message.toolCalls ?? []).map((call) => ({
+        type: "tool_use" as const,
+        id: call.id,
+        name: call.name,
+        input: call.arguments,
+      })),
     ],
-    stop_reason: response.finishReason,
-    usage: response.usage
-      ? {
-          input_tokens: response.usage.inputTokens,
-          output_tokens: response.usage.outputTokens,
-        }
-      : undefined,
+    stop_reason: anthropicStopReason(response),
+    stop_sequence: null,
+    usage: {
+      input_tokens: response.usage?.inputTokens ?? 0,
+      output_tokens: response.usage?.outputTokens ?? 0,
+    },
   };
 }
 
+type CreateParams = AnthropicTypes.MessageCreateParamsNonStreaming | JSONObject;
+
+type MessagesCreate = {
+  (
+    params: AnthropicTypes.MessageCreateParamsStreaming | (JSONObject & { stream: true }),
+  ): Promise<AsyncIterable<AnthropicTypes.RawMessageStreamEvent>>;
+  (params: CreateParams): Promise<AnthropicTypes.Message>;
+};
+
+function parsedOutput(message: { content: unknown[] }, params: JSONObject): unknown {
+  const text = message.content
+    .map((block) =>
+      isObject(block) && block.type === "text" && typeof block.text === "string" ? block.text : "",
+    )
+    .join("");
+  if (!text) return null;
+  let format: unknown = isObject(params.output_config) ? params.output_config.format : undefined;
+  format ??= params.output_format;
+  if (isObject(format) && typeof format.parse === "function") {
+    return (format.parse as (content: string) => unknown)(text);
+  }
+  return JSON.parse(text);
+}
+
 export class Anthropic {
+  static AnthropicError = AnthropicError;
+  static APIError = APIError;
+  static APIUserAbortError = APIUserAbortError;
+  static APIConnectionError = APIConnectionError;
+  static APIConnectionTimeoutError = APIConnectionTimeoutError;
+  static BadRequestError = BadRequestError;
+  static AuthenticationError = AuthenticationError;
+  static PermissionDeniedError = PermissionDeniedError;
+  static NotFoundError = NotFoundError;
+  static ConflictError = ConflictError;
+  static UnprocessableEntityError = UnprocessableEntityError;
+  static RateLimitError = RateLimitError;
+  static InternalServerError = InternalServerError;
+
   readonly provider: ModelProvider;
   readonly sandboxSession?: SandboxSession;
   readonly maxCodeToolRounds: number;
   readonly mcpClients: Record<string, MCPMigrationClient>;
   readonly webSearchProvider?: RetrievalProvider;
   readonly messages: {
-    create: (params: JSONObject) => Promise<ReturnType<typeof anthropicShape>>;
+    create: MessagesCreate;
+    stream: (params: CreateParams) => MessageStream;
+    parse: <T = unknown>(params: CreateParams) => Promise<AnthropicTypes.ParsedMessage<T>>;
     countTokens: (params: JSONObject) => Promise<{ input_tokens: number }>;
     batches: {
       create: (params: JSONObject) => Promise<unknown>;
@@ -275,7 +417,9 @@ export class Anthropic {
   };
   readonly beta: {
     messages: {
-      create: (params: JSONObject) => Promise<ReturnType<typeof anthropicShape>>;
+      create: MessagesCreate;
+      stream: (params: CreateParams) => MessageStream;
+      parse: <T = unknown>(params: CreateParams) => Promise<AnthropicTypes.ParsedMessage<T>>;
     };
   };
   readonly models: {
@@ -289,16 +433,63 @@ export class Anthropic {
   };
 
   constructor(options: AnthropicClientOptions = {}) {
+    // Like the SDK, an unset baseURL/apiKey falls back to the environment.
     this.provider = options.provider ?? new AnthropicModelProvider({
-      apiKey: options.apiKey,
-      baseUrl: options.baseURL,
+      // The SDKs send every request through an injected `fetch`; tests use
+      // it as an offline transport.
+      ...(typeof options.fetch === "function" ? { fetch: options.fetch as typeof fetch } : {}),
+      apiKey: options.apiKey ?? sdkEnv("ANTHROPIC_API_KEY"),
+      baseUrl: options.baseURL ?? sdkEnv("ANTHROPIC_BASE_URL"),
       defaultModel: options.defaultModel,
     });
     this.sandboxSession = options.sandboxSession;
     this.maxCodeToolRounds = options.maxCodeToolRounds ?? 8;
     this.mcpClients = { ...(options.mcpClients ?? {}) };
     this.webSearchProvider = options.webSearchProvider;
-    const createMessage = async (params: JSONObject) => {
+    const createMessage = (params: CreateParams): Promise<AnthropicTypes.Message> =>
+      withSDKErrors(errors, () => {
+        const { stream: _stream, ...rest } = params as JSONObject;
+        return createShape(rest);
+      }) as Promise<AnthropicTypes.Message>;
+    // `stream: true` returns the raw event stream; failures still surface
+    // from create() as SDK errors, as in the SDK.
+    const createOrStream = (async (params: CreateParams) => {
+      if ((params as JSONObject).stream === true) {
+        const message = await createMessage(params);
+        return rawMessageStream(Promise.resolve(message));
+      }
+      return createMessage(params);
+    }) as MessagesCreate;
+    // messages.stream() sends a streaming request, as the SDK does, when no
+    // local migration tool needs the bounded tool loop.
+    const streamShape = async (params: JSONObject) => {
+      const { stream: _stream, ...rest } = params;
+      const { request, expanded } = await buildRequest(rest);
+      const streaming = this.provider as ModelProvider & Partial<StreamingModelProvider>;
+      const localTools =
+        expanded.mcpBindings?.size || expanded.webSearchBindings?.size || this.sandboxSession;
+      if (localTools || typeof streaming.stream !== "function") return createShape(rest);
+      let completed: ModelResponse | undefined;
+      for await (const event of streaming.stream(request)) {
+        if (event.type === "completed" && event.response) completed = event.response;
+      }
+      if (!completed) throw new Error("Anthropic stream ended without a completed message");
+      return anthropicShape(completed);
+    };
+    const streamMessage = (params: CreateParams): MessageStream =>
+      new MessageStream(
+        () =>
+          withSDKErrors(errors, () => streamShape(params as JSONObject)) as Promise<
+            AnthropicTypes.Message
+          >,
+      );
+    const parseMessage = async <T = unknown>(
+      params: CreateParams,
+    ): Promise<AnthropicTypes.ParsedMessage<T>> => {
+      const message = await createMessage(params);
+      return { ...message, parsed_output: parsedOutput(message, params as JSONObject) as T | null };
+    };
+    const buildRequest = async (params: JSONObject) => {
       validateAnthropicMCPServers(params.mcp_servers, params.tools);
       const format = structuredOutput(params.output_config ?? params.output_format);
       const reasoning = anthropicReasoning(params.thinking, params.output_config);
@@ -318,6 +509,10 @@ export class Anthropic {
         ...(format ? { structuredOutput: format } : {}),
         ...(reasoning ? { reasoning } : {}),
       };
+      return { request, expanded };
+    };
+    const createShape = async (params: JSONObject) => {
+      const { request, expanded } = await buildRequest(params);
       const completed = await completeWithMigrationTools(this.provider, request, {
         sandboxSession: this.sandboxSession,
         mcpBindings: expanded.mcpBindings,
@@ -383,7 +578,9 @@ export class Anthropic {
       },
     };
     this.messages = {
-      create: createMessage,
+      create: createOrStream,
+      stream: streamMessage,
+      parse: parseMessage,
       countTokens: async (params) => {
         const provider = this.provider as ModelProvider & Partial<TokenCountingModelProvider>;
         if (typeof provider.countTokens !== "function") {
@@ -397,7 +594,9 @@ export class Anthropic {
       },
       batches: messageBatches,
     };
-    this.beta = { messages: { create: createMessage } };
+    this.beta = {
+      messages: { create: createOrStream, stream: streamMessage, parse: parseMessage },
+    };
     this.models = {
       list: async () => {
         const provider = this.provider as ModelProvider & Partial<ModelCatalogProvider>;
@@ -424,6 +623,60 @@ export class Anthropic {
         return anthropicModelShape(await provider.retrieveModel(model));
       },
     };
+  }
+}
+
+/** SDK type names reachable as `Anthropic.MessageParam`, `Anthropic.Messages.Message`, ... */
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export declare namespace Anthropic {
+  export type Model = AnthropicTypes.Model;
+  export type MessageParam = AnthropicTypes.MessageParam;
+  export type Message = AnthropicTypes.Message;
+  export type ContentBlock = AnthropicTypes.ContentBlock;
+  export type ContentBlockParam = AnthropicTypes.ContentBlockParam;
+  export type TextBlock = AnthropicTypes.TextBlock;
+  export type TextBlockParam = AnthropicTypes.TextBlockParam;
+  export type ImageBlockParam = AnthropicTypes.ImageBlockParam;
+  export type DocumentBlockParam = AnthropicTypes.DocumentBlockParam;
+  export type ToolUseBlock = AnthropicTypes.ToolUseBlock;
+  export type ToolUseBlockParam = AnthropicTypes.ToolUseBlockParam;
+  export type ToolResultBlockParam = AnthropicTypes.ToolResultBlockParam;
+  export type ThinkingBlock = AnthropicTypes.ThinkingBlock;
+  export type ThinkingBlockParam = AnthropicTypes.ThinkingBlockParam;
+  export type Tool = AnthropicTypes.Tool;
+  export type ToolChoice = AnthropicTypes.ToolChoice;
+  export type Usage = AnthropicTypes.Usage;
+  export type StopReason = AnthropicTypes.StopReason;
+  export type CacheControlEphemeral = AnthropicTypes.CacheControlEphemeral;
+  export type MessageCreateParams = AnthropicTypes.MessageCreateParams;
+  export type MessageCreateParamsStreaming = AnthropicTypes.MessageCreateParamsStreaming;
+  export type MessageCreateParamsNonStreaming = AnthropicTypes.MessageCreateParamsNonStreaming;
+  export type RawMessageStreamEvent = AnthropicTypes.RawMessageStreamEvent;
+  export type MessageStreamEvent = AnthropicTypes.MessageStreamEvent;
+  export type AnthropicError = InstanceType<typeof errors.BaseError>;
+  export type APIError = InstanceType<typeof errors.APIError>;
+  export type APIConnectionError = InstanceType<typeof errors.APIConnectionError>;
+  export type RateLimitError = InstanceType<typeof errors.RateLimitError>;
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  export namespace Messages {
+    export type MessageParam = AnthropicTypes.MessageParam;
+    export type Message = AnthropicTypes.Message;
+    export type ContentBlock = AnthropicTypes.ContentBlock;
+    export type ContentBlockParam = AnthropicTypes.ContentBlockParam;
+    export type TextBlock = AnthropicTypes.TextBlock;
+    export type TextBlockParam = AnthropicTypes.TextBlockParam;
+    export type ImageBlockParam = AnthropicTypes.ImageBlockParam;
+    export type DocumentBlockParam = AnthropicTypes.DocumentBlockParam;
+    export type ToolUseBlock = AnthropicTypes.ToolUseBlock;
+    export type ToolUseBlockParam = AnthropicTypes.ToolUseBlockParam;
+    export type ToolResultBlockParam = AnthropicTypes.ToolResultBlockParam;
+    export type Tool = AnthropicTypes.Tool;
+    export type Usage = AnthropicTypes.Usage;
+    export type MessageCreateParams = AnthropicTypes.MessageCreateParams;
+    export type MessageCreateParamsStreaming = AnthropicTypes.MessageCreateParamsStreaming;
+    export type MessageCreateParamsNonStreaming = AnthropicTypes.MessageCreateParamsNonStreaming;
+    export type RawMessageStreamEvent = AnthropicTypes.RawMessageStreamEvent;
+    export type MessageStreamEvent = AnthropicTypes.MessageStreamEvent;
   }
 }
 

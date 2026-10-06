@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import inspect
 import json
 import os
@@ -11,6 +12,33 @@ from dataclasses import dataclass, field
 from enum import Enum
 from types import SimpleNamespace
 from typing import Any, get_args, get_origin
+
+from ext.compat import anthropic_types, openai_types
+from ext.compat.sdk_errors import (
+    ANTHROPIC_ERRORS,
+    OPENAI_ERRORS,
+    public_error_classes,
+    translate_error,
+)
+
+
+def _vendor_errors(errors):
+    """Raise provider failures as the vendor SDK's exception classes."""
+
+    def decorate(method):
+        @functools.wraps(method)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await method(*args, **kwargs)
+            except Exception as exc:
+                translated = translate_error(errors, exc)
+                if translated is exc:
+                    raise
+                raise translated from exc
+
+        return wrapper
+
+    return decorate
 
 
 def _rt():
@@ -1021,7 +1049,7 @@ async def _anthropic_local_event_stream(
         )
     yield SimpleNamespace(
         type="message_delta",
-        delta=SimpleNamespace(stop_reason=response.finish_reason),
+        delta=SimpleNamespace(stop_reason=_anthropic_stop_reason(response)),
         usage=_usage_namespace(response.usage, anthropic=True),
     )
     yield SimpleNamespace(type="message_stop")
@@ -1060,6 +1088,9 @@ def _structured(value):
     payload = value
     if isinstance(payload.get("format"), Mapping):
         payload = payload["format"]
+    if payload.get("type") == "json_object":
+        # JSON mode: any JSON object, no schema.
+        return rt.JSON_OBJECT_OUTPUT
     if isinstance(payload.get("json_schema"), Mapping):
         payload = payload["json_schema"]
 
@@ -1137,18 +1168,133 @@ def _request(
     )
 
 
-def _openai_provider(*, model, credential, base_url, provider=None):
+class _HTTPXResponse:
+    """An httpx response in the shape the compatible transport reads."""
+
+    def __init__(self, response, body=None):
+        self.status_code = int(response.status_code)
+        self.headers = {str(k).lower(): str(v) for k, v in response.headers.items()}
+        self._response = response
+        self._body = body
+        self._async = False
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            detail = (self._body or b"").decode("utf-8", errors="replace")[:500]
+            raise _rt()._OpenAICompatibleHTTPError(
+                f"HTTP {self.status_code} from OpenAI-compatible endpoint: {detail}",
+                status_code=self.status_code,
+                headers=self.headers,
+            )
+
+    def json(self):
+        return json.loads(self._body)
+
+    async def aiter_lines(self):
+        if self._async:
+            async for line in self._response.aiter_lines():
+                yield line
+        else:
+            for line in self._response.iter_lines():
+                yield line
+
+
+class _HTTPXStreamContext:
+    def __init__(self, core, path, payload):
+        self._core, self._path, self._payload = core, path, payload
+        self._context = None
+
+    async def __aenter__(self):
+        client = self._core.http_client
+        self._context = client.stream(
+            "POST",
+            self._core.url(self._path),
+            json=self._payload,
+            headers=self._core.headers,
+        )
+        is_async = hasattr(self._context, "__aenter__")
+        response = (
+            await self._context.__aenter__() if is_async else self._context.__enter__()
+        )
+        wrapped = _HTTPXResponse(response)
+        wrapped._async = is_async
+        return wrapped
+
+    async def __aexit__(self, *exc_info):
+        if hasattr(self._context, "__aexit__"):
+            return await self._context.__aexit__(*exc_info)
+        return self._context.__exit__(*exc_info)
+
+
+class _HTTPXCompatibleCore:
+    """Routes the compatible transport through an injected ``http_client``.
+
+    The SDK sends every request through ``OpenAI(http_client=...)``; tests use
+    it for offline transports such as ``httpx.MockTransport``. Ignoring it
+    would send those requests to the configured endpoint instead.
+    """
+
+    def __init__(self, http_client, *, base_url, api_key):
+        self.http_client = http_client
+        self._base_url = base_url.rstrip("/") + "/"
+        self.headers = {"authorization": f"Bearer {api_key}"}
+
+    def url(self, path):
+        return self._base_url + path.lstrip("/")
+
+    async def _send(self, method, path, **kwargs):
+        response = self.http_client.request(
+            method, self.url(path), headers=self.headers, **kwargs
+        )
+        if inspect.isawaitable(response):
+            response = await response
+        return _HTTPXResponse(response, response.content)
+
+    async def get(self, path, *, params=None):
+        params = {k: v for k, v in (params or {}).items() if v is not None}
+        return await self._send("GET", path, params=params or None)
+
+    async def post(self, path, *, json):
+        return await self._send("POST", path, json=json)
+
+    def stream(self, method, path, *, json):
+        if method.upper() != "POST":
+            raise ValueError("OpenAI-compatible client only supports POST")
+        return _HTTPXStreamContext(self, path, json)
+
+    async def aclose(self):
+        """The caller owns the injected client and closes it."""
+
+
+def _openai_provider(*, model, credential, base_url, provider=None, http_client=None):
     if provider is not None:
         return provider
     rt = _rt()
     env = os.environ
+    # Blank environment values count as unset, as in the vendor SDKs.
     settings = {
         "base_url": base_url
-        or env.get(rt.OPENAI_BASE_URL_ENV, rt.DEFAULT_OPENAI_BASE_URL),
-        "default_model": model or env.get(rt.OPENAI_MODEL_ENV),
-        "api_" + "key": credential or env.get(rt.OPENAI_API_KEY_ENV),
+        or env.get(rt.OPENAI_BASE_URL_ENV, "").strip()
+        or rt.DEFAULT_OPENAI_BASE_URL,
+        "default_model": model or env.get(rt.OPENAI_MODEL_ENV, "").strip() or None,
+        "api_" + "key": credential
+        or env.get(rt.OPENAI_API_KEY_ENV, "").strip()
+        or None,
     }
-    return rt.OpenAIModelProvider(rt.OpenAIProviderSettings(**settings))
+    resolved = rt.OpenAIProviderSettings(**settings)
+    if http_client is None:
+        return rt.OpenAIModelProvider(resolved)
+    core = _HTTPXCompatibleCore(
+        http_client,
+        base_url=resolved.base_url,
+        api_key=resolved.api_key or "not-provided",
+    )
+    return rt.OpenAIModelProvider(
+        resolved,
+        client=rt._OpenAICompatibleHTTPClient(
+            base_url=resolved.base_url, api_key="", core=core
+        ),
+    )
 
 
 def _anthropic_provider(*, model, credential, base_url, provider=None):
@@ -1156,11 +1302,15 @@ def _anthropic_provider(*, model, credential, base_url, provider=None):
         return provider
     rt = _rt()
     env = os.environ
+    # Blank environment values count as unset, as in the vendor SDKs.
     settings = {
         "base_url": base_url
-        or env.get(rt.ANTHROPIC_BASE_URL_ENV, rt.DEFAULT_ANTHROPIC_BASE_URL),
-        "default_model": model or env.get(rt.ANTHROPIC_MODEL_ENV),
-        "api_" + "key": credential or env.get(rt.ANTHROPIC_API_KEY_ENV),
+        or env.get(rt.ANTHROPIC_BASE_URL_ENV, "").strip()
+        or rt.DEFAULT_ANTHROPIC_BASE_URL,
+        "default_model": model or env.get(rt.ANTHROPIC_MODEL_ENV, "").strip() or None,
+        "api_" + "key": credential
+        or env.get(rt.ANTHROPIC_API_KEY_ENV, "").strip()
+        or None,
     }
     return rt.AnthropicModelProvider(rt.AnthropicProviderSettings(**settings))
 
@@ -1276,12 +1426,14 @@ def _validate_json_schema_value(schema, value, path="$"):
     expected = schema.get("type")
     type_checks = {
         "object": lambda item: isinstance(item, Mapping),
-        "array": lambda item: isinstance(item, Sequence)
-        and not isinstance(item, (str, bytes, bytearray)),
+        "array": lambda item: (
+            isinstance(item, Sequence) and not isinstance(item, (str, bytes, bytearray))
+        ),
         "string": lambda item: isinstance(item, str),
         "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
-        "number": lambda item: isinstance(item, (int, float))
-        and not isinstance(item, bool),
+        "number": lambda item: (
+            isinstance(item, (int, float)) and not isinstance(item, bool)
+        ),
         "boolean": lambda item: isinstance(item, bool),
         "null": lambda item: item is None,
     }
@@ -1569,11 +1721,11 @@ def _usage_namespace(usage, *, anthropic=False):
     if usage is None:
         return None
     if anthropic:
-        return SimpleNamespace(
+        return anthropic_types.Usage(
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
         )
-    return SimpleNamespace(
+    return openai_types.CompletionUsage(
         prompt_tokens=usage.input_tokens,
         completion_tokens=usage.output_tokens,
         total_tokens=usage.total_tokens,
@@ -1581,10 +1733,10 @@ def _usage_namespace(usage, *, anthropic=False):
 
 
 def _openai_tool_call(call):
-    return SimpleNamespace(
+    return openai_types.ChatCompletionMessageToolCall(
         id=call.id,
         type="function",
-        function=SimpleNamespace(
+        function=openai_types.Function(
             name=call.name,
             arguments=json.dumps(dict(call.arguments)),
         ),
@@ -1592,17 +1744,17 @@ def _openai_tool_call(call):
 
 
 def _openai_chat_response(response):
-    message = SimpleNamespace(
+    message = openai_types.ChatCompletionMessage(
         role="assistant",
         content=_text(response.message),
         tool_calls=[_openai_tool_call(c) for c in response.message.tool_calls],
     )
-    return SimpleNamespace(
+    return openai_types.ChatCompletion(
         id=None,
         object="chat.completion",
         model=response.model,
         choices=[
-            SimpleNamespace(
+            openai_types.Choice(
                 index=0,
                 message=message,
                 finish_reason=response.finish_reason,
@@ -1628,57 +1780,77 @@ async def _provider_stream(provider, request):
 async def _openai_chat_stream(provider, request):
     async for event in _provider_stream(provider, request):
         if event.type == "text_delta":
-            yield SimpleNamespace(
+            yield openai_types.ChatCompletionChunk(
                 id=None,
                 object="chat.completion.chunk",
                 model=request.model,
                 choices=[
-                    SimpleNamespace(
+                    openai_types.ChunkChoice(
                         index=0,
-                        delta=SimpleNamespace(content=event.text, tool_calls=[]),
+                        delta=openai_types.ChoiceDelta(
+                            content=event.text, tool_calls=[]
+                        ),
                         finish_reason=None,
                     )
                 ],
                 usage=None,
             )
         elif event.type == "tool_call_delta":
-            function = SimpleNamespace(
+            function = openai_types.ChoiceDeltaToolCallFunction(
                 name=event.tool_name,
                 arguments=event.arguments_delta or "",
             )
-            call = SimpleNamespace(
+            call = openai_types.ChoiceDeltaToolCall(
                 index=0,
                 id=event.tool_call_id,
                 type="function",
                 function=function,
             )
-            yield SimpleNamespace(
+            yield openai_types.ChatCompletionChunk(
                 id=None,
                 object="chat.completion.chunk",
                 model=request.model,
                 choices=[
-                    SimpleNamespace(
+                    openai_types.ChunkChoice(
                         index=0,
-                        delta=SimpleNamespace(content=None, tool_calls=[call]),
+                        delta=openai_types.ChoiceDelta(content=None, tool_calls=[call]),
                         finish_reason=None,
                     )
                 ],
                 usage=None,
             )
         elif event.type == "completed" and event.response is not None:
-            yield SimpleNamespace(
+            yield openai_types.ChatCompletionChunk(
                 id=None,
                 object="chat.completion.chunk",
                 model=event.response.model,
                 choices=[
-                    SimpleNamespace(
+                    openai_types.ChunkChoice(
                         index=0,
-                        delta=SimpleNamespace(content=None, tool_calls=[]),
+                        delta=openai_types.ChoiceDelta(content=None, tool_calls=[]),
                         finish_reason=event.response.finish_reason,
                     )
                 ],
                 usage=_usage_namespace(event.response.usage),
             )
+
+
+def _json_schema_format(output_type):
+    """The SDK's `parse()` turns a pydantic model into a strict JSON-schema format."""
+    schema_of = getattr(output_type, "model_json_schema", None)
+    if not callable(schema_of):
+        raise TypeError("parse() requires a pydantic model class as the output type")
+    return {
+        "name": getattr(output_type, "__name__", "output"),
+        "schema": schema_of(),
+        "strict": True,
+    }
+
+
+def _parse_output(output_type, text):
+    if not text:
+        return None
+    return output_type.model_validate_json(text)
 
 
 async def _collect_async_iterator(iterator):
@@ -1689,6 +1861,7 @@ class _AsyncOpenAICompletions:
     def __init__(self, client):
         self._client = client
 
+    @_vendor_errors(OPENAI_ERRORS)
     async def create(
         self,
         *,
@@ -1759,6 +1932,25 @@ class _AsyncOpenAICompletions:
         )
         return _openai_chat_response(response)
 
+    async def parse(self, *, response_format, **kwargs):
+        return await _parse_chat_completion(self, response_format, kwargs)
+
+
+async def _parse_chat_completion(completions, response_format, kwargs):
+    if kwargs.get("stream"):
+        raise TypeError("chat.completions.parse() does not support stream=True")
+    completion = await completions.create(
+        response_format={
+            "type": "json_schema",
+            "json_schema": _json_schema_format(response_format),
+        },
+        **kwargs,
+    )
+    for choice in completion.choices:
+        choice.message.parsed = _parse_output(response_format, choice.message.content)
+        choice.message.refusal = None
+    return completion
+
 
 class _SyncOpenAICompletions:
     def __init__(self, client):
@@ -1770,6 +1962,9 @@ class _SyncOpenAICompletions:
         if stream:
             return iter(_run_sync(_collect_async_iterator(result)))
         return result
+
+    def parse(self, **kwargs):
+        return _run_sync(self._client._async.chat.completions.parse(**kwargs))
 
 
 def _responses_messages(value, instructions=None):
@@ -1897,12 +2092,13 @@ def _openai_response_object(
     text = _text(response.message)
     if text:
         output.append(
-            SimpleNamespace(
+            openai_types.ResponseOutputMessage(
                 id=None,
                 type="message",
                 role="assistant",
+                status="completed",
                 content=[
-                    SimpleNamespace(
+                    openai_types.ResponseOutputText(
                         type="output_text",
                         text=text,
                         annotations=[],
@@ -1911,7 +2107,7 @@ def _openai_response_object(
             )
         )
     output.extend(
-        SimpleNamespace(
+        openai_types.ResponseFunctionToolCall(
             id=call.id,
             type="function_call",
             call_id=call.id,
@@ -1922,7 +2118,7 @@ def _openai_response_object(
         for call in response.message.tool_calls
     )
     usage = response.usage
-    return SimpleNamespace(
+    return openai_types.Response(
         id=response_id,
         object="response",
         status="completed",
@@ -1932,7 +2128,7 @@ def _openai_response_object(
         usage=(
             None
             if usage is None
-            else SimpleNamespace(
+            else openai_types.ResponseUsage(
                 input_tokens=usage.input_tokens,
                 output_tokens=usage.output_tokens,
                 total_tokens=usage.total_tokens,
@@ -1965,12 +2161,12 @@ def _store_response_state(client, response_id, messages):
 async def _openai_responses_stream(provider, request, *, client=None, response_id=None):
     async for event in _provider_stream(provider, request):
         if event.type == "text_delta":
-            yield SimpleNamespace(
+            yield openai_types.ResponseTextDeltaEvent(
                 type="response.output_text.delta",
                 delta=event.text or "",
             )
         elif event.type == "tool_call_delta":
-            yield SimpleNamespace(
+            yield openai_types.ResponseFunctionCallArgumentsDeltaEvent(
                 type="response.function_call_arguments.delta",
                 item_id=event.tool_call_id,
                 name=event.tool_name,
@@ -1983,7 +2179,7 @@ async def _openai_responses_stream(provider, request, *, client=None, response_i
                     response_id,
                     tuple(request.messages) + (event.response.message,),
                 )
-            yield SimpleNamespace(
+            yield openai_types.ResponseCompletedEvent(
                 type="response.completed",
                 response=_openai_response_object(
                     event.response, response_id=response_id
@@ -1995,6 +2191,7 @@ class _AsyncOpenAIResponses:
     def __init__(self, client):
         self._client = client
 
+    @_vendor_errors(OPENAI_ERRORS)
     async def create(
         self,
         *,
@@ -2087,10 +2284,36 @@ class _AsyncOpenAIResponses:
             web_search_calls=web_search_calls,
         )
 
+    async def parse(self, *, text_format=None, **kwargs):
+        return await _parse_response(self, text_format, kwargs)
+
+
+async def _parse_response(responses, text_format, kwargs):
+    if kwargs.get("stream"):
+        raise TypeError("responses.parse() does not support stream=True")
+    if text_format is not None:
+        kwargs["text"] = {
+            "format": {"type": "json_schema", **_json_schema_format(text_format)}
+        }
+    response = await responses.create(**kwargs)
+    if text_format is None:
+        return openai_types.ParsedResponse(**vars(response), output_parsed=None)
+    for item in response.output:
+        for part in getattr(item, "content", None) or ():
+            if getattr(part, "type", None) == "output_text":
+                part.parsed = _parse_output(text_format, part.text)
+    return openai_types.ParsedResponse(
+        **vars(response),
+        output_parsed=_parse_output(text_format, response.output_text),
+    )
+
 
 class _SyncOpenAIResponses:
     def __init__(self, client):
         self._client = client
+
+    def parse(self, **kwargs):
+        return _run_sync(self._client._async.responses.parse(**kwargs))
 
     def create(self, **kwargs):
         stream = bool(kwargs.get("stream"))
@@ -2101,11 +2324,11 @@ class _SyncOpenAIResponses:
 
 
 def _openai_embedding_response(response):
-    return SimpleNamespace(
+    return openai_types.CreateEmbeddingResponse(
         object="list",
         model=response.model,
         data=[
-            SimpleNamespace(
+            openai_types.Embedding(
                 object="embedding",
                 index=item.index,
                 embedding=item.embedding,
@@ -2115,7 +2338,7 @@ def _openai_embedding_response(response):
         usage=(
             None
             if response.usage is None
-            else SimpleNamespace(
+            else openai_types.EmbeddingUsage(
                 prompt_tokens=response.usage.input_tokens,
                 total_tokens=response.usage.total_tokens,
             )
@@ -2127,6 +2350,7 @@ class _AsyncOpenAIEmbeddings:
     def __init__(self, client):
         self._client = client
 
+    @_vendor_errors(OPENAI_ERRORS)
     async def create(
         self,
         *,
@@ -2454,7 +2678,56 @@ class _SyncOpenAIEmbeddings:
         return _run_sync(self._client._async.embeddings.create(**kwargs))
 
 
-class AsyncOpenAI:
+class _OpenAIChat:
+    def __init__(self, completions):
+        self.completions = completions
+
+
+class SyncAPIClient:
+    """`openai._base_client.SyncAPIClient` stand-in, so SDK-internal patch targets resolve.
+
+    Shim requests go through Agent RT providers, never through `request()`.
+    """
+
+    def request(self, *args, **kwargs):
+        raise NotImplementedError(
+            "agent_rt.openai clients send requests through Agent RT providers, not request()"
+        )
+
+
+class AsyncAPIClient:
+    """`openai._base_client.AsyncAPIClient` stand-in; see SyncAPIClient."""
+
+    async def request(self, *args, **kwargs):
+        raise NotImplementedError(
+            "agent_rt.openai clients send requests through Agent RT providers, not request()"
+        )
+
+
+class _OpenAIClientOptions:
+    """Client options and lifecycle the SDK exposes; requests use Agent RT's transport."""
+
+    def _init_options(self, base_url, kwargs):
+        # The SDK defaults: 10-minute timeout and two retries.
+        self.timeout = kwargs.pop("timeout", 600.0)
+        self.max_retries = kwargs.pop("max_retries", 2)
+        self.base_url = base_url
+
+    def close(self):
+        """Accepted for SDK parity; the shim holds no open connection pool."""
+        self._closed = True
+
+    def is_closed(self):
+        return getattr(self, "_closed", False)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+
+class AsyncOpenAI(_OpenAIClientOptions, AsyncAPIClient):
     def __init__(
         self,
         *,
@@ -2469,6 +2742,7 @@ class AsyncOpenAI:
         **kwargs,
     ):
         credential = _credential(kwargs)
+        self._init_options(base_url, kwargs)
         self.sandbox_session = sandbox_session
         self.mcp_clients = dict(mcp_clients or {})
         self.retrieval_registry = retrieval_registry
@@ -2482,23 +2756,56 @@ class AsyncOpenAI:
             credential=credential,
             base_url=base_url,
             provider=provider,
+            http_client=kwargs.pop("http_client", None),
         )
-        self.chat = SimpleNamespace(completions=_AsyncOpenAICompletions(self))
+        self.chat = _AsyncOpenAIChat(_AsyncOpenAICompletions(self))
         self.responses = _AsyncOpenAIResponses(self)
         self.embeddings = _AsyncOpenAIEmbeddings(self)
         self.models = _AsyncOpenAIModels(self)
         self.batches = _AsyncOpenAIBatches(self)
 
+    async def close(self):
+        """Accepted for SDK parity; the shim holds no open connection pool."""
+        self._closed = True
 
-class OpenAI:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc_info):
+        await self.close()
+
+
+class _AsyncOpenAIChat(_OpenAIChat):
+    pass
+
+
+class OpenAI(_OpenAIClientOptions, SyncAPIClient):
     def __init__(self, *, base_url=None, provider=None, **kwargs):
         self._async = AsyncOpenAI(base_url=base_url, provider=provider, **kwargs)
+        self.timeout = self._async.timeout
+        self.max_retries = self._async.max_retries
+        self.base_url = base_url
         self.provider = self._async.provider
-        self.chat = SimpleNamespace(completions=_SyncOpenAICompletions(self))
+        self.chat = _OpenAIChat(_SyncOpenAICompletions(self))
         self.responses = _SyncOpenAIResponses(self)
         self.embeddings = _SyncOpenAIEmbeddings(self)
         self.models = _SyncOpenAIModels(self)
         self.batches = _SyncOpenAIBatches(self)
+
+
+_ANTHROPIC_STOP_REASONS = {
+    "stop": "end_turn",
+    "tool_calls": "tool_use",
+    "length": "max_tokens",
+    "content_filter": "refusal",
+}
+
+
+def _anthropic_stop_reason(response):
+    """Map an Agent RT finish reason back to Anthropic's ``stop_reason``."""
+    if response.message.tool_calls:
+        return "tool_use"
+    return _ANTHROPIC_STOP_REASONS.get(response.finish_reason, "end_turn")
 
 
 def _anthropic_response_shape(response, mcp_calls=(), web_search_calls=()):
@@ -2553,9 +2860,9 @@ def _anthropic_response_shape(response, mcp_calls=(), web_search_calls=()):
             )
         )
     if text:
-        blocks.append(SimpleNamespace(type="text", text=text))
+        blocks.append(anthropic_types.TextBlock(type="text", text=text))
     blocks.extend(
-        SimpleNamespace(
+        anthropic_types.ToolUseBlock(
             type="tool_use",
             id=c.id,
             name=c.name,
@@ -2563,13 +2870,14 @@ def _anthropic_response_shape(response, mcp_calls=(), web_search_calls=()):
         )
         for c in response.message.tool_calls
     )
-    return SimpleNamespace(
+    return anthropic_types.Message(
         id=None,
         type="message",
         role="assistant",
         model=response.model,
         content=blocks,
-        stop_reason=response.finish_reason,
+        stop_reason=_anthropic_stop_reason(response),
+        stop_sequence=None,
         usage=_usage_namespace(response.usage, anthropic=True),
     )
 
@@ -2594,6 +2902,15 @@ def _anthropic_messages(messages, system=None):
         tool_calls = []
         tool_results = []
         for block in content:
+            if not isinstance(block, Mapping) and isinstance(
+                getattr(block, "type", None), str
+            ):
+                # Response blocks (`response.content`) sent back as history.
+                block = (
+                    block.model_dump()
+                    if callable(getattr(block, "model_dump", None))
+                    else vars(block)
+                )
             if not isinstance(block, Mapping):
                 text_parts.append(_content(block))
                 continue
@@ -2696,7 +3013,9 @@ async def _anthropic_event_stream(provider, request):
         elif event.type == "completed" and event.response is not None:
             yield SimpleNamespace(
                 type="message_delta",
-                delta=SimpleNamespace(stop_reason=event.response.finish_reason),
+                delta=SimpleNamespace(
+                    stop_reason=_anthropic_stop_reason(event.response)
+                ),
                 usage=_usage_namespace(event.response.usage, anthropic=True),
             )
             yield SimpleNamespace(type="message_stop")
@@ -2764,7 +3083,9 @@ class _AsyncAnthropicMessageStream:
                 self._final_message = _anthropic_response_shape(event.response)
                 yield SimpleNamespace(
                     type="message_delta",
-                    delta=SimpleNamespace(stop_reason=event.response.finish_reason),
+                    delta=SimpleNamespace(
+                        stop_reason=_anthropic_stop_reason(event.response)
+                    ),
                     usage=_usage_namespace(event.response.usage, anthropic=True),
                 )
                 yield SimpleNamespace(type="message_stop")
@@ -2842,12 +3163,16 @@ class _AsyncAnthropicLocalMessageStream:
                 self._usage = event.usage
             elif event.type == "message_stop":
                 text = "".join(self._text_parts)
-                self._final_message = SimpleNamespace(
+                self._final_message = anthropic_types.Message(
                     id=None,
                     type="message",
                     role="assistant",
                     model=self._model,
-                    content=[SimpleNamespace(type="text", text=text)] if text else [],
+                    content=(
+                        [anthropic_types.TextBlock(type="text", text=text)]
+                        if text
+                        else []
+                    ),
                     stop_reason=self._stop_reason,
                     usage=self._usage,
                 )
@@ -2991,6 +3316,7 @@ class _AsyncAnthropicMessages:
         self._client = client
         self.batches = _AsyncAnthropicMessageBatches(client)
 
+    @_vendor_errors(ANTHROPIC_ERRORS)
     async def create(
         self,
         *,
@@ -3063,6 +3389,7 @@ class _AsyncAnthropicMessages:
         )
         return _anthropic_response_shape(response, mcp_calls, web_search_calls)
 
+    @_vendor_errors(ANTHROPIC_ERRORS)
     async def count_tokens(
         self,
         *,
@@ -3156,6 +3483,67 @@ def _module(name, **exports):
     return module
 
 
+# Upstream llama_index module paths served by the combined LlamaIndex
+# compatibility module, so `from llama_index.core.node_parser import ...`
+# migrates by prefixing `agent_rt.` alone.
+_LLAMA_INDEX_SUBMODULES = (
+    "core",
+    "core.agent",
+    "core.agent.workflow",
+    "core.base",
+    "core.base.embeddings",
+    "core.base.embeddings.base",
+    "core.base.llms",
+    "core.base.llms.types",
+    "core.base.response",
+    "core.base.response.schema",
+    "core.callbacks",
+    "core.embeddings",
+    "core.indices",
+    "core.indices.property_graph",
+    "core.indices.property_graph.transformations",
+    "core.ingestion",
+    "core.llms",
+    "core.memory",
+    "core.node_parser",
+    "core.output_parsers",
+    "core.prompts",
+    "core.query_engine",
+    "core.readers",
+    "core.response_synthesizers",
+    "core.retrievers",
+    "core.schema",
+    "core.settings",
+    "core.storage",
+    "core.tools",
+    "core.vector_stores",
+    "core.workflow",
+    "embeddings.gemini",
+    "embeddings.ollama",
+    "embeddings.openai",
+    "llms.ollama",
+    "readers",
+    "readers.file",
+)
+
+
+def _register_submodule(root, path, target):
+    """Serve ``target`` at ``root.path`` and link it from its parent module."""
+    parent = root
+    parts = path.split(".")
+    for depth, part in enumerate(parts, start=1):
+        name = f"{root.__name__}.{'.'.join(parts[:depth])}"
+        module = sys.modules.get(name) if depth < len(parts) else None
+        if module is None:
+            module = target
+            sys.modules.setdefault(name, target)
+        if not hasattr(parent, "__path__"):
+            parent.__path__ = ()
+        if getattr(parent, part, None) is None:
+            setattr(parent, part, module)
+        parent = module
+
+
 def install_compat_submodules(parent):
     modules = {
         "langchain": _module(
@@ -3183,11 +3571,70 @@ def install_compat_submodules(parent):
             f"{parent.__name__}.anthropic",
             Anthropic=Anthropic,
             AsyncAnthropic=AsyncAnthropic,
+            **public_error_classes(ANTHROPIC_ERRORS),
         ),
     }
+    modules["openai"].__dict__.update(public_error_classes(OPENAI_ERRORS))
+    modules["openai"].__all__ = tuple(
+        sorted({*modules["openai"].__all__, *public_error_classes(OPENAI_ERRORS)})
+    )
     for short, module in modules.items():
         sys.modules[module.__name__] = module
         setattr(parent, short, module)
+
+    # Upstream `openai.types.*` and `openai.resources.*` submodules; the
+    # resource classes are the shim's own, so patching one (for example
+    # `monkeypatch.setattr(Responses, "parse", ...)`) reaches every client.
+    openai_module = modules["openai"]
+    openai_module.__path__ = ()
+    openai_submodules = dict(openai_types.MODULES)
+    openai_submodules.update(
+        {
+            "_base_client": {
+                "SyncAPIClient": SyncAPIClient,
+                "AsyncAPIClient": AsyncAPIClient,
+            },
+            "resources": {},
+            "resources.chat": {"Chat": _OpenAIChat, "AsyncChat": _AsyncOpenAIChat},
+            "resources.chat.completions": {
+                "Completions": _SyncOpenAICompletions,
+                "AsyncCompletions": _AsyncOpenAICompletions,
+            },
+            "resources.responses": {
+                "Responses": _SyncOpenAIResponses,
+                "AsyncResponses": _AsyncOpenAIResponses,
+            },
+            "resources.embeddings": {
+                "Embeddings": _SyncOpenAIEmbeddings,
+                "AsyncEmbeddings": _AsyncOpenAIEmbeddings,
+            },
+            "resources.models": {
+                "Models": _SyncOpenAIModels,
+                "AsyncModels": _AsyncOpenAIModels,
+            },
+        }
+    )
+    for path in sorted(openai_submodules):
+        submodule = _module(
+            f"{openai_module.__name__}.{path}", **openai_submodules[path]
+        )
+        submodule.__path__ = ()
+        sys.modules[submodule.__name__] = submodule
+        owner_path, _, short = path.rpartition(".")
+        owner = (
+            sys.modules[f"{openai_module.__name__}.{owner_path}"]
+            if owner_path
+            else openai_module
+        )
+        setattr(owner, short, submodule)
+
+    anthropic = modules["anthropic"]
+    anthropic.__path__ = ()
+    anthropic_types_module = _module(
+        f"{anthropic.__name__}.types", **anthropic_types.TYPES_EXPORTS
+    )
+    sys.modules[anthropic_types_module.__name__] = anthropic_types_module
+    anthropic.types = anthropic_types_module
 
     from ext.compat.autogen import install_autogen_compat
     from ext.compat.crewai import install_crewai_compat
@@ -3207,8 +3654,8 @@ def install_compat_submodules(parent):
     langchain = sys.modules[f"{parent.__name__}.langchain"]
     sys.modules[f"{parent.__name__}.langchain_openai"] = langchain
     sys.modules[f"{parent.__name__}.langchain_anthropic"] = langchain
-    setattr(parent, "langchain_openai", langchain)
-    setattr(parent, "langchain_anthropic", langchain)
+    parent.langchain_openai = langchain
+    parent.langchain_anthropic = langchain
 
     llamaindex = sys.modules[f"{parent.__name__}.llamaindex"]
     llama_index = _module(
@@ -3225,4 +3672,13 @@ def install_compat_submodules(parent):
     llama_llms.openai = llamaindex
     llama_llms.anthropic = llamaindex
     llama_index.llms = llama_llms
-    setattr(parent, "llama_index", llama_index)
+    parent.llama_index = llama_index
+    llama_embeddings = _module(f"{parent.__name__}.llama_index.embeddings")
+    llama_embeddings.__path__ = ()
+    sys.modules[llama_embeddings.__name__] = llama_embeddings
+    llama_index.embeddings = llama_embeddings
+    vector_stores = sys.modules.get(f"{parent.__name__}.llama_index.vector_stores")
+    if vector_stores is not None:
+        llama_index.vector_stores = vector_stores
+    for path in _LLAMA_INDEX_SUBMODULES:
+        _register_submodule(llama_index, path, llamaindex)

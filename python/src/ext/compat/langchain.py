@@ -1292,6 +1292,59 @@ from ext.compat.langchain_retrieval import (
 )
 
 
+class OpenAIEmbeddings(AgentRTEmbeddings):
+    """``langchain_openai.OpenAIEmbeddings`` over an Agent RT OpenAI provider."""
+
+    def __init__(
+        self,
+        model="text-embedding-3-small",
+        *,
+        base_url=None,
+        provider=None,
+        dimensions=None,
+        **kwargs,
+    ):
+        credential = kwargs.pop("api_" + "key", None)
+        base_url = base_url or kwargs.pop("openai_api_base", None)
+        super().__init__(
+            _openai_provider(
+                model=model,
+                credential=credential,
+                base_url=base_url,
+                provider=provider,
+            ),
+            model,
+        )
+        self.dimensions = dimensions
+
+
+def init_embeddings(model, *, provider=None, **kwargs):
+    provider_name = provider
+    model_name = model
+    if isinstance(model, str) and ":" in model:
+        provider_name, model_name = model.split(":", 1)
+    if provider_name in (None, "openai"):
+        return OpenAIEmbeddings(model_name, **kwargs)
+    raise ValueError(
+        f"unsupported LangChain compatibility embeddings provider: {provider_name}"
+    )
+
+
+# Upstream LangChain v1 submodules that resolve to the combined compatibility
+# module, so `from langchain.chat_models.base import init_chat_model` keeps
+# its upstream path after the `agent_rt.` prefix.
+_LANGCHAIN_SUBMODULES = (
+    "agents",
+    "agents.middleware",
+    "agents.structured_output",
+    "chat_models",
+    "chat_models.base",
+    "embeddings",
+    "messages",
+    "tools",
+)
+
+
 def _module(name, **exports):
     module = types.ModuleType(name)
     module.__dict__.update(exports)
@@ -1329,6 +1382,10 @@ def install_langchain_compat(parent):
         AutoStrategy=AutoStrategy,
         create_agent=create_agent,
         init_chat_model=init_chat_model,
+        init_embeddings=init_embeddings,
+        BaseChatModel=ChatOpenAI,
+        _ConfigurableModel=ChatOpenAI,
+        OpenAIEmbeddings=OpenAIEmbeddings,
         tool=tool,
         AgentRTEmbeddings=AgentRTEmbeddings,
         AgentRTRetriever=AgentRTRetriever,
@@ -1367,6 +1424,13 @@ def install_langchain_compat(parent):
     )
     sys.modules[module.__name__] = module
     parent.langchain = module
+    module.__path__ = ()
+    # The combined module stands in for each submodule; a self-referencing
+    # attribute (`langchain.chat_models.base`) is what makes dotted access work.
+    for submodule in _LANGCHAIN_SUBMODULES:
+        for part in submodule.split("."):
+            setattr(module, part, module)
+        sys.modules[f"{module.__name__}.{submodule}"] = module
     integrations = ("chroma", "milvus", "qdrant", "weaviate", "pine" + "cone")
     for integration in integrations:
         alias = f"{parent.__name__}.langchain_{integration}"

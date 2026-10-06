@@ -1,0 +1,381 @@
+Package,Language,PLIndex,RepoURL
+LangChain,Python,1,https://github.com/ARieS719/agentic-qa-engine
+LangChain,Python,2,https://github.com/Atakan97/rag-doc-assistant
+LangChain,Python,3,https://github.com/Ramesh-4702/rag_eval_framework_ollama_deepeval
+LangChain,Python,4,https://github.com/eliv1982/ai-agent-toolbox
+LangChain,Python,5,https://github.com/jqzhao72-cell/docpilot-rag
+LangChain,Python,6,https://github.com/k333rb/rag-knowledge-assistant
+LangChain,Python,7,https://github.com/mohandab-dataeng/rag-cultural-events
+LangChain,Python,8,https://github.com/ASK201802/ReactAgent
+LangChain,Python,9,https://github.com/HS7MAX/pdf-rag-assistant
+LangChain,Python,10,https://github.com/Jaiswal-Akshay/Research-Paper-Assistant
+LangChain,Python,11,https://github.com/OlajuwonOkeniyi/pdf-quiz-generator
+LangChain,Python,12,https://github.com/Riyasharma-17/jd-intelligence-tool
+LangChain,Python,13,https://github.com/cosmicurvy/qa-rag-system
+LangChain,Python,14,https://github.com/lyyxyy/PythonPlantsVsZombies
+LangChain,Python,15,https://github.com/sakshijaiswal145/Nexthikes-IT-Solutions-Project-9
+LangChain,Python,16,https://github.com/shekratul10/AI-Document-Assistant
+LangChain,Python,17,https://github.com/zhaozhenyu-dev/llm-app-portfolio
+LangChain,Python,18,https://github.com/alexeymasalykin/ai-assistant-eduflow
+LangChain,Python,19,https://github.com/pixegami/rag-tutorial-v2
+LangChain,Python,20,https://github.com/pmutua/CodeCraftGPT
+LangChain,Python,21,https://github.com/zakirkun/guardian-cli
+LangChain,Python,22,https://github.com/JuliusBrussee/caveman
+LangChain,Python,23,https://github.com/Trusera/ai-bom
+LangChain,Python,24,https://github.com/agentspan-ai/agentspan
+LangChain,Python,25,https://github.com/ayushmi/agentstate
+LangChain,Python,26,https://github.com/jjallaire/inspect-llm-workshop
+LangChain,Python,27,https://github.com/LLAMATOR-Core/llamator
+LangChain,Python,28,https://github.com/BinNong/meet-libai
+LangChain,Python,29,https://github.com/deeppavlov/chatsky
+LangChain,Python,30,https://github.com/memgraph/ai-toolkit
+LangChain,Python,31,https://github.com/alexneverland/Astakos-AI-Agent
+
+LangChain,TS/JS,1,https://github.com/Infinitefft/Eterion
+LangChain,TS/JS,2,https://github.com/0xmdrakib/AgentDomain
+LangChain,TS/JS,3,https://github.com/diogonzafe/tokenwatch
+LangChain,TS/JS,4,https://github.com/devhimanshuu/BudgetBuddy
+LangChain,TS/JS,5,https://github.com/heripo-lab/llm-newsletter-kit-core
+LangChain,TS/JS,6,https://github.com/tubeagentkit/langchain-getyoutubetranscript-js
+LangChain,TS/JS,7,https://github.com/githubvv/langchain-cost-tracker
+LangChain,TS/JS,8,https://github.com/movchaneric/policy_agent_vecdb
+LangChain,TS/JS,9,https://github.com/ESPChong/mywallet-expense-tracker-api-ai-chatbot
+LangChain,TS/JS,10,https://github.com/Martin-Bruel/nestjs-langchain
+LangChain,TS/JS,11,https://github.com/programmarchy/directus-extension-copilot
+LangChain,TS/JS,12,https://github.com/HiveForensics-AI/knolo-core
+LangChain,TS/JS,13,https://github.com/HeadyZhang/agent-audit
+LangChain,TS/JS,14,https://github.com/gaboolic/novel-gpt
+LangChain,TS/JS,15,https://github.com/MGdaasLab/WHartTest
+LangChain,TS/JS,16,https://github.com/davidpc007/solana-agent-kit
+LangChain,TS/JS,17,https://github.com/hashgraph/hedera-agent-kit-js
+LangChain,TS/JS,18,https://github.com/sendaifun/solana-agent-kit
+LangChain,TS/JS,19,https://github.com/avikalpg/byok-relay
+LangChain,TS/JS,20,https://github.com/kungfu-systems/kungfu
+LangChain,TS/JS,21,https://github.com/Stellar-Agent-Guard/stellar-agent-guard-sdk
+LangChain,TS/JS,22,https://github.com/maunappl8/recursive-langgraph-agent
+LangChain,TS/JS,23,https://github.com/HaveNiceDa/My-Notion
+LangChain,TS/JS,24,https://github.com/thenameiswiiwin/moodsense-ai
+LangChain,TS/JS,25,https://github.com/laurentknauss/versatile-agent
+LangChain,TS/JS,26,https://github.com/smartinezai/friendship-points-api
+LangChain,TS/JS,27,https://github.com/agnivon/viral_thread_generator
+LangChain,TS/JS,28,https://github.com/taha123618/AI-CRM-Agents
+LangChain,TS/JS,29,https://github.com/lobehub/lobe-cli-toolbox
+LangChain,TS/JS,30,https://github.com/Sunny-117/mini-cc
+LangChain,TS/JS,31,https://github.com/wayde1122/langChain-travelAgent
+LangChain,TS/JS,32,https://github.com/SAP/langchainjs-integration-for-sap-hana-cloud
+LangChain,TS/JS,33,https://github.com/actrone/actrone-memory-ts
+LangChain,TS/JS,34,https://github.com/rustammdev/memory-bot
+LangChain,TS/JS,35,https://github.com/mpotane/markybot
+LangChain,TS/JS,36,https://github.com/mohitsehgal/ecommerce-ai-native
+LangChain,TS/JS,37,https://github.com/gawadx1/omnirag
+LangChain,TS/JS,38,https://github.com/typesearch-ai/langchain-typesearch-js
+LangChain,TS/JS,39,https://github.com/weam-ai/weam
+LangChain,TS/JS,40,https://github.com/zeus-12/uxie
+LangChain,TS/JS,41,https://github.com/codecentric/c4-genai-suite
+LangChain,TS/JS,42,https://github.com/agentailor/fullstack-langgraph-nextjs-agent
+LangChain,TS/JS,43,https://github.com/AgentSwarms-fyi/AgentSwarms
+LangChain,TS/JS,44,https://github.com/olasunkanmi-SE/codebuddy
+
+LlamaIndex,Python,1,https://github.com/AlwaysAditya/MedRAG-with-LlamaIndex
+LlamaIndex,Python,2,https://github.com/BrentWilkins/author-corpus-rag
+LlamaIndex,Python,3,https://github.com/DVLevin/LlamaIndex-Presales
+LlamaIndex,Python,4,https://github.com/Gaallard/API-RAG-LlamaIndex
+LlamaIndex,Python,5,https://github.com/MeganMulcahy/RAG-Pipeline-using-LlamaIndex
+LlamaIndex,Python,6,https://github.com/PhoebeHuPing/memai
+LlamaIndex,Python,7,https://github.com/ahals42/Reframing-Retirement-AI-Coach
+LlamaIndex,Python,8,https://github.com/bacchilu/llama-index-test
+LlamaIndex,Python,9,https://github.com/benmaster82/Kwipu
+LlamaIndex,Python,10,https://github.com/iAbhyuday/shodh
+LlamaIndex,Python,11,https://github.com/jingwangjw81/kdsg-rag
+LlamaIndex,Python,12,https://github.com/jyunming/Axon
+LlamaIndex,Python,13,https://github.com/neumann-mlucas/ragwatcher
+LlamaIndex,Python,14,https://github.com/sapphireyyy/llamaIndex_rag
+LlamaIndex,Python,15,https://github.com/szczyglis-dev/py-gpt
+LlamaIndex,Python,16,https://github.com/wahidur028/Legal-Query-RAG
+LlamaIndex,Python,17,https://github.com/JSv4/Delphic
+LlamaIndex,Python,18,https://github.com/flamehaven01/Flamehaven-Filesearch
+LlamaIndex,Python,19,https://github.com/BittnerPierre/applied-ai-rag-assistant
+LlamaIndex,Python,20,https://github.com/PatrickAttankurugu/Agentic-RAG-with-Llamaindex
+LlamaIndex,Python,21,https://github.com/rasinmuhammed/rag-tui
+LlamaIndex,Python,22,https://github.com/StarTrail-org/LEANN
+LlamaIndex,Python,23,https://github.com/Marker-Inc-Korea/AutoRAG
+LlamaIndex,Python,24,https://github.com/DeytaHQ/khora
+LlamaIndex,Python,25,https://github.com/BjornMelin/docmind-ai-llm
+LlamaIndex,Python,26,https://github.com/MotleyAI/motleycrew
+LlamaIndex,Python,27,https://github.com/HewlettPackard/llmesh
+LlamaIndex,Python,28,https://github.com/qrev-ai/qrev
+LlamaIndex,Python,29,https://github.com/GPTStonks/gptstonks
+LlamaIndex,Python,30,https://github.com/JuliusBrussee/caveman
+LlamaIndex,Python,31,https://github.com/ENDEVSOLS/LongProbe
+
+LlamaIndex,TS/JS,1,https://github.com/AlvisoOculus/optionsahoy-mcp
+LlamaIndex,TS/JS,2,https://github.com/j33v4nz/MIMORI
+LlamaIndex,TS/JS,3,https://github.com/lambdadb/lambdadb-typescript-client
+LlamaIndex,TS/JS,4,https://github.com/bharathajjarapu/Tome
+LlamaIndex,TS/JS,5,https://github.com/Pseud0Coder/CERTAINTY
+LlamaIndex,TS/JS,6,https://github.com/ExpoLab-App/nexus
+LlamaIndex,TS/JS,7,https://github.com/YARlabs/hyperspace-db
+LlamaIndex,TS/JS,8,https://github.com/AgentScript-AI/agentscript
+LlamaIndex,TS/JS,9,https://github.com/HiveForensics-AI/knolo-core
+LlamaIndex,TS/JS,10,https://github.com/vladeziegler/Vladoesgrowth
+LlamaIndex,TS/JS,11,https://github.com/avelikiy/great_cto
+LlamaIndex,TS/JS,12,https://github.com/iZiTTMarvin/MemCoach
+LlamaIndex,TS/JS,13,https://github.com/SpillwaveSolutions/agent-brain
+LlamaIndex,TS/JS,14,https://github.com/telekom/create-tsi
+LlamaIndex,TS/JS,15,https://github.com/u14app/neo-chat
+LlamaIndex,TS/JS,16,https://github.com/linkerlin/PUAX
+LlamaIndex,TS/JS,17,https://github.com/cure-lab/ArbiterOS
+LlamaIndex,TS/JS,18,https://github.com/fkonovalov/rdrr
+LlamaIndex,TS/JS,19,https://github.com/Leonard-Li777/firefly-ai-folder-desktop
+LlamaIndex,TS/JS,20,https://github.com/litefuse/litefuse
+LlamaIndex,TS/JS,21,https://github.com/auraoneai/sdk-typescript
+LlamaIndex,TS/JS,22,https://github.com/dor-rondel/interactive-pdf-rag-chatbot
+LlamaIndex,TS/JS,23,https://github.com/run-llama/n8n-llamacloud
+LlamaIndex,TS/JS,24,https://github.com/LastSearch-HQ/lastsearch
+LlamaIndex,TS/JS,25,https://github.com/Azure-Samples/llama-index-vector-search-javascript
+LlamaIndex,TS/JS,26,https://github.com/Azure-Samples/llama-index-azure-code-interpreter
+LlamaIndex,TS/JS,27,https://github.com/cvfile/cv
+LlamaIndex,TS/JS,28,https://github.com/ragverse-labs/ragverse
+LlamaIndex,TS/JS,29,https://github.com/Usmankh4/pdf-knowledge-assistant
+LlamaIndex,TS/JS,30,https://github.com/Sidd27/ragscope
+LlamaIndex,TS/JS,31,https://github.com/FelixBitSoul/swift-mind
+LlamaIndex,TS/JS,32,https://github.com/qtuanph/chatbot-rag
+LlamaIndex,TS/JS,33,https://github.com/MusaIslamFahad/ai-integration-hub
+LlamaIndex,TS/JS,34,https://github.com/pjamessteven/social-project
+LlamaIndex,TS/JS,35,https://github.com/Azure-Samples/azure-ai-travel-agents
+
+OpenAI,Python,1,https://github.com/EhsaN-AI13/ai-engineering-agent
+OpenAI,Python,2,https://github.com/Geocoder89/engineering-knowledge-platform
+OpenAI,Python,3,https://github.com/brianshimkus/Document-Extraction-Workbench
+OpenAI,Python,4,https://github.com/brianshimkus/Ticket-Triage-Lab
+OpenAI,Python,5,https://github.com/eliv1982/customer-review-mcp-assistant
+OpenAI,Python,6,https://github.com/eliv1982/kitchen-helper-telegram-bot
+OpenAI,Python,7,https://github.com/enoorii/contract-clause-reviewer
+OpenAI,Python,8,https://github.com/ethankok/clinic-dashboard
+OpenAI,Python,9,https://github.com/hajar-benhadj/AI-API-TEST-Generator
+OpenAI,Python,10,https://github.com/jamps3/LeetIRCPythonBot
+OpenAI,Python,11,https://github.com/kzfree9124/llm-summary-api
+OpenAI,Python,12,https://github.com/neehanthreddym/ai-sales-crm-assistant
+OpenAI,Python,13,https://github.com/ozgurdh/ai-support-ticket-triage
+OpenAI,Python,14,https://github.com/q1nn2/ai_qahelper
+OpenAI,Python,15,https://github.com/he-yufeng/CoreCoder
+OpenAI,Python,16,https://github.com/oreeke/twipsybot
+OpenAI,Python,17,https://github.com/pitercoding/ai-news-scraper
+OpenAI,Python,18,https://github.com/techdomegh/ai-news-scraper
+OpenAI,Python,19,https://github.com/SAP/project-kb
+OpenAI,Python,20,https://github.com/grumpyp/blogging-with-ai
+OpenAI,Python,21,https://github.com/goruck/home-generative-agent
+OpenAI,Python,22,https://github.com/lesterppo/arxiv-lab
+OpenAI,Python,23,https://github.com/Tanush1206/llm-utility-lab
+OpenAI,Python,24,https://github.com/GEKI-AI/apipi
+OpenAI,Python,25,https://github.com/mharrisb1/openai-responses-python
+OpenAI,Python,26,https://github.com/FullStackWithLawrence/openai-embeddings
+OpenAI,Python,27,https://github.com/godhiraj-code/pytest-mockllm
+OpenAI,Python,28,https://github.com/tomerhakak/agentprobe
+OpenAI,Python,29,https://github.com/altbozon/openai-response-validator
+OpenAI,Python,30,https://github.com/1dg618/fakellm
+OpenAI,Python,31,https://github.com/1dg618/pytest-fakellm
+OpenAI,Python,32,https://github.com/sbroenne/pytest-llm-assert
+OpenAI,Python,33,https://github.com/aymenhmaidiwastaken/promptcheck
+OpenAI,Python,34,https://github.com/dx-corp/mocktopus
+
+OpenAI,TS/JS,1,https://github.com/archydre/lowdeep
+OpenAI,TS/JS,2,https://github.com/oguzhankir/phyra
+OpenAI,TS/JS,3,https://github.com/eropermakov/snap-notes
+OpenAI,TS/JS,4,https://github.com/YokYok71/Tabac
+OpenAI,TS/JS,5,https://github.com/Vinay-003/RoyaltyOs
+OpenAI,TS/JS,6,https://github.com/OrenZhang/tongzhou
+OpenAI,TS/JS,7,https://github.com/datalign-technology/procela
+OpenAI,TS/JS,8,https://github.com/54shitaimzf/Fugue
+OpenAI,TS/JS,9,https://github.com/kunchenguid/autopreso
+OpenAI,TS/JS,10,https://github.com/op7418/CodePilot
+OpenAI,TS/JS,11,https://github.com/solomon2773/nora
+OpenAI,TS/JS,12,https://github.com/WellApp-ai/Well
+OpenAI,TS/JS,13,https://github.com/ExplosiveCoderflome/AI-Novel-Writing-Assistant
+OpenAI,TS/JS,14,https://github.com/lee-to/aif-handoff
+OpenAI,TS/JS,15,https://github.com/mobileAiDev/ai-app-bridge
+OpenAI,TS/JS,16,https://github.com/blaxsior/vitest-codegen-with-openai
+OpenAI,TS/JS,17,https://github.com/WuMingDao/zenith-image-generator
+OpenAI,TS/JS,18,https://github.com/Felix-au/OmniKey-AI-Unified-Key-Manager
+OpenAI,TS/JS,19,https://github.com/yakin-ts/MOOD
+OpenAI,TS/JS,20,https://github.com/rakheOmar/opencode-autodiscover
+OpenAI,TS/JS,21,https://github.com/dorangao/openai-agents-chatkit-nextjs
+OpenAI,TS/JS,22,https://github.com/VJDiPaola/LinkedIn-Resume-Builder
+OpenAI,TS/JS,23,https://github.com/KevinVanDerSchans/clone-google-translate-react
+OpenAI,TS/JS,24,https://github.com/icernigoj/llmao
+OpenAI,TS/JS,25,https://github.com/thomaslnx/AIChatBackend
+OpenAI,TS/JS,26,https://github.com/fettstorch/tic-tac-foe
+OpenAI,TS/JS,27,https://github.com/null-inc/grammer-assistant
+
+Anthropic,Python,1,https://github.com/JuanCamiloMendoza99/mcp-document-chat
+Anthropic,Python,2,https://github.com/LikithSh3tty/Askvane
+Anthropic,Python,3,https://github.com/Mini34/trailhead-claude-support-api
+Anthropic,Python,4,https://github.com/NickTrapp/poker-coach
+Anthropic,Python,5,https://github.com/PranaPragada7/Study-Tutor-Agent
+Anthropic,Python,6,https://github.com/Raviteja-2004/ai-chat-assistant
+Anthropic,Python,7,https://github.com/arashbahrami20261-tech/ai-researcher
+Anthropic,Python,8,https://github.com/gauravsoodtech/shortlist-api
+Anthropic,Python,9,https://github.com/guptrishi01/rally-ai
+Anthropic,Python,10,https://github.com/henry-hai/arthouse-ops
+Anthropic,Python,11,https://github.com/matipirro/taskmanager-python
+Anthropic,Python,12,https://github.com/thomas-tahk/itsm-ticket-triage
+Anthropic,Python,13,https://github.com/xAlayham/habit-coach-ai
+Anthropic,Python,14,https://github.com/ArchanaChetan07/validation-lab-capacity-planning-copilot
+Anthropic,Python,15,https://github.com/rubenG1009/jobscout
+Anthropic,Python,16,https://github.com/rocketride-org/rocketride-server
+Anthropic,Python,17,https://github.com/nex-agi/NexAU
+Anthropic,Python,18,https://github.com/ghost-in-the-droid/android-agent
+Anthropic,Python,19,https://github.com/BCG-X-Official/artkit
+Anthropic,Python,20,https://github.com/headroomlabs-ai/headroom
+Anthropic,Python,21,https://github.com/softspark/ai-toolkit
+
+Anthropic,TS/JS,1,https://github.com/ayaanalikhunt/ks1j-hackathon
+Anthropic,TS/JS,2,https://github.com/drorkat/agent-control-plane
+Anthropic,TS/JS,3,https://github.com/K3NTAW/ai-apprentice
+Anthropic,TS/JS,4,https://github.com/uzysjung/uzys-agent-harness
+Anthropic,TS/JS,5,https://github.com/irfan-arakkal/Job-Track-AI
+Anthropic,TS/JS,6,https://github.com/hanul442/gnomon_analytics
+Anthropic,TS/JS,7,https://github.com/jaeyeonling/claude-for-you
+Anthropic,TS/JS,8,https://github.com/YokYok71/Tabac
+Anthropic,TS/JS,9,https://github.com/OrenZhang/tongzhou
+Anthropic,TS/JS,10,https://github.com/datalign-technology/procela
+Anthropic,TS/JS,11,https://github.com/54shitaimzf/Fugue
+Anthropic,TS/JS,12,https://github.com/PierrunoYT/patch
+Anthropic,TS/JS,13,https://github.com/SFARPak/AliFullStack
+Anthropic,TS/JS,14,https://github.com/Zentar-Ai/Zentara-Code
+Anthropic,TS/JS,15,https://github.com/presidio-oss/cline-based-code-generator
+Anthropic,TS/JS,16,https://github.com/damiensmith1/llm-cassette
+Anthropic,TS/JS,17,https://github.com/pensarai/apex
+Anthropic,TS/JS,18,https://github.com/stravu/crystal
+Anthropic,TS/JS,19,https://github.com/antongulin/opencode-skill-creator
+Anthropic,TS/JS,20,https://github.com/s0ld13rr/pentestcode
+Anthropic,TS/JS,21,https://github.com/prapaa-ai/agav
+Anthropic,TS/JS,22,https://github.com/Avijit07x/claude-db
+Anthropic,TS/JS,23,https://github.com/MoaKK/AI-Code-Reviewer
+Anthropic,TS/JS,24,https://github.com/adm73/OpenBcon
+Anthropic,TS/JS,25,https://github.com/Panto92/Opencognit
+Anthropic,TS/JS,26,https://github.com/TaewoooPark/NODEPROMPT
+Anthropic,TS/JS,27,https://github.com/lossless-group/perplexed-plugin
+Anthropic,TS/JS,28,https://github.com/jackschedel/KoalaClient
+Anthropic,TS/JS,29,https://github.com/Lepuz-coder/opengnothia
+Anthropic,TS/JS,30,https://github.com/prathamVaidya/claude-share
+Anthropic,TS/JS,31,https://github.com/Shreyas-Dayal/ai-cli-bridge
+Anthropic,TS/JS,32,https://github.com/bvisible/mcp-ssh-manager
+Anthropic,TS/JS,33,https://github.com/cheapestinference/claude-auto-retry
+Anthropic,TS/JS,34,https://github.com/KarpelesLab/teamclaude
+Anthropic,TS/JS,35,https://github.com/micz/ThunderAI
+Anthropic,TS/JS,36,https://github.com/sepivip/SeekerClaw
+
+OpenAI Agents,Python,1,https://github.com/singhuttam7/genai-content-transformation-platform
+OpenAI Agents,Python,2,https://github.com/PATELPRATHAM007/nemotron-agent-engine
+OpenAI Agents,Python,3,https://github.com/yuchenm1303-png/Loom
+OpenAI Agents,Python,4,https://github.com/databrickslabs/kasal
+OpenAI Agents,Python,5,https://github.com/WaseemGhanem98/AgentCheck
+OpenAI Agents,Python,6,https://github.com/sandbox-quantum/switch-trust-cli
+OpenAI Agents,Python,7,https://github.com/guiyinan/agomTradePro
+OpenAI Agents,Python,8,https://github.com/omnigent-ai/omnigent
+OpenAI Agents,Python,9,https://github.com/DemonDamon/AgenticX
+OpenAI Agents,Python,10,https://github.com/agentarea/agentarea
+OpenAI Agents,Python,11,https://github.com/AgentFlocks/flocks
+OpenAI Agents,Python,12,https://github.com/Lumen-Labs/brainapi2
+OpenAI Agents,Python,13,https://github.com/debpalash/VoiceStudio
+OpenAI Agents,Python,14,https://github.com/Bairong-Xdynamics/MistakeNotebookLearning
+OpenAI Agents,Python,15,https://github.com/ziqizhang/jate
+OpenAI Agents,Python,16,https://github.com/xncbf/openai-agents-testkit
+OpenAI Agents,Python,17,https://github.com/HamsikaRaj/research-report-agents
+OpenAI Agents,Python,18,https://github.com/ibrahimsamak/multi-agent-AI-travel-planner
+OpenAI Agents,Python,19,https://github.com/qx-labs/agents-deep-research
+OpenAI Agents,Python,20,https://github.com/jkmaina/openai-agents-blueprint
+OpenAI Agents,Python,21,https://github.com/hellotinah/email-agent-workflow
+OpenAI Agents,Python,22,https://github.com/chirpz-ai/pandaprobe
+OpenAI Agents,Python,23,https://github.com/Shaurya-Sethi/circuitron
+OpenAI Agents,Python,24,https://github.com/ThreeMoonsLab/agents-shipgate
+OpenAI Agents,Python,25,https://github.com/lemoncrow-lab/lemoncrow
+OpenAI Agents,Python,26,https://github.com/panaversity/agentfactory-manufacturing
+OpenAI Agents,Python,27,https://github.com/rafaelpierre/openai-agents-redis
+OpenAI Agents,Python,28,https://github.com/hubzoid/hubzoid
+OpenAI Agents,Python,29,https://github.com/sixteen-dev/obai
+OpenAI Agents,Python,30,https://github.com/bastion-soft/bastion-prompt-protection
+OpenAI Agents,Python,31,https://github.com/Cogensec/agentegrity
+OpenAI Agents,Python,32,https://github.com/Fazilat-Jahan/Agentic-AI-with-OpenAI-Agents-SDK
+OpenAI Agents,Python,33,https://github.com/Umairkhan2324/trilith
+OpenAI Agents,Python,34,https://github.com/momo-null/OmniAgent
+OpenAI Agents,Python,35,https://github.com/Rexarrior/reagentic
+OpenAI Agents,Python,36,https://github.com/deeplook/agents-primer
+OpenAI Agents,Python,37,https://github.com/KMdotcom/agent-handoff-kit
+OpenAI Agents,Python,38,https://github.com/webpro255/openai-agentlock
+OpenAI Agents,Python,39,https://github.com/btfranklin/agentic-django
+OpenAI Agents,Python,40,https://github.com/sunhaoxiang/market-research-agent
+OpenAI Agents,Python,41,https://github.com/tahasiddiquii/soc-triage-agent
+OpenAI Agents,Python,42,https://github.com/xbstack/openai-agents-runstate-approval-resume-lab
+
+OpenAI Agents,TS/JS,1,https://github.com/rajudandigam/agent-inspect
+OpenAI Agents,TS/JS,2,https://github.com/Cloudgeni-ai/opengeni
+OpenAI Agents,TS/JS,3,https://github.com/dcramer/peated
+OpenAI Agents,TS/JS,4,https://github.com/thefalconry/talon
+OpenAI Agents,TS/JS,5,https://github.com/AIPexStudio/AIPex
+OpenAI Agents,TS/JS,6,https://github.com/latitude-dev/latitude-llm
+OpenAI Agents,TS/JS,7,https://github.com/future-agi/traceAI
+OpenAI Agents,TS/JS,8,https://github.com/getsentry/vitest-evals
+OpenAI Agents,TS/JS,9,https://github.com/sendaifun/solana-agent-kit
+OpenAI Agents,TS/JS,10,https://github.com/vaultys/VaultysClaw
+OpenAI Agents,TS/JS,11,https://github.com/trustabl/agent-reliability-analyzer
+OpenAI Agents,TS/JS,12,https://github.com/ziguishian/MxPage
+OpenAI Agents,TS/JS,13,https://github.com/haydenbleasel/files-sdk
+OpenAI Agents,TS/JS,14,https://github.com/runtypelabs/persona
+OpenAI Agents,TS/JS,15,https://github.com/open-software-network/os-clovy
+OpenAI Agents,TS/JS,16,https://github.com/dmitryostrov/stark-document-translator
+
+AutoGen,Python,1,https://github.com/Divya23490/regulatory-impact-analyst
+AutoGen,Python,2,https://github.com/DarthVader19/Agent_Eval
+AutoGen,Python,3,https://github.com/Mandark-droid/genai_otel_instrument
+AutoGen,Python,4,https://github.com/themaker00001/chaos-bringer
+AutoGen,Python,5,https://github.com/Ramya192/RootCause
+AutoGen,Python,6,https://github.com/nunar-nexus-forge/multi-agent-observability
+AutoGen,Python,7,https://github.com/nikhilvdev/logquill-python
+AutoGen,Python,8,https://github.com/arun-srinivasan-builds/ai-agent-olympics
+AutoGen,Python,9,https://github.com/clanker25/autogen
+AutoGen,Python,10,https://github.com/natrajexplore/AutoGen_Agentic-AI
+AutoGen,Python,11,https://github.com/agenticdome/agenticdome-python-sdk
+AutoGen,Python,12,https://github.com/AshraHossain/Self-ReflectiveAgentwithAuto-Eval
+AutoGen,Python,13,https://github.com/xpcmdshell/py-code-mode
+AutoGen,Python,14,https://github.com/Dakera-AI/dakera-autogen
+AutoGen,Python,15,https://github.com/Hariharan17194/autogen-support-desk
+AutoGen,Python,16,https://github.com/Corpus-OS/corpusos
+AutoGen,Python,17,https://github.com/alibaba/loongsuite-python
+AutoGen,Python,18,https://github.com/isoftstone-data-intelligence-ai/efflux-desktop
+AutoGen,Python,19,https://github.com/13429837441/AutoGenTestCase
+AutoGen,Python,20,https://github.com/microsoft/agdebugger
+AutoGen,Python,21,https://github.com/coinbase/agentkit
+AutoGen,Python,22,https://github.com/Cisco-Talos/PEAK-Assistant
+AutoGen,Python,23,https://github.com/hidai25/eval-view
+AutoGen,Python,24,https://github.com/test-zeus-ai/testzeus-hercules
+AutoGen,Python,25,https://github.com/pksol/mock_autogen
+
+CrewAI,Python,1,https://github.com/sumairkhan/WebIntelX-AI
+CrewAI,Python,2,https://github.com/Aryabhatta-0/Wynk
+CrewAI,Python,3,https://github.com/Yash-Chindam/secure-mcp-multi-agent-research-platform
+CrewAI,Python,4,https://github.com/RNS-Forge/Agentium-Python-Library-
+CrewAI,Python,5,https://github.com/alexandre0sheva/crewai-engineering_team
+CrewAI,Python,6,https://github.com/dhouse109/agentic-harness-lab
+CrewAI,Python,7,https://github.com/taoq-ai/ziran
+CrewAI,Python,8,https://github.com/miikkij/crewaimeat
+CrewAI,Python,9,https://github.com/mubashir72/AccessDesk-Multi-Agent-AI
+CrewAI,Python,10,https://github.com/KnockOutEZ/wigolo
+CrewAI,Python,11,https://github.com/LayerLens/stratix-python
+CrewAI,Python,12,https://github.com/ThreatRecall/zettelforge
+CrewAI,Python,13,https://github.com/Trusera/ai-bom
+CrewAI,Python,14,https://github.com/vessl-ai/hyperpocket
+CrewAI,Python,15,https://github.com/Floe-Labs/floe-guard
+CrewAI,Python,16,https://github.com/Harshit-J004/toolguard
+CrewAI,Python,17,https://github.com/Ismail-2001/agent-bench
+CrewAI,Python,18,https://github.com/anupmanekar/phantom-qa-agentic-workflow
+CrewAI,Python,19,https://github.com/crzyc0d3r/agent-scenario-testing
+CrewAI,Python,20,https://github.com/hidai25/eval-view
+CrewAI,Python,21,https://github.com/aymenfouatihaiautomation/ai-sales-agent-employee
+CrewAI,Python,22,https://github.com/Tonioan-0/Tiered-crew
+CrewAI,Python,23,https://github.com/ArchanaChetan07/a2a-purchasing-agents
+CrewAI,Python,24,https://github.com/rvira/triage-desk
+CrewAI,Python,25,https://github.com/ladsad/Agent-Eval-Harness
+CrewAI,Python,26,https://github.com/freshernation/zero-to-agent-engineer
+CrewAI,Python,27,https://github.com/shubhamkathar/Multi-Agent-Code-Testing-Validation-System

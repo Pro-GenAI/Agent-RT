@@ -97,12 +97,20 @@ export type LangChainToolCall = {
 	argument_error?: string;
 };
 
+export type UsageMetadata = {
+	input_tokens: number;
+	output_tokens: number;
+	total_tokens: number;
+	input_token_details?: Record<string, number>;
+	output_token_details?: Record<string, number>;
+};
+
 export type MessageFields = {
 	tool_calls?: LangChainToolCall[];
 	tool_call_id?: string;
 	additional_kwargs?: JSONObject;
 	response_metadata?: JSONObject;
-	usage_metadata?: JSONObject;
+	usage_metadata?: UsageMetadata;
 	id?: string;
 	name?: string;
 };
@@ -114,7 +122,7 @@ export class BaseMessage {
 	readonly tool_call_id?: string;
 	readonly additional_kwargs: JSONObject;
 	readonly response_metadata: JSONObject;
-	readonly usage_metadata?: JSONObject;
+	readonly usage_metadata?: UsageMetadata;
 	readonly id?: string;
 	readonly name?: string;
 
@@ -420,13 +428,45 @@ function inputMessages(value: unknown): MessageLike[] {
 	);
 }
 
-function usageMetadata(usage?: ModelUsage): JSONObject | undefined {
+function usageMetadata(usage?: ModelUsage): UsageMetadata | undefined {
 	if (!usage) return undefined;
+	const input = usage.inputTokens ?? 0;
+	const output = usage.outputTokens ?? 0;
 	return {
-		input_tokens: usage.inputTokens,
-		output_tokens: usage.outputTokens,
-		total_tokens: usage.totalTokens,
+		input_tokens: input,
+		output_tokens: output,
+		total_tokens: usage.totalTokens ?? input + output,
 	};
+}
+
+/**
+ * Call one LangChain callback-handler method (`handleToolStart`,
+ * `handleLLMError`, ...) on every handler object in `callbacks`. As in
+ * LangChain, a failing handler does not fail the run.
+ */
+export async function emitCallbackHandlers(
+	callbacks: unknown,
+	method: string,
+	...args: unknown[]
+): Promise<void> {
+	if (!Array.isArray(callbacks)) return;
+	for (const handler of callbacks) {
+		if (!isObject(handler)) continue;
+		const fn = handler[method];
+		if (typeof fn !== 'function') continue;
+		try {
+			await (fn as (...values: unknown[]) => unknown).apply(
+				handler,
+				args,
+			);
+		} catch {
+			// Handler failures are the handler's concern, not the run's.
+		}
+	}
+}
+
+function callbackRunId(): string {
+	return globalThis.crypto.randomUUID();
 }
 
 function fromResponse(response: ModelResponse): AIMessage {
@@ -541,6 +581,272 @@ export function tool<TInput = unknown>(
 	};
 }
 
+/** Raised when tool input does not match the tool schema. */
+export class ToolInputParsingException extends Error {
+	readonly output?: string;
+
+	// Like LangChain's, the name stays `Error`, so `String(error)` reads
+	// `Error: Received tool input did not match expected schema...`.
+	constructor(message: string, output?: string) {
+		super(message);
+		this.output = output;
+	}
+}
+
+type SchemaIssue = { message?: unknown; path?: unknown };
+
+function issuePath(path: unknown[]): string {
+	return path
+		.map((segment, index) => {
+			const key =
+				isObject(segment) && 'key' in segment ? segment.key : segment;
+			if (typeof key === 'number') return `[${key}]`;
+			const text = String(key);
+			if (!/^[A-Za-z_$][\w$]*$/.test(text))
+				return `[${JSON.stringify(text)}]`;
+			return index === 0 ? text : `.${text}`;
+		})
+		.join('');
+}
+
+/** Render a zod-like error the way zod's `prettifyError()` does. */
+function prettifySchemaError(error: unknown): string {
+	const issues =
+		isObject(error) && Array.isArray(error.issues)
+			? (error.issues as SchemaIssue[])
+			: undefined;
+	if (!issues) return error instanceof Error ? error.message : String(error);
+	const lines: string[] = [];
+	const sorted = [...issues].sort(
+		(left, right) =>
+			(Array.isArray(left.path) ? left.path.length : 0) -
+			(Array.isArray(right.path) ? right.path.length : 0),
+	);
+	for (const issue of sorted) {
+		lines.push(`✖ ${String(issue.message)}`);
+		if (Array.isArray(issue.path) && issue.path.length)
+			lines.push(`  → at ${issuePath(issue.path)}`);
+	}
+	return lines.join('\n');
+}
+
+/** A tool failure raised inside an agent, carrying the failed call. */
+export class ToolInvocationError extends Error {
+	readonly toolCall: LangChainToolCall;
+	readonly toolError: unknown;
+
+	constructor(
+		toolError: unknown,
+		call: Pick<LangChainToolCall, 'name' | 'args'> &
+			Partial<LangChainToolCall>,
+	) {
+		const toolCall: LangChainToolCall = {
+			...call,
+			id: call.id ?? '',
+			type: 'tool_call',
+		};
+		// LangChain puts the error's stack (which starts with its message) in
+		// the text the model receives.
+		const detail =
+			toolError instanceof Error
+				? (toolError.stack ?? String(toolError))
+				: String(toolError);
+		super(
+			`Error invoking tool '${toolCall.name}' with kwargs ${JSON.stringify(toolCall.args)} with error: ${detail}\n Please fix the error and try again.`,
+		);
+		this.name = 'ToolInvocationError';
+		this.toolCall = toolCall;
+		this.toolError = toolError;
+	}
+
+	static isInstance(error: unknown): error is ToolInvocationError {
+		return error instanceof ToolInvocationError;
+	}
+}
+
+function parseToolInput(schema: unknown, input: unknown): unknown {
+	if (isObject(schema) && typeof schema.safeParse === 'function') {
+		const result = (
+			schema.safeParse as (value: unknown) => {
+				success: boolean;
+				data?: unknown;
+				error?: unknown;
+			}
+		)(input);
+		if (!result.success) {
+			throw new ToolInputParsingException(
+				`Received tool input did not match expected schema\n\n${prettifySchemaError(result.error)}`,
+				JSON.stringify(input),
+			);
+		}
+		return result.data;
+	}
+	if (isObject(schema) && Array.isArray(schema.required)) {
+		const fields = isObject(input) ? input : {};
+		for (const key of schema.required) {
+			if (typeof key === 'string' && !(key in fields)) {
+				throw new ToolInputParsingException(
+					`Received tool input did not match expected schema: missing ${key}`,
+					JSON.stringify(input),
+				);
+			}
+		}
+	}
+	return input;
+}
+
+function isToolCallInput(value: unknown): value is LangChainToolCall {
+	return (
+		isObject(value) &&
+		value.type === 'tool_call' &&
+		typeof value.name === 'string' &&
+		isObject(value.args)
+	);
+}
+
+/**
+ * Base class for LangChain-style structured tools. `invoke()` validates input
+ * against `schema` (JSON Schema or a zod-like `safeParse()`) before calling
+ * `_call()`; a `tool_call` input returns a `ToolMessage`, as upstream does.
+ */
+export abstract class StructuredTool {
+	name = '';
+	description = '';
+	schema: unknown = { type: 'object', properties: {} };
+	returnDirect = false;
+
+	protected abstract _call(
+		input: unknown,
+		runManager?: unknown,
+		config?: Record<string, unknown>,
+	): unknown | Promise<unknown>;
+
+	async invoke(
+		input: unknown,
+		config: Record<string, unknown> = {},
+	): Promise<unknown> {
+		const call = isToolCallInput(input) ? input : undefined;
+		const parsed = parseToolInput(this.schema, call ? call.args : input);
+		const output = await this._call(parsed, undefined, {
+			...config,
+			...(call ? { toolCall: call } : {}),
+		});
+		if (!call) return output;
+		return new ToolMessage(
+			typeof output === 'string' ? output : JSON.stringify(output),
+			call.id,
+			{ name: this.name },
+		);
+	}
+
+	async call(
+		input: unknown,
+		config?: Record<string, unknown>,
+	): Promise<unknown> {
+		return await this.invoke(input, config);
+	}
+}
+
+export type DynamicStructuredToolInput = {
+	name: string;
+	description: string;
+	schema?: unknown;
+	func: (
+		// `any` so callers' typed parameters (`values: { a: number }`) are
+		// assignable; input is validated against `schema` before the call.
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		input: any,
+		runManager?: unknown,
+		config?: Record<string, unknown>,
+	) => unknown | Promise<unknown>;
+	returnDirect?: boolean;
+};
+
+export class DynamicStructuredTool extends StructuredTool {
+	readonly func: DynamicStructuredToolInput['func'];
+
+	constructor(fields: DynamicStructuredToolInput) {
+		super();
+		this.name = fields.name;
+		this.description = fields.description;
+		this.schema = fields.schema ?? { type: 'object', properties: {} };
+		this.func = fields.func;
+		this.returnDirect = fields.returnDirect ?? false;
+	}
+
+	protected _call(
+		input: unknown,
+		runManager?: unknown,
+		config?: Record<string, unknown>,
+	): unknown | Promise<unknown> {
+		return this.func(input, runManager, config);
+	}
+}
+
+/** A single-string-input tool; the model sends `{ input: string }`. */
+export class DynamicTool extends StructuredTool {
+	readonly func: (
+		input: string,
+		runManager?: unknown,
+		config?: Record<string, unknown>,
+	) => unknown | Promise<unknown>;
+
+	constructor(fields: {
+		name: string;
+		description: string;
+		func: DynamicTool['func'];
+		returnDirect?: boolean;
+	}) {
+		super();
+		this.name = fields.name;
+		this.description = fields.description;
+		this.schema = {
+			type: 'object',
+			properties: { input: { type: 'string' } },
+		};
+		this.func = fields.func;
+		this.returnDirect = fields.returnDirect ?? false;
+	}
+
+	protected _call(
+		input: unknown,
+		runManager?: unknown,
+		config?: Record<string, unknown>,
+	): unknown | Promise<unknown> {
+		const text =
+			typeof input === 'string'
+				? input
+				: isObject(input) && typeof input.input === 'string'
+					? input.input
+					: JSON.stringify(input);
+		return this.func(text, runManager, config);
+	}
+}
+
+/**
+ * Turns a failed tool call into the tool message the model receives. Without
+ * `onError`, the error text is returned.
+ */
+export function toolErrorMiddleware(
+	options: {
+		onError?: (
+			error: unknown,
+			call: LangChainToolCall,
+		) => string | Promise<string>;
+	} = {},
+): AgentMiddleware {
+	return {
+		async wrapToolCall(_runtime, call, handler) {
+			try {
+				return await handler(call);
+			} catch (error) {
+				if (options.onError) return await options.onError(error, call);
+				return error instanceof Error ? error.message : String(error);
+			}
+		},
+	};
+}
+
 function toolDefinition(value: unknown): ToolDefinition {
 	if (
 		isObject(value) &&
@@ -609,6 +915,8 @@ export type ChatInvokeOptions = {
 	tools?: unknown[];
 	responseFormat?: unknown;
 	config?: RunnableConfig;
+	/** LangChain callback-handler objects (`handleLLMError`, ...). */
+	callbacks?: unknown[];
 };
 
 export type ChatModelOptions = {
@@ -694,6 +1002,14 @@ export class ChatModel {
 		options: ChatInvokeOptions = {},
 	): Promise<AIMessage> {
 		await emitRunnableCallbacks(options.config, { type: 'start', input });
+		const runId = callbackRunId();
+		await emitCallbackHandlers(
+			options.callbacks,
+			'handleChatModelStart',
+			{ name: this.constructor.name },
+			[inputMessages(input).map(asMessage)],
+			runId,
+		);
 		try {
 			const output = fromResponse(
 				await this.provider.complete(requestFor(this, input, options)),
@@ -703,6 +1019,12 @@ export class ChatModel {
 				input,
 				output,
 			});
+			await emitCallbackHandlers(
+				options.callbacks,
+				'handleLLMEnd',
+				{ generations: [[{ text: output.text, message: output }]] },
+				runId,
+			);
 			return output;
 		} catch (error) {
 			await emitRunnableCallbacks(options.config, {
@@ -710,6 +1032,12 @@ export class ChatModel {
 				input,
 				error,
 			});
+			await emitCallbackHandlers(
+				options.callbacks,
+				'handleLLMError',
+				error,
+				runId,
+			);
 			throw error;
 		}
 	}
@@ -1353,6 +1681,20 @@ async function invokeTool(
 	runtime?: AgentRuntimeContext,
 ): Promise<unknown> {
 	if (!isObject(candidate)) throw new Error(`tool not found: ${call.name}`);
+	if (candidate instanceof StructuredTool) {
+		try {
+			return await candidate.invoke(call.args, {
+				toolCall: call,
+				...(runtime ? { runtime } : {}),
+			});
+		} catch (error) {
+			// As in LangChain's tool node, only input the schema rejects becomes a
+			// ToolInvocationError; an error from the tool itself is rethrown as is.
+			if (error instanceof ToolInputParsingException)
+				throw new ToolInvocationError(error, call);
+			throw error;
+		}
+	}
 	if (typeof candidate.invoke === 'function') {
 		return await (candidate.invoke as (input: unknown) => unknown)({
 			...call.args,
@@ -1369,6 +1711,14 @@ async function invokeTool(
 	}
 	throw new Error(`tool ${call.name} is not executable`);
 }
+
+/** `createAgent().invoke()` result: the final agent state. */
+export type AgentState = {
+	messages: BaseMessage[];
+	state?: Record<string, unknown>;
+	structuredResponse?: unknown;
+	[key: string]: unknown;
+};
 
 export class AgentRunnable {
 	readonly model: ChatModel;
@@ -1440,9 +1790,10 @@ export class AgentRunnable {
 				checkpoint = this.checkpointer.get(threadId);
 			}
 		}
-		const incoming = inputMessages(input);
+		// Agent state holds BaseMessage objects, as in LangChain.
+		const incoming = inputMessages(input).map(asMessage);
 		const messages = checkpoint
-			? [...checkpoint.messages, ...incoming]
+			? [...checkpoint.messages.map(asMessage), ...incoming]
 			: [...incoming];
 		if (
 			this.systemPrompt &&
@@ -1551,6 +1902,8 @@ export class AgentRunnable {
 				: selectedTools;
 			const model = this.model.bindTools(modelTools);
 			const invokeOptions: ChatInvokeOptions = {};
+			if (Array.isArray(config.callbacks))
+				invokeOptions.callbacks = config.callbacks;
 			if (
 				this.responseStrategy &&
 				!(this.responseStrategy instanceof ToolStrategy)
@@ -1670,7 +2023,37 @@ export class AgentRunnable {
 							inner,
 						);
 				}
-				const output = await handler(call);
+				const toolRunId = callbackRunId();
+				await emitCallbackHandlers(
+					config.callbacks,
+					'handleToolStart',
+					{ name: call.name },
+					JSON.stringify(call.args),
+					toolRunId,
+					undefined,
+					undefined,
+					undefined,
+					call.name,
+					call.id,
+				);
+				let output: unknown;
+				try {
+					output = await handler(call);
+				} catch (error) {
+					await emitCallbackHandlers(
+						config.callbacks,
+						'handleToolError',
+						error,
+						toolRunId,
+					);
+					throw error;
+				}
+				await emitCallbackHandlers(
+					config.callbacks,
+					'handleToolEnd',
+					output,
+					toolRunId,
+				);
 				const toolMessage = new ToolMessage(
 					typeof output === 'string'
 						? output
@@ -1691,8 +2074,8 @@ export class AgentRunnable {
 	async invoke(
 		input: unknown,
 		config: Record<string, unknown> = {},
-	): Promise<Record<string, unknown>> {
-		return await this.run(input, config);
+	): Promise<AgentState> {
+		return (await this.run(input, config)) as AgentState;
 	}
 
 	async *stream(
@@ -1739,6 +2122,111 @@ export class AgentRunnable {
 
 export function createAgent(options: AgentOptions): AgentRunnable {
 	return new AgentRunnable(options);
+}
+
+type FakeToolCall = { name: string; args?: JSONObject; id?: string };
+type FakeResponse =
+	| { kind: 'message'; message: { content?: unknown; tool_calls?: unknown } }
+	| { kind: 'tools'; calls: FakeToolCall[] }
+	| { kind: 'error'; error: unknown };
+
+function fakeText(content: unknown): string {
+	if (typeof content === 'string') return content;
+	if (!Array.isArray(content)) return '';
+	return content
+		.map((part) =>
+			typeof part === 'string'
+				? part
+				: isObject(part) && typeof part.text === 'string'
+					? part.text
+					: '',
+		)
+		.join('');
+}
+
+/** Scripted, in-memory provider behind `fakeModel()`; never touches the network. */
+class FakeModelProvider implements ModelProvider {
+	readonly name = 'fake';
+	readonly queue: FakeResponse[] = [];
+	readonly calls: ModelRequest[] = [];
+
+	async complete(request: ModelRequest): Promise<ModelResponse> {
+		this.calls.push(request);
+		const next = this.queue.shift();
+		if (!next)
+			throw new Error(
+				`fakeModel() has no scripted response for call ${this.calls.length}`,
+			);
+		if (next.kind === 'error') throw next.error;
+		const rawCalls =
+			next.kind === 'tools'
+				? next.calls
+				: Array.isArray(next.message.tool_calls)
+					? (next.message.tool_calls as FakeToolCall[])
+					: [];
+		const toolCalls = rawCalls.map((call, index) => ({
+			id: call.id ?? `fake_call_${this.calls.length}_${index}`,
+			name: call.name,
+			arguments: { ...(call.args ?? {}) },
+		}));
+		const text = next.kind === 'message' ? fakeText(next.message.content) : '';
+		return {
+			message: {
+				role: 'assistant',
+				content: text ? [{ type: 'text', text }] : [],
+				...(toolCalls.length ? { toolCalls } : {}),
+			},
+			model: request.model ?? 'fake-model',
+			finishReason: toolCalls.length ? 'tool_calls' : 'stop',
+		};
+	}
+}
+
+/**
+ * LangChain v1's `fakeModel()` test helper: a chat model that returns
+ * scripted responses in order (`respond()`, `respondWithTools()`), and
+ * records `calls` / `callCount`.
+ */
+export class FakeChatModel extends ChatModel {
+	private readonly fake: FakeModelProvider;
+
+	constructor() {
+		const fake = new FakeModelProvider();
+		super({ model: 'fake-model', provider: fake });
+		this.fake = fake;
+	}
+
+	respond(response: unknown): this {
+		this.fake.queue.push(
+			response instanceof Error
+				? { kind: 'error', error: response }
+				: {
+						kind: 'message',
+						message:
+							typeof response === 'string'
+								? { content: response }
+								: (response as { content?: unknown; tool_calls?: unknown }),
+					},
+		);
+		return this;
+	}
+
+	respondWithTools(calls: FakeToolCall[]): this {
+		this.fake.queue.push({ kind: 'tools', calls: [...calls] });
+		return this;
+	}
+
+	get calls(): ModelRequest[] {
+		return this.fake.calls;
+	}
+
+	get callCount(): number {
+		return this.fake.calls.length;
+	}
+}
+
+export function fakeModel(): FakeChatModel {
+	return new FakeChatModel();
 }
 
 export type RunnableEvent = {

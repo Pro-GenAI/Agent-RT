@@ -1,4 +1,5 @@
 import {
+  JSON_OBJECT_OUTPUT,
   OpenAIModelProvider,
   type BatchJob,
   type BatchProvider,
@@ -14,6 +15,7 @@ import {
   type RetrievalProvider,
   type RetrievalRegistry,
   type SandboxSession,
+  type StreamingModelProvider,
   type StructuredOutputRequirement,
 } from "../../index.js";
 import {
@@ -24,21 +26,54 @@ import {
   type MCPExecutionRecord,
   type MCPMigrationClient,
   type WebSearchExecutionRecord,
+  sdkEnv,
 } from "./migration_tools.js";
+import { createSDKErrors, translateSDKError, withSDKErrors } from "./sdk_errors.js";
 
 type JSONObject = Record<string, unknown>;
 
+const errors = createSDKErrors("OpenAI");
+export const OpenAIError = errors.BaseError;
+export const APIError = errors.APIError;
+export const APIUserAbortError = errors.APIUserAbortError;
+export const APIConnectionError = errors.APIConnectionError;
+export const APIConnectionTimeoutError = errors.APIConnectionTimeoutError;
+export const BadRequestError = errors.BadRequestError;
+export const AuthenticationError = errors.AuthenticationError;
+export const PermissionDeniedError = errors.PermissionDeniedError;
+export const NotFoundError = errors.NotFoundError;
+export const ConflictError = errors.ConflictError;
+export const UnprocessableEntityError = errors.UnprocessableEntityError;
+export const RateLimitError = errors.RateLimitError;
+export const InternalServerError = errors.InternalServerError;
+export type OpenAIError = InstanceType<typeof OpenAIError>;
+export type APIError = InstanceType<typeof APIError>;
+export type APIConnectionError = InstanceType<typeof APIConnectionError>;
+export type RateLimitError = InstanceType<typeof RateLimitError>;
+
 type OpenAIClientOptions = {
-  apiKey?: string;
-  baseURL?: string;
-  provider?: ModelProvider;
-  defaultModel?: string;
-  sandboxSession?: SandboxSession;
-  maxCodeToolRounds?: number;
-  mcpClients?: Record<string, MCPMigrationClient>;
-  maxResponseStates?: number;
-  retrievalRegistry?: RetrievalRegistry;
-  webSearchProvider?: RetrievalProvider;
+  apiKey?: string | undefined;
+  baseURL?: string | undefined;
+  provider?: ModelProvider | undefined;
+  defaultModel?: string | undefined;
+  sandboxSession?: SandboxSession | undefined;
+  maxCodeToolRounds?: number | undefined;
+  mcpClients?: Record<string, MCPMigrationClient> | undefined;
+  maxResponseStates?: number | undefined;
+  retrievalRegistry?: RetrievalRegistry | undefined;
+  webSearchProvider?: RetrievalProvider | undefined;
+  // Vendor SDK client options accepted so migrated constructors type-check;
+  // retries, timeouts, and transport come from the Agent RT provider.
+  organization?: string | null | undefined;
+  project?: string | null | undefined;
+  timeout?: number | undefined;
+  maxRetries?: number | undefined;
+  defaultHeaders?: Record<string, string | null | undefined> | undefined;
+  defaultQuery?: Record<string, string | undefined> | undefined;
+  fetch?: unknown | undefined;
+  dangerouslyAllowBrowser?: boolean | undefined;
+  logLevel?: string | undefined;
+  logger?: unknown | undefined;
 };
 
 function isObject(value: unknown): value is JSONObject {
@@ -54,6 +89,8 @@ function structuredOutput(value: unknown): StructuredOutputRequirement | undefin
   if (!isObject(value)) return undefined;
   let payload: JSONObject = value;
   if (isObject(payload.format)) payload = payload.format;
+  // JSON mode: any JSON object, no schema.
+  if (payload.type === "json_object") return JSON_OBJECT_OUTPUT;
   if (isObject(payload.json_schema)) payload = payload.json_schema;
   const schema = schemaObject(payload.schema);
   if (!schema) return undefined;
@@ -172,18 +209,104 @@ function responseText(response: ModelResponse): string {
   return response.message.content.map((part) => part.text ?? "").join("");
 }
 
+function toolCallsShape(response: ModelResponse) {
+  const calls = response.message.toolCalls ?? [];
+  return calls.length
+    ? calls.map((call) => ({
+        id: call.id,
+        type: "function" as const,
+        function: { name: call.name, arguments: JSON.stringify(call.arguments) },
+      }))
+    : undefined;
+}
+
 function chatShape(response: ModelResponse) {
+  const toolCalls = toolCallsShape(response);
   return {
     id: undefined,
     object: "chat.completion",
     model: response.model,
     choices: [{
       index: 0,
-      message: { role: "assistant", content: responseText(response) },
+      message: {
+        role: "assistant",
+        content: responseText(response),
+        ...(toolCalls ? { tool_calls: toolCalls } : {}),
+      },
       finish_reason: response.finishReason,
     }],
     usage: usageShape(response),
   };
+}
+
+type ChatCompletionChunkShape = {
+  id: undefined;
+  object: "chat.completion.chunk";
+  model?: string;
+  choices: Array<{
+    index: number;
+    delta: { role?: "assistant"; content?: string | null; tool_calls?: unknown[] };
+    finish_reason: string | null;
+  }>;
+  usage?: ReturnType<typeof usageShape>;
+};
+
+function chunkShape(
+  model: string | undefined,
+  delta: ChatCompletionChunkShape["choices"][number]["delta"],
+  finishReason: string | null = null,
+  usage?: ReturnType<typeof usageShape>,
+): ChatCompletionChunkShape {
+  return {
+    id: undefined,
+    object: "chat.completion.chunk",
+    model,
+    choices: [{ index: 0, delta, finish_reason: finishReason }],
+    ...(usage ? { usage } : {}),
+  };
+}
+
+type ChatCompletionsCreate = {
+  (params: JSONObject & { stream: true }): Promise<AsyncIterable<ChatCompletionChunkShape>>;
+  (params: JSONObject): Promise<ReturnType<typeof chatShape>>;
+};
+
+/** `stream: true` chunks; synthesized from one response when the provider cannot stream. */
+async function* chatStream(
+  provider: ModelProvider,
+  request: ModelRequest,
+  complete: () => Promise<ModelResponse>,
+): AsyncGenerator<ChatCompletionChunkShape> {
+  const streaming = provider as Partial<StreamingModelProvider>;
+  if (typeof streaming.stream === "function") {
+    for await (const event of streaming.stream.call(provider, request)) {
+      if (event.type === "text_delta" && event.text) {
+        yield chunkShape(request.model, { content: event.text });
+      } else if (event.type === "tool_call_delta") {
+        yield chunkShape(request.model, {
+          tool_calls: [{
+            index: 0,
+            id: event.toolCallId,
+            type: "function",
+            function: { name: event.toolName, arguments: event.argumentsDelta ?? "" },
+          }],
+        });
+      } else if (event.type === "completed" && event.response) {
+        yield chunkShape(event.response.model, {}, event.response.finishReason, usageShape(event.response));
+      }
+    }
+    return;
+  }
+  const response = await complete();
+  const text = responseText(response);
+  if (text) yield chunkShape(response.model, { role: "assistant", content: text });
+  const toolCalls = toolCallsShape(response);
+  if (toolCalls) {
+    yield chunkShape(response.model, {
+      tool_calls: toolCalls.map((call, index) => ({ index, ...call })),
+    });
+  }
+  yield chunkShape(response.model, {}, response.finishReason, usageShape(response));
 }
 
 function responsesShape(
@@ -296,6 +419,20 @@ function responsesShape(
 }
 
 export class OpenAI {
+  static OpenAIError = OpenAIError;
+  static APIError = APIError;
+  static APIUserAbortError = APIUserAbortError;
+  static APIConnectionError = APIConnectionError;
+  static APIConnectionTimeoutError = APIConnectionTimeoutError;
+  static BadRequestError = BadRequestError;
+  static AuthenticationError = AuthenticationError;
+  static PermissionDeniedError = PermissionDeniedError;
+  static NotFoundError = NotFoundError;
+  static ConflictError = ConflictError;
+  static UnprocessableEntityError = UnprocessableEntityError;
+  static RateLimitError = RateLimitError;
+  static InternalServerError = InternalServerError;
+
   readonly provider: ModelProvider;
   readonly sandboxSession?: SandboxSession;
   readonly maxCodeToolRounds: number;
@@ -307,7 +444,7 @@ export class OpenAI {
   private responseSequence = 0;
   readonly chat: {
     completions: {
-      create: (params: JSONObject) => Promise<ReturnType<typeof chatShape>>;
+      create: ChatCompletionsCreate;
     };
   };
   readonly responses: {
@@ -333,9 +470,15 @@ export class OpenAI {
   };
 
   constructor(options: OpenAIClientOptions = {}) {
+    // Like the SDK, an unset baseURL/apiKey falls back to the environment;
+    // without it migrated apps silently ignore OPENAI_BASE_URL and call the
+    // hosted API.
     this.provider = options.provider ?? new OpenAIModelProvider({
-      apiKey: options.apiKey,
-      baseUrl: options.baseURL,
+      // The SDKs send every request through an injected `fetch`; tests use
+      // it as an offline transport.
+      ...(typeof options.fetch === "function" ? { fetch: options.fetch as typeof fetch } : {}),
+      apiKey: options.apiKey ?? sdkEnv("OPENAI_API_KEY"),
+      baseUrl: options.baseURL ?? sdkEnv("OPENAI_BASE_URL"),
       defaultModel: options.defaultModel,
     });
     this.sandboxSession = options.sandboxSession;
@@ -349,7 +492,7 @@ export class OpenAI {
     }
     this.chat = {
       completions: {
-        create: async (params) => {
+        create: (async (params: JSONObject) => {
           const model = typeof params.model === "string" ? params.model : undefined;
           const expanded = await expandMigrationTools(
             params.tools,
@@ -374,15 +517,28 @@ export class OpenAI {
               : {}),
             ...(reasoning ? { reasoning } : {}),
           };
-          const completed = await completeWithMigrationTools(this.provider, request, {
-            sandboxSession: this.sandboxSession,
-            mcpBindings: expanded.mcpBindings,
-            fileSearchBindings: expanded.fileSearchBindings,
-            webSearchBindings: expanded.webSearchBindings,
-            maxRounds: this.maxCodeToolRounds,
-          });
-          return chatShape(completed.response);
-        },
+          const complete = async () =>
+            (await completeWithMigrationTools(this.provider, request, {
+              sandboxSession: this.sandboxSession,
+              mcpBindings: expanded.mcpBindings,
+              fileSearchBindings: expanded.fileSearchBindings,
+              webSearchBindings: expanded.webSearchBindings,
+              maxRounds: this.maxCodeToolRounds,
+            })).response;
+          if (params.stream === true) {
+            // Hosted/local migration tools need the bounded tool loop, so
+            // those requests stream the completed result instead.
+            const localTools =
+              expanded.mcpBindings?.size || expanded.fileSearchBindings?.size ||
+              expanded.webSearchBindings?.size || this.sandboxSession;
+            return chatStream(
+              localTools ? ({ complete: () => complete() } as unknown as ModelProvider) : this.provider,
+              request,
+              complete,
+            );
+          }
+          return chatShape(await complete());
+        }) as ChatCompletionsCreate,
       },
     };
     this.responses = {
@@ -529,6 +685,25 @@ export class OpenAI {
         return openAIModelShape(await provider.retrieveModel(model));
       },
     };
+    // Provider failures surface as the SDK's error classes (OpenAI.APIError, ...).
+    const chatCreate = this.chat.completions.create;
+    this.chat.completions.create = (async (params: JSONObject) => {
+      const result = await withSDKErrors(errors, () => chatCreate(params));
+      if (!(Symbol.asyncIterator in Object(result))) return result;
+      // Stream failures surface while iterating; translate those too.
+      const chunks = result as unknown as AsyncIterable<ChatCompletionChunkShape>;
+      return (async function* () {
+        try {
+          yield* chunks;
+        } catch (error) {
+          throw translateSDKError(errors, error);
+        }
+      })();
+    }) as ChatCompletionsCreate;
+    const responsesCreate = this.responses.create;
+    this.responses.create = (params) => withSDKErrors(errors, () => responsesCreate(params));
+    const embeddingsCreate = this.embeddings.create;
+    this.embeddings.create = (params) => withSDKErrors(errors, () => embeddingsCreate(params));
   }
 }
 

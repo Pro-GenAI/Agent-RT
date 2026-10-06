@@ -2734,6 +2734,13 @@ class StructuredOutputRequirement:
     strict: bool = True
 
 
+# JSON mode (OpenAI `response_format={"type": "json_object"}`): any JSON
+# object, without a schema. OpenAI-compatible providers send JSON mode for it.
+JSON_OBJECT_OUTPUT = StructuredOutputRequirement(
+    schema={"type": "object"}, name=None, strict=False
+)
+
+
 @dataclass(frozen=True)
 class ReasoningConfig:
     effort: str | None = None
@@ -3384,6 +3391,8 @@ def _openai_tool_params(tools: Sequence[ToolDefinition]) -> list[dict[str, Any]]
 def _openai_response_format(
     requirement: StructuredOutputRequirement,
 ) -> dict[str, Any]:
+    if requirement == JSON_OBJECT_OUTPUT:
+        return {"type": "json_object"}
     return {
         "type": "json_schema",
         "json_schema": {
@@ -3911,8 +3920,12 @@ class _OpenAICompatibleBatches:
 
 
 class _OpenAICompatibleHTTPClient:
-    def __init__(self, *, base_url: str, api_key: str) -> None:
-        self._client = _OpenAICompatibleCoreClient(base_url=base_url, api_key=api_key)
+    def __init__(self, *, base_url: str, api_key: str, core: Any = None) -> None:
+        # `core` replaces the httpcore pool with another get/post/stream
+        # transport (the compat layer adapts an injected httpx client).
+        self._client = core or _OpenAICompatibleCoreClient(
+            base_url=base_url, api_key=api_key
+        )
         self.chat = _OpenAICompatibleChat(self._client)
         self.embeddings = _OpenAICompatibleEmbeddings(self._client)
         self.models = _OpenAICompatibleModels(self._client)

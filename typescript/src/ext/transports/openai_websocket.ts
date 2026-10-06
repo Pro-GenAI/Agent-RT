@@ -92,7 +92,17 @@ export function responsesPayload(
 			reasoning.summary = request.reasoning.summary;
 		if (Object.keys(reasoning).length) payload.reasoning = reasoning;
 	}
-	if (request.structuredOutput) {
+	const structured = request.structuredOutput;
+	// JSON mode (JSON_OBJECT_OUTPUT): any JSON object, without a schema.
+	if (
+		structured &&
+		structured.strict === false &&
+		structured.name === undefined &&
+		Object.keys(structured.schema).length === 1 &&
+		structured.schema.type === 'object'
+	) {
+		payload.text = { format: { type: 'json_object' } };
+	} else if (request.structuredOutput) {
 		payload.text = {
 			format: {
 				type: 'json_schema',

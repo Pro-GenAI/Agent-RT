@@ -199,7 +199,15 @@ def responses_payload(
             payload["reasoning"] = reasoning_payload
 
     structured = getattr(request, "structured_output", None)
-    if structured is not None:
+    if (
+        structured is not None
+        and structured.schema == {"type": "object"}
+        and not structured.strict
+        and structured.name is None
+    ):
+        # JSON mode (agent_rt.JSON_OBJECT_OUTPUT).
+        payload["text"] = {"format": {"type": "json_object"}}
+    elif structured is not None:
         payload["text"] = {
             "format": {
                 "type": "json_schema",

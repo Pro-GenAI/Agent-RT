@@ -50,10 +50,18 @@
 			"default": "./dist/ext/operations.js"
 		},
 		"./openai": {
+			"import": {
+				"types": "./dist/ext/compat/openai_esm.d.mts",
+				"default": "./dist/ext/compat/openai_esm.mjs"
+			},
 			"types": "./dist/ext/compat/openai.d.ts",
 			"default": "./dist/ext/compat/openai.js"
 		},
 		"./anthropic": {
+			"import": {
+				"types": "./dist/ext/compat/anthropic_esm.d.mts",
+				"default": "./dist/ext/compat/anthropic_esm.mjs"
+			},
 			"types": "./dist/ext/compat/anthropic.d.ts",
 			"default": "./dist/ext/compat/anthropic.js"
 		},
@@ -82,6 +90,10 @@
 			"default": "./dist/ext/compat/llamaindex.js"
 		},
 		"./@anthropic-ai/sdk": {
+			"import": {
+				"types": "./dist/ext/compat/anthropic_esm.d.mts",
+				"default": "./dist/ext/compat/anthropic_esm.mjs"
+			},
 			"types": "./dist/ext/compat/anthropic.d.ts",
 			"default": "./dist/ext/compat/anthropic.js"
 		},
@@ -157,7 +169,7 @@
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
-		"test": "npm run build && node --test tests/test.js tests/migration.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js",
+		"test": "npm run build && node --test tests/test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js",
 		"evaluate": "node scripts/evaluate-harness.js --scope all",
 		"evaluate:evals": "node scripts/evaluate-harness.js --scope evals",
 		"evaluate:tests": "node scripts/evaluate-harness.js --scope tests",
@@ -206,12 +218,12 @@
 		"ws": "^8.22.0"
 	},
 	"peerDependencies": {
-		"@anthropic-ai/sdk": "^0.128.0",
+		"@anthropic-ai/sdk": ">=0.14.0",
 		"@traceloop/node-server-sdk": "^0.27.0",
 		"agent-action-guard": "^1.2.1",
 		"e2b": ">=1.4.0 <3",
 		"microsandbox": ">=0.7.4 <0.8",
-		"openai": "^6.49.0 || ^7.0.0"
+		"openai": ">=4.0.0"
 	},
 	"peerDependenciesMeta": {
 		"@anthropic-ai/sdk": {

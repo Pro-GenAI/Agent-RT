@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import string
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 
 class _PlainFormatter(string.Formatter):
@@ -20,7 +21,9 @@ class _PlainFormatter(string.Formatter):
 
     def get_value(self, key: Any, args: Any, kwargs: Any) -> Any:
         if isinstance(key, int):
-            raise ValueError("positional template fields are not supported")
+            # A bad template, not a bad argument type: keep ValueError like
+            # the attribute/index check above.
+            raise ValueError("positional template fields are not supported")  # noqa: TRY004
         return super().get_value(key, args, kwargs)
 
 
