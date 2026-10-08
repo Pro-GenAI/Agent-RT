@@ -5,6 +5,42 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PACKAGE_DIR}"
 
+read -r -a versions <<< "${NODE_VERSIONS:-20 22 24 26}"
+statuses=()
+passed=0
+failed=0
+
+print_summary() {
+  local status=$?
+  trap - EXIT
+  echo
+  echo "Node test matrix summary"
+  echo "------------------------"
+  for index in "${!versions[@]}"; do
+    printf '  Node %-4s  %s\n' "${versions[index]}" "${statuses[index]:-NOT RUN}"
+  done
+  printf '  Total: %d passed, %d failed\n' "${passed}" "${failed}"
+  if (( failed > 0 || status != 0 )); then
+    exit 1
+  fi
+}
+trap print_summary EXIT
+
+# Print the final Node test totals rather than thousands of individual TAP entries.
+# On failure retain more context for diagnosis.
+run_tests() {
+  local log
+  log="$(mktemp)"
+  if "$@" >"${log}" 2>&1; then
+    tail -n 12 "${log}"
+    rm -f "${log}"
+  else
+    tail -n 80 "${log}"
+    rm -f "${log}"
+    return 1
+  fi
+}
+
 NVM_FLAVOR="unix"
 if [[ -n "${NVM_SYMLINK:-}" ]] || [[ "${OSTYPE:-}" == msys* ]] || [[ "${OSTYPE:-}" == cygwin* ]]; then
   if command -v nvm >/dev/null 2>&1; then
@@ -27,8 +63,6 @@ if [[ "${NVM_FLAVOR}" == "unix" ]]; then
   fi
 fi
 
-read -r -a versions <<< "${NODE_VERSIONS:-20 22 24 26}"
-
 if [[ "${NVM_FLAVOR}" == "windows" ]]; then
   original_node="$(node -p "process.versions.node" 2>/dev/null || true)"
 
@@ -37,20 +71,36 @@ if [[ "${NVM_FLAVOR}" == "windows" ]]; then
       nvm use "${original_node}" >/dev/null 2>&1 || true
     fi
   }
-  trap restore_node EXIT
+  trap 'restore_node; print_summary' EXIT
 
   for version in "${versions[@]}"; do
     echo "==> Node ${version} (nvm-windows)"
-    nvm install "${version}"
-    nvm use "${version}"
-    npm ci --omit=optional --ignore-scripts
-    npm test
+    if nvm install "${version}" && \
+      nvm use "${version}" && \
+      npm ci --omit=optional --ignore-scripts && \
+      run_tests npm test; then
+      statuses+=("PASS")
+      passed=$((passed + 1))
+    else
+      statuses+=("FAIL")
+      failed=$((failed + 1))
+    fi
   done
 else
   for version in "${versions[@]}"; do
     echo "==> Node ${version}"
-    nvm install "${version}" --no-progress >/dev/null
-    nvm exec "${version}" npm ci --omit=optional --ignore-scripts
-    nvm exec "${version}" npm test
+    if nvm install "${version}" --no-progress >/dev/null && \
+      nvm exec "${version}" npm ci --omit=optional --ignore-scripts && \
+      run_tests nvm exec "${version}" npm test; then
+      statuses+=("PASS")
+      passed=$((passed + 1))
+    else
+      statuses+=("FAIL")
+      failed=$((failed + 1))
+    fi
   done
+fi
+
+if (( failed > 0 )); then
+  exit 1
 fi

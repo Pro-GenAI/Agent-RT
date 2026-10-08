@@ -10,12 +10,13 @@ import shutil
 import subprocess
 import sys
 import uuid
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from agent_rt import (
+    ActionBlockerLike,
     AgentConfig,
     AgentLoop,
     AgentRunLimits,
@@ -50,6 +51,8 @@ COMPACTION_INSTRUCTIONS = (
 COMPACTION_REQUEST = "Compact the conversation above now. Return only the context that should be carried forward."
 DEFAULT_COMPACT_TOKEN_THRESHOLD = 32_000
 COMPACT_LIMIT_ENV = "AGENT_RT_CLI_COMPACT_LIMIT"
+MAX_ENV_FILE_BYTES = 1_048_576
+_ENV_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 USER_INPUT_PROMPT = [
     ("bold fg:#00afff", "you"),
@@ -164,6 +167,91 @@ def _require_cli_dependencies() -> tuple[Any, Any, Any, Any, Any, Any, Any, Any]
 
 def _message_text(message: ModelMessage) -> str:
     return "".join(part.text or "" for part in message.content if part.type == "text")
+
+
+def _parse_env_value(raw: str, *, path: Path, line_number: int) -> str:
+    value = raw.strip()
+    if not value:
+        return ""
+    if value[0] == "'":
+        closing = value.find("'", 1)
+        if closing < 0:
+            raise ValueError(f"{path}:{line_number}: unterminated single-quoted value")
+        trailing = value[closing + 1 :].strip()
+        if trailing and not trailing.startswith("#"):
+            raise ValueError(
+                f"{path}:{line_number}: unexpected text after quoted value"
+            )
+        return value[1:closing]
+    if value[0] == '"':
+        decoded: list[str] = []
+        index = 1
+        escapes = {"n": "\n", "r": "\r", "t": "\t", "\\": "\\", '"': '"'}
+        while index < len(value):
+            char = value[index]
+            if char == '"':
+                trailing = value[index + 1 :].strip()
+                if trailing and not trailing.startswith("#"):
+                    raise ValueError(
+                        f"{path}:{line_number}: unexpected text after quoted value"
+                    )
+                return "".join(decoded)
+            if char == "\\":
+                index += 1
+                if index >= len(value):
+                    raise ValueError(
+                        f"{path}:{line_number}: unterminated escape in quoted value"
+                    )
+                escaped = value[index]
+                decoded.append(escapes.get(escaped, "\\" + escaped))
+            else:
+                decoded.append(char)
+            index += 1
+        raise ValueError(f"{path}:{line_number}: unterminated double-quoted value")
+
+    for index, char in enumerate(value):
+        if char == "#" and index > 0 and value[index - 1].isspace():
+            return value[:index].rstrip()
+    return value
+
+
+def _load_env_file(
+    path: Path,
+    environ: MutableMapping[str, str] | None = None,
+) -> None:
+    target = os.environ if environ is None else environ
+    try:
+        if path.stat().st_size > MAX_ENV_FILE_BYTES:
+            raise ValueError(
+                f"environment file exceeds {MAX_ENV_FILE_BYTES} byte limit: {path}"
+            )
+        text = path.read_text(encoding="utf-8-sig")
+    except OSError as exc:
+        raise ValueError(f"unable to read environment file {path}: {exc}") from exc
+    if "\x00" in text:
+        raise ValueError(f"environment file contains a NUL byte: {path}")
+
+    parsed: dict[str, str] = {}
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export") and len(line) > 6 and line[6].isspace():
+            line = line[7:].lstrip()
+        if "=" not in line:
+            raise ValueError(f"{path}:{line_number}: expected NAME=VALUE")
+        name, raw_value = line.split("=", 1)
+        name = name.strip()
+        if not _ENV_NAME_PATTERN.fullmatch(name):
+            raise ValueError(f"{path}:{line_number}: invalid environment variable name")
+        parsed[name] = _parse_env_value(
+            raw_value,
+            path=path,
+            line_number=line_number,
+        )
+
+    for name, value in parsed.items():
+        target.setdefault(name, value)
 
 
 def _compact_token_threshold() -> int:
@@ -564,12 +652,14 @@ class WorkspaceCodeTools:
     def registry(
         self,
         *,
+        action_blockers: Sequence[ActionBlockerLike] = (),
         tool_input_guardrails: Sequence[Callable[[ToolCall, ToolDefinition], Any]] = (),
         tool_input_guardrail_classifier: (
             Callable[[Mapping[str, Any]], tuple[str | None, float]] | None
         ) = None,
     ) -> ToolRegistry:
         registry = ToolRegistry(
+            action_blockers=action_blockers,
             tool_input_guardrails=tool_input_guardrails,
             enable_model_tool_input_guardrail=True,
             tool_input_guardrail_classifier=tool_input_guardrail_classifier,
@@ -1178,9 +1268,7 @@ class TranscriptStore:
         }
         temporary = path.with_suffix(".tmp")
         # Transcripts contain file contents and tool output: owner-only access.
-        descriptor = os.open(
-            temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600
-        )
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write(
                 json.dumps(payload, indent=2, ensure_ascii=False, default=str) + "\n"
@@ -1905,6 +1993,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-m", "--model", help="provider model name")
     parser.add_argument(
+        "--env-file",
+        type=Path,
+        help=(
+            "load configuration variables from a .env file without overriding "
+            "variables already set in the process environment"
+        ),
+    )
+    parser.add_argument(
         "--instructions",
         default=DEFAULT_INSTRUCTIONS,
         help="system instructions for the CLI agent",
@@ -1952,6 +2048,12 @@ def build_parser() -> argparse.ArgumentParser:
 async def async_main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     launch_workspace = Path.cwd()
+    if args.env_file is not None:
+        try:
+            _load_env_file(args.env_file)
+        except ValueError as exc:
+            print(f"agent-rt: environment file error: {exc}", file=sys.stderr)
+            return 2
     try:
         provider_environment = _provider_environment_with_global_config()
         provider = load_model(

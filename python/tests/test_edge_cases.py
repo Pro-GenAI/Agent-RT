@@ -7,6 +7,8 @@ from dataclasses import replace
 import pytest
 
 from agent_rt import (
+    PII_MORPHER_DISABLE_ENV,
+    ActionBlockedError,
     AgentConfig,
     AgentInvocation,
     AgentLoop,
@@ -120,6 +122,8 @@ from agent_rt import (
     PermissionEngine,
     PermissionRule,
     PersistentWorkspaceStore,
+    PIIEntity,
+    PIIMorpher,
     Plan,
     PlannerExecutor,
     PlanStep,
@@ -162,6 +166,7 @@ from agent_rt import (
     ReviewResult,
     RoundRobinTeam,
     RoutingRequirements,
+    RuleBasedActionBlocker,
     RuntimeMetrics,
     RuntimeRequest,
     SandboxCommand,
@@ -212,7 +217,9 @@ from agent_rt import (
     agent_as_tool,
     approval_presentation,
     classify_failure,
+    make_agent_action_guard_action_blocker,
     make_audit_trail_hook,
+    make_decision_action_blocker,
     make_tool_input_exfiltration_guardrail,
     make_tool_output_exfiltration_guardrail,
     sandbox_backend_from_env,
@@ -808,6 +815,212 @@ class TestToolContract:
         with pytest.raises(GuardrailViolationError):
             asyncio.run(blocked.execute(ToolCall(id="2", name="process", arguments={})))
 
+    def test_action_blockers_compose_rule_agent_guard_function_and_object(self):
+        executed = []
+        seen = []
+
+        def classify(action):
+            command = action["function"]["arguments"].get("command")
+            return ("harmful", 0.99) if command == "aag" else (None, 0.01)
+
+        def function_blocker(call, _definition, _context):
+            seen.append(("function", call.arguments["command"]))
+            return (
+                "function blocker" if call.arguments["command"] == "function" else False
+            )
+
+        class ObjectBlocker:
+            def check(self, call, _definition):
+                seen.append(("object", call.arguments["command"]))
+                return (
+                    "object blocker" if call.arguments["command"] == "object" else None
+                )
+
+        registry = ToolRegistry(
+            action_blockers=(
+                RuleBasedActionBlocker(["sudo", "git push"]),
+                make_agent_action_guard_action_blocker(classify),
+                function_blocker,
+                ObjectBlocker(),
+            )
+        )
+
+        async def handler(arguments, _cancellation_token):
+            executed.append(arguments["command"])
+            return "ok"
+
+        registry.register(
+            ToolDefinition(
+                name="shell",
+                description="Run a command.",
+                input_schema={
+                    "type": "object",
+                    "properties": {"command": {"type": "string"}},
+                    "required": ["command"],
+                },
+            ),
+            handler=handler,
+        )
+
+        assert (
+            asyncio.run(
+                registry.execute(
+                    ToolCall(
+                        id="ab-1",
+                        name="shell",
+                        arguments={"command": "echo git push"},
+                    )
+                )
+            )
+            == "ok"
+        )
+        assert executed == ["echo git push"]
+        assert seen == [
+            ("function", "echo git push"),
+            ("object", "echo git push"),
+        ]
+
+        with pytest.raises(ActionBlockedError) as rule_error:
+            asyncio.run(
+                registry.execute(
+                    ToolCall(
+                        id="ab-2",
+                        name="shell",
+                        arguments={"command": "cd repo && git push origin main"},
+                    )
+                )
+            )
+        assert "command:git push" in rule_error.value.classifications
+
+        with pytest.raises(ActionBlockedError, match="Agent Action Guard"):
+            asyncio.run(
+                registry.execute(
+                    ToolCall(
+                        id="ab-3",
+                        name="shell",
+                        arguments={"command": "aag"},
+                    )
+                )
+            )
+
+        with pytest.raises(ActionBlockedError, match="function blocker"):
+            asyncio.run(
+                registry.execute(
+                    ToolCall(
+                        id="ab-4",
+                        name="shell",
+                        arguments={"command": "function"},
+                    )
+                )
+            )
+
+        with pytest.raises(ActionBlockedError, match="object blocker"):
+            asyncio.run(
+                registry.execute(
+                    ToolCall(
+                        id="ab-5",
+                        name="shell",
+                        arguments={"command": "object"},
+                    )
+                )
+            )
+
+    def test_rule_based_action_blocker_matches_default_commands_and_tool_names(self):
+        blocker = RuleBasedActionBlocker()
+        definition = ToolDefinition(
+            name="shell",
+            description="Run.",
+            input_schema={"type": "object"},
+        )
+
+        blocked = (
+            "sudo apt update",
+            "rm -rf build",
+            "git add .",
+            "git commit -m change",
+            "git push origin main",
+            "git reset --hard HEAD~1",
+            "git merge feature",
+            "git rebase main",
+        )
+        for index, command in enumerate(blocked):
+            result = blocker.check(
+                ToolCall(
+                    id=f"rule-{index}",
+                    name="shell",
+                    arguments={"command": command},
+                ),
+                definition,
+            )
+            assert result.blocked is True, command
+
+        assert (
+            blocker.check(
+                ToolCall(
+                    id="rule-safe",
+                    name="shell",
+                    arguments={"command": "echo git push"},
+                ),
+                definition,
+            ).blocked
+            is False
+        )
+        assert (
+            blocker.check(
+                ToolCall(id="rule-name", name="git_push", arguments={}),
+                definition,
+            ).blocked
+            is True
+        )
+
+    def test_decision_model_action_blocker_supports_laya_style_provider(self):
+        class Provider:
+            def __init__(self):
+                self.calls = []
+
+            def decide(self, state, questions):
+                self.calls.append((state, questions))
+                score = 0.95 if state["arguments"].get("danger") else 0.05
+                return {"block": {"noul": score}}
+
+        provider = Provider()
+        registry = ToolRegistry(
+            action_blockers=(make_decision_action_blocker(provider, threshold=0.8),)
+        )
+        registry.register(
+            ToolDefinition(
+                name="operate",
+                description="Operate.",
+                input_schema={"type": "object"},
+                side_effect="write",
+            ),
+            handler=lambda arguments, _cancellation_token: asyncio.sleep(
+                0, result=arguments
+            ),
+        )
+
+        assert asyncio.run(
+            registry.execute(
+                ToolCall(id="decision-1", name="operate", arguments={"danger": False}),
+                request_context={"user_prompt": "do the safe thing"},
+            )
+        ) == {"danger": False}
+        with pytest.raises(ActionBlockedError, match="Decision model blocked"):
+            asyncio.run(
+                registry.execute(
+                    ToolCall(
+                        id="decision-2",
+                        name="operate",
+                        arguments={"danger": True},
+                    ),
+                    request_context={"user_prompt": "be careful"},
+                )
+            )
+
+        assert provider.calls[0][0]["tool"] == "operate"
+        assert provider.calls[0][0]["side_effect"] == "write"
+        assert provider.calls[0][1]["block"]["type"] == "noul"
+
     def test_agent_action_guard_is_default_model_backed_tool_input_guardrail(self):
         classified = []
         executed = []
@@ -1273,6 +1486,41 @@ class TestToolContract:
         retrieval.register("kb", Retrieval())
         results = asyncio.run(retrieval.search("kb", RetrievalQuery("query", limit=2)))
         assert [result.id for result in results] == ["1", "2"]
+
+        class Reranker:
+            def __init__(self):
+                self.ks = []
+
+            async def rerank(self, query, candidates, *, k=None):
+                self.ks.append(k)
+                ranked = tuple(reversed(candidates))
+                return ranked if k is None else ranked[:k]
+
+        unlimited_reranker = Reranker()
+        retrieval.register("reranked-all", Retrieval(), reranker=unlimited_reranker)
+        reranked_all = asyncio.run(
+            retrieval.search("reranked-all", RetrievalQuery("query", limit=3))
+        )
+        assert [result.id for result in reranked_all] == ["3", "2", "1"]
+        assert unlimited_reranker.ks == [None]
+
+        limited_reranker = Reranker()
+        retrieval.register(
+            "reranked-top-k",
+            Retrieval(),
+            reranker=limited_reranker,
+            reranker_k=2,
+        )
+        reranked_top_k = asyncio.run(
+            retrieval.search("reranked-top-k", RetrievalQuery("query", limit=3))
+        )
+        assert [result.id for result in reranked_top_k] == ["3", "2"]
+        assert limited_reranker.ks == [2]
+
+        with pytest.raises(ValueError, match="reranker k requires a reranker"):
+            retrieval.register("missing-reranker", Retrieval(), reranker_k=2)
+        with pytest.raises(ValueError, match="reranker k must be at least 1"):
+            retrieval.register("invalid-k", Retrieval(), reranker=Reranker(), reranker_k=0)
 
         multimodal = MultimodalMessage(
             role="user",
@@ -2567,6 +2815,96 @@ class TestToolContract:
         assert value["password"] == "[REDACTED]"
         assert value["nested"][0]["note"] == "[REDACTED]"
         assert value["nested"][1] == "safe"
+
+    def test_pii_morpher_is_deterministic_and_maps_short_hash_to_fake_data(self):
+        first = PIIMorpher(environ={})
+        second = PIIMorpher(environ={})
+
+        fake = first.morph_pii("alice@example.com", "email")
+
+        assert PIIMorpher.short_hash("alice@example.com") == "ff8d9819fcc160f8cc69"
+        assert fake == "logan.parker.7993@example.test"
+        assert second.morph_pii("alice@example.com", "email") == fake
+        assert first.morph_pii("bob@example.com", "email") != fake
+        assert first.mapping["ff8d9819fcc160f8cc69"] == fake
+        assert len(first.mapping) == 2
+        assert "alice@example.com" not in repr(first.mapping)
+
+    def test_pii_morpher_detects_high_confidence_pii_and_preserves_references(self):
+        morpher = PIIMorpher(environ={})
+        original = (
+            "Email alice@example.com twice alice@example.com; "
+            "phone 415-555-2671; SSN 123-45-6789; "
+            "card 4111 1111 1111 1111; IP 8.8.8.8."
+        )
+
+        morphed = morpher.morph_text(original)
+        fake_email = morpher.morph_pii("alice@example.com", "email")
+
+        assert morphed.count(fake_email) == 2
+        for pii in (
+            "alice@example.com",
+            "415-555-2671",
+            "123-45-6789",
+            "4111 1111 1111 1111",
+            "8.8.8.8",
+        ):
+            assert pii not in morphed
+
+    def test_pii_morpher_uses_structured_hints_and_external_entity_spans(self):
+        morpher = PIIMorpher(environ={})
+        structured = morpher.morph(
+            {
+                "customer_email": "alice@example.com",
+                "first_name": "Alice",
+                "last_name": "Smith",
+                "mailing_address": "10 Main Street",
+                "date_of_birth": "1988-04-07",
+                "name": "publish-tool",
+            }
+        )
+
+        assert structured["customer_email"].endswith("@example.test")
+        assert " " not in structured["first_name"]
+        assert " " not in structured["last_name"]
+        assert "Example Avenue" in structured["mailing_address"]
+        assert structured["date_of_birth"].count("-") == 2
+        assert structured["name"] == "publish-tool"
+
+        text = "Customer Alice Smith requested support."
+        morphed = morpher.morph_text(
+            text,
+            entities=(PIIEntity(kind="person", start=9, end=20),),
+        )
+        assert "Alice Smith" not in morphed
+        assert morphed.startswith("Customer ")
+        assert morphed.endswith(" requested support.")
+
+    def test_pii_morpher_can_be_disabled_by_environment(self):
+        disabled = PIIMorpher(environ={PII_MORPHER_DISABLE_ENV: "true"})
+        enabled = PIIMorpher(environ={PII_MORPHER_DISABLE_ENV: "false"})
+
+        assert disabled.morph_text("alice@example.com") == "alice@example.com"
+        assert disabled.mapping == {}
+        assert enabled.morph_text("alice@example.com") != "alice@example.com"
+
+        with pytest.raises(ValueError, match=PII_MORPHER_DISABLE_ENV):
+            PIIMorpher(environ={PII_MORPHER_DISABLE_ENV: "maybe"})
+
+    def test_privacy_redactor_morphs_pii_but_still_redacts_secrets(self):
+        redactor = PrivacyRedactor(pii_morpher=PIIMorpher(environ={}))
+
+        redacted = redactor.redact(
+            {
+                "email": "alice@example.com",
+                "note": "Contact alice@example.com",
+                "secret": "do-not-log",
+            }
+        )
+
+        assert redacted["email"] == "logan.parker.7993@example.test"
+        assert "alice@example.com" not in redacted["note"]
+        assert redacted["secret"] == "[REDACTED]"
 
     def test_retained_event_store_supports_redaction_suppression_ephemeral_archive_and_ttl(
         self,

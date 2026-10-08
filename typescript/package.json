@@ -1,6 +1,6 @@
 {
 	"name": "agent-rt",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "Lightweight utilities for building AI agent harnesses",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

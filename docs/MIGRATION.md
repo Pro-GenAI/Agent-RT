@@ -4,6 +4,8 @@ Agent RT provides lightweight Python and TypeScript/JavaScript compatibility ent
 
 The compatibility layer is intentionally a focused subset, not a claim of drop-in parity with every LangChain, LlamaIndex, OpenAI Agents SDK, AutoGen, CrewAI, OpenAI SDK, or Anthropic SDK feature. Use it to reduce the initial migration diff, then move framework-specific orchestration, tools, memory, streaming, and policy code to Agent RT's native APIs where needed.
 
+Migration compatibility field testing is ongoing. So far, 69 third-party repositories have passed their test suites both before and after migration to Agent RT.
+
 The adapters use the same provider environment settings as Agent RT, including `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`, and `ANTHROPIC_API_KEY`.
 
 Minimum environment for the snippets below:

@@ -60,7 +60,7 @@ make check
 | `make quality` | `typecheck` + `lint` + `format-check`. |
 | `make security-static` | Deterministic static security gate (fails on medium or higher). |
 | `make security-attacks` | Offline adversarial runtime scan. |
-| `make security` | Both gates plus the third-party developer security scan. |
+| `make security` | Both gates plus the third-party developer security scan; runs all checks and prints a final PASS/FAIL summary (failures appear in red on color terminals). |
 | `make check` | `quality` + `test` + `security`. |
 
 To run a single test file or test: `uv run --extra dev pytest tests/test_agent_loop.py -k name`.
@@ -78,7 +78,7 @@ Override the matrix when needed:
 PYTHON_VERSIONS="3.13 3.14" ./scripts/test-matrix.sh
 ```
 
-The matrix uses `uv`, ignores inherited Conda activation variables, and creates isolated locked environments from `uv.lock`.
+The matrix uses `uv`, ignores inherited Conda activation variables, and creates isolated locked environments from `uv.lock`. Both `make test-matrix` and `make security` require Bash on `PATH`; on Windows without Bash, the Make targets stop immediately with an actionable error.
 
 The regression suite is pytest-native. Async tests use pytest-asyncio in auto mode with function-scoped test and fixture loops. Vector database integration coverage runs entirely on localhost through `tests/helpers/vector_mock.py` and `tests/test_vector_mock_integration.py`, covering Chroma, Milvus, Pinecone, Qdrant, and Weaviate through core Agent RT plus LangChain and LlamaIndex compatibility paths.
 
@@ -171,7 +171,7 @@ npm ci
 npm test
 ```
 
-The TypeScript Makefile exposes the same target names as Python (`make help` lists them), backed by npm scripts: `make quality` runs `typecheck`, `lint`, `format-check`, and dead-code detection, and `make security` runs `npm run security:gate`.
+The TypeScript Makefile exposes the same target names as Python (`make help` lists them), backed by npm scripts: `make quality` runs `typecheck`, `lint`, `format-check`, and dead-code detection, and `make security` runs the equivalent security checks individually, prints a final PASS/FAIL summary, and highlights failures in red on color terminals.
 
 Run the suite across supported Node versions with `nvm`:
 

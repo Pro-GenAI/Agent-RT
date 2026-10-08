@@ -358,11 +358,11 @@ result = loop.run(agent, messages)
 
 <h2>4. Tools and tool registry</h2>
 <p>A tool is a runtime capability with a name, description, argument schema, optional output schema, side-effect classification, timeout/resource information, and a handler. <code>ToolRegistry</code> provides registration, lookup, namespaces, enable/disable, replacement, deferred loading, contextual/async handlers, validation, guardrails, lifecycle hooks, and dependency-injected execution context.</p>
-<p><strong>Execution order:</strong> visibility → model call → tool-call transform → tool-input guardrails → argument validation → permissions/capability checks → approvals/policy → handler execution → tool-output guardrails → result marshaling → model continuation.</p>
+<p><strong>Execution order:</strong> visibility → model call → tool lookup/enabled check → permissions/capability checks → pre-call transform → action blockers → tool-input guardrails → argument validation → rate limits/dry-run → approvals/policy → handler execution → tool-output guardrails → result marshaling → model continuation.</p>
 <div class="note"><strong>Why visibility and dispatch are separate</strong>Hiding a tool from the model reduces capability exposure, but dispatch still re-checks execution policy. A stale or malformed call cannot rely on having seen an older schema.</div>
 
 <h2>5. Tool selection, visibility, and discovery</h2>
-<p><code>ToolSelectionPolicy</code> can allow, deny, require, or prefer tools. Runtime visibility filters can narrow the visible set per turn. Deferred tools keep schemas out of context until loaded. <code>CapabilityCatalog</code> provides cross-kind capability discovery, and Decision models can be used to select/rank capabilities without making the main model consume the entire catalog.</p>
+<p><code>ToolSelectionPolicy</code> can allow, deny, require, or prefer tools. Runtime visibility filters can narrow the visible set per turn. <code>Toolbase</code> combines enabled local tools, materialized deferred tools, and discovered MCP tools into a safety-screened internal catalog. The main model receives the relevance-selected subset plus <code>tool_search</code>; search results can promote additional safe tools on later turns without bypassing capability grants, prompt-injection filtering, tool-selection policy, context isolation, or execution-time registry checks. <code>make_decision_toolbase</code> / <code>makeDecisionToolbase</code> use Decision models for safety screening and relevance selection, while <code>CapabilityCatalog</code> provides the bounded search index.</p>
 <p><strong>Use it when:</strong> your application has many tools, tenant-specific capabilities, task phases, specialist agents, or expensive schemas that should not appear on every turn.</p>
 
 <h2>6. Guardrails: four different boundaries</h2>
@@ -390,6 +390,17 @@ loop = AgentLoop(provider, boundary_guardrail_policy=policy)
 # replaces it with its own input/output guardrails:
 loop = AgentLoop(provider, boundary_guardrail_policy=None)</code></pre>
 
+<h3>Composable action blockers</h3>
+<p><code>ToolRegistry</code> can run multiple deny-only action blockers before tool-input guardrails, validation, approvals, and handler execution. The first rejection raises <code>ActionBlockedError</code>. Built-ins include <code>RuleBasedActionBlocker</code>, Agent Action Guard adapters, and Decision-model adapters for Laya/Jev-compatible providers; custom functions/callables and objects exposing <code>check</code> are also supported.</p>
+<p>The default rule set blocks <code>sudo</code>, <code>rm -rf</code>, <code>git add</code>, <code>git commit</code>, <code>git push</code>, <code>git reset --hard</code>, <code>git merge</code>, and <code>git rebase</code>. Rules are configurable and match command prefixes at shell-command segment boundaries rather than arbitrary substrings.</p>
+<pre><code class="language-python">from agent_rt import RuleBasedActionBlocker, ToolRegistry
+
+registry = ToolRegistry(
+    action_blockers=(
+        RuleBasedActionBlocker(["sudo", "rm -rf", "git push"]),
+        my_custom_blocker,
+    ),
+)</code></pre>
 <h3>Agent Action Guard: the default model-backed tool-input model</h3>
 <p>Agent Action Guard protects <em>tool calls</em>, not raw user messages. The integration is optional because it adds a model dependency. When model-backed tool-input screening is enabled, <code>DEFAULT_TOOL_INPUT_GUARDRAIL_MODEL</code> is <code>agent-action-guard</code>. Screening happens before argument validation and before the tool handler can cause side effects.</p>
 <pre><code class="language-python"># Python
@@ -551,7 +562,7 @@ print(result.exit_code)
 print(result.stdout.decode())</code></pre>
 
 <h2>17. Retrieval, browser, computer, multimodal, and realtime interfaces</h2>
-<p><code>RetrievalRegistry</code> normalizes web, enterprise, file, knowledge, and database search behind one result contract. Browser and computer sessions provide controlled navigation/search/form/download and screenshot/pointer/keyboard capabilities. Multimodal messages support text, image, PDF, audio, video, document, file, and JSON parts. Realtime sessions cover low-latency audio/text events, speech turn markers, completion, interruption, and cleanup.</p>
+<p><code>RetrievalRegistry</code> normalizes web, enterprise, file, knowledge, and database search behind one result contract and can run an injected <code>RetrievalReranker</code> after provider retrieval. Python <code>reranker_k</code> and TypeScript <code>rerankerK</code> optionally cap the reranked sequence; if omitted, the reranker itself has no top-k cap. The normal retrieval query limit is still applied to the final registry result. <code>DecisionRetrievalReranker</code> provides the built-in Decision-model implementation. Browser and computer sessions provide controlled navigation/search/form/download and screenshot/pointer/keyboard capabilities. Multimodal messages support text, image, PDF, audio, video, document, file, and JSON parts. Realtime sessions cover low-latency audio/text events, speech turn markers, completion, interruption, and cleanup.</p>
 <pre><code class="language-python">from agent_rt import RetrievalQuery, RetrievalRegistry, RetrievalResult
 
 class KnowledgeBase:
@@ -600,7 +611,7 @@ loop = AgentLoop(
 )</code></pre>
 
 <h2>22. Observability, auditing, privacy, tokens, and cost</h2>
-<p>Tracing records task/agent/turn/model/tool/subagent/guardrail/queue/remote spans. Structured logging supports privacy redaction before persistence. Runtime metrics cover latency, throughput, errors, retries, queue time, and completion. Token and cost ledgers can attribute usage to users, tenants, tasks, agents, models, tools, storage, compute, and external services.</p>
+<p>Tracing records task/agent/turn/model/tool/subagent/guardrail/queue/remote spans. Structured logging supports privacy protection before persistence: secret-like keys are redacted, while <code>PIIMorpher</code> deterministically substitutes detected PII with synthetic values so repeated values remain correlated without retaining plaintext. The lookup map stores only a short SHA-256+MD5 fingerprint to fake-data mapping; set <code>AGENT_RT_DISABLE_PII_MORPHER=true</code> to disable morphing. Runtime metrics cover latency, throughput, errors, retries, queue time, and completion. Token and cost ledgers can attribute usage to users, tenants, tasks, agents, models, tools, storage, compute, and external services.</p>
 <p>Audit trails record actor-attributed request/authorization/execution outcomes. Retention-aware event storage supports TTL, purge, archival, ephemeral runs, and logging suppression where policy requires it.</p>
 <pre><code class="language-python">from agent_rt import TraceRecorder
 
@@ -631,7 +642,7 @@ agent_span = traces.start(
 <p>IDE integration can pass current-file, selection, diagnostics, and diff context into workspace operations. Chat bridges preserve channel identity and thread state. Approval presentation provides standardized consequence/diff/allow-or-deny UI data.</p>
 
 <h2>25. Compatibility and migration</h2>
-<p>Compatibility modules support common LangChain and LlamaIndex integration patterns, while OpenAI- and Anthropic-compatible HTTP surfaces ease application migration. Use compatibility layers to keep surrounding application code familiar while moving policy, tools, limits, state, and execution control into Agent RT.</p>
+<p>Compatibility modules support common LangChain and LlamaIndex integration patterns, while OpenAI- and Anthropic-compatible HTTP surfaces ease application migration. Use compatibility layers to keep surrounding application code familiar while moving policy, tools, limits, state, and execution control into Agent RT. Migration field testing is ongoing; 69 third-party repositories currently pass their test suites both before and after migration.</p>
 
 <h2>26. Production deployment checklist</h2>
 <div class="table-wrap"><table><thead><tr><th>Before production</th><th>Recommended action</th></tr></thead><tbody>

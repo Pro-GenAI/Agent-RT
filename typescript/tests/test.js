@@ -116,7 +116,11 @@ const {
   StructuredOutputValidationError,
   PersistentWorkspaceStore,
   InMemorySecretStore,
+  ActionBlockedError,
   GuardrailViolationError,
+  RuleBasedActionBlocker,
+  makeAgentActionGuardActionBlocker,
+  makeDecisionActionBlocker,
   makeDefaultInputGuardrail,
   makeDefaultOutputGuardrail,
   ScopedSecretStore,
@@ -134,6 +138,8 @@ const {
   RateLimitExceededError,
   RecoveryRouter,
   RetryExecutor,
+  PIIMorpher,
+  PII_MORPHER_DISABLE_ENV,
   PrivacyRedactor,
   PromptInjectionDefense,
   ProceduralMemory,
@@ -3622,6 +3628,212 @@ test("tool guardrails transform input and sanitize output before exposure", asyn
   );
 });
 
+test("action blockers compose rule Agent Action Guard function and object", async () => {
+  const executed = [];
+  const seen = [];
+  const classify = async (action) => {
+    const command = action.function.arguments.command;
+    return {
+      label: command === "aag" ? "harmful" : null,
+      confidence: command === "aag" ? 0.99 : 0.01,
+    };
+  };
+  const functionBlocker = (call) => {
+    seen.push(["function", call.arguments.command]);
+    return call.arguments.command === "function" ? "function blocker" : false;
+  };
+  const objectBlocker = {
+    check(call) {
+      seen.push(["object", call.arguments.command]);
+      return call.arguments.command === "object" ? "object blocker" : null;
+    },
+  };
+  const registry = new ToolRegistry(
+    {},
+    {},
+    undefined,
+    [],
+    [],
+    undefined,
+    undefined,
+    {},
+    undefined,
+    [
+      new RuleBasedActionBlocker(["sudo", "git push"]),
+      makeAgentActionGuardActionBlocker(classify),
+      functionBlocker,
+      objectBlocker,
+    ],
+  );
+  registry.register(
+    {
+      name: "shell",
+      description: "Run a command.",
+      inputSchema: {
+        type: "object",
+        properties: { command: { type: "string" } },
+        required: ["command"],
+      },
+    },
+    {
+      handler: async (args) => {
+        executed.push(args.command);
+        return "ok";
+      },
+    },
+  );
+
+  assert.equal(
+    await registry.execute({
+      id: "ab-1",
+      name: "shell",
+      arguments: { command: "echo git push" },
+    }),
+    "ok",
+  );
+  assert.deepEqual(executed, ["echo git push"]);
+  assert.deepEqual(seen, [
+    ["function", "echo git push"],
+    ["object", "echo git push"],
+  ]);
+
+  await assert.rejects(
+    () =>
+      registry.execute({
+        id: "ab-2",
+        name: "shell",
+        arguments: { command: "cd repo && git push origin main" },
+      }),
+    (error) =>
+      error instanceof ActionBlockedError &&
+      error.classifications.includes("command:git push"),
+  );
+  await assert.rejects(
+    () =>
+      registry.execute({
+        id: "ab-3",
+        name: "shell",
+        arguments: { command: "aag" },
+      }),
+    /Agent Action Guard/,
+  );
+  await assert.rejects(
+    () =>
+      registry.execute({
+        id: "ab-4",
+        name: "shell",
+        arguments: { command: "function" },
+      }),
+    /function blocker/,
+  );
+  await assert.rejects(
+    () =>
+      registry.execute({
+        id: "ab-5",
+        name: "shell",
+        arguments: { command: "object" },
+      }),
+    /object blocker/,
+  );
+});
+
+test("rule action blocker matches configured defaults and tool names", () => {
+  const blocker = new RuleBasedActionBlocker();
+  const blocked = [
+    "sudo apt update",
+    "rm -rf build",
+    "git add .",
+    "git commit -m change",
+    "git push origin main",
+    "git reset --hard HEAD~1",
+    "git merge feature",
+    "git rebase main",
+  ];
+  for (const [index, command] of blocked.entries()) {
+    assert.equal(
+      blocker.check({
+        id: "rule-" + index,
+        name: "shell",
+        arguments: { command },
+      }).blocked,
+      true,
+      command,
+    );
+  }
+  assert.equal(
+    blocker.check({
+      id: "rule-safe",
+      name: "shell",
+      arguments: { command: "echo git push" },
+    }).blocked,
+    false,
+  );
+  assert.equal(
+    blocker.check({ id: "rule-name", name: "git_push", arguments: {} }).blocked,
+    true,
+  );
+});
+
+test("decision-model action blocker supports Laya-style provider", async () => {
+  const calls = [];
+  const provider = {
+    async decide(state, questions) {
+      calls.push([state, questions]);
+      return {
+        block: { noul: state.arguments.danger ? 0.95 : 0.05 },
+      };
+    },
+  };
+  const registry = new ToolRegistry(
+    {},
+    {},
+    undefined,
+    [],
+    [],
+    undefined,
+    undefined,
+    {},
+    undefined,
+    [makeDecisionActionBlocker(provider, { threshold: 0.8 })],
+  );
+  registry.register(
+    {
+      name: "operate",
+      description: "Operate.",
+      inputSchema: { type: "object" },
+      sideEffect: "write",
+    },
+    { handler: async (args) => args },
+  );
+
+  assert.deepEqual(
+    await registry.execute(
+      {
+        id: "decision-1",
+        name: "operate",
+        arguments: { danger: false },
+      },
+      { user_prompt: "do the safe thing" },
+    ),
+    { danger: false },
+  );
+  await assert.rejects(
+    () =>
+      registry.execute(
+        {
+          id: "decision-2",
+          name: "operate",
+          arguments: { danger: true },
+        },
+        { user_prompt: "be careful" },
+      ),
+    /Decision model blocked/,
+  );
+  assert.equal(calls[0][0].tool, "operate");
+  assert.equal(calls[0][0].side_effect, "write");
+  assert.equal(calls[0][1].block.type, "noul");
+});
+
 test("Agent Action Guard is the default model-backed tool input guardrail", async () => {
   const classified = [];
   const executed = [];
@@ -4162,6 +4374,81 @@ test("browser computer retrieval multimodal and realtime runtime contracts", asy
   assert.deepEqual(
     (await retrieval.search("kb", { text: "query", limit: 2 })).map((item) => item.id),
     ["1", "2"],
+  );
+
+  const makeReranker = () => {
+    const ks = [];
+    return {
+      ks,
+      reranker: {
+        rerank: async (_query, candidates, options = {}) => {
+          ks.push(options.k);
+          const ranked = [...candidates].reverse();
+          return options.k === undefined ? ranked : ranked.slice(0, options.k);
+        },
+      },
+    };
+  };
+
+  const unlimitedReranker = makeReranker();
+  retrieval.register(
+    "reranked-all",
+    {
+      kind: "knowledge",
+      search: async () => [
+        { id: "1", title: "One", content: "a" },
+        { id: "2", title: "Two", content: "b" },
+        { id: "3", title: "Three", content: "c" },
+      ],
+    },
+    { reranker: unlimitedReranker.reranker },
+  );
+  assert.deepEqual(
+    (await retrieval.search("reranked-all", { text: "query", limit: 3 })).map(
+      (item) => item.id,
+    ),
+    ["3", "2", "1"],
+  );
+  assert.deepEqual(unlimitedReranker.ks, [undefined]);
+
+  const limitedReranker = makeReranker();
+  retrieval.register(
+    "reranked-top-k",
+    {
+      kind: "knowledge",
+      search: async () => [
+        { id: "1", title: "One", content: "a" },
+        { id: "2", title: "Two", content: "b" },
+        { id: "3", title: "Three", content: "c" },
+      ],
+    },
+    { reranker: limitedReranker.reranker, rerankerK: 2 },
+  );
+  assert.deepEqual(
+    (await retrieval.search("reranked-top-k", { text: "query", limit: 3 })).map(
+      (item) => item.id,
+    ),
+    ["3", "2"],
+  );
+  assert.deepEqual(limitedReranker.ks, [2]);
+
+  assert.throws(
+    () =>
+      retrieval.register(
+        "missing-reranker",
+        { kind: "knowledge", search: async () => [] },
+        { rerankerK: 2 },
+      ),
+    /reranker k requires a reranker/,
+  );
+  assert.throws(
+    () =>
+      retrieval.register(
+        "invalid-k",
+        { kind: "knowledge", search: async () => [] },
+        { reranker: makeReranker().reranker, rerankerK: 0 },
+      ),
+    /reranker k must be at least 1/,
   );
 
   const mixed = multimodalToModelMessage({
@@ -5359,6 +5646,96 @@ test("privacy redactor recursively redacts keys and text patterns", () => {
   assert.equal(value.password, "[REDACTED]");
   assert.equal(value.nested[0].note, "[REDACTED]");
   assert.equal(value.nested[1], "safe");
+});
+
+test("PII morpher is deterministic and maps short hash to fake data", () => {
+  const first = new PIIMorpher({ env: {} });
+  const second = new PIIMorpher({ env: {} });
+
+  const fake = first.morphPII("alice@example.com", "email");
+
+  assert.equal(PIIMorpher.shortHash("alice@example.com"), "ff8d9819fcc160f8cc69");
+  assert.equal(fake, "logan.parker.7993@example.test");
+  assert.equal(second.morphPII("alice@example.com", "email"), fake);
+  assert.notEqual(first.morphPII("bob@example.com", "email"), fake);
+  assert.equal(first.mapping["ff8d9819fcc160f8cc69"], fake);
+  assert.equal(Object.keys(first.mapping).length, 2);
+  assert.equal(JSON.stringify(first.mapping).includes("alice@example.com"), false);
+});
+
+test("PII morpher detects high confidence PII and preserves references", () => {
+  const morpher = new PIIMorpher({ env: {} });
+  const original =
+    "Email alice@example.com twice alice@example.com; " +
+    "phone 415-555-2671; SSN 123-45-6789; " +
+    "card 4111 1111 1111 1111; IP 8.8.8.8.";
+
+  const morphed = morpher.morphText(original);
+  const fakeEmail = morpher.morphPII("alice@example.com", "email");
+
+  assert.equal(morphed.split(fakeEmail).length - 1, 2);
+  for (const pii of [
+    "alice@example.com",
+    "415-555-2671",
+    "123-45-6789",
+    "4111 1111 1111 1111",
+    "8.8.8.8",
+  ]) {
+    assert.equal(morphed.includes(pii), false);
+  }
+});
+
+test("PII morpher uses structured hints and external entity spans", () => {
+  const morpher = new PIIMorpher({ env: {} });
+  const structured = morpher.morph({
+    customer_email: "alice@example.com",
+    first_name: "Alice",
+    last_name: "Smith",
+    mailing_address: "10 Main Street",
+    date_of_birth: "1988-04-07",
+    name: "publish-tool",
+  });
+
+  assert.equal(structured.customer_email.endsWith("@example.test"), true);
+  assert.equal(structured.first_name.includes(" "), false);
+  assert.equal(structured.last_name.includes(" "), false);
+  assert.equal(structured.mailing_address.includes("Example Avenue"), true);
+  assert.equal(structured.date_of_birth.split("-").length, 3);
+  assert.equal(structured.name, "publish-tool");
+
+  const text = "Customer Alice Smith requested support.";
+  const morphed = morpher.morphText(text, {
+    entities: [{ kind: "person", start: 9, end: 20 }],
+  });
+  assert.equal(morphed.includes("Alice Smith"), false);
+  assert.equal(morphed.startsWith("Customer "), true);
+  assert.equal(morphed.endsWith(" requested support."), true);
+});
+
+test("PII morpher can be disabled by environment", () => {
+  const disabled = new PIIMorpher({ env: { [PII_MORPHER_DISABLE_ENV]: "true" } });
+  const enabled = new PIIMorpher({ env: { [PII_MORPHER_DISABLE_ENV]: "false" } });
+
+  assert.equal(disabled.morphText("alice@example.com"), "alice@example.com");
+  assert.deepEqual(disabled.mapping, {});
+  assert.notEqual(enabled.morphText("alice@example.com"), "alice@example.com");
+  assert.throws(
+    () => new PIIMorpher({ env: { [PII_MORPHER_DISABLE_ENV]: "maybe" } }),
+    new RegExp(PII_MORPHER_DISABLE_ENV),
+  );
+});
+
+test("privacy redactor morphs PII but still redacts secrets", () => {
+  const redactor = new PrivacyRedactor({}, new PIIMorpher({ env: {} }));
+  const redacted = redactor.redact({
+    email: "alice@example.com",
+    note: "Contact alice@example.com",
+    secret: "do-not-log",
+  });
+
+  assert.equal(redacted.email, "logan.parker.7993@example.test");
+  assert.equal(redacted.note.includes("alice@example.com"), false);
+  assert.equal(redacted.secret, "[REDACTED]");
 });
 
 test("retained event store supports redaction suppression ephemeral archive and ttl", () => {

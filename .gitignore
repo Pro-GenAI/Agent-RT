@@ -2,3 +2,5 @@
 TODO*
 temp/
 .env
+.claude/
+openbox*

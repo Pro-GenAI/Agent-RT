@@ -8,6 +8,12 @@ ANTHROPIC_MODEL_ENV
 APIInterface
 APIOperationHandler
 APIRequest
+ActionBlockedError
+ActionBlocker
+ActionBlockerDecision
+ActionBlockerFunction
+ActionBlockerLike
+ActionBlockerResult
 AgentActionGuardClassifier
 AgentCheckpoint
 AgentConfig
@@ -107,6 +113,8 @@ CriticAgent
 CriticPanel
 DEFAULT_ANTHROPIC_BASE_URL
 DEFAULT_OPENAI_BASE_URL
+DEFAULT_BLOCKED_COMMANDS
+DEFAULT_COMMAND_ARGUMENT_NAMES
 DEFAULT_TOOL_INPUT_GUARDRAIL_MODEL
 DataClassification
 DataEgressRequest
@@ -232,6 +240,9 @@ PermissionEffect
 PermissionEngine
 PermissionRequest
 PermissionRule
+PIIEntity
+PIIMorpher
+PII_MORPHER_DISABLE_ENV
 PersistentWorkspaceStore
 Plan
 PlanExecutionResult
@@ -273,6 +284,7 @@ RealtimeTransport
 RecoveryAction
 RecoveryContext
 RecoveryRouter
+RuleBasedActionBlocker
 ReflectionPass
 RegisteredTool
 RemoteAgentCard
@@ -294,6 +306,7 @@ ReplayModelProvider
 RetainedEventStore
 RetrievalKind
 RetrievalProvider
+RetrievalReranker
 RetrievalQuery
 RetrievalRegistry
 RetrievalResult
@@ -361,6 +374,7 @@ TenantEventStore
 TenantSessionMemory
 TenantWorkspaceStore
 TerminationReason
+TOOL_SEARCH_NAME
 TokenCountingModelProvider
 TokenLedger
 TokenUsageRecord
@@ -385,11 +399,13 @@ ToolPreCallHook
 ToolProgramExecutor
 ToolProgramResult
 ToolRegistry
+ToolSafetyFilter
 ToolSelectionPolicy
 ToolSelectionRequirement
 ToolSideEffect
 ToolTimeoutError
 ToolVisibilityFilter
+Toolbase
 TraceRecorder
 TraceSpan
 TransactionResult
@@ -410,11 +426,14 @@ classify_failure
 hello
 initialize_openllmetry_from_env
 load_model
+make_agent_action_guard_action_blocker
 make_agent_action_guard_tool_input_guardrail
 make_audit_trail_hook
+make_decision_action_blocker
 make_default_input_guardrail
 make_default_output_guardrail
 make_default_tool_input_guardrail
+make_rule_based_action_blocker
 make_tool_input_exfiltration_guardrail
 make_tool_output_exfiltration_guardrail
 marshal_tool_result
