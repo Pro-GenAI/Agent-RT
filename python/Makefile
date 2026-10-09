@@ -3,7 +3,15 @@
 UV ?= uv
 RUN := $(UV) run --extra dev
 
-.PHONY: help install install-dev test test-matrix lint format format-check typecheck quality security-static security-attacks security vuln check
+.PHONY: help install install-dev test test-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
+
+# GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
+require-bash:
+ifeq ($(OS),Windows_NT)
+	@where bash >NUL 2>&1 || (echo ERROR: Bash is required for this target. Install Bash and add it to PATH. & exit /b 1)
+else
+	@command -v bash >/dev/null 2>&1 || { echo 'ERROR: Bash is required for this target. Install Bash and add it to PATH.' >&2; exit 1; }
+endif
 
 help:
 	@printf '%s\n' \
@@ -31,8 +39,8 @@ install-dev: install
 test:
 	$(RUN) pytest -n auto --dist worksteal
 
-test-matrix:
-	./scripts/test-matrix.sh
+test-matrix: require-bash
+	bash ./scripts/test-matrix.sh
 
 lint:
 	$(RUN) ruff check src tests scripts
@@ -54,8 +62,11 @@ security-static:
 security-attacks:
 	$(RUN) python scripts/security_attack_scan.py
 
-security: security-static security-attacks
-	$(UV) run --python 3.12 --extra dev python scripts/dev_security_scan.py
+security: require-bash
+	@bash ../scripts/security-summary.sh \
+		'Static scan' '$(RUN) python scripts/security_scan.py --fail-on medium' \
+		'Adversarial runtime scan' '$(RUN) python scripts/security_attack_scan.py' \
+		'Development security tools' '$(UV) run --python 3.12 --extra dev python scripts/dev_security_scan.py'
 
 vuln: security
 

@@ -8,6 +8,7 @@ const {
 } = require('../dist/index.js');
 const {
 	DecisionFilteredRetrievalProvider,
+	DecisionRetrievalReranker,
 	DecisionMemoryGuard,
 	DecisionMemoryWriteGate,
 	JevDecisionProvider,
@@ -317,6 +318,46 @@ test('decision memory guard filters poisoned retrieved memory', async () => {
 	);
 });
 
+test('decision retrieval reranker applies k only when provided', async () => {
+	const provider = new FakeDecisionProvider((state) => ({
+		relevant: {
+			noul: {
+				First: 0.6,
+				Second: 0.95,
+				Drop: 0.2,
+			}[state.title],
+		},
+		trustworthy: { noul: 0.9 },
+	}));
+	const reranker = new DecisionRetrievalReranker(provider);
+	const candidates = [
+		{ id: 'a', title: 'First', content: 'one' },
+		{ id: 'b', title: 'Second', content: 'two' },
+		{ id: 'c', title: 'Drop', content: 'three' },
+	];
+
+	const allResults = await reranker.rerank({ text: 'query', limit: 10 }, candidates);
+	assert.deepEqual(
+		allResults.map((result) => result.id),
+		['b', 'a'],
+	);
+
+	const topResult = await reranker.rerank(
+		{ text: 'query', limit: 10 },
+		candidates,
+		{ k: 1 },
+	);
+	assert.deepEqual(
+		topResult.map((result) => result.id),
+		['b'],
+	);
+
+	await assert.rejects(
+		() => reranker.rerank({ text: 'query' }, candidates, { k: 0 }),
+		/reranker k must be at least 1/,
+	);
+});
+
 test('decision retrieval and context filtering', async () => {
 	const provider = new FakeDecisionProvider((state, questions) => {
 		if (questions.trustworthy) {
@@ -413,3 +454,5 @@ test('model response failure classifier is wired into AgentLoop', async () => {
 	assert.equal(result.turns, 1);
 	assert.equal(result.totalTokens, 7);
 });
+
+require('./toolbase.test.js');

@@ -26,12 +26,14 @@ from agent_rt_cli import (
     TranscriptStore,
     WorkspaceCodeTools,
     _discover_cli_skills,
+    _load_env_file,
     _provider_environment_with_global_config,
     _provider_model_ids,
     _register_skill_tools,
     _require_cli_dependencies,
     _slash_command_matches,
     _startup_model,
+    async_main,
     build_parser,
 )
 
@@ -84,6 +86,100 @@ class FakeProvider:
         yield ModelStreamEvent(type="text_delta", text=text[:4])
         yield ModelStreamEvent(type="text_delta", text=text[4:])
         yield ModelStreamEvent(type="completed", response=response)
+
+
+class TestEnvFile:
+    def test_loads_dotenv_syntax_without_overriding_process_environment(self, tmp_path):
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "# comment\n"
+            "OPENAI_MODEL=file-model\n"
+            "export OPENAI_BASE_URL=https://example.test/v1\n"
+            'QUOTED="line\\nnext"\n'
+            "SINGLE='hello world'\n"
+            "INLINE=value # comment\n"
+            "HASH=value#literal\n"
+            "EMPTY=\n",
+            encoding="utf-8",
+        )
+        environment = {"OPENAI_MODEL": "process-model"}
+
+        _load_env_file(env_file, environment)
+
+        assert environment == {
+            "OPENAI_MODEL": "process-model",
+            "OPENAI_BASE_URL": "https://example.test/v1",
+            "QUOTED": "line\nnext",
+            "SINGLE": "hello world",
+            "INLINE": "value",
+            "HASH": "value#literal",
+            "EMPTY": "",
+        }
+
+    def test_env_file_values_take_precedence_over_global_settings(self, tmp_path):
+        env_file = tmp_path / ".env"
+        env_file.write_text("OPENAI_MODEL=file-model\n", encoding="utf-8")
+        config_path = tmp_path / "settings.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "provider": "openai",
+                    "model": "global-model",
+                    "base_url": "https://config.example.test/v1",
+                }
+            ),
+            encoding="utf-8",
+        )
+        environment = {}
+
+        _load_env_file(env_file, environment)
+        resolved = _provider_environment_with_global_config(
+            environment,
+            config_path=config_path,
+        )
+
+        assert resolved["OPENAI_MODEL"] == "file-model"
+        assert resolved["OPENAI_BASE_URL"] == "https://config.example.test/v1"
+
+    def test_env_file_values_are_visible_to_runtime_configuration(
+        self, tmp_path, monkeypatch
+    ):
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "AGENT_RT_CLI_COMPACT_LIMIT=321\n",
+            encoding="utf-8",
+        )
+        monkeypatch.delenv("AGENT_RT_CLI_COMPACT_LIMIT", raising=False)
+
+        _load_env_file(env_file)
+        session = ChatSession(
+            AgentLoop(FakeProvider()),
+            model="test-model",
+            autosave=False,
+        )
+
+        assert session.compact_token_threshold == 321
+
+    def test_rejects_malformed_env_file(self, tmp_path):
+        env_file = tmp_path / ".env"
+        env_file.write_text("NOT VALID\n", encoding="utf-8")
+
+        with pytest.raises(ValueError, match=r":1: expected NAME=VALUE"):
+            _load_env_file(env_file, {})
+
+    def test_rejects_missing_env_file(self, tmp_path):
+        with pytest.raises(ValueError, match="unable to read environment file"):
+            _load_env_file(tmp_path / "missing.env", {})
+
+    async def test_cli_reports_env_file_error_before_provider_setup(
+        self, tmp_path, capsys
+    ):
+        result = await async_main(
+            ["--env-file", str(tmp_path / "missing.env"), "-p", "hello"]
+        )
+
+        assert result == 2
+        assert "environment file error" in capsys.readouterr().err
 
 
 class TestGlobalConfig:
@@ -496,6 +592,10 @@ class TestWorkspaceCodeTools:
                 events.append(("agent-action-guard", request["function"]["name"]))
                 return None, 0.01
 
+            def action_blocker(call, _definition, _context):
+                events.append(("action-blocker", call.name))
+                return False
+
             def custom_guardrail(call, _definition):
                 events.append(("custom-guardrail", call.name))
                 return GuardrailResult()
@@ -506,6 +606,7 @@ class TestWorkspaceCodeTools:
 
             tools.approval_callback = approve
             registry = tools.registry(
+                action_blockers=(action_blocker,),
                 tool_input_guardrails=(custom_guardrail,),
                 tool_input_guardrail_classifier=classify,
             )
@@ -520,6 +621,7 @@ class TestWorkspaceCodeTools:
 
             assert result["path"] == "safe.txt"
             assert events == [
+                ("action-blocker", "write_file"),
                 ("agent-action-guard", "write_file"),
                 ("custom-guardrail", "write_file"),
                 ("approval", "write_file", "safe.txt"),
@@ -1158,6 +1260,7 @@ class TestParser:
             [
                 "--model",
                 "provider-model",
+                "--env-file=./.env",
                 "--session",
                 "work",
                 "--no-stream",
@@ -1167,6 +1270,7 @@ class TestParser:
             ]
         )
         assert args.model == "provider-model"
+        assert args.env_file == Path(".env")
         assert args.session == "work"
         assert args.no_stream
         assert args.no_save
@@ -1180,5 +1284,6 @@ class TestParser:
         help_text = build_parser().format_help()
         assert "-p" in help_text
         assert "--prompt" in help_text
+        assert "--env-file" in help_text
         assert "PROMPT" in help_text
         assert "positional arguments:" not in help_text

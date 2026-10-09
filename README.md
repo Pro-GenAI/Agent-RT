@@ -10,6 +10,12 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 [![npm](https://img.shields.io/npm/v/agent-rt?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/agent-rt)
 [![Docs](https://img.shields.io/badge/Docs-000000?style=for-the-badge&logo=github&logoColor=white)](https://agent-rt-pro.github.io/docs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Pro-GenAI/Agent-RT/blob/main/LICENSE)
+<a href="https://pepy.tech/projects/agent-rt"><img src="https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=PyPI%20Downloads" alt="PyPI Downloads" height="28"></a>
+![NPM Downloads](https://img.shields.io/npm/d18m/agent-rt?style=for-the-badge&label=npm%20downloads)
+
+<!-- [![PyPI Downloads](https://img.shields.io/pepy/dt/agent-rt?style=for-the-badge&label=Downloads)](https://pepy.tech/projects/agent-rt) -->
+<!-- [![PyPI Downloads](https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=Downloads)](https://pepy.tech/projects/agent-rt) -->
+<!-- [![PyPI Downloads](https://img.shields.io/pepy/dt/agent-rt?style=for-the-badge&label=Downloads)](https://pepy.tech/projects/agent-rt) -->
 
 ## 🚀 Quick Start
 
@@ -30,10 +36,11 @@ npm install agent-rt
 ## ✨ Why Agent RT?
 
 - 🪶 **Lightweight and measurable** — start with the runtime core and add integrations only when needed; reproducible cross-framework benchmarks live in [`comparison/`](comparison/README.md).
-- 🛡️ **Controlled** — permissions, approvals, limits, guardrails, and sandbox boundaries are runtime concepts, not add-ons.
+- 🛡️ **Controlled** — permissions, composable action blockers, approvals, deterministic PII morphing, limits, guardrails, and sandbox boundaries are runtime concepts, not add-ons.
 - 🔌 **Provider-neutral, two languages** — OpenAI, Anthropic, compatible endpoints, or custom providers, with aligned contracts in <img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Python and <img src="docs/website/assets/typescript.svg" alt="TypeScript" width="18" height="18"> TypeScript.
+- 🔄 **Migration-tested** — ongoing compatibility field testing has 69 third-party repositories passing their test suites both before and after migration to Agent RT.
 
-**Decision models** (such as Laya and other Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text: pruning the tool catalog, gating memory and retrieval, and classifying failures.
+**Decision models** (such as Laya and other Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text. `Toolbase` can combine local, deferred, and MCP tools, remove unsafe definitions with a Decision model, pass only the relevant subset to each turn, and keep `tool_search` available for safe fallback discovery; the same Decision layer also gates memory, reranks retrieval results with optional top-k selection, and classifies failures.
 
 ## ⚖️ Quick Comparison
 
@@ -52,6 +59,7 @@ npm install agent-rt
 | **♻️ Budget-preserving checkpoints** | ✅ Resume with prior turn/tool/token budgets | ◐ | ◐ |
 | **💾 Memory & checkpoints** | ✅ Built-in | ✅ | ✅ |
 | **🗃️ Switch vector DBs** | ✅ Simple env/registry switch | ◐ Integration-dependent | ◐ Integration-dependent |
+| **Post-retrieval reranking** | Built-in provider-neutral hook + optional top-k | Available | Available |
 | **🔌 Provider-neutral** | ✅ | ✅ | ✅ |
 | **🪶 Lightweight runtime focus** | ✅ | ◐ | ◐ |
 | **<img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Fresh install footprint** | **46.43 MiB** | 69.87 MiB | 219.91 MiB |

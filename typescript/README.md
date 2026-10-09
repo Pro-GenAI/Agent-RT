@@ -9,10 +9,11 @@ Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero 
 ## Why Agent RT?
 
 - **Provider-neutral.** OpenAI-compatible endpoints, OpenAI, Anthropic, or your own `ModelProvider`.
-- **Safe by construction.** Tool validation, permissions, approvals, guardrails, budgets, and deadlines are runtime primitives.
+- **Safe by construction.** Tool validation, permissions, composable action blockers, approvals, deterministic PII morphing, guardrails, budgets, and deadlines are runtime primitives.
+- **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI, Anthropic, Agent Action Guard, and sandbox integrations are optional peers.
-- **Production-ready.** Checkpoints, events, queues, tracing, cost ledgers, retrieval, and multi-agent patterns.
-- **Easy to adopt.** Drop-in compatibility entry points for OpenAI, Anthropic, LangChain, LlamaIndex, and OpenAI Agents code.
+- **Production-ready.** Checkpoints, events, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
+- **Easy to adopt.** Drop-in compatibility entry points for OpenAI, Anthropic, LangChain, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
 
 ## Install
 

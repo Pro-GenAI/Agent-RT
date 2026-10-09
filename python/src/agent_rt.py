@@ -28,6 +28,28 @@ from typing import (
     runtime_checkable,
 )
 
+from ext.action_blockers import (
+    DEFAULT_BLOCKED_COMMANDS as DEFAULT_BLOCKED_COMMANDS,
+)
+from ext.action_blockers import (
+    DEFAULT_COMMAND_ARGUMENT_NAMES as DEFAULT_COMMAND_ARGUMENT_NAMES,
+)
+from ext.action_blockers import ActionBlocker as ActionBlocker
+from ext.action_blockers import ActionBlockerDecision as ActionBlockerDecision
+from ext.action_blockers import ActionBlockerFunction as ActionBlockerFunction
+from ext.action_blockers import ActionBlockerLike as ActionBlockerLike
+from ext.action_blockers import ActionBlockerResult as ActionBlockerResult
+from ext.action_blockers import RuleBasedActionBlocker as RuleBasedActionBlocker
+from ext.action_blockers import evaluate_action_blocker as _evaluate_action_blocker
+from ext.action_blockers import (
+    make_agent_action_guard_action_blocker as make_agent_action_guard_action_blocker,
+)
+from ext.action_blockers import (
+    make_decision_action_blocker as make_decision_action_blocker,
+)
+from ext.action_blockers import (
+    make_rule_based_action_blocker as make_rule_based_action_blocker,
+)
 from ext.registration_safety import (
     RegistrationSafetyGuard,
     RegistrationSafetySubject,
@@ -742,6 +764,10 @@ class GuardrailViolationError(RuntimeError):
         super().__init__(reason)
 
 
+class ActionBlockedError(GuardrailViolationError):
+    """Raised when an action blocker rejects a proposed tool call."""
+
+
 def _apply_guardrail_result(original: Any, result: GuardrailResult) -> Any:
     if result.action == "block":
         raise GuardrailViolationError(
@@ -888,6 +914,299 @@ class InMemoryAuditTrail:
         return tuple(self._records)
 
 
+PII_MORPHER_DISABLE_ENV = "AGENT_RT_DISABLE_PII_MORPHER"
+_PII_SHORT_HASH_CHARS_PER_DIGEST = 10
+
+
+@dataclass(frozen=True)
+class PIIEntity:
+    kind: str
+    start: int
+    end: int
+
+
+_PII_PATTERN_SPECS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "email",
+        re.compile(
+            r"(?<![A-Za-z0-9._%+-])[A-Za-z0-9.!#$%&'*+/=?^_\x60{|}~-]+"
+            r"@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+            r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
+            r"(?![A-Za-z0-9._%+-])"
+        ),
+    ),
+    ("ssn", re.compile(r"(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)")),
+    ("credit_card", re.compile(r"(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)")),
+    (
+        "ipv4",
+        re.compile(
+            r"(?<!\d)(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}"
+            r"(?:25[0-5]|2[0-4]\d|1?\d?\d)(?!\d)"
+        ),
+    ),
+    (
+        "phone",
+        re.compile(
+            r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})"
+            r"[\s.-]\d{3}[\s.-]\d{4}(?!\d)"
+        ),
+    ),
+)
+
+_PII_HINT_SUFFIXES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("email", ("email", "emailaddress")),
+    ("phone", ("phone", "phonenumber", "mobile", "mobilenumber")),
+    ("ssn", ("ssn", "socialsecuritynumber")),
+    ("credit_card", ("creditcard", "cardnumber")),
+    ("ipv4", ("ipaddress", "ipv4")),
+    ("ipv6", ("ipv6",)),
+    ("first_name", ("firstname",)),
+    ("last_name", ("lastname",)),
+    ("person", ("fullname", "personname")),
+    ("address", ("streetaddress", "postaladdress", "mailingaddress")),
+    ("date_of_birth", ("dateofbirth", "birthdate", "dob")),
+)
+
+_PII_FIRST_NAMES = (
+    "Avery",
+    "Blake",
+    "Casey",
+    "Dakota",
+    "Emerson",
+    "Finley",
+    "Harper",
+    "Jordan",
+    "Kai",
+    "Logan",
+    "Morgan",
+    "Parker",
+    "Quinn",
+    "Riley",
+    "Rowan",
+    "Taylor",
+)
+_PII_LAST_NAMES = (
+    "Bennett",
+    "Brooks",
+    "Carter",
+    "Ellis",
+    "Hayes",
+    "Jordan",
+    "Lane",
+    "Morgan",
+    "Parker",
+    "Reed",
+    "Rivera",
+    "Sawyer",
+    "Taylor",
+    "Walker",
+    "Ward",
+    "Young",
+)
+
+
+def _normalize_pii_key(key: Any) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(key).lower())
+
+
+def _infer_pii_kind(key: Any) -> str | None:
+    normalized = _normalize_pii_key(key)
+    for kind, suffixes in _PII_HINT_SUFFIXES:
+        if any(normalized.endswith(suffix) for suffix in suffixes):
+            return kind
+    return None
+
+
+def _looks_like_credit_card(value: str) -> bool:
+    digits = "".join(char for char in value if char.isdigit())
+    if not 13 <= len(digits) <= 19:
+        return False
+    total = 0
+    parity = len(digits) % 2
+    for index, char in enumerate(digits):
+        digit = int(char)
+        if index % 2 == parity:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    return total % 10 == 0
+
+
+class PIIMorpher:
+    """Deterministically replace PII with synthetic values without storing plaintext."""
+
+    def __init__(
+        self,
+        *,
+        enabled: bool = True,
+        environ: Mapping[str, str] | None = None,
+    ) -> None:
+        env = os.environ if environ is None else environ
+        try:
+            disabled = _parse_env_bool(env.get(PII_MORPHER_DISABLE_ENV))
+        except ValueError as exc:
+            raise ValueError(
+                f"{PII_MORPHER_DISABLE_ENV} must be a boolean value"
+            ) from exc
+        self.enabled = enabled and disabled is not True
+        self._mapping: dict[str, str] = {}
+
+    @staticmethod
+    def short_hash(value: str) -> str:
+        encoded = value.encode("utf-8")
+        sha = hashlib.sha256(encoded).hexdigest()
+        md5 = hashlib.md5(encoded, usedforsecurity=False).hexdigest()
+        width = _PII_SHORT_HASH_CHARS_PER_DIGEST
+        return sha[:width] + md5[:width]
+
+    @property
+    def mapping(self) -> Mapping[str, str]:
+        return dict(self._mapping)
+
+    @staticmethod
+    def _seed_parts(short_hash: str) -> tuple[int, int, int]:
+        return (
+            int(short_hash[0:8], 16),
+            int(short_hash[8:16], 16),
+            int(short_hash[12:20], 16),
+        )
+
+    def _fake_value(self, kind: str, short_hash: str) -> str:
+        first, second, third = self._seed_parts(short_hash)
+        if kind == "email":
+            first_name = _PII_FIRST_NAMES[first % len(_PII_FIRST_NAMES)].lower()
+            last_name = _PII_LAST_NAMES[second % len(_PII_LAST_NAMES)].lower()
+            return f"{first_name}.{last_name}.{third % 10_000:04d}@example.test"
+        if kind == "phone":
+            return f"+1-000-{first % 1_000:03d}-{second % 10_000:04d}"
+        if kind == "ssn":
+            return f"000-{first % 100:02d}-{second % 10_000:04d}"
+        if kind == "credit_card":
+            return f"0000 0000 {first % 10_000:04d} {second % 10_000:04d}"
+        if kind == "ipv4":
+            networks = ("192.0.2", "198.51.100", "203.0.113")
+            return f"{networks[first % len(networks)]}.{1 + second % 254}"
+        if kind == "ipv6":
+            groups = [short_hash[index : index + 4] for index in range(0, 16, 4)]
+            return "2001:db8:" + ":".join(groups) + "::1"
+        if kind == "first_name":
+            return _PII_FIRST_NAMES[first % len(_PII_FIRST_NAMES)]
+        if kind == "last_name":
+            return _PII_LAST_NAMES[second % len(_PII_LAST_NAMES)]
+        if kind == "person":
+            first_name = _PII_FIRST_NAMES[first % len(_PII_FIRST_NAMES)]
+            last_name = _PII_LAST_NAMES[second % len(_PII_LAST_NAMES)]
+            return f"{first_name} {last_name}"
+        if kind == "address":
+            return f"{100 + first % 9_900} Example Avenue, Testville, ZZ 00000"
+        if kind == "date_of_birth":
+            year = 1970 + first % 31
+            month = 1 + second % 12
+            day = 1 + third % 28
+            return f"{year:04d}-{month:02d}-{day:02d}"
+        normalized_kind = re.sub(r"[^a-z0-9]+", "-", kind.lower()).strip("-")
+        label = normalized_kind or "pii"
+        return f"fake-{label}-{first % 1_000_000:06d}"
+
+    def morph_pii(self, original: str, kind: str) -> str:
+        if not self.enabled or not original:
+            return original
+        key = self.short_hash(original)
+        existing = self._mapping.get(key)
+        if existing is not None:
+            return existing
+        fake = self._fake_value(kind, key)
+        self._mapping[key] = fake
+        return fake
+
+    def _detected_entities(self, text: str) -> tuple[PIIEntity, ...]:
+        entities: list[PIIEntity] = []
+        for kind, pattern in _PII_PATTERN_SPECS:
+            for match in pattern.finditer(text):
+                if kind == "credit_card" and not _looks_like_credit_card(
+                    match.group(0)
+                ):
+                    continue
+                entities.append(
+                    PIIEntity(kind=kind, start=match.start(), end=match.end())
+                )
+        return tuple(entities)
+
+    @staticmethod
+    def _select_entities(
+        text: str,
+        explicit: Sequence[PIIEntity],
+        detected: Sequence[PIIEntity],
+    ) -> tuple[PIIEntity, ...]:
+        candidates: list[tuple[int, int, int, PIIEntity]] = []
+        for priority, entities in ((0, explicit), (1, detected)):
+            for entity in entities:
+                if (
+                    not entity.kind.strip()
+                    or entity.start < 0
+                    or entity.end <= entity.start
+                    or entity.end > len(text)
+                ):
+                    raise ValueError("PII entity spans must be valid and non-empty")
+                candidates.append(
+                    (entity.start, priority, -(entity.end - entity.start), entity)
+                )
+        candidates.sort(key=lambda item: item[:3])
+        selected: list[PIIEntity] = []
+        occupied_until = -1
+        for _, _, _, entity in candidates:
+            if entity.start < occupied_until:
+                continue
+            selected.append(entity)
+            occupied_until = entity.end
+        return tuple(selected)
+
+    def morph_text(
+        self,
+        text: str,
+        *,
+        kind: str | None = None,
+        entities: Sequence[PIIEntity] = (),
+    ) -> str:
+        if not self.enabled or not text:
+            return text
+        if kind is not None:
+            leading = len(text) - len(text.lstrip())
+            trailing = len(text) - len(text.rstrip())
+            end = len(text) - trailing if trailing else len(text)
+            core = text[leading:end]
+            if not core:
+                return text
+            return text[:leading] + self.morph_pii(core, kind) + text[end:]
+        selected = self._select_entities(
+            text,
+            entities,
+            self._detected_entities(text),
+        )
+        result = text
+        for entity in reversed(selected):
+            original = text[entity.start : entity.end]
+            replacement = self.morph_pii(original, entity.kind)
+            result = result[: entity.start] + replacement + result[entity.end :]
+        return result
+
+    def morph(self, value: Any, *, key_hint: Any = None) -> Any:
+        if not self.enabled:
+            return value
+        if isinstance(value, Mapping):
+            return {
+                str(key): self.morph(item, key_hint=key) for key, item in value.items()
+            }
+        if isinstance(value, tuple):
+            return tuple(self.morph(item) for item in value)
+        if isinstance(value, list):
+            return [self.morph(item) for item in value]
+        if isinstance(value, str):
+            return self.morph_text(value, kind=_infer_pii_kind(key_hint))
+        return value
+
+
 @dataclass(frozen=True)
 class PrivacyRedactionPolicy:
     # Keys are compared after dropping case and punctuation and also match as
@@ -919,9 +1238,13 @@ def _normalize_key(key: str) -> str:
 
 class PrivacyRedactor:
     def __init__(
-        self, policy: PrivacyRedactionPolicy = PrivacyRedactionPolicy()
+        self,
+        policy: PrivacyRedactionPolicy = PrivacyRedactionPolicy(),
+        *,
+        pii_morpher: PIIMorpher | None = None,
     ) -> None:
         self.policy = policy
+        self.pii_morpher = pii_morpher or PIIMorpher()
         self._patterns = tuple(re.compile(pattern) for pattern in policy.text_patterns)
         self._sensitive = tuple(
             normalized
@@ -933,26 +1256,32 @@ class PrivacyRedactor:
         normalized = _normalize_key(str(key))
         return any(normalized.endswith(item) for item in self._sensitive)
 
-    def redact(self, value: Any) -> Any:
+    def _redact(self, value: Any, *, key_hint: Any = None) -> Any:
         if isinstance(value, Mapping):
             return {
                 str(key): (
                     self.policy.replacement
                     if self._is_sensitive(key)
-                    else self.redact(item)
+                    else self._redact(item, key_hint=key)
                 )
                 for key, item in value.items()
             }
         if isinstance(value, tuple):
-            return tuple(self.redact(item) for item in value)
+            return tuple(self._redact(item) for item in value)
         if isinstance(value, list):
-            return [self.redact(item) for item in value]
+            return [self._redact(item) for item in value]
         if isinstance(value, str):
             result = value
             for pattern in self._patterns:
                 result = pattern.sub(self.policy.replacement, result)
-            return result
+            return self.pii_morpher.morph_text(
+                result,
+                kind=_infer_pii_kind(key_hint),
+            )
         return value
+
+    def redact(self, value: Any) -> Any:
+        return self._redact(value)
 
 
 ApprovalDecision = Literal["allow", "deny"]
@@ -1816,6 +2145,7 @@ class ToolRegistry:
         *,
         services: Mapping[str, Any] | None = None,
         permission_engine: PermissionEngine | None = None,
+        action_blockers: Sequence[ActionBlockerLike] = (),
         tool_input_guardrails: Sequence[ToolInputGuardrail] = (),
         enable_model_tool_input_guardrail: bool = False,
         tool_input_guardrail_model: str = DEFAULT_TOOL_INPUT_GUARDRAIL_MODEL,
@@ -1836,6 +2166,7 @@ class ToolRegistry:
         self.hooks = hooks or ToolLifecycleHooks()
         self.services = services or {}
         self.permission_engine = permission_engine
+        self.action_blockers = tuple(action_blockers)
         resolved_input_guardrails = list(tool_input_guardrails)
         if enable_model_tool_input_guardrail:
             resolved_input_guardrails.insert(
@@ -2115,6 +2446,19 @@ class ToolRegistry:
                         "pre-call hook cannot change tool call identity or name"
                     )
                 effective_call = transformed
+
+        for blocker in self.action_blockers:
+            decision = await _evaluate_action_blocker(
+                blocker,
+                effective_call,
+                registered.definition,
+                request_context,
+            )
+            if decision.blocked:
+                raise ActionBlockedError(
+                    decision.reason or "action blocker rejected tool call",
+                    decision.classifications,
+                )
 
         for guardrail in self.tool_input_guardrails:
             guarded = _apply_guardrail_result(
@@ -5262,6 +5606,7 @@ _LAZY_FEATURE_EXPORTS = frozenset(
         "AGENT_RT_VECTOR_DB_URL_ENV",
         "RetrievalKind",
         "RetrievalProvider",
+        "RetrievalReranker",
         "RetrievalQuery",
         "RetrievalRegistry",
         "RetrievalResult",
@@ -5820,6 +6165,351 @@ ToolVisibilityFilter = Callable[
     [ToolFilterContext, Sequence[ToolDefinition]],
     Sequence[str],
 ]
+
+ToolSafetyFilter = Callable[
+    [Sequence[ToolDefinition]],
+    Sequence[str] | Awaitable[Sequence[str]],
+]
+
+TOOL_SEARCH_NAME = "tool_search"
+_TOOL_SEARCH_RESULT_TYPE = "agent_rt.tool_search_results"
+
+
+def _toolbase_mcp_name(server_label: str, tool_name: str) -> str:
+    safe_server = re.sub(r"[^A-Za-z0-9_-]", "_", server_label)
+    safe_tool = re.sub(r"[^A-Za-z0-9_-]", "_", tool_name)
+    return "mcp." + safe_server + "." + safe_tool
+
+
+class Toolbase:
+    """Safety-screened catalog containing local, deferred, and MCP tools."""
+
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        *,
+        safe_definitions: Mapping[str, ToolDefinition],
+        selection_filter: ToolVisibilityFilter | None,
+        search_limit: int,
+    ) -> None:
+        self.registry = registry
+        self.selection_filter = selection_filter
+        self.search_limit = search_limit
+        self._safe_definitions = dict(safe_definitions)
+
+    @classmethod
+    async def initialize(
+        cls,
+        *,
+        tool_registry: ToolRegistry | None = None,
+        mcp_clients: Mapping[str, Any] | None = None,
+        safety_filter: ToolSafetyFilter | None = None,
+        selection_filter: ToolVisibilityFilter | None = None,
+        search_limit: int = 8,
+        allowlist: Sequence[str] | None = None,
+        blocklist: Sequence[str] = (),
+        read_allowlist: Sequence[str] | None = None,
+        read_blocklist: Sequence[str] = (),
+        write_allowlist: Sequence[str] | None = None,
+        write_blocklist: Sequence[str] = (),
+    ) -> "Toolbase":
+        if search_limit <= 0:
+            raise ValueError("tool search limit must be positive")
+        registry = tool_registry or ToolRegistry()
+
+        def permitted(name: str, side_effect: str) -> bool:
+            reading = side_effect in ("none", "read")
+            scoped_allow = read_allowlist if reading else write_allowlist
+            scoped_block = read_blocklist if reading else write_blocklist
+            return (name not in blocklist and name not in scoped_block
+                    and (allowlist is None or name in allowlist)
+                    and (scoped_allow is None or name in scoped_allow))
+
+        for name in tuple(registry.deferred_names()):
+            if name not in blocklist and (allowlist is None or name in allowlist):
+                registry.load(name)
+
+        local_tools = registry.list()
+        candidate_definitions: dict[str, ToolDefinition] = {
+            tool.name: tool.model_definition() for tool in local_tools
+        }
+        candidate_raw_definitions: dict[str, ToolDefinition] = {
+            tool.name: tool.definition for tool in local_tools
+        }
+        if TOOL_SEARCH_NAME in candidate_definitions:
+            raise ValueError(f"tool name {TOOL_SEARCH_NAME!r} is reserved by Toolbase")
+        candidate_definitions = {
+            name: definition for name, definition in candidate_definitions.items()
+            if permitted(name, definition.side_effect)
+        }
+
+        mcp_bindings: dict[str, tuple[Any, str, ToolDefinition]] = {}
+        for server_label, client in (mcp_clients or {}).items():
+            inner = getattr(client, "client", client)
+            if hasattr(inner, "server_info") and getattr(inner, "server_info") is None:
+                initialize = getattr(inner, "initialize", None)
+                if callable(initialize):
+                    await initialize()
+            list_tools = getattr(client, "list_tools", None)
+            if not callable(list_tools):
+                raise TypeError(
+                    f"MCP client {server_label!r} does not support list_tools()"
+                )
+            discovered = await list_tools()
+            for tool in discovered:
+                remote_name = (
+                    tool.get("name")
+                    if isinstance(tool, Mapping)
+                    else getattr(tool, "name", None)
+                )
+                if not isinstance(remote_name, str) or not remote_name.strip():
+                    raise ValueError(
+                        f"MCP client {server_label!r} returned a tool without a name"
+                    )
+                exposed_name = _toolbase_mcp_name(server_label, remote_name)
+                if not permitted(exposed_name, "consequential"):
+                    continue
+                if (
+                    exposed_name == TOOL_SEARCH_NAME
+                    or exposed_name in candidate_definitions
+                ):
+                    raise ValueError(
+                        f"tool name collision while building Toolbase: {exposed_name}"
+                    )
+                description = (
+                    tool.get("description")
+                    if isinstance(tool, Mapping)
+                    else getattr(tool, "description", None)
+                )
+                input_schema = (
+                    tool.get("input_schema")
+                    if isinstance(tool, Mapping)
+                    else getattr(tool, "input_schema", None)
+                )
+                definition = ToolDefinition(
+                    name=exposed_name,
+                    description=(
+                        description.strip()
+                        if isinstance(description, str) and description.strip()
+                        else f"MCP tool {remote_name} from {server_label}"
+                    ),
+                    input_schema=(
+                        dict(input_schema)
+                        if isinstance(input_schema, Mapping)
+                        else {"type": "object"}
+                    ),
+                    metadata={
+                        "toolbase_source": "mcp",
+                        "mcp_server": server_label,
+                        "mcp_tool": remote_name,
+                    },
+                    side_effect="consequential",
+                )
+                candidate_definitions[exposed_name] = definition
+                mcp_bindings[exposed_name] = (client, remote_name, definition)
+
+        if safety_filter is None:
+            safe_names = set(candidate_definitions)
+        else:
+            selected = await _call_maybe_async(
+                safety_filter, tuple(candidate_definitions.values())
+            )
+            safe_names = {
+                name
+                for name in selected
+                if isinstance(name, str) and name in candidate_definitions
+            }
+
+        for exposed_name, (client, remote_name, definition) in mcp_bindings.items():
+            if exposed_name not in safe_names:
+                continue
+
+            async def call_mcp(
+                arguments: Mapping[str, Any],
+                cancellation_token: CancellationToken | None,
+                *,
+                _client: Any = client,
+                _remote_name: str = remote_name,
+            ) -> Any:
+                del cancellation_token
+                call_tool = getattr(_client, "call_tool", None)
+                if not callable(call_tool):
+                    raise TypeError(
+                        "configured MCP client does not support call_tool()"
+                    )
+                return await call_tool(_remote_name, dict(arguments))
+
+            registered = registry.register(definition, handler=call_mcp)
+            candidate_raw_definitions[exposed_name] = registered.definition
+
+        screened = {
+            name: candidate_raw_definitions[name]
+            for name in safe_names
+            if name in candidate_raw_definitions
+        }
+        toolbase = cls(
+            registry,
+            safe_definitions=screened,
+            selection_filter=selection_filter,
+            search_limit=search_limit,
+        )
+        search_definition = ToolDefinition(
+            name=TOOL_SEARCH_NAME,
+            description=(
+                "Search the agent's full safe tool catalog for tools that were not "
+                "included in the current turn. Matching tools become available on "
+                "the next turn."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "minLength": 1},
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": search_limit,
+                    },
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+            side_effect="none",
+            metadata={"toolbase_internal": True},
+        )
+        registered_search = registry.register(
+            search_definition,
+            handler=toolbase._search_handler,
+        )
+        toolbase._safe_definitions[TOOL_SEARCH_NAME] = registered_search.definition
+        return toolbase
+
+    @property
+    def version(self) -> int:
+        return self.registry.version
+
+    def _is_screened(self, name: str, tool: RegisteredTool) -> bool:
+        return self._safe_definitions.get(name) is tool.definition
+
+    def definitions(self) -> tuple[ToolDefinition, ...]:
+        visible: list[ToolDefinition] = []
+        for tool in self.registry.list():
+            if self._is_screened(tool.name, tool):
+                visible.append(tool.model_definition())
+        return tuple(visible)
+
+    def get(self, name: str) -> RegisteredTool:
+        tool = self.registry.get(name)
+        if not self._is_screened(name, tool):
+            raise KeyError(f"tool is not safety-screened in this Toolbase: {name}")
+        return tool
+
+    async def execute(
+        self,
+        call: ToolCall,
+        cancellation_token: CancellationToken | None = None,
+        request_context: Mapping[str, Any] | None = None,
+    ) -> Any:
+        self.get(call.name)
+        return await self.registry.execute(call, cancellation_token, request_context)
+
+    def capability_descriptors(self) -> tuple[CapabilityDescriptor, ...]:
+        return tuple(
+            CapabilityDescriptor(
+                id=f"tool:{definition.name}",
+                kind="tool",
+                name=definition.name,
+                description=definition.description,
+                metadata=definition.metadata,
+            )
+            for definition in self.definitions()
+            if definition.name != TOOL_SEARCH_NAME
+        )
+
+    async def _search_handler(
+        self,
+        arguments: Mapping[str, Any],
+        cancellation_token: CancellationToken | None,
+    ) -> Mapping[str, Any]:
+        del cancellation_token
+        query = str(arguments["query"]).strip()
+        requested_limit = arguments.get("limit", self.search_limit)
+        limit = min(int(requested_limit), self.search_limit)
+        catalog = CapabilityCatalog(self.capability_descriptors())
+        matches = catalog.search(query, kinds=("tool",), limit=limit)
+        definitions = {tool.name: tool for tool in self.definitions()}
+        tools = []
+        for match in matches:
+            definition = definitions.get(match.capability.name)
+            if definition is None:
+                continue
+            tools.append(
+                {
+                    "name": definition.name,
+                    "description": definition.description,
+                    "input_schema": dict(definition.input_schema),
+                    "side_effect": definition.side_effect,
+                    "score": match.score,
+                }
+            )
+        return {
+            "type": _TOOL_SEARCH_RESULT_TYPE,
+            "query": query,
+            "tools": tools,
+        }
+
+    @staticmethod
+    def _searched_tool_names(messages: Sequence[ModelMessage]) -> set[str]:
+        search_call_ids = {
+            call.id
+            for message in messages
+            if message.role == "assistant"
+            for call in message.tool_calls
+            if call.name == TOOL_SEARCH_NAME
+        }
+        names: set[str] = set()
+        for message in messages:
+            if message.role != "tool" or message.tool_call_id not in search_call_ids:
+                continue
+            for part in message.content:
+                if part.type != "json" or not isinstance(part.data, Mapping):
+                    continue
+                if part.data.get("type") != _TOOL_SEARCH_RESULT_TYPE:
+                    continue
+                results = part.data.get("tools")
+                if not isinstance(results, Sequence) or isinstance(
+                    results, (str, bytes)
+                ):
+                    continue
+                for result in results:
+                    if not isinstance(result, Mapping):
+                        continue
+                    name = result.get("name")
+                    if isinstance(name, str):
+                        names.add(name)
+        return names
+
+    def visibility_filter(
+        self,
+        base_filter: ToolVisibilityFilter | None = None,
+    ) -> ToolVisibilityFilter:
+        selector = base_filter or self.selection_filter
+
+        async def filter_tools(
+            context: ToolFilterContext,
+            tools: Sequence[ToolDefinition],
+        ) -> tuple[str, ...]:
+            candidates = tuple(tool for tool in tools if tool.name != TOOL_SEARCH_NAME)
+            if selector is None:
+                selected = {tool.name for tool in candidates}
+            elif candidates:
+                selected = set(await _call_maybe_async(selector, context, candidates))
+            else:
+                selected = set()
+            selected.update(self._searched_tool_names(context.messages))
+            selected.add(TOOL_SEARCH_NAME)
+            return tuple(tool.name for tool in tools if tool.name in selected)
+
+        return filter_tools
 
 
 @dataclass(frozen=True)
@@ -7759,7 +8449,7 @@ class AgentLoop:
         self,
         provider: ModelProvider,
         tool_executor: ToolExecutor | None = None,
-        tool_registry: ToolRegistry | None = None,
+        tool_registry: ToolRegistry | Toolbase | None = None,
         tool_filter: ToolVisibilityFilter | None = None,
         context_assembler: ContextAssembler | None = None,
         event_store: EventStore | None = None,
@@ -7786,7 +8476,11 @@ class AgentLoop:
         self.provider = provider
         self.tool_executor = tool_executor
         self.tool_registry = tool_registry
-        self.tool_filter = tool_filter
+        self.tool_filter = (
+            tool_registry.visibility_filter(tool_filter)
+            if isinstance(tool_registry, Toolbase)
+            else tool_filter
+        )
         self.context_assembler = context_assembler or ContextAssembler()
         self.event_store = event_store
         self.idempotency_store = idempotency_store
@@ -8852,6 +9546,8 @@ class AgentLoop:
                     return finish("model_response_failure")
 
             calls = tuple(response.message.tool_calls)
+            if calls and self.tool_registry is None and self.tool_executor is None:
+                raise RuntimeError("model requested tool calls but no tool executor is configured")
             if not calls:
                 requirements = agent.output
                 if requirements is not None and (

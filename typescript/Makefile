@@ -2,7 +2,15 @@
 
 NPM ?= npm
 
-.PHONY: help install install-dev test test-matrix lint format format-check typecheck quality security-static security-attacks security vuln check
+.PHONY: help install install-dev test test-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
+
+# GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
+require-bash:
+ifeq ($(OS),Windows_NT)
+	@where bash >NUL 2>&1 || (echo ERROR: Bash is required for this target. Install Bash and add it to PATH. & exit /b 1)
+else
+	@command -v bash >/dev/null 2>&1 || { echo 'ERROR: Bash is required for this target. Install Bash and add it to PATH.' >&2; exit 1; }
+endif
 
 help:
 	@printf '%s\n' \
@@ -30,7 +38,7 @@ install-dev: install
 test:
 	$(NPM) test
 
-test-matrix:
+test-matrix: require-bash
 	$(NPM) run test:matrix
 
 lint:
@@ -54,8 +62,13 @@ security-static:
 security-attacks:
 	$(NPM) run security:attacks
 
-security:
-	$(NPM) run security:gate
+security: require-bash
+	@bash ../scripts/security-summary.sh \
+		'Static scan' '$(NPM) run security:scan:gate' \
+		'Adversarial runtime scan' '$(NPM) run security:attacks' \
+		'Dependency audit' '$(NPM) run security:deps' \
+		'Secret scan' '$(NPM) run security:secrets' \
+		'MCP scan' '$(NPM) run security:mcp'
 
 vuln: security
 

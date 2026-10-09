@@ -449,9 +449,12 @@ def test_process_collection_caps_output_and_kills_on_cancel(tmp_path):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        return await optional._collect_process_result(
+        result = await optional._collect_process_result(
             process, None, output_limit=1000, kill=process.kill, started=0.0
         )
+        process._transport.close()  # Release pipe transports before asyncio.run closes its loop.
+        await asyncio.sleep(0)
+        return result
 
     result = asyncio.run(run_noisy())
     assert len(result.stdout) == 1000 and result.truncated
@@ -477,10 +480,12 @@ def test_process_collection_caps_output_and_kills_on_cancel(tmp_path):
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
-        return process
+        process._transport.close()  # Drain transport callbacks before closing the loop.
+        await asyncio.sleep(0)
+        return process.returncode
 
-    process = asyncio.run(run_and_cancel())
-    assert process.returncode is not None  # reaped, not left running
+    returncode = asyncio.run(run_and_cancel())
+    assert returncode is not None  # reaped, not left running
 
 
 @pytest.mark.skipif(os.name != "posix", reason="uses a POSIX shell stub for docker")

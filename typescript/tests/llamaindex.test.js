@@ -1,10 +1,10 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import vectorMockModule from './vector-mock.js';
+const assert = require('node:assert/strict');
+const test = require('node:test');
+const vectorMockModule = require('./vector-mock.js');
 
 const { VectorMock } = vectorMockModule;
 
-import {
+const {
 	AgentInput,
 	AgentOutput,
 	AgentRTEmbedding,
@@ -44,12 +44,12 @@ import {
 	AgentWorkflow,
 	agent,
 	tool,
-} from '../dist/ext/compat/llamaindex.js';
-import {
+} = require('../dist/ext/compat/llamaindex.js');
+const {
 	InMemoryCheckpointStore,
 	InMemoryFileSystem,
 	RetrievalRegistry,
-} from '../dist/index.js';
+} = require('../dist/index.js');
 
 class StreamingProvider {
 	name = 'streaming';

@@ -1,4 +1,8 @@
 import {
+	evaluateActionBlocker,
+	type ActionBlockerLike,
+} from './ext/action_blockers.js';
+import {
 	enforceRegistrationSafety,
 	enforceRegistrationSafetyAsync,
 	type AsyncRegistrationSafetyGuard,
@@ -14,6 +18,24 @@ import {
 	parseToolCallArguments,
 	plainPartText,
 } from './internal/media.js';
+
+export {
+	DEFAULT_BLOCKED_COMMANDS,
+	DEFAULT_COMMAND_ARGUMENT_NAMES,
+	DEFAULT_DECISION_ACTION_BLOCKER_INSTRUCTIONS,
+	RuleBasedActionBlocker,
+	makeAgentActionGuardActionBlocker,
+	makeDecisionActionBlocker,
+	makeRuleBasedActionBlocker,
+	type ActionBlocker,
+	type ActionBlockerCall,
+	type ActionBlockerDecision,
+	type ActionBlockerFunction,
+	type ActionBlockerLike,
+	type ActionBlockerResult,
+	type ActionBlockerToolDefinition,
+	type DecisionActionBlockerProvider,
+} from './ext/action_blockers.js';
 
 export {
 	RegistrationSafetyError,
@@ -1324,6 +1346,358 @@ export class InMemoryAuditTrail implements AuditTrail {
 	}
 }
 
+export const PII_MORPHER_DISABLE_ENV = 'AGENT_RT_DISABLE_PII_MORPHER';
+const PII_SHORT_HASH_CHARS_PER_DIGEST = 10;
+
+export interface PIIEntity {
+	kind: string;
+	start: number;
+	end: number;
+}
+
+const PII_PATTERN_SPECS: ReadonlyArray<readonly [string, string]> = [
+	[
+		'email',
+		String.raw`(?<![A-Za-z0-9._%+-])[A-Za-z0-9.!#$%&'*+/=?^_\`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?![A-Za-z0-9._%+-])`,
+	],
+	['ssn', String.raw`(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)`],
+	['credit_card', String.raw`(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)`],
+	[
+		'ipv4',
+		String.raw`(?<!\d)(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)(?!\d)`,
+	],
+	[
+		'phone',
+		String.raw`(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]\d{3}[\s.-]\d{4}(?!\d)`,
+	],
+];
+
+const PII_HINT_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
+	['email', ['email', 'emailaddress']],
+	['phone', ['phone', 'phonenumber', 'mobile', 'mobilenumber']],
+	['ssn', ['ssn', 'socialsecuritynumber']],
+	['credit_card', ['creditcard', 'cardnumber']],
+	['ipv4', ['ipaddress', 'ipv4']],
+	['ipv6', ['ipv6']],
+	['first_name', ['firstname']],
+	['last_name', ['lastname']],
+	['person', ['fullname', 'personname']],
+	['address', ['streetaddress', 'postaladdress', 'mailingaddress']],
+	['date_of_birth', ['dateofbirth', 'birthdate', 'dob']],
+];
+
+const PII_FIRST_NAMES = [
+	'Avery',
+	'Blake',
+	'Casey',
+	'Dakota',
+	'Emerson',
+	'Finley',
+	'Harper',
+	'Jordan',
+	'Kai',
+	'Logan',
+	'Morgan',
+	'Parker',
+	'Quinn',
+	'Riley',
+	'Rowan',
+	'Taylor',
+] as const;
+
+const PII_LAST_NAMES = [
+	'Bennett',
+	'Brooks',
+	'Carter',
+	'Ellis',
+	'Hayes',
+	'Jordan',
+	'Lane',
+	'Morgan',
+	'Parker',
+	'Reed',
+	'Rivera',
+	'Sawyer',
+	'Taylor',
+	'Walker',
+	'Ward',
+	'Young',
+] as const;
+
+function normalizePIIKey(key: unknown): string {
+	return String(key)
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, '');
+}
+
+function inferPIIKind(key: unknown): string | undefined {
+	const normalized = normalizePIIKey(key);
+	for (const [kind, suffixes] of PII_HINT_SUFFIXES) {
+		if (suffixes.some((suffix) => normalized.endsWith(suffix))) return kind;
+	}
+	return undefined;
+}
+
+function looksLikeCreditCard(value: string): boolean {
+	const digits = [...value].filter((char) => /\d/.test(char)).join('');
+	if (digits.length < 13 || digits.length > 19) return false;
+	let total = 0;
+	const parity = digits.length % 2;
+	for (let index = 0; index < digits.length; index += 1) {
+		let digit = Number(digits[index]);
+		if (index % 2 === parity) {
+			digit *= 2;
+			if (digit > 9) digit -= 9;
+		}
+		total += digit;
+	}
+	return total % 10 === 0;
+}
+
+function piiDigests(value: string): { sha256: string; md5: string } {
+	const crypto = nodeModule('node:crypto') as {
+		createHash: (algorithm: string) => {
+			update: (
+				data: string,
+				encoding?: string,
+			) => {
+				digest: (encoding: 'hex') => string;
+			};
+		};
+	};
+	return {
+		sha256: crypto.createHash('sha256').update(value, 'utf8').digest('hex'),
+		// MD5 is used only as a user-requested deterministic fingerprint component,
+		// never as a security boundary or password/credential primitive.
+		md5: crypto.createHash('md5').update(value, 'utf8').digest('hex'),
+	};
+}
+
+export interface PIIMorpherOptions {
+	enabled?: boolean;
+	env?: Record<string, string | undefined>;
+}
+
+export class PIIMorpher {
+	readonly enabled: boolean;
+	private readonly replacements = new Map<string, string>();
+
+	constructor(options: PIIMorpherOptions = {}) {
+		const env = options.env ?? runtimeEnvironment();
+		let disabled: boolean | undefined;
+		try {
+			disabled = parseEnvBoolean(env[PII_MORPHER_DISABLE_ENV]);
+		} catch {
+			throw new Error(
+				PII_MORPHER_DISABLE_ENV + ' must be a boolean value',
+			);
+		}
+		this.enabled = (options.enabled ?? true) && disabled !== true;
+	}
+
+	static shortHash(value: string): string {
+		const digests = piiDigests(value);
+		const width = PII_SHORT_HASH_CHARS_PER_DIGEST;
+		return digests.sha256.slice(0, width) + digests.md5.slice(0, width);
+	}
+
+	get mapping(): Readonly<Record<string, string>> {
+		return Object.fromEntries(this.replacements);
+	}
+
+	private static seedParts(shortHash: string): [number, number, number] {
+		return [
+			Number.parseInt(shortHash.slice(0, 8), 16),
+			Number.parseInt(shortHash.slice(8, 16), 16),
+			Number.parseInt(shortHash.slice(12, 20), 16),
+		];
+	}
+
+	private fakeValue(kind: string, shortHash: string): string {
+		const [first, second, third] = PIIMorpher.seedParts(shortHash);
+		if (kind === 'email') {
+			const firstName =
+				PII_FIRST_NAMES[first % PII_FIRST_NAMES.length].toLowerCase();
+			const lastName =
+				PII_LAST_NAMES[second % PII_LAST_NAMES.length].toLowerCase();
+			return `${firstName}.${lastName}.${String(third % 10_000).padStart(4, '0')}@example.test`;
+		}
+		if (kind === 'phone') {
+			return `+1-000-${String(first % 1_000).padStart(3, '0')}-${String(second % 10_000).padStart(4, '0')}`;
+		}
+		if (kind === 'ssn') {
+			return `000-${String(first % 100).padStart(2, '0')}-${String(second % 10_000).padStart(4, '0')}`;
+		}
+		if (kind === 'credit_card') {
+			return `0000 0000 ${String(first % 10_000).padStart(4, '0')} ${String(second % 10_000).padStart(4, '0')}`;
+		}
+		if (kind === 'ipv4') {
+			const networks = ['192.0.2', '198.51.100', '203.0.113'] as const;
+			return `${networks[first % networks.length]}.${1 + (second % 254)}`;
+		}
+		if (kind === 'ipv6') {
+			const groups = [0, 4, 8, 12].map((index) =>
+				shortHash.slice(index, index + 4),
+			);
+			return '2001:db8:' + groups.join(':') + '::1';
+		}
+		if (kind === 'first_name') {
+			return PII_FIRST_NAMES[first % PII_FIRST_NAMES.length];
+		}
+		if (kind === 'last_name') {
+			return PII_LAST_NAMES[second % PII_LAST_NAMES.length];
+		}
+		if (kind === 'person') {
+			const firstName = PII_FIRST_NAMES[first % PII_FIRST_NAMES.length];
+			const lastName = PII_LAST_NAMES[second % PII_LAST_NAMES.length];
+			return firstName + ' ' + lastName;
+		}
+		if (kind === 'address') {
+			return `${100 + (first % 9_900)} Example Avenue, Testville, ZZ 00000`;
+		}
+		if (kind === 'date_of_birth') {
+			const year = 1970 + (first % 31);
+			const month = 1 + (second % 12);
+			const day = 1 + (third % 28);
+			return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+		}
+		const normalizedKind = kind
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '');
+		const label = normalizedKind || 'pii';
+		return `fake-${label}-${String(first % 1_000_000).padStart(6, '0')}`;
+	}
+
+	morphPII(original: string, kind: string): string {
+		if (!this.enabled || !original) return original;
+		const key = PIIMorpher.shortHash(original);
+		const existing = this.replacements.get(key);
+		if (existing !== undefined) return existing;
+		const fake = this.fakeValue(kind, key);
+		this.replacements.set(key, fake);
+		return fake;
+	}
+
+	private detectedEntities(text: string): PIIEntity[] {
+		const entities: PIIEntity[] = [];
+		for (const [kind, source] of PII_PATTERN_SPECS) {
+			const pattern = new RegExp(source, 'g');
+			for (const match of text.matchAll(pattern)) {
+				const original = match[0];
+				if (kind === 'credit_card' && !looksLikeCreditCard(original))
+					continue;
+				const start = match.index ?? 0;
+				entities.push({ kind, start, end: start + original.length });
+			}
+		}
+		return entities;
+	}
+
+	private static selectEntities(
+		text: string,
+		explicit: readonly PIIEntity[],
+		detected: readonly PIIEntity[],
+	): PIIEntity[] {
+		const candidates: Array<{
+			start: number;
+			priority: number;
+			negativeLength: number;
+			entity: PIIEntity;
+		}> = [];
+		for (const [priority, entities] of [
+			[0, explicit],
+			[1, detected],
+		] as const) {
+			for (const entity of entities) {
+				if (
+					!entity.kind.trim() ||
+					!Number.isInteger(entity.start) ||
+					!Number.isInteger(entity.end) ||
+					entity.start < 0 ||
+					entity.end <= entity.start ||
+					entity.end > text.length
+				) {
+					throw new Error(
+						'PII entity spans must be valid and non-empty',
+					);
+				}
+				candidates.push({
+					start: entity.start,
+					priority,
+					negativeLength: -(entity.end - entity.start),
+					entity,
+				});
+			}
+		}
+		candidates.sort(
+			(left, right) =>
+				left.start - right.start ||
+				left.priority - right.priority ||
+				left.negativeLength - right.negativeLength,
+		);
+		const selected: PIIEntity[] = [];
+		let occupiedUntil = -1;
+		for (const candidate of candidates) {
+			if (candidate.entity.start < occupiedUntil) continue;
+			selected.push(candidate.entity);
+			occupiedUntil = candidate.entity.end;
+		}
+		return selected;
+	}
+
+	morphText(
+		text: string,
+		options: { kind?: string; entities?: readonly PIIEntity[] } = {},
+	): string {
+		if (!this.enabled || !text) return text;
+		if (options.kind !== undefined) {
+			const leading = text.length - text.trimStart().length;
+			const trailing = text.length - text.trimEnd().length;
+			const end = trailing ? text.length - trailing : text.length;
+			const core = text.slice(leading, end);
+			if (!core) return text;
+			return (
+				text.slice(0, leading) +
+				this.morphPII(core, options.kind) +
+				text.slice(end)
+			);
+		}
+		const selected = PIIMorpher.selectEntities(
+			text,
+			options.entities ?? [],
+			this.detectedEntities(text),
+		);
+		let result = text;
+		for (let index = selected.length - 1; index >= 0; index -= 1) {
+			const entity = selected[index];
+			const original = text.slice(entity.start, entity.end);
+			const replacement = this.morphPII(original, entity.kind);
+			result =
+				result.slice(0, entity.start) +
+				replacement +
+				result.slice(entity.end);
+		}
+		return result;
+	}
+
+	morph(value: unknown, keyHint?: unknown): unknown {
+		if (!this.enabled) return value;
+		if (Array.isArray(value)) return value.map((item) => this.morph(item));
+		if (value && typeof value === 'object') {
+			const output: Record<string, unknown> = {};
+			for (const [key, item] of Object.entries(value)) {
+				output[key] = this.morph(item, key);
+			}
+			return output;
+		}
+		if (typeof value === 'string') {
+			return this.morphText(value, { kind: inferPIIKind(keyHint) });
+		}
+		return value;
+	}
+}
+
 export interface PrivacyRedactionPolicy {
 	sensitiveKeys?: string[];
 	replacement?: string;
@@ -1340,8 +1714,12 @@ export class PrivacyRedactor {
 	private readonly normalizedSensitiveKeys: string[];
 	readonly replacement: string;
 	readonly textPatterns: RegExp[];
+	readonly piiMorpher: PIIMorpher;
 
-	constructor(policy: PrivacyRedactionPolicy = {}) {
+	constructor(
+		policy: PrivacyRedactionPolicy = {},
+		piiMorpher: PIIMorpher = new PIIMorpher(),
+	) {
 		this.sensitiveKeys = new Set(
 			(
 				policy.sensitiveKeys ?? [
@@ -1367,10 +1745,12 @@ export class PrivacyRedactor {
 			.filter(Boolean);
 		this.replacement = policy.replacement ?? '[REDACTED]';
 		this.textPatterns = [...(policy.textPatterns ?? [])];
+		this.piiMorpher = piiMorpher;
 	}
 
-	redact(value: unknown): unknown {
-		if (Array.isArray(value)) return value.map((item) => this.redact(item));
+	private redactValue(value: unknown, keyHint?: unknown): unknown {
+		if (Array.isArray(value))
+			return value.map((item) => this.redactValue(item));
 		if (value && typeof value === 'object') {
 			const output: Record<string, unknown> = {};
 			for (const [key, item] of Object.entries(value)) {
@@ -1379,17 +1759,24 @@ export class PrivacyRedactor {
 					normalized.endsWith(item),
 				)
 					? this.replacement
-					: this.redact(item);
+					: this.redactValue(item, key);
 			}
 			return output;
 		}
 		if (typeof value === 'string') {
-			return this.textPatterns.reduce(
+			const redacted = this.textPatterns.reduce(
 				(result, pattern) => result.replace(pattern, this.replacement),
 				value,
 			);
+			return this.piiMorpher.morphText(redacted, {
+				kind: inferPIIKind(keyHint),
+			});
 		}
 		return value;
+	}
+
+	redact(value: unknown): unknown {
+		return this.redactValue(value);
 	}
 }
 
@@ -2725,6 +3112,13 @@ export class GuardrailViolationError extends Error {
 	}
 }
 
+export class ActionBlockedError extends GuardrailViolationError {
+	constructor(message: string, classifications: string[] = []) {
+		super(message, classifications);
+		this.name = 'ActionBlockedError';
+	}
+}
+
 function applyGuardrailResult<T>(original: T, result: GuardrailResult<T>): T {
 	const action = result.action ?? 'allow';
 	if (action === 'block') {
@@ -3143,6 +3537,7 @@ export class ToolRegistry {
 		readonly rateLimiter?: RateLimiter,
 		modelToolInputGuardrail: ModelToolInputGuardrailOptions = {},
 		readonly registrationGuard?: RegistrationSafetyGuard,
+		readonly actionBlockers: ActionBlockerLike[] = [],
 	) {
 		if (modelToolInputGuardrail.enabled) {
 			this.modelToolInputGuardrail = makeDefaultToolInputGuardrail(
@@ -3479,6 +3874,21 @@ export class ToolRegistry {
 					);
 				}
 				effectiveCall = transformed;
+			}
+		}
+
+		for (const blocker of this.actionBlockers) {
+			const decision = await evaluateActionBlocker(
+				blocker,
+				effectiveCall,
+				registered.definition,
+				requestContext,
+			);
+			if (decision.blocked) {
+				throw new ActionBlockedError(
+					decision.reason ?? 'action blocker rejected tool call',
+					[...(decision.classifications ?? [])],
+				);
 			}
 		}
 
@@ -8433,13 +8843,41 @@ export interface RetrievalProvider {
 	search(query: RetrievalQuery): Promise<RetrievalResult[]>;
 }
 
+export interface RetrievalReranker {
+	rerank(
+		query: RetrievalQuery,
+		results: readonly RetrievalResult[],
+		options?: { k?: number },
+	): Promise<RetrievalResult[]>;
+}
+
 export class RetrievalRegistry {
 	private readonly providers = new Map<string, RetrievalProvider>();
+	private readonly rerankers = new Map<string, RetrievalReranker>();
+	private readonly rerankerKs = new Map<string, number>();
 
-	register(name: string, provider: RetrievalProvider): void {
+	register(
+		name: string,
+		provider: RetrievalProvider,
+		options: { reranker?: RetrievalReranker; rerankerK?: number } = {},
+	): void {
 		if (!name.trim())
 			throw new Error('retrieval provider name must not be empty');
+		if (options.rerankerK !== undefined) {
+			if (!Number.isInteger(options.rerankerK) || options.rerankerK < 1) {
+				throw new Error('reranker k must be at least 1');
+			}
+			if (!options.reranker) throw new Error('reranker k requires a reranker');
+		}
 		this.providers.set(name, provider);
+		if (!options.reranker) {
+			this.rerankers.delete(name);
+			this.rerankerKs.delete(name);
+			return;
+		}
+		this.rerankers.set(name, options.reranker);
+		if (options.rerankerK === undefined) this.rerankerKs.delete(name);
+		else this.rerankerKs.set(name, options.rerankerK);
 	}
 
 	async search(
@@ -8452,7 +8890,18 @@ export class RetrievalRegistry {
 		}
 		const provider = this.providers.get(name);
 		if (!provider) throw new Error('unknown retrieval provider: ' + name);
-		return (await provider.search(query)).slice(0, limit);
+		let results = await provider.search(query);
+		const reranker = this.rerankers.get(name);
+		if (reranker) {
+			const k = this.rerankerKs.get(name);
+			if (k === undefined) {
+				results = await reranker.rerank(query, results);
+			} else {
+				results = await reranker.rerank(query, results, { k });
+				results = results.slice(0, k);
+			}
+		}
+		return results.slice(0, limit);
 	}
 }
 
@@ -10492,6 +10941,360 @@ export type ToolVisibilityFilter = (
 	context: ToolFilterContext,
 	tools: ToolDefinition[],
 ) => string[] | Promise<string[]>;
+
+export type ToolSafetyFilter = (
+	tools: ToolDefinition[],
+) => string[] | Promise<string[]>;
+
+export const TOOL_SEARCH_NAME = 'tool_search';
+const TOOL_SEARCH_RESULT_TYPE = 'agent_rt.tool_search_results';
+
+export interface ToolbaseMCPClient {
+	client?: {
+		serverInfo?: unknown;
+		initialize?: () => Promise<unknown>;
+	};
+	serverInfo?: unknown;
+	initialize?: () => Promise<unknown>;
+	listTools(): Promise<MCPTool[]>;
+	callTool(name: string, argumentsValue: Record<string, unknown>): Promise<unknown>;
+}
+
+function toolbaseMCPName(serverLabel: string, toolName: string): string {
+	const safeServer = serverLabel.replace(/[^a-zA-Z0-9_-]/g, '_');
+	const safeTool = toolName.replace(/[^a-zA-Z0-9_-]/g, '_');
+	return 'mcp.' + safeServer + '.' + safeTool;
+}
+
+export class Toolbase {
+	private readonly safeDefinitions: Map<string, ToolDefinition>;
+
+	private constructor(
+		readonly registry: ToolRegistry,
+		safeDefinitions: Map<string, ToolDefinition>,
+		readonly selectionFilter?: ToolVisibilityFilter,
+		readonly searchLimit = 8,
+	) {
+		this.safeDefinitions = safeDefinitions;
+	}
+
+	static async initialize(
+		options: {
+			toolRegistry?: ToolRegistry;
+			mcpClients?: Record<string, ToolbaseMCPClient>;
+			safetyFilter?: ToolSafetyFilter;
+			selectionFilter?: ToolVisibilityFilter;
+			searchLimit?: number;
+			allowlist?: string[];
+			blocklist?: string[];
+			read_allowlist?: string[];
+			read_blocklist?: string[];
+			write_allowlist?: string[];
+			write_blocklist?: string[];
+		} = {},
+	): Promise<Toolbase> {
+		const registry = options.toolRegistry ?? new ToolRegistry();
+		const searchLimit = options.searchLimit ?? 8;
+		if (!Number.isInteger(searchLimit) || searchLimit < 1) {
+			throw new Error('tool search limit must be positive');
+		}
+
+		const permitted = (name: string, sideEffect?: string): boolean => {
+			const reading = sideEffect === undefined || sideEffect === 'none' || sideEffect === 'read';
+			const scopedAllow = reading ? options.read_allowlist : options.write_allowlist;
+			const scopedBlock = reading ? options.read_blocklist : options.write_blocklist;
+			return !(options.blocklist ?? []).includes(name) &&
+				!(scopedBlock ?? []).includes(name) &&
+				(options.allowlist === undefined || options.allowlist.includes(name)) &&
+				(scopedAllow === undefined || scopedAllow.includes(name));
+		};
+		for (const name of registry.deferredNames()) {
+			if (!(options.blocklist ?? []).includes(name) &&
+				(options.allowlist === undefined || options.allowlist.includes(name))) registry.load(name);
+		}
+
+		const candidateDefinitions = new Map<string, ToolDefinition>();
+		const candidateRawDefinitions = new Map<string, ToolDefinition>();
+		for (const tool of registry.list()) {
+			const name = ToolRegistry.qualifiedName(
+				tool.definition.name,
+				tool.namespace,
+			);
+			const definition = tool.namespace
+				? { ...tool.definition, name }
+				: tool.definition;
+			candidateDefinitions.set(name, definition);
+			candidateRawDefinitions.set(name, tool.definition);
+		}
+		if (candidateDefinitions.has(TOOL_SEARCH_NAME)) {
+			throw new Error(
+				'tool name ' + JSON.stringify(TOOL_SEARCH_NAME) + ' is reserved by Toolbase',
+			);
+		}
+		for (const [name, definition] of candidateDefinitions) {
+			if (!permitted(name, definition.sideEffect)) candidateDefinitions.delete(name);
+		}
+
+		const mcpBindings = new Map<
+			string,
+			{ client: ToolbaseMCPClient; remoteName: string; definition: ToolDefinition }
+		>();
+		for (const [serverLabel, client] of Object.entries(options.mcpClients ?? {})) {
+			const inner = client.client ?? client;
+			if (
+				inner.serverInfo === undefined &&
+				typeof inner.initialize === 'function'
+			) {
+				await inner.initialize();
+			}
+			for (const tool of await client.listTools()) {
+				if (!tool.name.trim()) {
+					throw new Error(
+						'MCP client ' + JSON.stringify(serverLabel) + ' returned a tool without a name',
+					);
+				}
+				const exposedName = toolbaseMCPName(serverLabel, tool.name);
+				if (!permitted(exposedName, 'consequential')) continue;
+				if (
+					exposedName === TOOL_SEARCH_NAME ||
+					candidateDefinitions.has(exposedName)
+				) {
+					throw new Error(
+						'tool name collision while building Toolbase: ' + exposedName,
+					);
+				}
+				const definition: ToolDefinition = {
+					name: exposedName,
+					description:
+						tool.description?.trim() ||
+						'MCP tool ' + tool.name + ' from ' + serverLabel,
+					inputSchema: { ...(tool.inputSchema ?? { type: 'object' }) },
+					metadata: {
+						toolbase_source: 'mcp',
+						mcp_server: serverLabel,
+						mcp_tool: tool.name,
+					},
+					sideEffect: 'consequential',
+				};
+				candidateDefinitions.set(exposedName, definition);
+				mcpBindings.set(exposedName, {
+					client,
+					remoteName: tool.name,
+					definition,
+				});
+			}
+		}
+
+		const safeNames = new Set(
+			options.safetyFilter
+				? await options.safetyFilter([...candidateDefinitions.values()])
+				: [...candidateDefinitions.keys()],
+		);
+		for (const name of [...safeNames]) {
+			if (!candidateDefinitions.has(name)) safeNames.delete(name);
+		}
+
+		for (const [exposedName, binding] of mcpBindings) {
+			if (!safeNames.has(exposedName)) continue;
+			const registered = registry.register(binding.definition, {
+				handler: async (argumentsValue) =>
+					binding.client.callTool(binding.remoteName, argumentsValue),
+			});
+			candidateRawDefinitions.set(exposedName, registered.definition);
+		}
+
+		const safeDefinitions = new Map<string, ToolDefinition>();
+		for (const name of safeNames) {
+			const definition = candidateRawDefinitions.get(name);
+			if (definition) safeDefinitions.set(name, definition);
+		}
+
+		const toolbase = new Toolbase(
+			registry,
+			safeDefinitions,
+			options.selectionFilter,
+			searchLimit,
+		);
+		const searchDefinition: ToolDefinition = {
+			name: TOOL_SEARCH_NAME,
+			description:
+				"Search the agent's full safe tool catalog for tools that were not included in the current turn. Matching tools become available on the next turn.",
+			inputSchema: {
+				type: 'object',
+				properties: {
+					query: { type: 'string', minLength: 1 },
+					limit: {
+						type: 'integer',
+						minimum: 1,
+						maximum: searchLimit,
+					},
+				},
+				required: ['query'],
+				additionalProperties: false,
+			},
+			sideEffect: 'none',
+			metadata: { toolbase_internal: true },
+		};
+		const registeredSearch = registry.register(searchDefinition, {
+			handler: (argumentsValue, signal) =>
+				toolbase.searchHandler(argumentsValue, signal),
+		});
+		toolbase.safeDefinitions.set(
+			TOOL_SEARCH_NAME,
+			registeredSearch.definition,
+		);
+		return toolbase;
+	}
+
+	get version(): number {
+		return this.registry.version;
+	}
+
+	private isScreened(name: string, tool: RegisteredTool): boolean {
+		return this.safeDefinitions.get(name) === tool.definition;
+	}
+
+	definitions(): ToolDefinition[] {
+		const visible: ToolDefinition[] = [];
+		for (const tool of this.registry.list()) {
+			const name = ToolRegistry.qualifiedName(
+				tool.definition.name,
+				tool.namespace,
+			);
+			if (!this.isScreened(name, tool)) continue;
+			visible.push(tool.namespace ? { ...tool.definition, name } : tool.definition);
+		}
+		return visible;
+	}
+
+	get(name: string): RegisteredTool {
+		const tool = this.registry.get(name);
+		if (!this.isScreened(name, tool)) {
+			throw new Error('tool is not safety-screened in this Toolbase: ' + name);
+		}
+		return tool;
+	}
+
+	async execute(
+		call: ToolCall,
+		signal?: AbortSignal,
+		requestContext: Record<string, unknown> = {},
+	): Promise<unknown> {
+		this.get(call.name);
+		return this.registry.execute(call, signal, requestContext);
+	}
+
+	capabilityDescriptors(): CapabilityDescriptor[] {
+		return this.definitions()
+			.filter((definition) => definition.name !== TOOL_SEARCH_NAME)
+			.map((definition) => ({
+				id: 'tool:' + definition.name,
+				kind: 'tool' as const,
+				name: definition.name,
+				description: definition.description,
+				metadata: definition.metadata,
+			}));
+	}
+
+	private async searchHandler(
+		argumentsValue: Record<string, unknown>,
+		_signal?: AbortSignal,
+	): Promise<Record<string, unknown>> {
+		const query = String(argumentsValue.query ?? '').trim();
+		const requestedLimit =
+			typeof argumentsValue.limit === 'number'
+				? Math.floor(argumentsValue.limit)
+				: this.searchLimit;
+		const limit = Math.min(Math.max(requestedLimit, 1), this.searchLimit);
+		const catalog = new CapabilityCatalog(this.capabilityDescriptors());
+		const matches = catalog.search(query, { kinds: ['tool'], limit });
+		const definitions = new Map(
+			this.definitions().map((definition) => [definition.name, definition]),
+		);
+		const tools = matches.flatMap((match) => {
+			const definition = definitions.get(match.capability.name);
+			if (!definition) return [];
+			return [
+				{
+					name: definition.name,
+					description: definition.description,
+					inputSchema: definition.inputSchema,
+					sideEffect: definition.sideEffect ?? 'none',
+					score: match.score,
+				},
+			];
+		});
+		return { type: TOOL_SEARCH_RESULT_TYPE, query, tools };
+	}
+
+	private static searchedToolNames(messages: ModelMessage[]): Set<string> {
+		const searchCallIds = new Set(
+			messages.flatMap((message) =>
+				message.role === 'assistant'
+					? (message.toolCalls ?? [])
+							.filter((call) => call.name === TOOL_SEARCH_NAME)
+							.map((call) => call.id)
+					: [],
+			),
+		);
+		const names = new Set<string>();
+		for (const message of messages) {
+			if (
+				message.role !== 'tool' ||
+				!message.toolCallId ||
+				!searchCallIds.has(message.toolCallId)
+			) {
+				continue;
+			}
+			for (const part of message.content) {
+				if (
+					part.type !== 'json' ||
+					!part.data ||
+					typeof part.data !== 'object' ||
+					Array.isArray(part.data)
+				) {
+					continue;
+				}
+				const data = part.data as Record<string, unknown>;
+				if (data.type !== TOOL_SEARCH_RESULT_TYPE || !Array.isArray(data.tools)) {
+					continue;
+				}
+				for (const result of data.tools) {
+					if (
+						result &&
+						typeof result === 'object' &&
+						!Array.isArray(result) &&
+						typeof (result as Record<string, unknown>).name === 'string'
+					) {
+						names.add((result as Record<string, unknown>).name as string);
+					}
+				}
+			}
+		}
+		return names;
+	}
+
+	visibilityFilter(baseFilter?: ToolVisibilityFilter): ToolVisibilityFilter {
+		const selector = baseFilter ?? this.selectionFilter;
+		return async (context, tools) => {
+			const candidates = tools.filter(
+				(tool) => tool.name !== TOOL_SEARCH_NAME,
+			);
+			const selected = new Set(
+				selector
+					? await selector(context, candidates)
+					: candidates.map((tool) => tool.name),
+			);
+			for (const name of Toolbase.searchedToolNames(context.messages)) {
+				selected.add(name);
+			}
+			selected.add(TOOL_SEARCH_NAME);
+			return tools
+				.filter((tool) => selected.has(tool.name))
+				.map((tool) => tool.name);
+		};
+	}
+}
 
 export interface ModelTarget {
 	model: string;
@@ -14912,11 +15715,13 @@ class RunCancelledError extends Error {
 }
 
 export class AgentLoop {
+	private readonly toolFilter?: ToolVisibilityFilter;
+
 	constructor(
 		private readonly provider: ModelProvider,
 		private readonly toolExecutor?: ToolExecutor,
-		private readonly toolRegistry?: ToolRegistry,
-		private readonly toolFilter?: ToolVisibilityFilter,
+		private readonly toolRegistry?: ToolRegistry | Toolbase,
+		toolFilter?: ToolVisibilityFilter,
 		private readonly contextAssembler: ContextAssembler = new ContextAssembler(),
 		private readonly eventStore?: EventStore,
 		private readonly idempotencyStore?: IdempotencyStore,
@@ -14940,6 +15745,10 @@ export class AgentLoop {
 			| undefined,
 		private readonly boundaryGuardrailPolicy: BoundaryGuardrailPolicy | null = DEFAULT_BOUNDARY_GUARDRAIL_POLICY,
 	) {
+		this.toolFilter =
+			this.toolRegistry instanceof Toolbase
+				? this.toolRegistry.visibilityFilter(toolFilter)
+				: toolFilter;
 		if (boundaryGuardrailPolicy !== null)
 			resolveBoundaryGuardrailPolicy(boundaryGuardrailPolicy);
 	}
@@ -15664,9 +16473,7 @@ export class AgentLoop {
 				);
 			}
 
-			const iterator = this.provider
-				.stream(request)
-				[Symbol.asyncIterator]();
+			const iterator = this.provider.stream(request)[Symbol.asyncIterator]();
 			let completed: ModelResponse | undefined;
 			while (true) {
 				const next = await withDeadline(iterator.next());

@@ -36,13 +36,12 @@ harmactionseval = [
 
 [[package]]
 name = "agent-rt"
-version = "0.0.2"
+version = "0.0.3"
 source = { editable = "." }
 dependencies = [
     { name = "httpcore", extra = ["asyncio"] },
     { name = "httpx" },
     { name = "requests" },
-    { name = "traceloop-sdk" },
     { name = "websockets" },
 ]
 
@@ -58,6 +57,7 @@ all = [
     { name = "prompt-toolkit" },
     { name = "rich" },
     { name = "swe-rex" },
+    { name = "traceloop-sdk" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 anthropic = [
@@ -102,12 +102,16 @@ dev = [
     { name = "rich" },
     { name = "ruff" },
     { name = "swe-rex" },
+    { name = "traceloop-sdk" },
     { name = "twine" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 guardrails = [
     { name = "agent-action-guard", extra = ["harmactionseval"] },
     { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+]
+observability = [
+    { name = "traceloop-sdk" },
 ]
 openai = [
     { name = "openai" },
@@ -183,14 +187,16 @@ requires-dist = [
     { name = "swe-rex", marker = "extra == 'all'", specifier = ">=1.4,<2" },
     { name = "swe-rex", marker = "extra == 'dev'", specifier = ">=1.4,<2" },
     { name = "swe-rex", marker = "extra == 'sandbox-swe-rex'", specifier = ">=1.4,<2" },
-    { name = "traceloop-sdk", specifier = ">=0.62,<1" },
+    { name = "traceloop-sdk", marker = "extra == 'all'", specifier = ">=0.62,<1" },
+    { name = "traceloop-sdk", marker = "extra == 'dev'", specifier = ">=0.62,<1" },
+    { name = "traceloop-sdk", marker = "extra == 'observability'", specifier = ">=0.62,<1" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=6,<7" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.30,<1" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'api'", specifier = ">=0.30,<1" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'dev'", specifier = ">=0.30,<1" },
     { name = "websockets", specifier = ">=14,<17" },
 ]
-provides-extras = ["openai", "anthropic", "providers", "guardrails", "sandbox-e2b", "sandbox-microsandbox", "sandbox-swe-rex", "api", "cli", "all", "dev"]
+provides-extras = ["openai", "anthropic", "providers", "observability", "guardrails", "sandbox-e2b", "sandbox-microsandbox", "sandbox-swe-rex", "api", "cli", "all", "dev"]
 
 [[package]]
 name = "agentsec-ai"

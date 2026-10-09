@@ -3,7 +3,6 @@ import json
 
 import pytest
 
-from ext import decisions as agent_rt_decisions
 from agent_rt import (
     AgentConfig,
     AgentLoop,
@@ -26,10 +25,12 @@ from agent_rt import (
     ToolSelectionPolicy,
     _apply_guardrail_result,
 )
+from ext import decisions as agent_rt_decisions
 from ext.decisions import (
     DecisionFilteredRetrievalProvider,
     DecisionMemoryGuard,
     DecisionMemoryWritePolicy,
+    DecisionRetrievalReranker,
     JevDecisionProvider,
     filter_context_items,
     make_decision_registration_guard,
@@ -359,6 +360,36 @@ class TestDecisionIntegration:
         filtered = guard.filter_results(results, query="prepare deployment")
         assert [result.record.id for result in filtered] == ["safe"]
         assert all(call[0]["untrusted_memory"] for call in provider.calls)
+
+    def test_retrieval_reranker_k_is_optional(self):
+        class ScoreByTitleDecisionProvider:
+            def decide(self, state, questions):
+                relevance = {
+                    "First": 0.6,
+                    "Second": 0.95,
+                    "Drop": 0.2,
+                }[state["title"]]
+                return {
+                    "relevant": {"noul": relevance},
+                    "trustworthy": {"noul": 0.9},
+                }
+
+        reranker = DecisionRetrievalReranker(ScoreByTitleDecisionProvider())
+        candidates = (
+            RetrievalResult(id="a", title="First", content="one"),
+            RetrievalResult(id="b", title="Second", content="two"),
+            RetrievalResult(id="c", title="Drop", content="three"),
+        )
+        query = RetrievalQuery(text="query", limit=10)
+
+        all_results = asyncio.run(reranker.rerank(query, candidates))
+        assert [result.id for result in all_results] == ["b", "a"]
+
+        top_result = asyncio.run(reranker.rerank(query, candidates, k=1))
+        assert [result.id for result in top_result] == ["b"]
+
+        with pytest.raises(ValueError, match="reranker k must be at least 1"):
+            asyncio.run(reranker.rerank(query, candidates, k=0))
 
     def test_retrieval_and_context_filtering(self):
         provider = QueueDecisionProvider(

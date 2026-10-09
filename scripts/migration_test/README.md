@@ -1,6 +1,6 @@
 # Migration test runner
 
-`migration_test.py` consumes `repo_list.csv` and tests the documented one-import-path Agent RT migration against third-party repositories.
+`migration_test.py` consumes `repo_list.csv` and tests the documented one-import-path Agent RT migration against third-party repositories. Field testing is ongoing; 69 third-party repositories currently pass their test suites both before and after migration.
 
 For each CSV row, the runner clones the repository, records the tested commit, checks whether the repository is suitable for migration testing, runs its tests before migration, applies the Agent RT import/package rewrite, installs the local Agent RT package, and runs the tests again. Results are stored in `migration_results.csv` with these columns:
 
