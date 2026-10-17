@@ -11,7 +11,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 - **Provider-neutral.** OpenAI-compatible endpoints, OpenAI, Anthropic, or your own `ModelProvider`.
 - **Safe by construction.** Tool validation, permissions, composable action blockers, approvals, deterministic PII morphing, guardrails, budgets, and deadlines are runtime primitives.
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
-- **Small core.** Provider SDKs, guardrails, API serving, CLI, and sandboxes are opt-in extras.
+- **Small core.** OpenAI support is included; Anthropic, guardrails, API serving, CLI, and sandboxes are opt-in extras.
 - **Production-ready.** Checkpoints, event streams, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
 - **Easy to adopt.** Drop-in compatibility for OpenAI, Anthropic, LangChain, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
 
@@ -21,8 +21,10 @@ Python 3.10–3.14.
 
 ```bash
 pip install agent-rt
-pip install 'agent-rt[all]'   # or pick extras: openai, anthropic, observability, api, cli, guardrails
+pip install 'agent-rt[all]'   # or pick extras: anthropic, observability, api, cli, guardrails
 ```
+
+Works with the `openai` (1.31+, including 2.x and 3.x) and `anthropic` (0.29+, including 1.x) SDK versions your project already pins — any release since mid-2024.
 
 OpenLLMetry/Traceloop export is optional. Install `agent-rt[observability]` only when TRACELOOP-based telemetry is needed; the core runtime does not require it.
 

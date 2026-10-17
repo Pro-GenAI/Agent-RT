@@ -33,7 +33,7 @@ for version in "${versions[@]}"; do
     env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u CONDA_PROMPT_MODIFIER \
       -u CONDA_SHLVL -u VIRTUAL_ENV -u PYTHONHOME \
       uv run --locked --isolated --python "${version}" --extra dev \
-        pytest -q; then
+        pytest -q -n auto --dist worksteal -p no:cacheprovider; then
     statuses+=("PASS")
     passed=$((passed + 1))
   else

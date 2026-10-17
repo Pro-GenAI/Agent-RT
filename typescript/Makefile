@@ -2,7 +2,7 @@
 
 NPM ?= npm
 
-.PHONY: help install install-dev test test-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
+.PHONY: help install install-dev test test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
 
 # GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
 require-bash:
@@ -19,6 +19,7 @@ help:
 		'  make install-dev       Alias for make install' \
 		'  make test              Run the regression test suite' \
 		'  make test-matrix       Run tests across all supported Node versions' \
+		'  make test-deps-matrix  Run tests across supported dependency versions (mid-2024+)' \
 		'  make lint              Run ESLint checks' \
 		'  make format            Format source/scripts with Prettier' \
 		'  make format-check      Check formatting without changing files' \
@@ -40,6 +41,9 @@ test:
 
 test-matrix: require-bash
 	$(NPM) run test:matrix
+
+test-deps-matrix: require-bash
+	$(NPM) run test:deps-matrix
 
 lint:
 	$(NPM) run lint

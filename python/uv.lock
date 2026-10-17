@@ -41,6 +41,7 @@ source = { editable = "." }
 dependencies = [
     { name = "httpcore", extra = ["asyncio"] },
     { name = "httpx" },
+    { name = "openai" },
     { name = "requests" },
     { name = "websockets" },
 ]
@@ -137,10 +138,10 @@ requires-dist = [
     { name = "agent-action-guard", extras = ["harmactionseval"], marker = "extra == 'cli'", specifier = ">=1.2.1,<2" },
     { name = "agent-action-guard", extras = ["harmactionseval"], marker = "extra == 'guardrails'", specifier = ">=1.2.1,<2" },
     { name = "agentsec-ai", marker = "extra == 'dev'", specifier = ">=0.5,<1" },
-    { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.40,<1" },
-    { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.40,<1" },
-    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.40,<1" },
-    { name = "anthropic", marker = "extra == 'providers'", specifier = ">=0.40,<1" },
+    { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.29,<2" },
+    { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.29,<2" },
+    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.29,<2" },
+    { name = "anthropic", marker = "extra == 'providers'", specifier = ">=0.29,<2" },
     { name = "bandit", extras = ["toml"], marker = "extra == 'dev'", specifier = ">=1.8,<2" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=25.9,<27" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.2,<2" },
@@ -165,10 +166,11 @@ requires-dist = [
     { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'cli'", specifier = "<1.24" },
     { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'dev'", specifier = "<1.24" },
     { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'guardrails'", specifier = "<1.24" },
-    { name = "openai", marker = "extra == 'all'", specifier = ">=1,<3" },
-    { name = "openai", marker = "extra == 'dev'", specifier = ">=1,<3" },
-    { name = "openai", marker = "extra == 'openai'", specifier = ">=1,<3" },
-    { name = "openai", marker = "extra == 'providers'", specifier = ">=1,<3" },
+    { name = "openai", specifier = ">=1.31,<4" },
+    { name = "openai", marker = "extra == 'all'", specifier = ">=1.31,<4" },
+    { name = "openai", marker = "extra == 'dev'", specifier = ">=1.31,<4" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.31,<4" },
+    { name = "openai", marker = "extra == 'providers'", specifier = ">=1.31,<4" },
     { name = "picklescan", marker = "python_full_version >= '3.11' and extra == 'dev'", specifier = ">=1.0.5,<2" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10,<3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4,<5" },
@@ -194,7 +196,7 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'all'", specifier = ">=0.30,<1" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'api'", specifier = ">=0.30,<1" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'dev'", specifier = ">=0.30,<1" },
-    { name = "websockets", specifier = ">=14,<17" },
+    { name = "websockets", specifier = ">=13,<18" },
 ]
 provides-extras = ["openai", "anthropic", "providers", "observability", "guardrails", "sandbox-e2b", "sandbox-microsandbox", "sandbox-swe-rex", "api", "cli", "all", "dev"]
 

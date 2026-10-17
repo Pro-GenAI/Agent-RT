@@ -4987,9 +4987,15 @@ export async function validateAnthropicProviderSettings(
 		baseURL: resolved.baseUrl,
 		apiKey: resolved.apiKey ?? 'not-provided',
 	});
-	// The optional peer range starts at the Messages API (0.14); the models
-	// API that validation needs arrived in 0.39.
-	if (typeof client.models?.list !== 'function') {
+	// The optional peer range starts at 0.23 (the oldest tested release); SDKs before
+	// the models API (0.39) reach `/v1/models` through the generic `get()`.
+	const listable = client as Partial<ModelListClient> & {
+		get?(path: string): Promise<unknown>;
+	};
+	if (
+		typeof listable.models?.list !== 'function' &&
+		typeof listable.get !== 'function'
+	) {
 		throw new Error(
 			"Anthropic startup validation needs the models API: upgrade '@anthropic-ai/sdk' " +
 				'to 0.39.0 or newer, or pass clientFactory explicitly.',
@@ -4997,7 +5003,7 @@ export async function validateAnthropicProviderSettings(
 	}
 	let modelIds: string[];
 	try {
-		modelIds = modelListIds(await client.models.list());
+		modelIds = modelListIds(await anthropicListModels(listable));
 	} catch (error) {
 		throw new Error(
 			`Anthropic startup validation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -5141,23 +5147,49 @@ type OpenAICompletionClient = {
 	};
 };
 
+type AnthropicBatchesResource = {
+	create(params: Record<string, unknown>): Promise<unknown>;
+	retrieve(id: string): Promise<unknown>;
+	list(params?: Record<string, unknown>): Promise<unknown>;
+	cancel(id: string): Promise<unknown>;
+	results(id: string): Promise<unknown>;
+};
+
 type AnthropicCompletionClient = {
 	messages: {
 		create(params: Record<string, unknown>): Promise<unknown>;
 		countTokens?(params: Record<string, unknown>): Promise<unknown>;
-		batches?: {
-			create(params: Record<string, unknown>): Promise<unknown>;
-			retrieve(id: string): Promise<unknown>;
-			list(params?: Record<string, unknown>): Promise<unknown>;
-			cancel(id: string): Promise<unknown>;
-			results(id: string): Promise<unknown>;
-		};
+		batches?: AnthropicBatchesResource;
 	};
+	// SDKs 0.28-0.38 expose batches only under the beta namespace.
+	beta?: { messages?: { batches?: AnthropicBatchesResource } };
 	models?: {
 		list(): Promise<unknown>;
 		retrieve(model: string): Promise<unknown>;
 	};
+	// Generic request helpers every SDK release ships; they reach endpoints
+	// that older SDKs have no typed resource for.
+	get?(path: string): Promise<unknown>;
+	post?(path: string, options: { body: unknown }): Promise<unknown>;
 };
+
+function anthropicBatches(
+	client: AnthropicCompletionClient,
+): AnthropicBatchesResource | undefined {
+	return client.messages.batches ?? client.beta?.messages?.batches;
+}
+
+/** List models, or fetch `/v1/models` on SDKs that predate the models API (0.39). */
+async function anthropicListModels(client: {
+	models?: { list(): Promise<unknown> };
+	get?(path: string): Promise<unknown>;
+}): Promise<unknown> {
+	if (typeof client.models?.list === 'function') return client.models.list();
+	if (typeof client.get === 'function') return client.get('/v1/models');
+	throw new TypeError(
+		'Anthropic provider client does not support models.list()',
+	);
+}
 
 function providerValue(value: unknown, key: string): unknown {
 	if (typeof value !== 'object' || value === null) return undefined;
@@ -6632,65 +6664,60 @@ export class AnthropicModelProvider implements StreamingModelProvider {
 
 	async createBatch(params: Record<string, unknown>): Promise<BatchJob> {
 		const client = await this.getClient();
-		const create = client.messages.batches?.create;
+		const create = anthropicBatches(client)?.create;
 		if (!create)
 			throw new TypeError(
 				'Anthropic provider client does not support messages.batches.create()',
 			);
-		return batchJob(await create.call(client.messages.batches, params));
+		return batchJob(await create.call(anthropicBatches(client), params));
 	}
 
 	async retrieveBatch(id: string): Promise<BatchJob> {
 		const client = await this.getClient();
-		const retrieve = client.messages.batches?.retrieve;
+		const retrieve = anthropicBatches(client)?.retrieve;
 		if (!retrieve)
 			throw new TypeError(
 				'Anthropic provider client does not support messages.batches.retrieve()',
 			);
-		return batchJob(await retrieve.call(client.messages.batches, id));
+		return batchJob(await retrieve.call(anthropicBatches(client), id));
 	}
 
 	async listBatches(
 		params: Record<string, unknown> = {},
 	): Promise<BatchJob[]> {
 		const client = await this.getClient();
-		const list = client.messages.batches?.list;
+		const list = anthropicBatches(client)?.list;
 		if (!list)
 			throw new TypeError(
 				'Anthropic provider client does not support messages.batches.list()',
 			);
-		const raw = await list.call(client.messages.batches, params);
+		const raw = await list.call(anthropicBatches(client), params);
 		return batchData(raw).map(batchJob);
 	}
 
 	async cancelBatch(id: string): Promise<BatchJob> {
 		const client = await this.getClient();
-		const cancel = client.messages.batches?.cancel;
+		const cancel = anthropicBatches(client)?.cancel;
 		if (!cancel)
 			throw new TypeError(
 				'Anthropic provider client does not support messages.batches.cancel()',
 			);
-		return batchJob(await cancel.call(client.messages.batches, id));
+		return batchJob(await cancel.call(anthropicBatches(client), id));
 	}
 
 	async batchResults(id: string): Promise<unknown> {
 		const client = await this.getClient();
-		const results = client.messages.batches?.results;
+		const results = anthropicBatches(client)?.results;
 		if (!results)
 			throw new TypeError(
 				'Anthropic provider client does not support messages.batches.results()',
 			);
-		return results.call(client.messages.batches, id);
+		return results.call(anthropicBatches(client), id);
 	}
 
 	async listModels(): Promise<ModelCatalogEntry[]> {
 		const client = await this.getClient();
-		const list = client.models?.list;
-		if (!list)
-			throw new TypeError(
-				'Anthropic provider client does not support models.list()',
-			);
-		const raw = await list.call(client.models);
+		const raw = await anthropicListModels(client);
 		return modelCatalogData(raw).map((item) =>
 			modelCatalogEntry(item, true),
 		);
@@ -6713,7 +6740,9 @@ export class AnthropicModelProvider implements StreamingModelProvider {
 	async countTokens(request: ModelRequest): Promise<number> {
 		const client = await this.getClient();
 		const countTokens = client.messages.countTokens;
-		if (!countTokens) {
+		// SDKs before 0.39 lack messages.countTokens(); the generic request
+		// helper reaches the same endpoint.
+		if (!countTokens && typeof client.post !== 'function') {
 			throw new TypeError(
 				'Anthropic provider client does not support messages.countTokens()',
 			);
@@ -6722,7 +6751,11 @@ export class AnthropicModelProvider implements StreamingModelProvider {
 		delete params.max_tokens;
 		delete params.temperature;
 		delete params.output_config;
-		const raw = await countTokens.call(client.messages, params);
+		const raw = countTokens
+			? await countTokens.call(client.messages, params)
+			: await client.post?.('/v1/messages/count_tokens', {
+					body: params,
+				});
 		const inputTokens = numberValue(providerValue(raw, 'input_tokens'));
 		if (inputTokens === undefined) {
 			throw new Error(

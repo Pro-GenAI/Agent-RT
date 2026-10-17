@@ -169,7 +169,8 @@
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
-		"test": "npm run build && node --test tests/test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js",
+		"test": "npm run build && npm run test:run",
+		"test:run": "node --test tests/test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js",
 		"evaluate": "node scripts/evaluate-harness.js --scope all",
 		"evaluate:evals": "node scripts/evaluate-harness.js --scope evals",
 		"evaluate:tests": "node scripts/evaluate-harness.js --scope tests",
@@ -180,6 +181,7 @@
 		"security:attacks": "npm run build && node scripts/security-attack-scan.mjs",
 		"security:gate": "npm run security:scan:gate && npm run security:attacks && npm run security:deps && npm run security:secrets && npm run security:mcp",
 		"test:matrix": "bash scripts/test-matrix.sh",
+		"test:deps-matrix": "bash scripts/test-deps-matrix.sh",
 		"lint": "eslint src scripts",
 		"lint:fix": "eslint src scripts --fix",
 		"format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.{js,mjs}\"",
@@ -218,12 +220,12 @@
 		"ws": "^8.22.0"
 	},
 	"peerDependencies": {
-		"@anthropic-ai/sdk": ">=0.14.0",
+		"@anthropic-ai/sdk": ">=0.23.0",
 		"@traceloop/node-server-sdk": "^0.27.0",
 		"agent-action-guard": "^1.2.1",
 		"e2b": ">=1.4.0 <3",
 		"microsandbox": ">=0.7.4 <0.8",
-		"openai": ">=4.0.0"
+		"openai": ">=4.48.1"
 	},
 	"peerDependenciesMeta": {
 		"@anthropic-ai/sdk": {

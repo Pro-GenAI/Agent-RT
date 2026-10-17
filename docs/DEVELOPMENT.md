@@ -39,6 +39,7 @@ make help
 make install
 make test
 make test-matrix
+make test-deps-matrix
 make lint
 make format
 make format-check
@@ -55,6 +56,7 @@ make check
 | `make install` | Install locked development dependencies (`uv sync --extra dev --locked`). |
 | `make test` | Run the regression suite in parallel. |
 | `make test-matrix` | Run the suite across all supported Python versions. |
+| `make test-deps-matrix` | Run the suite across supported dependency versions (`openai`, `anthropic`, `httpx`, `websockets`, ... released since mid-2024). |
 | `make lint` / `make format` / `make format-check` | Ruff lint; Black formatting; Black check without changes. |
 | `make typecheck` | Run mypy on `src`. |
 | `make quality` | `typecheck` + `lint` + `format-check`. |
@@ -79,6 +81,16 @@ PYTHON_VERSIONS="3.13 3.14" ./scripts/test-matrix.sh
 ```
 
 The matrix uses `uv`, ignores inherited Conda activation variables, and creates isolated locked environments from `uv.lock`. Both `make test-matrix` and `make security` require Bash on `PATH`; on Windows without Bash, the Make targets stop immediately with an actionable error.
+
+Applications keep the SDK versions their own projects pin, so the runtime supports every `openai` (1.31+), `anthropic` (0.29+), `httpx` (0.27+), and `websockets` (13+) release since mid-2024. Run the suite against representative versions of those dependencies:
+
+```bash
+make test-deps-matrix
+DEPS_PROFILES="mid-2024 latest" ./scripts/test-deps-matrix.sh   # subset
+DEPS_PYTHON=3.13 ./scripts/test-deps-matrix.sh                    # other interpreter (default 3.12)
+```
+
+Each profile (`mid-2024`, `late-2024`, `mid-2025`, `late-2025`, `mid-2026`, `latest`) installs the `dev` extra into a disposable virtual environment with that profile's pins applied as `uv pip install --override`, runs the full suite, deletes the environment, and ends with a per-profile PASS/FAIL summary; `uv.lock` and the `make test` environment are untouched. Keep the first profile at the `pyproject.toml` floors and the last at the newest releases, and widen the declared ranges when a new major SDK release passes. `tests/test_sdk_versions.py` drives the installed real SDKs against a loopback wire-format double, so SDK-specific breakage (for example request fields an older SDK rejects, or APIs it lacks) shows up offline. Old `openai` (<1.55.3) and `anthropic` (<0.40) releases need `httpx<0.28`, which their applications already pin.
 
 The regression suite is pytest-native. Async tests use pytest-asyncio in auto mode with function-scoped test and fixture loops. Vector database integration coverage runs entirely on localhost through `tests/helpers/vector_mock.py` and `tests/test_vector_mock_integration.py`, covering Chroma, Milvus, Pinecone, Qdrant, and Weaviate through core Agent RT plus LangChain and LlamaIndex compatibility paths.
 
@@ -187,6 +199,15 @@ Override the matrix when needed:
 NODE_VERSIONS="22 24 26" npm run test:matrix
 ```
 
+Run the suite against representative optional-peer SDK versions released since mid-2024 (`openai` 4.x-7.x, `@anthropic-ai/sdk` 0.23+):
+
+```bash
+make test-deps-matrix                                   # or: npm run test:deps-matrix
+DEPS_PROFILES="mid-2024 latest" npm run test:deps-matrix
+```
+
+The script builds `dist/` once from the locked install, then for each profile copies `dist/`, `tests/`, and `scripts/` into a disposable directory, installs only the runtime dependencies, the test double, and the profile's SDK versions, runs `npm run test:run`, and ends with a per-profile PASS/FAIL summary. The locked `node_modules` used by `npm test` is untouched. `tests/sdk-versions.test.js` drives the installed real SDKs against a loopback wire-format double.
+
 Run code-quality checks with:
 
 ```bash
@@ -288,5 +309,7 @@ The CircleCI workflow runs:
 - Python built-in static security scanning, deterministic offline adversarial scanning, and the third-party developer security gate.
 - TypeScript regression tests across Node 20, 22, 24, and 26.
 - TypeScript type/lint/dead-code checks plus the deterministic security gate.
+
+The dependency-version matrices (`make test-deps-matrix`: Python `openai`, `anthropic`, `httpx`, `websockets`; TypeScript `openai` and `@anthropic-ai/sdk`; releases since mid-2024) are slower and run in a separate `apple_silicon_deps_matrix` workflow enabled only by the `run_deps_matrix` pipeline parameter (set it to `true` when triggering the pipeline). They also run on `m4pro.medium` arm64 runners.
 
 All deterministic security gates remain offline with respect to real LLM/model endpoints.

@@ -4,6 +4,9 @@ parameters:
   run_mac_ci:
     type: boolean
     default: false
+  run_deps_matrix:
+    type: boolean
+    default: false
 
 executors:
   apple_silicon:
@@ -67,6 +70,28 @@ jobs:
             set -euo pipefail
             cd python
             ./scripts/test-matrix.sh
+      - save_cache:
+          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          paths:
+            - ~/.cache/uv
+
+  python_deps_matrix:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_uv
+      - restore_cache:
+          keys:
+            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-
+      - run:
+          name: Run Python dependency-version matrix
+          command: |
+            set -euo pipefail
+            cd python
+            uv python install 3.12
+            make test-deps-matrix
       - save_cache:
           key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
           paths:
@@ -142,6 +167,37 @@ jobs:
             - ~/.npm
             - ~/.nvm/.cache
 
+  typescript_deps_matrix:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_nvm
+      - restore_cache:
+          keys:
+            - npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+            - npm-v1-{{ arch }}-
+      - run:
+          name: Install Node 22 and locked dependencies
+          command: |
+            set -euo pipefail
+            nvm install 22 --no-progress
+            nvm use 22
+            cd typescript
+            npm ci
+      - run:
+          name: Run TypeScript SDK dependency-version matrix
+          command: |
+            set -euo pipefail
+            nvm use 22
+            cd typescript
+            make test-deps-matrix
+      - save_cache:
+          key: npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+          paths:
+            - ~/.npm
+            - ~/.nvm/.cache
+
   typescript_security:
     executor: apple_silicon
     steps:
@@ -202,3 +258,9 @@ workflows:
       - python_security
       - typescript_tests
       - typescript_security
+
+  apple_silicon_deps_matrix:
+    when: << pipeline.parameters.run_deps_matrix >>
+    jobs:
+      - python_deps_matrix
+      - typescript_deps_matrix

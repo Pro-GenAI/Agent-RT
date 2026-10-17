@@ -3204,6 +3204,82 @@ def _listed_model_ids(page: Any) -> tuple[str, ...]:
     return tuple(model_ids)
 
 
+_SDK_PARAMETER_CACHE: dict[Any, frozenset[str] | None] = {}
+_SDK_PARAMETER_CACHE_LIMIT = 256
+
+
+def _sdk_accepted_parameters(method: Any) -> frozenset[str] | None:
+    """Return the keyword names an SDK request method accepts.
+
+    ``None`` means the method accepts arbitrary keywords (or cannot be
+    inspected), so every parameter can be passed through unchanged.
+    """
+    try:
+        key = inspect.unwrap(method)
+        hash(key)
+    except (TypeError, ValueError):
+        key = None
+    if key is not None and key in _SDK_PARAMETER_CACHE:
+        return _SDK_PARAMETER_CACHE[key]
+    accepted: frozenset[str] | None
+    try:
+        parameters = inspect.signature(method).parameters
+    except (TypeError, ValueError):
+        accepted = None
+    else:
+        if "extra_body" not in parameters or any(
+            parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        ):
+            accepted = None
+        else:
+            accepted = frozenset(parameters)
+    if key is not None:
+        if len(_SDK_PARAMETER_CACHE) >= _SDK_PARAMETER_CACHE_LIMIT:
+            _SDK_PARAMETER_CACHE.clear()
+        _SDK_PARAMETER_CACHE[key] = accepted
+    return accepted
+
+
+def _sdk_params(method: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Move request fields an older SDK does not know into ``extra_body``.
+
+    Vendor SDKs released before a request field existed reject it as an
+    unexpected keyword argument, while the wire API still accepts it in the
+    JSON body. Routing it through ``extra_body`` keeps older SDK versions
+    working without changing the request that reaches the provider.
+    """
+    accepted = _sdk_accepted_parameters(method)
+    if accepted is None:
+        return params
+    unknown = [name for name in params if name not in accepted]
+    if not unknown:
+        return params
+    routed = dict(params)
+    extra_body = dict(routed.pop("extra_body", None) or {})
+    for name in unknown:
+        if name != "extra_body":
+            extra_body.setdefault(name, routed.pop(name))
+    routed["extra_body"] = extra_body
+    return routed
+
+
+def _sdk_list_models(client: Any) -> Any:
+    """Call ``client.models.list()``, or the raw endpoint on older SDKs.
+
+    Anthropic SDKs released before the models API (0.39) still expose the
+    generic ``client.get`` request helper, which reaches the same endpoint.
+    """
+    resource = getattr(client, "models", None)
+    list_models = getattr(resource, "list", None)
+    if callable(list_models):
+        return list_models()
+    raw_get = getattr(client, "get", None)
+    if callable(raw_get):
+        return raw_get("/v1/models", cast_to=object)
+    raise TypeError("provider client does not support models.list()")
+
+
 _ws_capability_cache: dict[str, bool] = {}
 
 
@@ -3312,7 +3388,7 @@ class OpenAIProviderSettings:
             api_key=self.api_key or "not-provided",
         )
         try:
-            model_ids = _listed_model_ids(client.models.list())
+            model_ids = _listed_model_ids(_sdk_list_models(client))
         except Exception as exc:
             raise ValueError(f"OpenAI startup validation failed: {exc}") from exc
         if self.websocket and probe_websocket:
@@ -3427,7 +3503,7 @@ class AnthropicProviderSettings:
             api_key=self.api_key or "not-provided",
         )
         try:
-            model_ids = _listed_model_ids(client.models.list())
+            model_ids = _listed_model_ids(_sdk_list_models(client))
         except Exception as exc:
             raise ValueError(f"Anthropic startup validation failed: {exc}") from exc
         if (
@@ -4673,13 +4749,17 @@ class OpenAIModelProvider:
         try:
             raw_api = getattr(completions, "with_raw_response", None)
             if raw_api is not None:
-                raw_response = await raw_api.create(**self._cached_params(request))
+                raw_response = await raw_api.create(
+                    **_sdk_params(raw_api.create, self._cached_params(request))
+                )
                 headers = _response_headers(raw_response)
                 parsed = raw_response.parse()
                 response = await parsed if hasattr(parsed, "__await__") else parsed
                 self._rate_limit_gate.update(model, headers)
             else:
-                response = await completions.create(**self._cached_params(request))
+                response = await completions.create(
+                    **_sdk_params(completions.create, self._cached_params(request))
+                )
                 self._rate_limit_gate.update(
                     model, self._rate_limit_headers(client, response)
                 )
@@ -4727,7 +4807,8 @@ class OpenAIModelProvider:
         params["stream_options"] = {"include_usage": True}
         client = self._get_client()
         try:
-            stream = await client.chat.completions.create(**params)
+            create = client.chat.completions.create
+            stream = await create(**_sdk_params(create, params))
         except BaseException as exc:
             headers = self._rate_limit_headers(client)
             error_response = getattr(exc, "response", None)
@@ -5114,7 +5195,8 @@ class AnthropicModelProvider:
         model = self.settings.resolve_model(request.model)
         self._rate_limit_gate.check(model)
         try:
-            response = await self.client.messages.create(**self._cached_params(request))
+            create = self.client.messages.create
+            response = await create(**_sdk_params(create, self._cached_params(request)))
         except BaseException as exc:
             error_response = getattr(exc, "response", None)
             headers = _response_headers(error_response)
@@ -5138,6 +5220,13 @@ class AnthropicModelProvider:
     def _message_batches_resource(self) -> Any:
         messages = getattr(self.client, "messages", None)
         resource = getattr(messages, "batches", None)
+        if resource is None:
+            # Anthropic SDKs 0.37-0.39 expose batches only under the beta
+            # namespace; the request and response shapes are the same.
+            beta_messages = getattr(
+                getattr(self.client, "beta", None), "messages", None
+            )
+            resource = getattr(beta_messages, "batches", None)
         if resource is None:
             raise TypeError(
                 "Anthropic provider client does not support messages.batches"
@@ -5209,11 +5298,13 @@ class AnthropicModelProvider:
         return tuple([item async for item in decoder])
 
     async def list_models(self) -> tuple[ModelCatalogEntry, ...]:
-        resource = getattr(self.client, "models", None)
-        list_models = getattr(resource, "list", None)
-        if not callable(list_models):
-            raise TypeError("Anthropic provider client does not support models.list()")
-        return _model_catalog_values(await list_models())
+        try:
+            page = _sdk_list_models(self.client)
+        except TypeError as exc:
+            raise TypeError(
+                "Anthropic provider client does not support models.list()"
+            ) from exc
+        return _model_catalog_values(await page)
 
     async def retrieve_model(self, model: str) -> ModelCatalogEntry:
         resource = getattr(self.client, "models", None)
@@ -5233,11 +5324,20 @@ class AnthropicModelProvider:
         params.pop("temperature", None)
         params.pop("output_config", None)
         count_tokens = getattr(self.client.messages, "count_tokens", None)
-        if count_tokens is None:
-            raise TypeError(
-                "Anthropic provider client does not support messages.count_tokens()"
+        if count_tokens is not None:
+            response = await count_tokens(**_sdk_params(count_tokens, params))
+        else:
+            # Anthropic SDKs before 0.47 lack messages.count_tokens(); the
+            # generic request helper reaches the same endpoint.
+            raw_post = getattr(self.client, "post", None)
+            if not callable(raw_post):
+                raise TypeError(
+                    "Anthropic provider client does not support "
+                    "messages.count_tokens()"
+                )
+            response = await raw_post(
+                "/v1/messages/count_tokens", cast_to=object, body=params
             )
-        response = await count_tokens(**params)
         value = _provider_value(response, "input_tokens")
         if not isinstance(value, int) or isinstance(value, bool):
             raise ValueError(
@@ -5251,7 +5351,8 @@ class AnthropicModelProvider:
         self._rate_limit_gate.check(model_key)
         params["stream"] = True
         try:
-            stream = await self.client.messages.create(**params)
+            create = self.client.messages.create
+            stream = await create(**_sdk_params(create, params))
         except BaseException as exc:
             error_response = getattr(exc, "response", None)
             headers = _response_headers(error_response)

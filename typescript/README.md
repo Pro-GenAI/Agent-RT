@@ -23,7 +23,7 @@ Node 20, 22, 24, or 26.
 npm install agent-rt
 ```
 
-Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-guard` only when you need them.
+Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-guard` only when you need them. Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
 
 ## Quick start
 

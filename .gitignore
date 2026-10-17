@@ -1,5 +1,6 @@
 .vscode/
 TODO*
 temp/
+temp*/
 .env
 .claude/
