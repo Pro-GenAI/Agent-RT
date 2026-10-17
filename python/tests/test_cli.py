@@ -339,7 +339,9 @@ class TestWorkspaceCodeTools:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "src").mkdir()
-            (root / "src" / "app.py").write_text("value = 1\n", encoding="utf-8")
+            (root / "src" / "app.py").write_text(
+                "value = 1\n", encoding="utf-8", newline="\n"
+            )
             tools = WorkspaceCodeTools(root)
             tools.approval_callback = lambda _action, _arguments: "approve"
 
@@ -710,6 +712,7 @@ class TestCliSkills:
         (skill_dir / "references" / "checklist.md").write_text(
             "Run tests before publishing.\n",
             encoding="utf-8",
+            newline="\n",
         )
 
         skills, warnings = _discover_cli_skills(

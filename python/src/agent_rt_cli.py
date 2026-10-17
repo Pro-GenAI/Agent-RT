@@ -369,7 +369,7 @@ class WorkspaceCodeTools:
                 }
             )
         return {
-            "path": str(directory.relative_to(self.root)) or ".",
+            "path": directory.relative_to(self.root).as_posix() or ".",
             "entries": entries,
         }
 
@@ -454,7 +454,7 @@ class WorkspaceCodeTools:
                         and candidate.suffix.casefold() != extension_query
                     ):
                         continue
-                    relative_path = str(candidate.relative_to(self.root))
+                    relative_path = candidate.relative_to(self.root).as_posix()
                     if relative_path in seen:
                         continue
                     seen.add(relative_path)
@@ -479,7 +479,7 @@ class WorkspaceCodeTools:
         if len(data) > max_bytes:
             raise ValueError(f"file exceeds max_bytes ({len(data)} bytes)")
         return {
-            "path": str(path.relative_to(self.root)),
+            "path": path.relative_to(self.root).as_posix(),
             "content": data.decode("utf-8"),
         }
 
@@ -590,7 +590,7 @@ class WorkspaceCodeTools:
             if not isinstance(path_value, str) or not path_value.strip():
                 raise ValueError("path must be a non-empty relative path")
             path = self._path(path_value.strip(), must_exist=False)
-            pathspec = str(path.relative_to(self.root))
+            pathspec = path.relative_to(self.root).as_posix()
         command = ["diff", "--no-ext-diff", "--no-textconv"]
         if staged:
             command.append("--cached")
@@ -620,7 +620,7 @@ class WorkspaceCodeTools:
         path = self._path(arguments.get("path"), must_exist=False)
         path.write_text(content, encoding="utf-8")
         return {
-            "path": str(path.relative_to(self.root)),
+            "path": path.relative_to(self.root).as_posix(),
             "bytes": len(content.encode("utf-8")),
         }
 
@@ -647,7 +647,7 @@ class WorkspaceCodeTools:
         await self._require_write_approval("replace_in_file", arguments)
         path = self._path(arguments.get("path"))
         path.write_text(updated, encoding="utf-8")
-        return {"path": str(path.relative_to(self.root)), "replacements": 1}
+        return {"path": path.relative_to(self.root).as_posix(), "replacements": 1}
 
     def registry(
         self,

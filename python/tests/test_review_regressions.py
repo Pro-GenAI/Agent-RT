@@ -417,6 +417,7 @@ def test_network_allowlist_rejects_parser_differential_targets(target):
     assert not policy.allows(target)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="POSIX uid/gid semantics")
 def test_native_privilege_drop_clears_groups_first(monkeypatch):
     from ext.runtime import optional
 
@@ -428,6 +429,7 @@ def test_native_privilege_drop_clears_groups_first(monkeypatch):
     assert calls == [("setgroups", []), ("setgid", 2345), ("setuid", 1234)]
 
 
+@pytest.mark.skipif(os.name != "posix", reason="POSIX passwd database")
 def test_native_backend_never_defaults_gid_to_the_callers():
     backend = agent_rt.NativeSandboxBackend(uid=0)
     assert backend._resolve_gid() == 0  # root's own primary gid, via passwd
