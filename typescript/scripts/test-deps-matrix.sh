@@ -83,9 +83,12 @@ run_tests() {
   fi
 }
 
-if [[ ! -d node_modules ]]; then
-  echo "node_modules is missing; run 'make install' (npm ci) first." >&2
-  exit 1
+# Other targets (e.g. `make test-matrix`, which runs `npm ci --omit=optional`
+# under several Node versions) can leave node_modules without the TypeScript
+# toolchain, so verify the compiler itself rather than just the directory.
+if [[ ! -x node_modules/.bin/tsc ]]; then
+  echo "TypeScript toolchain missing from node_modules; running 'npm ci'." >&2
+  npm ci --no-audit --no-fund
 fi
 echo "==> Building from locked dependencies"
 npm run build
