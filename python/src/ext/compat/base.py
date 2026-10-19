@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import sys
+import threading
 import types
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -1952,16 +1953,103 @@ async def _parse_chat_completion(completions, response_format, kwargs):
     return completion
 
 
+class _SyncOpenAIStream:
+    """Pull an async stream incrementally on one persistent event loop.
+
+    Collecting the iterator would buffer the response; running each chunk on
+    a new event loop would break loop-bound provider connections.
+    """
+
+    def __init__(self, create):
+        self._create = create
+        self._loop = None
+        self._thread = None
+        self._iterator = None
+        self._closed = False
+
+    async def _open(self):
+        return (await self._create()).__aiter__()
+
+    def _submit(self, coroutine):
+        return asyncio.run_coroutine_threadsafe(coroutine, self._loop).result()
+
+    @staticmethod
+    def _serve(loop):
+        # Static so the running thread holds no reference that keeps the stream alive.
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_forever()
+        finally:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
+            loop.close()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._closed:
+            raise StopIteration
+        if self._loop is None:
+            self._loop = asyncio.new_event_loop()
+            self._thread = threading.Thread(
+                target=self._serve, args=(self._loop,), daemon=True
+            )
+            self._thread.start()
+            try:
+                self._iterator = self._submit(self._open())
+            except BaseException:
+                self.close()
+                raise
+        try:
+            return self._submit(anext(self._iterator))
+        except StopAsyncIteration:
+            self.close()
+            raise StopIteration from None
+        except BaseException:
+            self.close()
+            raise
+
+    def close(self):
+        if self._closed:
+            return
+        self._closed = True
+        if self._loop is None:
+            return
+        try:
+            if self._iterator is not None:
+                self._submit(self._iterator.aclose())
+        finally:
+            self._loop.call_soon_threadsafe(self._loop.stop)
+            self._thread.join()
+
+    def __del__(self):
+        # An abandoned stream would otherwise keep its loop thread and connection
+        # open. Skip it on the loop thread (join would deadlock) and at shutdown.
+        if sys.is_finalizing() or threading.current_thread() is self._thread:
+            return
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+
 class _SyncOpenAICompletions:
     def __init__(self, client):
         self._client = client
 
     def create(self, **kwargs):
-        stream = bool(kwargs.get("stream"))
-        result = _run_sync(self._client._async.chat.completions.create(**kwargs))
-        if stream:
-            return iter(_run_sync(_collect_async_iterator(result)))
-        return result
+        if kwargs.get("stream"):
+            return _SyncOpenAIStream(
+                lambda: self._client._async.chat.completions.create(**kwargs)
+            )
+        return _run_sync(self._client._async.chat.completions.create(**kwargs))
 
     def parse(self, **kwargs):
         return _run_sync(self._client._async.chat.completions.parse(**kwargs))
@@ -3638,15 +3726,21 @@ def install_compat_submodules(parent):
 
     from ext.compat.autogen import install_autogen_compat
     from ext.compat.crewai import install_crewai_compat
+    from ext.compat.deepagents import install_deepagents_compat
     from ext.compat.langchain import install_langchain_compat
+    from ext.compat.litellm import install_litellm_compat
     from ext.compat.llamaindex import install_llamaindex_compat
     from ext.compat.openai_agents import install_openai_agents_compat
+    from ext.compat.openrouter import install_openrouter_compat
 
     install_langchain_compat(parent)
     install_llamaindex_compat(parent)
     install_openai_agents_compat(parent)
     install_autogen_compat(parent)
     install_crewai_compat(parent)
+    install_deepagents_compat(parent)
+    install_litellm_compat(parent)
+    install_openrouter_compat(parent)
 
     # Exact migration aliases: preserve the upstream module path and only
     # prepend the agent_rt. prefix. Keep the historical flattened aliases above for

@@ -60,8 +60,8 @@
 <tr><td>Assistant output role</td><td>Required</td><td>Change <code>require_assistant_output</code> in the boundary policy.</td></tr>
 <tr><td>Model-backed tool-input guardrail</td><td>Off unless enabled</td><td>Enable it on <code>ToolRegistry</code>. The default model/backend is <code>agent-action-guard</code>.</td></tr>
 <tr><td>Prompt-injection defense object</td><td>Created by default by <code>AgentLoop</code></td><td>Inject a custom <code>PromptInjectionDefense</code>.</td></tr>
-<tr><td>Sandbox network mode</td><td><code>none</code></td><td>Set <code>AGENT_RT_SANDBOX_NETWORK_MODE</code> to <code>allowlist</code> or <code>unrestricted</code> where the backend can enforce it.</td></tr>
-<tr><td>Sandbox backend selection</td><td><code>native</code> when env selection is unset</td><td>Use <code>AGENT_RT_SANDBOX_BACKEND</code>; supported backends include Docker and optional managed integrations.</td></tr>
+<tr><td>Sandbox network mode</td><td><code>none</code></td><td>Set <code>agent_rt_settings.sandbox.network_mode</code> to <code>allowlist</code> or <code>unrestricted</code> where the backend can enforce it.</td></tr>
+<tr><td>Sandbox backend selection</td><td><code>native</code> when the config does not select one</td><td>Use <code>agent_rt_settings.sandbox.backend</code>; supported backends include Docker and optional managed integrations.</td></tr>
 <tr><td>Memory, persistence, schedulers, queues</td><td>Explicitly configured</td><td>Inject the relevant store/manager; Agent RT does not silently persist application data.</td></tr>
 <tr><td>Permissions and approvals</td><td>Explicitly configured where your application needs them</td><td>Use <code>PermissionEngine</code>, capability grants, <code>ApprovalManager</code>, and policy rules.</td></tr>
 <tr><td>OpenAI-compatible base URL</td><td><code>https://api.openai.com/v1</code></td><td>Configure the provider/base URL or environment.</td></tr>
@@ -73,7 +73,6 @@
 
 <h3>Step 1 — run a basic agent in Python</h3>
 <pre><code class="language-python">import asyncio
-import os
 
 from agent_rt import (
     AgentConfig,
@@ -81,15 +80,15 @@ from agent_rt import (
     ContentPart,
     ModelMessage,
     ModelSettings,
+    load_config,
     load_model,
 )
 
 
 async def main():
-    model = os.environ.get("OPENAI_MODEL") or os.environ.get("ANTHROPIC_MODEL")
-    if not model:
-        raise RuntimeError("Set OPENAI_MODEL or ANTHROPIC_MODEL")
-    provider = load_model()
+    config = load_config()  # agent-rt.yaml, ~/.agent-rt/config.yaml, or an explicit path
+    model = config.default_model
+    provider = load_model(config)
 
     agent = AgentConfig(
         name="basic",
@@ -122,13 +121,13 @@ async def main():
 asyncio.run(main())</code></pre>
 
 <h3>Step 1 — the same agent in TypeScript</h3>
-<pre><code class="language-javascript">const { AgentLoop, loadModel } = require("agent-rt");
+<pre><code class="language-javascript">const { AgentLoop, loadConfig, loadModel } = require("agent-rt");
 
 async function main() {
-  const model = process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL;
-  if (!model) throw new Error("Set OPENAI_MODEL or ANTHROPIC_MODEL");
+  const config = await loadConfig(); // agent-rt.yaml, ~/.agent-rt/config.yaml, or an explicit path
+  const model = config.settings.default_model ?? config.models[0].modelName;
 
-  const provider = await loadModel();
+  const provider = await loadModel(config);
 
   const agent = {
     name: "basic",
@@ -160,7 +159,7 @@ main();</code></pre>
 
 <h3>Step 2 — add a tool</h3>
 <p>Tools are schemas plus handlers. The model only proposes the call; Agent RT validates and dispatches it.</p>
-<pre><code class="language-python">from agent_rt import AgentLoop, ToolDefinition, ToolRegistry, load_model
+<pre><code class="language-python">from agent_rt import AgentLoop, ToolDefinition, ToolRegistry, load_config, load_model
 
 registry = ToolRegistry()
 
@@ -183,9 +182,9 @@ registry.register(
     handler=weather,
 )
 
-loop = AgentLoop(load_model(), tool_registry=registry)</code></pre>
+loop = AgentLoop(load_model(load_config()), tool_registry=registry)</code></pre>
 
-<pre><code class="language-javascript">const { AgentLoop, ToolRegistry, loadModel } = require("agent-rt");
+<pre><code class="language-javascript">const { AgentLoop, ToolRegistry, loadConfig, loadModel } = require("agent-rt");
 
 const registry = new ToolRegistry();
 
@@ -210,7 +209,7 @@ registry.register(
   },
 );
 
-const provider = await loadModel();
+const provider = await loadModel(config);
 const loop = new AgentLoop(provider, undefined, registry);</code></pre>
 
 <h3>Step 3 — stream output</h3>
@@ -531,15 +530,14 @@ print(len(snapshot.messages))</code></pre>
 
 <h2>16. Sandboxed shell and code execution</h2>
 <p><code>SandboxBackend</code> and <code>SandboxSession</code> keep generated execution behind an injected isolation boundary. Backends can expose shell tools and language runtimes while carrying explicit workspace, environment, package state, resource limits, network policy, snapshots, and restore/clone behavior.</p>
-<p>Environment-driven sandbox selection defaults to <code>native</code> when <code>AGENT_RT_SANDBOX_BACKEND</code> is unset; supported deployments can select Docker or optional managed backends. Values that attempt to disable sandboxing through the backend selector are rejected. The native backend is POSIX-oriented and requires an explicitly restricted identity; use a backend capable of enforcing the isolation dimensions you require.</p>
+<p>Config-driven sandbox selection defaults to <code>native</code> when <code>agent_rt_settings.sandbox.backend</code> is unset; supported deployments can select Docker or optional managed backends. Values that attempt to disable sandboxing through the backend selector are rejected. The native backend is POSIX-oriented and requires an explicitly restricted identity; use a backend capable of enforcing the isolation dimensions you require.</p>
 <p>Network mode defaults to <code>none</code>. Allowlists and unrestricted access require explicit configuration, and backends that cannot enforce a requested network policy fail closed rather than silently weakening it.</p>
-<pre><code class="language-bash"># Native sandbox: use a restricted OS identity.
-export AGENT_RT_SANDBOX_BACKEND=native
-export AGENT_RT_SANDBOX_UID=1234
-export AGENT_RT_SANDBOX_GID=1235
-
-# Network access is disabled by default.
-export AGENT_RT_SANDBOX_NETWORK_MODE=none</code></pre>
+<pre><code class="language-yaml">agent_rt_settings:
+  sandbox:
+    backend: native      # use a restricted OS identity
+    uid: 1234
+    gid: 1235
+    network_mode: none   # network access is disabled by default</code></pre>
 <pre><code class="language-python">from agent_rt import (
     SandboxCommand,
     SandboxResourceLimits,
@@ -583,7 +581,7 @@ results = await retrieval.search(
 )</code></pre>
 
 <h2>18. Vector databases</h2>
-<p>The project includes provider-neutral vector-store support and compatibility surfaces for Chroma, Milvus, Pinecone, Qdrant, and Weaviate, including environment-driven switching and LangChain/LlamaIndex-compatible imports. See the <a href="../guides/vector-databases.html">vector database guide</a> for concrete setup.</p>
+<p>The project supports Chroma, Milvus, Pinecone, Qdrant, and Weaviate HTTP adapters and hosted Bedrock Knowledge Bases retrieval (optional AWS SDK), with YAML configuration, lazy initialization, and LangChain/LlamaIndex-compatible imports. See the <a href="../guides/vector-databases.html">vector database guide</a> for concrete setup.</p>
 
 <h2>19. Provider routing and Decision models</h2>
 <p>Model aliases, fallback chains, routing policies, cost/latency-aware selection, and provider-neutral metadata let applications select a generation model without rewriting the loop. Decision models—including Laya and other Jev-compatible models—can be used for bounded routing/selection tasks such as capability choice.</p>

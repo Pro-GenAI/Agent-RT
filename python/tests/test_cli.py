@@ -26,13 +26,12 @@ from agent_rt_cli import (
     TranscriptStore,
     WorkspaceCodeTools,
     _discover_cli_skills,
-    _load_env_file,
-    _provider_environment_with_global_config,
     _provider_model_ids,
     _register_skill_tools,
     _require_cli_dependencies,
     _slash_command_matches,
     _startup_model,
+    _CLI_SETTINGS,
     async_main,
     build_parser,
 )
@@ -88,208 +87,35 @@ class FakeProvider:
         yield ModelStreamEvent(type="completed", response=response)
 
 
-class TestEnvFile:
-    def test_loads_dotenv_syntax_without_overriding_process_environment(self, tmp_path):
-        env_file = tmp_path / ".env"
-        env_file.write_text(
-            "# comment\n"
-            "OPENAI_MODEL=file-model\n"
-            "export OPENAI_BASE_URL=https://example.test/v1\n"
-            'QUOTED="line\\nnext"\n'
-            "SINGLE='hello world'\n"
-            "INLINE=value # comment\n"
-            "HASH=value#literal\n"
-            "EMPTY=\n",
-            encoding="utf-8",
-        )
-        environment = {"OPENAI_MODEL": "process-model"}
-
-        _load_env_file(env_file, environment)
-
-        assert environment == {
-            "OPENAI_MODEL": "process-model",
-            "OPENAI_BASE_URL": "https://example.test/v1",
-            "QUOTED": "line\nnext",
-            "SINGLE": "hello world",
-            "INLINE": "value",
-            "HASH": "value#literal",
-            "EMPTY": "",
-        }
-
-    def test_env_file_values_take_precedence_over_global_settings(self, tmp_path):
-        env_file = tmp_path / ".env"
-        env_file.write_text("OPENAI_MODEL=file-model\n", encoding="utf-8")
-        config_path = tmp_path / "settings.json"
-        config_path.write_text(
-            json.dumps(
-                {
-                    "provider": "openai",
-                    "model": "global-model",
-                    "base_url": "https://config.example.test/v1",
-                }
-            ),
-            encoding="utf-8",
-        )
-        environment = {}
-
-        _load_env_file(env_file, environment)
-        resolved = _provider_environment_with_global_config(
-            environment,
-            config_path=config_path,
-        )
-
-        assert resolved["OPENAI_MODEL"] == "file-model"
-        assert resolved["OPENAI_BASE_URL"] == "https://config.example.test/v1"
-
-    def test_env_file_values_are_visible_to_runtime_configuration(
-        self, tmp_path, monkeypatch
-    ):
-        env_file = tmp_path / ".env"
-        env_file.write_text(
-            "AGENT_RT_CLI_COMPACT_LIMIT=321\n",
-            encoding="utf-8",
-        )
-        monkeypatch.delenv("AGENT_RT_CLI_COMPACT_LIMIT", raising=False)
-
-        _load_env_file(env_file)
-        session = ChatSession(
-            AgentLoop(FakeProvider()),
-            model="test-model",
-            autosave=False,
-        )
-
-        assert session.compact_token_threshold == 321
-
-    def test_rejects_malformed_env_file(self, tmp_path):
-        env_file = tmp_path / ".env"
-        env_file.write_text("NOT VALID\n", encoding="utf-8")
-
-        with pytest.raises(ValueError, match=r":1: expected NAME=VALUE"):
-            _load_env_file(env_file, {})
-
-    def test_rejects_missing_env_file(self, tmp_path):
-        with pytest.raises(ValueError, match="unable to read environment file"):
-            _load_env_file(tmp_path / "missing.env", {})
-
-    async def test_cli_reports_env_file_error_before_provider_setup(
-        self, tmp_path, capsys
-    ):
-        result = await async_main(
-            ["--env-file", str(tmp_path / "missing.env"), "-p", "hello"]
-        )
+class TestConfigFile:
+    async def test_missing_config_path_fails_before_provider_setup(self, tmp_path, capsys):
+        result = await async_main(["--config", str(tmp_path / "missing.yaml"), "-p", "hello"])
 
         assert result == 2
-        assert "environment file error" in capsys.readouterr().err
+        assert "configuration error" in capsys.readouterr().err
 
-
-class TestGlobalConfig:
-    def test_openai_global_config_supplies_missing_provider_environment(self, tmp_path):
-        config_path = tmp_path / "settings.json"
-        config_path.write_text(
-            json.dumps(
-                {
-                    "provider": "openai",
-                    "credential": "config-credential",
-                    "model": "gpt-config",
-                }
-            ),
-            encoding="utf-8",
-        )
-
-        environment = _provider_environment_with_global_config(
-            {},
-            config_path=config_path,
-        )
-
-        assert environment["OPENAI_BASE_URL"] == "https://api.openai.com/v1"
-        assert environment["OPENAI_" + "API_KEY"] == "config-credential"
-        assert environment["OPENAI_MODEL"] == "gpt-config"
-
-    def test_environment_values_override_matching_global_config(self, tmp_path):
-        config_path = tmp_path / "settings.json"
-        config_path.write_text(
-            json.dumps(
-                {
-                    "provider": "openai",
-                    "model": "config-model",
-                    "base_url": "https://config.example.test/v1",
-                }
-            ),
-            encoding="utf-8",
-        )
-        supplied = {
-            "OPENAI_BASE_URL": "https://env.example.test/v1",
-            "OPENAI_MODEL": "environment-model",
-        }
-
-        environment = _provider_environment_with_global_config(
-            supplied,
-            config_path=config_path,
-        )
-
-        assert environment == supplied
-
-    def test_environment_selected_provider_is_not_switched_by_global_config(
-        self, tmp_path
+    async def test_no_default_config_reports_searched_locations(
+        self, tmp_path, monkeypatch, capsys
     ):
-        config_path = tmp_path / "settings.json"
-        config_path.write_text(
-            json.dumps({"provider": "anthropic", "model": "claude-config"}),
-            encoding="utf-8",
-        )
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("HOME", str(tmp_path / "home"))
+        monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
 
-        environment = _provider_environment_with_global_config(
-            {"OPENAI_MODEL": "gpt-env"},
-            config_path=config_path,
-        )
+        result = await async_main(["-p", "hello"])
 
-        assert environment["OPENAI_MODEL"] == "gpt-env"
-        assert "ANTHROPIC_BASE_URL" not in environment
+        assert result == 2
+        err = capsys.readouterr().err
+        assert "no config file found" in err
+        assert "agent-rt.yaml" in err
 
-    def test_anthropic_global_config_uses_default_base_url(self, tmp_path):
-        config_path = tmp_path / "settings.json"
-        config_path.write_text(
-            json.dumps(
-                {
-                    "provider": "anthropic",
-                    "credential": "config-credential",
-                    "model": "claude-config",
-                }
-            ),
-            encoding="utf-8",
-        )
+    async def test_invalid_config_is_reported(self, tmp_path, capsys):
+        config = tmp_path / "bad.yaml"
+        config.write_text("model_list: nope\n", encoding="utf-8")
 
-        environment = _provider_environment_with_global_config(
-            {},
-            config_path=config_path,
-        )
+        result = await async_main(["--config", str(config), "-p", "hello"])
 
-        assert environment["ANTHROPIC_BASE_URL"] == "https://api.anthropic.com"
-        assert environment["ANTHROPIC_" + "API_KEY"] == "config-credential"
-        assert environment["ANTHROPIC_MODEL"] == "claude-config"
-
-    def test_model_provider_override_wins_over_environment_detection(self, tmp_path):
-        config_path = tmp_path / "settings.json"
-        config_path.write_text(
-            json.dumps({"provider": "openai", "model": "gpt-config"}),
-            encoding="utf-8",
-        )
-        supplied = {
-            "MODEL_PROVIDER": "anthropic",
-            "OPENAI_MODEL": "gpt-env",
-            "ANTHROPIC_BASE_URL": "https://anthropic.example.test",
-        }
-        environment = _provider_environment_with_global_config(
-            supplied,
-            config_path=config_path,
-        )
-        assert environment == supplied
-
-        with pytest.raises(ValueError, match="MODEL_PROVIDER"):
-            _provider_environment_with_global_config(
-                {"MODEL_PROVIDER": "unknown"},
-                config_path=config_path,
-            )
+        assert result == 2
+        assert "model_list must be a list" in capsys.readouterr().err
 
 
 class TestTranscriptStore:
@@ -787,8 +613,8 @@ class TestCliSkills:
 
 
 class TestChatSession:
-    def test_compact_threshold_uses_environment_override(self, monkeypatch):
-        monkeypatch.setenv("AGENT_RT_CLI_COMPACT_LIMIT", "123")
+    def test_compact_threshold_uses_config_override(self, monkeypatch):
+        monkeypatch.setitem(_CLI_SETTINGS, "compact_token_limit", 123)
         session = ChatSession(
             AgentLoop(FakeProvider()),
             model="test-model",
@@ -796,9 +622,9 @@ class TestChatSession:
         )
         assert session.compact_token_threshold == 123
 
-    def test_compact_threshold_rejects_invalid_environment_override(self, monkeypatch):
-        monkeypatch.setenv("AGENT_RT_CLI_COMPACT_LIMIT", "0")
-        with pytest.raises(ValueError, match="AGENT_RT_CLI_COMPACT_LIMIT"):
+    def test_compact_threshold_rejects_invalid_config_override(self, monkeypatch):
+        monkeypatch.setitem(_CLI_SETTINGS, "compact_token_limit", 0)
+        with pytest.raises(ValueError, match="compact_token_limit"):
             ChatSession(
                 AgentLoop(FakeProvider()),
                 model="test-model",
@@ -1263,7 +1089,7 @@ class TestParser:
             [
                 "--model",
                 "provider-model",
-                "--env-file=./.env",
+                "--config=./agent-rt.yaml",
                 "--session",
                 "work",
                 "--no-stream",
@@ -1273,7 +1099,7 @@ class TestParser:
             ]
         )
         assert args.model == "provider-model"
-        assert args.env_file == Path(".env")
+        assert args.config == Path("agent-rt.yaml")
         assert args.session == "work"
         assert args.no_stream
         assert args.no_save
@@ -1287,6 +1113,6 @@ class TestParser:
         help_text = build_parser().format_help()
         assert "-p" in help_text
         assert "--prompt" in help_text
-        assert "--env-file" in help_text
+        assert "--config" in help_text
         assert "PROMPT" in help_text
         assert "positional arguments:" not in help_text

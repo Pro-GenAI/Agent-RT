@@ -4,10 +4,9 @@ from agent_rt import (
     AgentLoop,
     ToolDefinition,
     ToolRegistry,
-    load_model,
 )
 
-from _common import make_agent, response_text, user_message
+from _common import example_provider, make_agent, response_text, user_message
 
 
 async def main() -> None:
@@ -33,7 +32,7 @@ async def main() -> None:
         handler=weather,
     )
 
-    provider = load_model()
+    provider = example_provider()
     agent = make_agent(
         "weather-assistant",
         "Use get_weather when the user asks about weather. Summarize the tool result.",

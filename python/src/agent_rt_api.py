@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import hashlib
 import ipaddress
 import json
@@ -601,6 +602,8 @@ class AgentRTAPIServer:
         max_queued_requests: int = DEFAULT_MAX_QUEUED_REQUESTS,
         queue_wait_timeout_seconds: float = DEFAULT_QUEUE_WAIT_TIMEOUT_SECONDS,
         allowed_websocket_origins: Collection[str] = (),
+        config: Any = None,
+        retrieval: Any = None,
     ) -> None:
         if not agents:
             raise ValueError("at least one agent must be configured")
@@ -626,6 +629,8 @@ class AgentRTAPIServer:
             raise ValueError("wildcard WebSocket origins are not allowed")
 
         self.loop = loop
+        self.config = config
+        self.retrieval = retrieval
         self.agents = dict(agents)
         self.default_agent = default_agent or (next(iter(self.agents)) if len(self.agents) == 1 else None)
         if self.default_agent is not None and self.default_agent not in self.agents:
@@ -645,6 +650,60 @@ class AgentRTAPIServer:
             )
             for model_id in self.agents
         }
+
+    def file_search_request(
+        self, tools: Any, model_id: str
+    ) -> tuple[tuple[Any, ...], int] | None:
+        """Validate request ``tools``; only ``file_search`` over configured stores is allowed."""
+        if not tools:
+            return None
+        if not isinstance(tools, list):
+            raise ValueError("tools must be a list")
+        references: list[str] = []
+        max_results = 10
+        for tool in tools:
+            if not isinstance(tool, Mapping) or tool.get("type") != "file_search":
+                raise ValueError(
+                    "Request-defined tools are not supported except file_search"
+                )
+            ids = tool.get("vector_store_ids")
+            if not isinstance(ids, list) or not all(isinstance(item, str) for item in ids):
+                raise ValueError("file_search vector_store_ids must be a list of strings")
+            references.extend(ids)
+            requested = tool.get("max_num_results")
+            if requested is not None:
+                if isinstance(requested, bool) or not isinstance(requested, int):
+                    raise ValueError("max_num_results must be an integer")
+                max_results = requested
+        if self.config is None or self.retrieval is None:
+            raise ValueError("file_search is not configured on this server")
+        from agent_rt import resolve_vector_stores
+
+        stores = resolve_vector_stores(self.config, references, model_name=model_id)
+        if not 1 <= max_results <= 50:
+            raise ValueError("max_num_results must be between 1 and 50")
+        return stores, max_results
+
+    def loop_for_request(self, file_search: tuple[tuple[Any, ...], int] | None) -> AgentLoop:
+        """Loop whose tools also include a ``file_search`` limited to the requested stores."""
+        if file_search is None:
+            return self.loop
+        from agent_rt import ToolRegistry, register_file_search_tool
+
+        registry = self.loop.tool_registry
+        executor = self.loop.tool_executor
+        if registry is None and executor is None:
+            registry = ToolRegistry()
+        if not isinstance(registry, ToolRegistry) or executor not in (None, registry):
+            raise ValueError("file_search requires the loop to use a ToolRegistry")
+        forked = registry.fork()
+        register_file_search_tool(
+            forked, self.retrieval, file_search[0], max_results=file_search[1]
+        )
+        clone = copy.copy(self.loop)
+        clone.tool_registry = forked
+        clone.tool_executor = forked
+        return clone
 
     def resolve_agent(self, model: Any) -> tuple[str, AgentConfig]:
         if model is None:
@@ -722,6 +781,7 @@ class AgentRTAPIServer:
         model: Any,
         temperature: Any = None,
         max_output_tokens: Any = None,
+        tools: Any = None,
     ) -> tuple[str, AgentConfig]:
         """Resolve the agent and validate per-request generation settings.
 
@@ -729,6 +789,7 @@ class AgentRTAPIServer:
         requests get a proper 4xx instead of a failure inside the stream.
         """
         model_id, agent = self.resolve_agent(model)
+        self.file_search_request(tools, model_id)
         settings = agent.model
         if temperature is not None:
             try:
@@ -761,20 +822,23 @@ class AgentRTAPIServer:
         temperature: Any = None,
         max_output_tokens: Any = None,
         stream_handler: Any = None,
+        tools: Any = None,
     ) -> tuple[str, AgentRunResult]:
         model_id, agent = self.prepare_run(
             model=model,
             temperature=temperature,
             max_output_tokens=max_output_tokens,
+            tools=tools,
         )
+        loop = self.loop_for_request(self.file_search_request(tools, model_id))
 
         execution_queue = self.execution_queues[model_id]
         await execution_queue.acquire(model_id)
         try:
             if stream_handler is None:
-                result = await self.loop.run(agent, messages, limits=self.limits)
+                result = await loop.run(agent, messages, limits=self.limits)
             else:
-                result = await self.loop.run_streaming(
+                result = await loop.run_streaming(
                     agent,
                     messages,
                     stream_handler,
@@ -893,6 +957,8 @@ def create_app(
     queue_wait_timeout_seconds: float = DEFAULT_QUEUE_WAIT_TIMEOUT_SECONDS,
     allowed_websocket_origins: Collection[str] = (),
     enable_docs: bool = False,
+    config: Any = None,
+    retrieval: Any = None,
 ) -> Any:
     server = AgentRTAPIServer(
         loop,
@@ -908,6 +974,8 @@ def create_app(
         max_queued_requests=max_queued_requests,
         queue_wait_timeout_seconds=queue_wait_timeout_seconds,
         allowed_websocket_origins=allowed_websocket_origins,
+        config=config,
+        retrieval=retrieval,
     )
     app = FastAPI(
         title="Agent RT Compatible API",
@@ -1136,6 +1204,7 @@ def create_app(
             messages = _chat_messages(body.get("messages"))
             model_id, _ = server.prepare_run(
                 model=body.get("model"),
+                tools=body.get("tools"),
                 temperature=body.get("temperature"),
                 max_output_tokens=body.get(
                     "max_completion_tokens", body.get("max_tokens")
@@ -1160,6 +1229,7 @@ def create_app(
                     try:
                         _, completed_result = await server.run(
                             model=body.get("model"),
+                            tools=body.get("tools"),
                             messages=messages,
                             temperature=body.get("temperature"),
                             max_output_tokens=body.get("max_completion_tokens", body.get("max_tokens")),
@@ -1229,6 +1299,7 @@ def create_app(
         try:
             model_id, result = await server.run(
                 model=body.get("model"),
+                tools=body.get("tools"),
                 messages=messages,
                 temperature=body.get("temperature"),
                 max_output_tokens=body.get("max_completion_tokens", body.get("max_tokens")),
@@ -1263,6 +1334,7 @@ def create_app(
             try:
                 _, result = await server.run(
                     model=body.get("model"),
+                    tools=body.get("tools"),
                     messages=messages,
                     temperature=body.get("temperature"),
                     max_output_tokens=body.get("max_output_tokens"),
@@ -1314,6 +1386,7 @@ def create_app(
             _responses_messages(body.get("input", ""))
             server.prepare_run(
                 model=body.get("model"),
+                tools=body.get("tools"),
                 temperature=body.get("temperature"),
                 max_output_tokens=body.get("max_output_tokens"),
             )
@@ -1343,6 +1416,7 @@ def create_app(
         try:
             model_id, result = await server.run(
                 model=body.get("model"),
+                tools=body.get("tools"),
                 messages=messages,
                 temperature=body.get("temperature"),
                 max_output_tokens=body.get("max_output_tokens"),
@@ -1669,6 +1743,8 @@ def serve(
     queue_wait_timeout_seconds: float = DEFAULT_QUEUE_WAIT_TIMEOUT_SECONDS,
     allowed_websocket_origins: Collection[str] = (),
     enable_docs: bool = False,
+    config: Any = None,
+    retrieval: Any = None,
     allow_unauthenticated_non_loopback: bool = False,
     **uvicorn_options: Any,
 ) -> None:
@@ -1707,9 +1783,116 @@ def serve(
         queue_wait_timeout_seconds=queue_wait_timeout_seconds,
         allowed_websocket_origins=allowed_websocket_origins,
         enable_docs=enable_docs,
+        config=config,
+        retrieval=retrieval,
     )
     uvicorn_options.setdefault("ws_max_size", max_websocket_message_bytes)
     uvicorn.run(app, host=host, port=port, **uvicorn_options)
 
 
-__all__ = ("APIQueueOverloadedError", "AgentRTAPIServer", "create_app", "serve")
+def build_from_config(
+    config: Any = None,
+    *,
+    config_path: Any = None,
+    instructions: str = "You are a helpful assistant.",
+    tool_registry: Any = None,
+    provider_factory: Any = None,
+    bedrock_client_factory: Any = None,
+) -> dict[str, Any]:
+    """Build the loop, agents and retrieval registry declared by a config file.
+
+    Every ``model_name`` becomes an agent; each ``vector_store_registry`` entry
+    becomes available to requests through ``file_search``.
+    """
+    from agent_rt import (
+        ModelSettings,
+        configure_runtime,
+        load_config,
+        load_model,
+        vector_store_registry_from_config,
+    )
+
+    resolved = config if config is not None else load_config(config_path)
+    configure_runtime(resolved)
+    provider = load_model(resolved, provider_factory=provider_factory)
+    loop = AgentLoop(
+        provider, tool_executor=tool_registry, tool_registry=tool_registry
+    )
+    agents = {
+        name: AgentConfig(
+            name=name,
+            instructions=instructions,
+            model=ModelSettings(model=name),
+        )
+        for name in resolved.model_names
+    }
+    retrieval = (
+        vector_store_registry_from_config(
+            resolved, embedding_provider=provider,
+            bedrock_client_factory=bedrock_client_factory,
+        )
+        if resolved.vector_stores
+        else None
+    )
+    options = resolved.server_options()
+    return {
+        "loop": loop,
+        "agents": agents,
+        "config": resolved,
+        "retrieval": retrieval,
+        "default_agent": options.get("default_agent") or resolved.default_model,
+        "api_keys": tuple(options.get("api_keys") or ()),
+        "allowed_websocket_origins": tuple(options.get("allowed_websocket_origins") or ()),
+        "host": options.get("host", "127.0.0.1"),
+        "port": int(options.get("port", 8000)),
+        **{
+            key: options[key]
+            for key in ("max_concurrent_requests", "max_queued_requests")
+            if key in options
+        },
+    }
+
+
+def serve_from_config(config: Any = None, *, config_path: Any = None, **overrides: Any) -> None:
+    """Serve every configured model over the OpenAI/Anthropic-compatible API."""
+    built = build_from_config(
+        config,
+        config_path=config_path,
+        **{
+            key: overrides.pop(key)
+            for key in ("instructions", "tool_registry", "provider_factory", "bedrock_client_factory")
+            if key in overrides
+        },
+    )
+    built.update(overrides)
+    serve(**built)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="agent-rt-api", description="Serve configured models.")
+    parser.add_argument("-c", "--config", help="path to the YAML config file")
+    args = parser.parse_args(argv)
+    try:
+        serve_from_config(config_path=args.config)
+    except (ValueError, RuntimeError) as exc:
+        import sys
+
+        print(f"agent-rt-api: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+__all__ = (
+    "APIQueueOverloadedError",
+    "AgentRTAPIServer",
+    "build_from_config",
+    "create_app",
+    "serve",
+    "serve_from_config",
+)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

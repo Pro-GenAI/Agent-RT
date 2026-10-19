@@ -23,16 +23,7 @@ npm ci
 npm run build
 ```
 
-Configure a provider. For OpenAI or an OpenAI-compatible endpoint:
-
-```bash
-export OPENAI_MODEL="your-model"
-export OPENAI_API_KEY="..."
-# Optional:
-export OPENAI_BASE_URL="https://your-provider.example/v1"
-```
-
-For Anthropic, configure `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_MODEL`.
+Copy [`agent-rt.example.yaml`](../../agent-rt.example.yaml) to `agent-rt.yaml` (or `~/.agent-rt/config.yaml`) and edit `model_list`. Secrets are referenced as `os.environ/NAME`, so export the variables the file names (for example `OPENAI_API_KEY`).
 
 Run an example from the `typescript/` directory:
 
@@ -51,17 +42,12 @@ The first five examples call a configured model provider. `06_tool_registry.js` 
 
 ## Vector DB example
 
-The vector DB example uses the same application code for every built-in service backend. Configure an OpenAI/OpenAI-compatible embedding provider, then set:
+The vector DB example uses the same application code for every built-in service backend. Add a `vector_store_registry` entry (backend via `custom_llm_provider`: `chroma`, `milvus`, `pinecone`, `qdrant`, or `weaviate`; plus `api_base`, `collection`, `api_key: os.environ/...`, and an `embedding_model` that is an embedding-capable `model_list` entry), then pass the store name and an optional query:
 
 ```bash
-export AGENT_RT_VECTOR_DB="qdrant" # chroma|milvus|pinecone|qdrant|weaviate
-export AGENT_RT_VECTOR_DB_URL="https://your-vector-db.example"
-export AGENT_RT_VECTOR_DB_COLLECTION="docs"
-export AGENT_RT_VECTOR_DB_API_KEY="..." # optional; backend-native variables also work
-export AGENT_RT_VECTOR_DB_QUERY="What is Agent RT?" # optional
-export AGENT_RT_VECTOR_DB_LIMIT="5" # optional
+node examples/07_vector_db.js docs-kb "What is Agent RT?"
 ```
 
-Backend-native credentials are `CHROMA_API_KEY`, `MILVUS_TOKEN`, `PINECONE_API_KEY`, `QDRANT_API_KEY`, and `WEAVIATE_API_KEY`. Change `AGENT_RT_VECTOR_DB` plus the endpoint, collection, and credential values to move the same application code to another backend. Extra backend configuration is passed with `AGENT_RT_VECTOR_DB_OPTION_*` variables, for example `AGENT_RT_VECTOR_DB_OPTION_NAMESPACE` for Pinecone or `AGENT_RT_VECTOR_DB_OPTION_TENANT` / `AGENT_RT_VECTOR_DB_OPTION_DATABASE` for Chroma.
+Change `custom_llm_provider` plus the endpoint, collection, and credential to move the same application code to another backend; several stores can be declared side by side. Extra non-secret backend settings go under `options`.
 
 FAISS and pgvector remain custom `VectorDBProviderRegistry` integrations because their normal execution paths require local/native or database drivers.

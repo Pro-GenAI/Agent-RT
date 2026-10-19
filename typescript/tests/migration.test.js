@@ -12,6 +12,8 @@ const {
   MCPClient,
   RetrievalRegistry,
   SandboxSession,
+  configureRuntime,
+  configFromObject,
 } = require("../dist/index.js");
 
 test("exact-prefix package exports preserve upstream specifiers", () => {
@@ -1364,8 +1366,9 @@ test("web_search resolves environment configuration and fails closed before prov
     );
     assert.equal(missingProvider.requests.length, 0);
 
-    process.env.AGENT_RT_WEB_SEARCH_TOOL = "tavily";
-    process.env.AGENT_RT_WEB_SEARCH_TOKEN = "generic-secret";
+    configureRuntime(configFromObject({
+      agent_rt_settings: { web_search: { tool: "tavily", api_key: "generic-secret" } },
+    }));
     const configuredProvider = new CaptureProvider();
     const configuredClient = new OpenAI({ provider: configuredProvider });
     await configuredClient.responses.create({
@@ -1375,6 +1378,7 @@ test("web_search resolves environment configuration and fails closed before prov
     });
     assert.equal(configuredProvider.requests[0].tools[0].name, "agent_rt_web_search");
   } finally {
+    configureRuntime({ models: [], vectorStores: [], settings: {} });
     for (const key of keys) {
       const value = saved[key];
       if (value === undefined) delete process.env[key];

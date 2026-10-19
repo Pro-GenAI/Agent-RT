@@ -1,12 +1,32 @@
-import os
+from functools import lru_cache
 
-from agent_rt import AgentConfig, ContentPart, ModelMessage, ModelSettings
+from agent_rt import (
+    AgentConfig,
+    ContentPart,
+    ModelMessage,
+    ModelSettings,
+    load_config,
+    load_model,
+)
+
+
+@lru_cache(maxsize=1)
+def example_config():
+    """Load agent-rt.yaml from the current folder or ~/.agent-rt/config.yaml.
+
+    See agent-rt.example.yaml at the repository root for a starting point.
+    """
+    return load_config()
+
+
+def example_provider():
+    return load_model(example_config())
 
 
 def configured_model() -> str:
-    model = os.environ.get("OPENAI_MODEL") or os.environ.get("ANTHROPIC_MODEL")
+    model = example_config().default_model
     if not model:
-        raise RuntimeError("Set OPENAI_MODEL or ANTHROPIC_MODEL before running this example.")
+        raise RuntimeError("Add a model to model_list in your agent-rt.yaml.")
     return model
 
 

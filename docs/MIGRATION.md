@@ -2,17 +2,18 @@
 
 Agent RT provides lightweight Python and TypeScript/JavaScript compatibility entry points for common migration paths. They preserve familiar entry points while translating requests into Agent RT's provider-neutral `ModelRequest` and `ModelResponse` contracts internally.
 
-The compatibility layer is intentionally a focused subset, not a claim of drop-in parity with every LangChain, LlamaIndex, OpenAI Agents SDK, AutoGen, CrewAI, OpenAI SDK, or Anthropic SDK feature. Use it to reduce the initial migration diff, then move framework-specific orchestration, tools, memory, streaming, and policy code to Agent RT's native APIs where needed.
+The compatibility layer is intentionally a focused subset, not a claim of drop-in parity with every LangChain, Deep Agents, LlamaIndex, OpenAI Agents SDK, AutoGen, CrewAI, LiteLLM, OpenAI SDK, Anthropic SDK, or OpenRouter SDK feature. Use it to reduce the initial migration diff, then move framework-specific orchestration, tools, memory, streaming, and policy code to Agent RT's native APIs where needed.
 
 Migration compatibility field testing is ongoing. So far, 69 third-party repositories have passed their test suites both before and after migration to Agent RT.
 
-The adapters use the same provider environment settings as Agent RT, including `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`, and `ANTHROPIC_API_KEY`.
+The adapters deliberately keep the upstream SDKs' environment behavior (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`) so migrated code runs unchanged. Agent RT's own runtime is configured with `agent-rt.yaml` instead; see [Configuration](Configuration.md).
 
 Minimum environment for the snippets below:
 
 - OpenAI: set `OPENAI_API_KEY` to use the default `https://api.openai.com/v1` endpoint, or set `OPENAI_BASE_URL` for an OpenAI-compatible endpoint (a key is then optional if that endpoint does not require one). `OPENAI_MODEL` supplies the default model.
 - Anthropic: set `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_BASE_URL` / `ANTHROPIC_MODEL`).
-- OpenAI requests use a Responses WebSocket transport by default. Custom OpenAI-compatible endpoints that do not implement it must opt out by passing an explicit provider configured with `websocket=False` (Python) or `websocket: false` (TypeScript) to the compatibility client, for example `AsyncOpenAI(provider=OpenAIModelProvider(OpenAIProviderSettings(base_url=..., websocket=False)))`. The `OPENAI_WEBSOCKET=0` variable applies to native environment startup (see [Architecture and Extensions](Architecture-and-Extensions.md#provider-selection-and-transports)); the compatibility clients construct their provider from the settings above and do not read it.
+- OpenRouter (the OpenRouter SDK shims and LiteLLM `openrouter/` models): set `OPENROUTER_API_KEY`. It never falls back to `OPENAI_API_KEY`.
+- OpenAI requests use a Responses WebSocket transport by default. Custom OpenAI-compatible endpoints that do not implement it must opt out by passing an explicit provider configured with `websocket=False` (Python) or `websocket: false` (TypeScript) to the compatibility client, for example `AsyncOpenAI(provider=OpenAIModelProvider(OpenAIProviderSettings(base_url=..., websocket=False)))`. The `websocket: false` model parameter in `agent-rt.yaml` applies to native startup (see [Architecture and Extensions](Architecture-and-Extensions.md#provider-selection-and-transports)); the compatibility clients construct their provider from the settings above and do not read it.
 
 Upstream tool-type, beta-header, and API-shape identifiers shown in these examples (for example `code_execution_20250825`, `web_search_20250305`, and `mcp-client-2026-09-15`) reflect the upstream SDKs when this guide was last reviewed. Check the upstream documentation for the versions you target.
 
@@ -116,7 +117,7 @@ store = QdrantVectorStore(
 documents = await store.asimilarity_search("How does Agent RT retrieve context?", k=4)
 ```
 
-The adapter reads `AGENT_RT_VECTOR_DB_URL`, `AGENT_RT_VECTOR_DB_COLLECTION`, the generic/backend-native credential variables, and `AGENT_RT_VECTOR_DB_OPTION_*` settings documented for native vector DB usage. The imported compatibility class fixes the vendor backend implied by its package name; applications that need to switch the backend solely with `AGENT_RT_VECTOR_DB` should use the native `VectorDBProviderRegistry` plus `AgentRTRetriever`.
+The adapter reads `AGENT_RT_VECTOR_DB_URL`, `AGENT_RT_VECTOR_DB_COLLECTION`, the generic/backend-native credential variables, and `AGENT_RT_VECTOR_DB_OPTION_*` settings as the upstream-style environment surface of the compatibility class. The imported class fixes the vendor backend implied by its package name; applications that declare vector stores in `vector_store_registry` should use `vector_store_registry_from_config` plus `AgentRTRetriever`.
 
 This compatibility surface is intentionally retrieval-oriented: `similarity_search` / `similaritySearch`, scored search, and retriever conversion are supported against existing collections. Vendor-specific collection creation, ingestion/upsert, deletion, index administration, sparse/hybrid vendor features, and lifecycle APIs remain backend-native.
 
@@ -643,6 +644,68 @@ result = await Crew(
 The adapter supports `Agent`, `Task`, `Crew`, `Process.sequential`, task context, input formatting, `kickoff()`, and `kickoff_async()`, with each task executed through Agent RT's bounded agent loop. `LLM(model, temperature=..., max_tokens=..., base_url=..., api_key=...)` takes CrewAI's LiteLLM-style names (`anthropic/<model>` uses the Anthropic provider; `openai/<model>` or a bare name uses OpenAI), offers `call()` / `acall()`, and can be passed as `Agent(llm=...)`. `Process.hierarchical`, per-task `async_execution` scheduling, CrewAI Flows, manager/delegation internals, knowledge/storage lifecycle, and exhaustive CrewAI tool/plugin semantics intentionally fail or remain upstream-native rather than being silently approximated.
 
 There is no Agent RT TypeScript CrewAI or AutoGen compatibility surface because those migration targets are Python-first; Agent RT does not invent non-upstream JavaScript APIs.
+
+## Deep Agents
+
+Deep Agents migration (`deepagents` / npm `deepagents`) runs `create_deep_agent` / `createDeepAgent` on the LangChain compatibility agent loop, so models, tools, middleware, checkpointers, and structured output behave as in the [LangChain](#langchain) section:
+
+```python
+from agent_rt.deepagents import create_deep_agent
+
+agent = create_deep_agent(
+    model="openai:gpt-4.1",
+    tools=[internet_search],
+    system_prompt="You are an expert researcher.",
+    subagents=[{"name": "critic", "description": "Reviews drafts.", "system_prompt": "Be critical."}],
+)
+result = agent.invoke({"messages": [{"role": "user", "content": "Research Agent RT"}], "files": {"/brief.md": "..."}})
+print(result["messages"][-1].content, result["files"].keys(), result["todos"])
+```
+
+```ts
+import { createDeepAgent } from "agent-rt/deepagents";
+
+const agent = createDeepAgent({ model: "openai:gpt-4.1", tools: [internetSearch], systemPrompt: "You are an expert researcher." });
+const result = await agent.invoke({ messages: [{ role: "user", content: "Research Agent RT" }] });
+```
+
+Supported: the built-in `write_todos`, `ls`, `read_file`, `write_file`, `edit_file`, `glob`, and `grep` tools; `task` delegation to the default `general-purpose` subagent and declarative subagents (`name`, `description`, `system_prompt` / `systemPrompt`, `tools`, `model`, `middleware`), which run isolated from the parent conversation but share its files; and `files` / `todos` in the input and result. As with upstream's default `StateBackend`, the filesystem is virtual agent state and never touches the host. `model` is required (upstream's implicit default is deprecated). Sandboxed `execute`, `backend`, `interrupt_on` / `interruptOn`, `skills`, `memory`, `permissions`, compiled or async subagents, and the forked subagent mode raise instead of being approximated. Subagent dictionaries/objects are strictly checked: only the documented six fields are accepted, and both `name` and `description` must be non-empty; unknown routing, security, or execution fields raise before the model runs. In TypeScript, top-level `files` / `todos` are mapped by `invoke()`; pass them in `state` when using `stream()`.
+
+## LiteLLM
+
+LiteLLM migration is Python-only, because LiteLLM has no official JavaScript SDK (from TypeScript, point the `agent-rt/openai` shim at a LiteLLM proxy with `baseURL`):
+
+```python
+from agent_rt.litellm import acompletion, completion
+
+response = completion(model="anthropic/claude-sonnet-4-5", messages=[{"role": "user", "content": "Hello"}])
+print(response.choices[0].message.content)
+print(response["choices"][0]["message"]["content"])  # LiteLLM's dict-style access also works
+```
+
+Supported: `completion`, `acompletion`, `embedding`, and `aembedding` (including `stream=True`, `tools`, `response_format`, and `reasoning_effort`, as in the OpenAI shim), with `api_key`, `api_base` / `base_url`, and `custom_llm_provider`. Models route by provider prefix: `openai/<model>` or a bare OpenAI model (plus any OpenAI-compatible server through `api_base`), `anthropic/<model>` or a bare `claude-*` model, and `openrouter/<model>`. Other LiteLLM providers (`gemini/`, `bedrock/`, `azure/`, ...) raise a `ValueError` rather than calling the wrong endpoint; point an Agent RT provider at them with `provider=` instead. Errors are the `agent_rt.openai` exception classes (also exported from `agent_rt.litellm` and `agent_rt.litellm.exceptions`, with `Timeout` as an alias of `APITimeoutError`), matching LiteLLM's own exceptions, which subclass OpenAI's. Module-level settings such as `litellm.api_key`, callbacks, the router, caching, and budget tracking are not emulated. Chat requests accept the same fields as the OpenRouter shim below (`model`, `messages`, `temperature`, `max_tokens`, `max_completion_tokens`, `tools`, `response_format`, `reasoning_effort`, `stream`); other options such as `tool_choice`, `top_p`, or `stop` raise `NotImplementedError` unless `drop_params=True`, which drops them as LiteLLM does. Request-level `timeout`, `request_timeout`, and a non-zero `num_retries` also raise `NotImplementedError` (rather than being ignored), since requests make one attempt with no client deadline; configure equivalent policies through a native Agent RT provider if needed. Python `completion(stream=True)` delivers chunks incrementally and its iterator supports `with ... as stream:` or explicit `stream.close()` for early termination; an abandoned iterator is closed when garbage-collected.
+
+## OpenRouter
+
+OpenRouter's OpenAI-compatible endpoint already works with the [OpenAI SDK](#openai-python-sdk) shim (`base_url="https://openrouter.ai/api/v1"`). Code written against OpenRouter's own SDKs migrates with the prefix:
+
+```python
+from agent_rt.openrouter import OpenRouter
+
+with OpenRouter() as client:  # reads OPENROUTER_API_KEY
+    response = client.chat.send(model="openai/gpt-5", messages=[{"role": "user", "content": "Hello"}])
+    print(response.choices[0].message.content)
+```
+
+```ts
+import { OpenRouter } from "agent-rt/@openrouter/sdk";
+
+const openRouter = new OpenRouter(); // reads OPENROUTER_API_KEY
+const result = await openRouter.chat.send({ chatRequest: { model: "openai/gpt-5", messages: [{ role: "user", content: "Hello" }] } });
+console.log(result.choices[0].message.content);
+```
+
+Supported: `chat.send` (and Python `chat.send_async`), including streaming and tools, plus `embeddings.generate` (Python `generate_async`). Python keeps the SDK's snake_case names; TypeScript accepts the SDK 1.x `chatRequest` wrapper or a flat request and returns camelCase results (`finishReason`, `toolCalls`, `usage.promptTokens`) and stream chunks. `api_key` / `apiKey`, `server_url` / `serverURL`, and an Agent RT `provider` are honored; TypeScript also takes `fetch`. Chat request fields honored by both SDK shims are `model`, `messages`, `temperature`, `max_tokens` / `maxTokens`, `max_completion_tokens` / `maxCompletionTokens`, `tools`, `response_format` / `responseFormat`, `reasoning_effort` / `reasoningEffort`, and `stream`. Unsupported generation options (`top_p` / `topP`, `tool_choice` / `toolChoice`, etc.) and OpenRouter routing fields (`provider`, `models`, `plugins`, ...) raise before a model call instead of being silently ignored; TypeScript per-call SDK options are also rejected. Python synchronous streams can be closed explicitly or used as context managers. Attribution headers, the other SDK resources (credits, keys, generations, ...), SDK error classes, and function-valued TypeScript `apiKey` are not emulated.
 
 ## OpenAI Python SDK
 

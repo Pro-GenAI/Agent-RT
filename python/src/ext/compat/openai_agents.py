@@ -468,7 +468,27 @@ class Runner:
                 raise InputGuardrailTripwireTriggered(
                     InputGuardrailResult(guardrail=guardrail, output=output)
                 )
-        provider = starting_agent.provider or rt.load_model()
+        provider = starting_agent.provider
+        if provider is None:
+            requested = (
+                starting_agent.model
+                if isinstance(starting_agent.model, str)
+                else getattr(starting_agent.model, "model", None)
+            )
+            try:
+                provider = rt.load_model()
+            except rt.ConfigNotFoundError:
+                provider = None
+            if provider is not None and requested not in provider.model_names:
+                provider = None
+            if provider is None:
+                # Migrated code without an Agent RT config, or asking for a model the
+                # config does not declare, keeps the vendor SDK's environment defaults.
+                from ext.compat.base import _openai_provider
+
+                provider = _openai_provider(
+                    model=None, credential=None, base_url=None
+                )
         registry = rt.ToolRegistry()
         state = {"last_agent": starting_agent}
 

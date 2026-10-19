@@ -1,6 +1,8 @@
 import asyncio
 import json
 import os
+
+import agent_rt as agent_rt_core
 import time
 from dataclasses import replace
 
@@ -4496,10 +4498,8 @@ class TestToolContract:
             "AGENT_RT_EXECUTION_MEMORY_BYTES",
             "AGENT_RT_EXECUTION_CPU_SECONDS",
         )
-        previous = {name: os.environ.get(name) for name in names}
-        os.environ[names[0]] = "3.5"
-        os.environ[names[1]] = "8192"
-        os.environ[names[2]] = "1.25"
+        previous = agent_rt_core._RUNTIME_SETTINGS
+        agent_rt_core._RUNTIME_SETTINGS = {names[0]: "3.5", names[1]: "8192", names[2]: "1.25"}
         try:
 
             async def runner(*_args, **_kwargs):
@@ -4514,11 +4514,7 @@ class TestToolContract:
             assert session.limits.memory_bytes == 16384
             assert session.limits.cpu_seconds == 1.25
         finally:
-            for name, value in previous.items():
-                if value is None:
-                    os.environ.pop(name, None)
-                else:
-                    os.environ[name] = value
+            agent_rt_core._RUNTIME_SETTINGS = previous
 
     def test_sandbox_command_is_cancelled_with_owning_task(self):
         async def scenario():

@@ -1,12 +1,12 @@
 import asyncio
 
-from agent_rt import AgentLoop, AgentRunLimits, load_model
+from agent_rt import AgentLoop, AgentRunLimits
 
-from _common import make_agent, response_text, user_message
+from _common import example_provider, make_agent, response_text, user_message
 
 
 async def main() -> None:
-    provider = load_model()
+    provider = example_provider()
     agent = make_agent("bounded", "Answer briefly.")
 
     limits = AgentRunLimits(

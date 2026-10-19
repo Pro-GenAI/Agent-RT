@@ -170,6 +170,7 @@ uv run python benchmark_install_size.py --publish
 uv run python benchmark_runtime.py --runs 30
 uv run python benchmark_features.py --runs 30
 uv run python benchmark_tool_tokens.py --publish
+uv run python benchmark_cli_harnesses.py --runs 30 --publish
 ```
 
 TypeScript:
@@ -186,3 +187,27 @@ node benchmark-features.mjs --runs 30
 ```
 
 The checked-in CSV files linked above contain the published aggregates used by this page. Per-runner flags, profiling, and scalability diagnostics are documented in the [Python](python/README.md) and [TypeScript](typescript/README.md) comparison READMEs.
+
+## Agent CLI harness comparison
+
+The `agent-rt` terminal client was compared with other agent CLIs. Each CLI was called as its plain one-shot prompt command with no extra flags. The model and provider settings each CLI needs went into its normal config file or environment variables instead. Every CLI was pointed at a deterministic localhost mock model, so no real model API was called. Each sequential run had its own mock server, a fresh temporary HOME/TMPDIR and git workspace, and real credentials stripped from its environment. Non-essential network features were turned off for each CLI that has them: Claude Code non-essential traffic, Copilot offline mode, and Codex plugins/apps/analytics. The table shows **30 clean sequential runs per CLI** plus 4- and 8-way parallel batches, measured on 2026-10-18 on a 16-thread Linux x86_64 machine. Each parallel batch shares one HOME, the way one user running parallel agents would.
+
+| CLI | Command | Version | Median time | p95 time | Median CPU | Peak RSS | Model requests | Tools sent | Input tokens | Tool-schema tokens | Cost / prompt | 8 parallel: wall | 8 parallel: sum of individual RSS peaks |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Agent RT | `agent-rt -p "hi"` | 0.0.1 | 559 ms | 726 ms | 525 ms | 34.9 MiB | 1 | 7 | 710 | 588 | $0.0022 | 778 ms | 277 MiB |
+| Codex | `codex exec "hi"` | 0.157.0 | 605 ms | 637 ms | 430 ms | 184.0 MiB | 1 | 10 | 6,629 | 1,998 | $0.0199 | 831 ms | 1,414 MiB |
+| Claude Code | `claude -p "hi"` | 2.1.302 | 791 ms | 2,048 ms | 865 ms | 228.6 MiB | 1 | 24 | 26,295 | 17,756 | $0.0789 | 2,220 ms | 1,774 MiB |
+| opencode | `opencode run "hi"` | 2.0.32 | 2,457 ms | 2,993 ms | 5,065 ms | 497.6 MiB | 2 | 11 | 5,685 | 2,710 | $0.0171 | 5,781 ms | 2,305 MiB |
+| Copilot CLI | `copilot -p "hi"` | 1.0.47 | 4,559 ms | 4,684 ms | 5,635 ms | 349.8 MiB | 1 | 16 | 13,983 | 5,262 | $0.0420 | 6,500 ms | 2,862 MiB |
+
+Input tokens are a same-tokenizer estimate (`tiktoken` `o200k_base`) of the system prompt, messages and tool schemas each CLI sent, summed over all of its model requests for the prompt. They are not provider-billed counts. opencode makes a second model request per prompt, and it starts a background `opencode serve --service` process that the runner counts and then stops. Cost uses a reference price of $3 per million input tokens and $15 per million output tokens, with no prompt-cache discount. In this capture Agent RT had the lowest median time, with Codex close behind. Agent RT used about 5–14× less memory and sent about 8–37× fewer input tokens per prompt. Part of that token gap comes from Agent RT's smaller built-in tool set (workspace file and read-only git tools), so these numbers measure per-prompt harness overhead, not task quality or capability.
+
+**Concurrency-memory caveat:** The historical 2026-10-18 eight-way RAM column sums individually observed process peaks; those peaks need not coincide. It is **not** observed simultaneous batch RAM. Future complete captures will also publish `c8_batch_peak_rss_mib`, sampled from all live process trees during the same sweep. Concurrent mock requests are validated in aggregate (at least one per invocation), but cannot be attributed to each process sharing the mock.
+
+Checked-in aggregate: [`python/cli-harness-measured-results.csv`](python/cli-harness-measured-results.csv).
+
+![Agent CLI end-to-end time](assets/cli-harness-time.svg)
+
+![Agent CLI peak memory](assets/cli-harness-memory.svg)
+
+![Agent CLI input tokens](assets/cli-harness-tokens.svg)

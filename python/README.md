@@ -13,7 +13,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI support is included; Anthropic, guardrails, API serving, CLI, and sandboxes are opt-in extras.
 - **Production-ready.** Checkpoints, event streams, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Easy to adopt.** Drop-in compatibility for OpenAI, Anthropic, LangChain, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
+- **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LiteLLM, LangChain, Deep Agents, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
 
 ## Install
 
@@ -30,18 +30,18 @@ OpenLLMetry/Traceloop export is optional. Install `agent-rt[observability]` only
 
 ## Quick start
 
-Configure a model:
+Configure models and vector stores in `agent-rt.yaml` (current folder) or `~/.agent-rt/config.yaml`, or pass any path with `--config` / `load_config(path)`. Secrets are referenced as `os.environ/NAME`; nothing else is read from the environment. Bedrock Knowledge Bases uses the optional `agent-rt[bedrock]` extra and AWS IAM credentials. See [Configuration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
 
-```bash
-export OPENAI_MODEL="your-model"
-export OPENAI_API_KEY="..."
+```yaml
+model_list:
+  - model_name: my-model
+    agent_rt_params:
+      model: openai/your-model        # or anthropic/..., add api_base for compatible endpoints
+      api_key: os.environ/OPENAI_API_KEY
 ```
-
-For an OpenAI-compatible endpoint, also set `OPENAI_BASE_URL`. If multiple provider configurations are present, set `MODEL_PROVIDER=openai` or `MODEL_PROVIDER=anthropic`.
 
 ```python
 import asyncio
-import os
 
 from agent_rt import (
     AgentConfig,
@@ -49,17 +49,19 @@ from agent_rt import (
     ContentPart,
     ModelMessage,
     ModelSettings,
+    load_config,
     load_model,
 )
 
 
 async def main() -> None:
     # validate=False skips the startup model-list check, so no extra network call.
-    provider = load_model(validate=False)
+    config = load_config()  # agent-rt.yaml, ~/.agent-rt/config.yaml, or an explicit path
+    provider = load_model(config)
     agent = AgentConfig(
         name="assistant",
         instructions="Answer clearly and concisely.",
-        model=ModelSettings(model=os.environ["OPENAI_MODEL"]),
+        model=ModelSettings(model="my-model"),
     )
     message = ModelMessage(
         role="user",
@@ -89,7 +91,7 @@ Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_
 ## Also included
 
 - **API server** (`agent-rt[api]`): OpenAI-compatible Chat Completions/Responses and Anthropic-compatible Messages endpoints.
-- **Terminal CLI** (`agent-rt[cli]`): `agent-rt -p "explain this stack trace"` or `agent-rt --env-file=./.env -p "..."`.
+- **Terminal CLI** (`agent-rt[cli]`): `agent-rt -p "explain this stack trace"` or `agent-rt --config ./agent-rt.yaml -p "..."`. Reuse an existing agent CLI's models and API keys with `agent-rt claude -p "..."`, `agent-rt codex exec "..."`, `agent-rt opencode run "..."`, or `agent-rt copilot -p "..."` ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#reuse-another-agent-cli)).
 
 ## Learn more
 

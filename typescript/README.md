@@ -13,7 +13,7 @@ Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero 
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI, Anthropic, Agent Action Guard, and sandbox integrations are optional peers.
 - **Production-ready.** Checkpoints, events, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Easy to adopt.** Drop-in compatibility entry points for OpenAI, Anthropic, LangChain, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
+- **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
 
 ## Install
 
@@ -30,17 +30,19 @@ Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-
 ```ts
 import {
   AgentLoop,
+  loadConfig,
   loadModel,
   type AgentConfig,
   type ModelMessage,
 } from "agent-rt";
 
-const provider = loadModel(process.env, { validate: false });
+// agent-rt.yaml in the current folder, ~/.agent-rt/config.yaml, or loadConfig("path.yaml")
+const provider = await loadModel(await loadConfig());
 
 const agent: AgentConfig = {
   name: "assistant",
   instructions: "Answer clearly and concisely.",
-  model: { model: process.env.OPENAI_MODEL! },
+  model: { model: "my-model" }, // a model_name from agent-rt.yaml
 };
 
 const messages: ModelMessage[] = [
@@ -59,7 +61,15 @@ console.log(
 );
 ```
 
-Configure `OPENAI_MODEL` and `OPENAI_API_KEY`; add `OPENAI_BASE_URL` for an OpenAI-compatible endpoint. If multiple provider configurations are present, set `MODEL_PROVIDER=openai` or `MODEL_PROVIDER=anthropic`.
+Configure several models and vector stores in `agent-rt.yaml`; secrets are referenced as `os.environ/NAME` and nothing else is read from the environment. Bedrock Knowledge Bases uses the optional `@aws-sdk/client-bedrock-agent-runtime` dependency and AWS IAM credentials. See [Configuration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
+
+```yaml
+model_list:
+  - model_name: my-model
+    agent_rt_params:
+      model: openai/your-model        # or anthropic/..., add api_base for compatible endpoints
+      api_key: os.environ/OPENAI_API_KEY
+```
 
 More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/typescript/examples).
 

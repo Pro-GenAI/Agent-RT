@@ -116,6 +116,20 @@ The default contract measures 8, 16, 32, 64, and 128 registered tools, four user
 
 Checked-in aggregate: [`tool-token-measured-results.csv`](tool-token-measured-results.csv). Detailed per-scenario CSV/JSON output is written under `results/tool-tokens/`.
 
+## Agent CLI harness benchmark
+
+`benchmark_cli_harnesses.py` compares the `agent-rt` terminal client with other agent CLIs: Codex, Claude Code, opencode (also found in `~/.opencode/bin`), and GitHub Copilot CLI. Each CLI is called as its plain one-shot prompt command with no extra flags: `agent-rt -p "hi"`, `codex exec "hi"`, `claude -p "hi"`, `opencode run "hi"`, and `copilot -p "hi"`. The model, provider and permission settings each CLI needs go into its normal config file or environment variables instead (`~/.agent-rt/config.yaml`, `$CODEX_HOME/config.toml`, `ANTHROPIC_*`, `~/.config/opencode/opencode.json`, `COPILOT_*`). Every CLI talks only to a deterministic localhost mock that speaks OpenAI Chat Completions, OpenAI Responses, and Anthropic Messages; no real model API is called. Each sequential run gets its own mock server, temporary `HOME`/`TMPDIR`, a git-initialized workspace, and an environment with every real credential removed. Non-essential network features are turned off the same way for every CLI that has them: Claude Code non-essential traffic, Copilot offline mode, and Codex plugins/apps/analytics. CLIs that are not installed are recorded as `not installed`. Processes a CLI leaves behind, such as opencode's `opencode serve --service`, are killed after each run.
+
+Per run it records wall time, process-tree CPU time and CPU utilization, peak process-tree RSS (psutil sampling every 10 ms), model requests, request bytes, input/output tokens (`tiktoken` `o200k_base` over the system prompt, messages and tool schemas the CLI sends), tool count and tool-schema tokens, and cost at reference prices (`--input-usd-per-mtok`, default 3.00; `--output-usd-per-mtok`, default 15.00). Concurrency phases (`--concurrency`, default 4 and 8) start N copies at once. They share one `HOME`, `TMPDIR` and mock, as one user running parallel agents would, with a separate workspace per copy. They record batch wall time, p95, throughput, and summed peak RSS/CPU. Token columns come only from the isolated sequential runs.
+
+```bash
+uv sync
+uv run python benchmark_cli_harnesses.py --runs 30 --publish
+cat cli-harness-measured-results.csv
+```
+
+`--publish` requires all five CLIs installed, at least 30 clean sequential runs per CLI, clean default 4- and 8-way batches, one warmup, and standard reference prices. Filtered and custom-config runs cannot publish. The runner retains individual peak sums for continuity and additionally records a sampled simultaneous batch peak (`c4_batch_peak_rss_mib`, `c8_batch_peak_rss_mib`). The 2026-10-18 checked-in CSV predates that fix and contains only sums of individual peaks, not measured concurrent RAM. Shared-mock concurrency request counts are validated in aggregate, not per client. Raw samples are written under `results/cli-harnesses/`. Run regression tests with `uv run --with pytest --offline python -m pytest -q test_benchmark_cli_harnesses.py`. Tokens are same-tokenizer estimates, not provider-billed counts, and the scenario measures per-prompt harness overhead, not task quality.
+
 ## Metrics
 
 - Wall-clock time in milliseconds.

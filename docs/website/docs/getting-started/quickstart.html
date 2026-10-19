@@ -44,7 +44,6 @@
 <main class="docs-main" id="main"><article class="content">
 <div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Getting started<span>/</span>Quickstart</div><section class="section-intro"><span class="eyebrow">Getting started</span><h1 class="doc-title">Quickstart</h1><p class="doc-lede">The repository examples are deliberately incremental. Start with one agent call, then add the capabilities that matter to production behavior without introducing another framework layer.</p></section>
 <h2>Minimal Python agent</h2><p>This is the smallest self-contained Python example: configure a model name, create an agent, create a user message, and run the loop.</p><pre><code class="language-python">import asyncio
-import os
 
 from agent_rt import (
     AgentConfig,
@@ -52,14 +51,14 @@ from agent_rt import (
     ContentPart,
     ModelMessage,
     ModelSettings,
+    load_config,
     load_model,
 )
 
 async def main():
-    model = os.environ.get("OPENAI_MODEL") or os.environ.get("ANTHROPIC_MODEL")
-    if not model:
-        raise RuntimeError("Set OPENAI_MODEL or ANTHROPIC_MODEL")
-    provider = load_model()
+    config = load_config()  # agent-rt.yaml, ~/.agent-rt/config.yaml, or an explicit path
+    model = config.default_model
+    provider = load_model(config)
 
     agent = AgentConfig(
         name="assistant",
@@ -75,13 +74,13 @@ async def main():
     print(result.termination_reason)
 
 asyncio.run(main())</code></pre>
-<h2>Minimal TypeScript agent</h2><pre><code class="language-javascript">const { AgentLoop, loadModel } = require("agent-rt");
+<h2>Minimal TypeScript agent</h2><pre><code class="language-javascript">const { AgentLoop, loadConfig, loadModel } = require("agent-rt");
 
 async function main() {
-  const model = process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL;
-  if (!model) throw new Error("Set OPENAI_MODEL or ANTHROPIC_MODEL");
+  const config = await loadConfig(); // agent-rt.yaml, ~/.agent-rt/config.yaml, or an explicit path
+  const model = config.settings.default_model ?? config.models[0].modelName;
 
-  const provider = await loadModel();
+  const provider = await loadModel(config);
   const agent = {
     name: "assistant",
     instructions: "Answer clearly and concisely.",

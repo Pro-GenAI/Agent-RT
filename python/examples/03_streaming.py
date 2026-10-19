@@ -1,12 +1,12 @@
 import asyncio
 
-from agent_rt import AgentLoop, load_model
+from agent_rt import AgentLoop
 
-from _common import make_agent, user_message
+from _common import example_provider, make_agent, user_message
 
 
 async def main() -> None:
-    provider = load_model()
+    provider = example_provider()
     agent = make_agent("streaming", "Answer in a short paragraph.")
 
     async def on_event(event) -> None:

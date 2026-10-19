@@ -95,7 +95,7 @@ registry.register(
 )
 
 loop = AgentLoop(
-    load_model(),  # OpenAI, Anthropic, or any compatible endpoint
+    load_model(load_config()),  # models from agent-rt.yaml: OpenAI, Anthropic, or compatible endpoints
     tool_registry=registry,
     capability_grant=CapabilityGrant(tools=("get_weather",)),
     execution_budget=ExecutionBudget(ExecutionBudgetLimits(max_model_calls=5)),
@@ -125,7 +125,7 @@ Arguments are validated against the schema, tools outside the grant never run, a
 
 [Python](python/README.md) · [TypeScript](typescript/README.md) · [Python examples](python/examples/README.md) · [TypeScript examples](typescript/examples/README.md)
 
-The inbound API server, terminal CLI, and AutoGen/CrewAI migration shims are Python-only.
+The inbound API server, terminal CLI, and AutoGen/CrewAI/LiteLLM migration shims are Python-only.
 
 ## 📄 License
 

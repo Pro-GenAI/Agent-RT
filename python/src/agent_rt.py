@@ -28,6 +28,11 @@ from typing import (
     runtime_checkable,
 )
 
+from ext.config import AgentRTConfig as AgentRTConfig
+from ext.config import ConfigError as ConfigError
+from ext.config import ConfigNotFoundError as ConfigNotFoundError
+from ext.config import require_resolved as _require_resolved
+from ext.config import load_config as load_config
 from ext.action_blockers import (
     DEFAULT_BLOCKED_COMMANDS as DEFAULT_BLOCKED_COMMANDS,
 )
@@ -142,7 +147,7 @@ def _valid_traceloop_base_url(value: str) -> bool:
 def openllmetry_config_from_env(
     env: Mapping[str, str] | None = None,
 ) -> OpenLLMetryConfig | None:
-    source = os.environ if env is None else env
+    source = runtime_settings() if env is None else env
     api_key_raw = source.get("TRACELOOP_API_KEY")
     base_url_raw = source.get("TRACELOOP_BASE_URL")
     api_key = api_key_raw.strip() if api_key_raw is not None else None
@@ -208,7 +213,24 @@ def initialize_openllmetry_from_env(
     return True
 
 
-_OPENLLMETRY_INITIALIZED = initialize_openllmetry_from_env()
+_RUNTIME_SETTINGS: Mapping[str, str] = {}
+
+
+def runtime_settings() -> Mapping[str, str]:
+    """Settings fed by ``configure_runtime`` (never the process environment)."""
+    return _RUNTIME_SETTINGS
+
+
+def configure_runtime(config: Any) -> bool:
+    """Apply ``agent_rt_settings`` from an ``AgentRTConfig`` to implicit defaults.
+
+    Sets the sandbox, tool-execution-limit, web-search, Decision-model and
+    observability defaults, and initializes OpenLLMetry when configured.
+    Returns whether OpenLLMetry was initialized.
+    """
+    global _RUNTIME_SETTINGS
+    _RUNTIME_SETTINGS = dict(config.runtime_environment())
+    return initialize_openllmetry_from_env(_RUNTIME_SETTINGS)
 
 
 def _validate_json_value(value: Any, path: str = "$") -> None:
@@ -406,7 +428,7 @@ class ToolExecutionLimits:
 def tool_execution_limits_from_env(
     environment: Mapping[str, str] | None = None,
 ) -> ToolExecutionLimits:
-    env = os.environ if environment is None else environment
+    env = runtime_settings() if environment is None else environment
 
     def parse_float(name: str) -> float | None:
         raw = env.get(name)
@@ -1042,7 +1064,7 @@ class PIIMorpher:
         enabled: bool = True,
         environ: Mapping[str, str] | None = None,
     ) -> None:
-        env = os.environ if environ is None else environ
+        env = runtime_settings() if environ is None else environ
         try:
             disabled = _parse_env_bool(env.get(PII_MORPHER_DISABLE_ENV))
         except ValueError as exc:
@@ -2191,6 +2213,13 @@ class ToolRegistry:
     def version(self) -> int:
         return self._version
 
+    def fork(self) -> "ToolRegistry":
+        """Shallow copy with independent tool tables, for per-request additions."""
+        clone = copy.copy(self)
+        clone._tools = dict(self._tools)
+        clone._deferred = dict(self._deferred)
+        return clone
+
     @staticmethod
     def qualified_name(name: str, namespace: str | None = None) -> str:
         if not name.strip():
@@ -3148,12 +3177,10 @@ DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENAI_BASE_URL_ENV = "OPENAI_BASE_URL"
 OPENAI_API_KEY_ENV = "OPENAI_" + "API_KEY"  # pragma: allowlist secret
 OPENAI_MODEL_ENV = "OPENAI_MODEL"
-OPENAI_WEBSOCKET_ENV = "OPENAI_WEBSOCKET"
 DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 ANTHROPIC_BASE_URL_ENV = "ANTHROPIC_BASE_URL"
 ANTHROPIC_API_KEY_ENV = "ANTHROPIC_" + "API_KEY"  # pragma: allowlist secret
 ANTHROPIC_MODEL_ENV = "ANTHROPIC_MODEL"
-MODEL_PROVIDER_ENV = "MODEL_PROVIDER"
 
 
 def _env_enabled(value: str | None, *, default: bool = True) -> bool:
@@ -3333,36 +3360,6 @@ class OpenAIProviderSettings:
                 raise ValueError("OpenAI default_model must not be empty when provided")
             object.__setattr__(self, "default_model", default_model)
 
-    @classmethod
-    def from_env(
-        cls,
-        *,
-        environ: Mapping[str, str] | None = None,
-        validate: bool = True,
-        client_factory: Callable[..., Any] | None = None,
-    ) -> "OpenAIProviderSettings":
-        env = os.environ if environ is None else environ
-        base_url = env.get(OPENAI_BASE_URL_ENV, DEFAULT_OPENAI_BASE_URL)
-        api_key = env.get(OPENAI_API_KEY_ENV)
-        if base_url.rstrip("/") == DEFAULT_OPENAI_BASE_URL and not (
-            api_key and api_key.strip()
-        ):
-            raise ValueError(
-                "OpenAI API key is required when using the default OpenAI base URL"
-            )
-        settings = cls(
-            base_url=base_url,
-            api_key=api_key,
-            default_model=env.get(OPENAI_MODEL_ENV),
-            websocket=_env_enabled(env.get(OPENAI_WEBSOCKET_ENV)),
-        )
-        if validate:
-            settings.validate_connection(
-                check_default_model=OPENAI_MODEL_ENV in env,
-                client_factory=client_factory,
-            )
-        return settings
-
     def validate_connection(
         self,
         *,
@@ -3458,27 +3455,6 @@ class AnthropicProviderSettings:
                     "Anthropic default_model must not be empty when provided"
                 )
             object.__setattr__(self, "default_model", default_model)
-
-    @classmethod
-    def from_env(
-        cls,
-        *,
-        environ: Mapping[str, str] | None = None,
-        validate: bool = True,
-        client_factory: Callable[..., Any] | None = None,
-    ) -> "AnthropicProviderSettings":
-        env = os.environ if environ is None else environ
-        settings = cls(
-            base_url=env.get(ANTHROPIC_BASE_URL_ENV, DEFAULT_ANTHROPIC_BASE_URL),
-            api_key=env.get(ANTHROPIC_API_KEY_ENV),
-            default_model=env.get(ANTHROPIC_MODEL_ENV),
-        )
-        if validate:
-            settings.validate_connection(
-                check_default_model=ANTHROPIC_MODEL_ENV in env,
-                client_factory=client_factory,
-            )
-        return settings
 
     def validate_connection(
         self,
@@ -5505,60 +5481,155 @@ class AnthropicModelProvider:
         yield ModelStreamEvent(type="completed", response=response, raw=last_raw)
 
 
+class ConfiguredModelProvider:
+    """Route requests by public ``model_name`` across configured deployments.
+
+    Several deployments sharing a ``model_name`` act as ordered fallbacks.
+    Provider clients are created lazily, one per deployment.
+    """
+
+    name = "agent-rt-config"
+
+    def __init__(
+        self,
+        config: Any,
+        *,
+        provider_factory: Callable[[Any], Any] | None = None,
+    ) -> None:
+        if not config.models:
+            raise ValueError("model_list must contain at least one model")
+        self.config = config
+        self._factory = provider_factory or self._default_factory
+        self._providers: dict[int, Any] = {}
+        self.settings = _ConfiguredModelSettings(config.default_model)
+
+    @property
+    def model_names(self) -> tuple[str, ...]:
+        return tuple(self.config.model_names)
+
+    @staticmethod
+    def _default_factory(deployment: Any) -> Any:
+        if deployment.provider == "openai":
+            options: dict[str, Any] = {"default_model": deployment.model}
+            if deployment.api_base:
+                options["base_url"] = deployment.api_base
+            if deployment.websocket is not None:
+                options["websocket"] = deployment.websocket
+            elif deployment.api_base:
+                options["websocket"] = False
+            settings = OpenAIProviderSettings(api_key=deployment.api_key, **options)
+            return OpenAIModelProvider(settings)
+        settings_a = AnthropicProviderSettings(
+            base_url=deployment.api_base or DEFAULT_ANTHROPIC_BASE_URL,
+            api_key=deployment.api_key,
+            default_model=deployment.model,
+        )
+        return AnthropicModelProvider(settings_a)
+
+    def _provider(self, deployment: Any) -> Any:
+        key = id(deployment)
+        provider = self._providers.get(key)
+        if provider is None:
+            _require_resolved(deployment.api_key, deployment.api_base)
+            provider = self._factory(deployment)
+            self._providers[key] = provider
+        return provider
+
+    def _targets(self, requested: str | None) -> tuple[Any, ...]:
+        name = requested or self.config.default_model
+        deployments = self.config.deployments(name) if name else ()
+        if not deployments:
+            configured = ", ".join(self.model_names)
+            raise ValueError(f"unknown model {name!r}; configured models: {configured}")
+        return deployments
+
+    def validate(self) -> None:
+        for deployment in self.config.models:
+            provider = self._provider(deployment)
+            validator = getattr(
+                getattr(provider, "settings", None), "validate_connection", None
+            )
+            if callable(validator):
+                validator(check_default_model=True)
+
+    async def complete(self, request: ModelRequest) -> ModelResponse:
+        last_error: Exception | None = None
+        for deployment in self._targets(request.model):
+            try:
+                return await self._provider(deployment).complete(
+                    replace(request, model=deployment.model)
+                )
+            except Exception as exc:
+                last_error = exc
+        assert last_error is not None
+        raise last_error
+
+    async def stream(self, request: ModelRequest) -> AsyncIterator[ModelStreamEvent]:
+        last_error: Exception | None = None
+        for deployment in self._targets(request.model):
+            started = False
+            try:
+                provider = self._provider(deployment)
+                inner = replace(request, model=deployment.model)
+                if hasattr(provider, "stream"):
+                    async for event in provider.stream(inner):
+                        started = True
+                        yield event
+                else:
+                    response = await provider.complete(inner)
+                    yield ModelStreamEvent(type="completed", response=response)
+                return
+            except Exception as exc:
+                if started:
+                    raise
+                last_error = exc
+        assert last_error is not None
+        raise last_error
+
+    async def embed(self, request: EmbeddingRequest) -> EmbeddingResponse:
+        last_error: Exception | None = None
+        for deployment in self._targets(request.model):
+            try:
+                return await self._provider(deployment).embed(
+                    replace(request, model=deployment.model)
+                )
+            except Exception as exc:
+                last_error = exc
+        assert last_error is not None
+        raise last_error
+
+    async def list_models(self) -> tuple[ModelCatalogEntry, ...]:
+        return tuple(
+            ModelCatalogEntry(id=name, owned_by="agent-rt") for name in self.model_names
+        )
+
+
+@dataclass(frozen=True)
+class _ConfiguredModelSettings:
+    default_model: str | None = None
+
+
 def load_model(
+    config: Any = None,
     *,
-    environ: Mapping[str, str] | None = None,
-    validate: bool = True,
-    openai_client_factory: Callable[..., Any] | None = None,
-    anthropic_client_factory: Callable[..., Any] | None = None,
-    openai_async_client: Any = None,
-    anthropic_async_client: Any = None,
-) -> StreamingModelProvider:
-    env = os.environ if environ is None else environ
-    provider_override = str(env.get(MODEL_PROVIDER_ENV, "")).strip().lower()
-    if provider_override and provider_override not in {"openai", "anthropic"}:
-        raise ValueError(
-            f"{MODEL_PROVIDER_ENV} must be 'openai' or 'anthropic', got {provider_override!r}"
-        )
-    if provider_override == "openai":
-        settings = OpenAIProviderSettings.from_env(
-            environ=env,
-            validate=validate,
-            client_factory=openai_client_factory,
-        )
-        return OpenAIModelProvider(settings, client=openai_async_client)
-    if provider_override == "anthropic":
-        settings = AnthropicProviderSettings.from_env(
-            environ=env,
-            validate=validate,
-            client_factory=anthropic_client_factory,
-        )
-        return AnthropicModelProvider(settings, client=anthropic_async_client)
-    if OPENAI_BASE_URL_ENV in env:
-        settings = OpenAIProviderSettings.from_env(
-            environ=env,
-            validate=validate,
-            client_factory=openai_client_factory,
-        )
-        return OpenAIModelProvider(settings, client=openai_async_client)
-    if ANTHROPIC_BASE_URL_ENV in env:
-        settings = AnthropicProviderSettings.from_env(
-            environ=env,
-            validate=validate,
-            client_factory=anthropic_client_factory,
-        )
-        return AnthropicModelProvider(settings, client=anthropic_async_client)
-    if OPENAI_MODEL_ENV in env:
-        settings = OpenAIProviderSettings.from_env(
-            environ=env,
-            validate=validate,
-            client_factory=openai_client_factory,
-        )
-        return OpenAIModelProvider(settings, client=openai_async_client)
-    raise ValueError(
-        "model provider environment is required: configure MODEL_PROVIDER, "
-        "OPENAI_BASE_URL, ANTHROPIC_BASE_URL, or OPENAI_MODEL"
-    )
+    config_path: str | os.PathLike[str] | None = None,
+    validate: bool = False,
+    provider_factory: Callable[[Any], Any] | None = None,
+) -> ConfiguredModelProvider:
+    """Build the model provider declared by ``model_list`` in a config file.
+
+    ``config`` is an ``AgentRTConfig``; otherwise ``config_path`` (or the first
+    default file: current folder, then home folder) is loaded. The process
+    environment is only used to resolve ``os.environ/NAME`` secret references.
+    """
+    if config is None:
+        from ext.config import load_config
+
+        config = load_config(config_path)
+    provider = ConfiguredModelProvider(config, provider_factory=provider_factory)
+    if validate:
+        provider.validate()
+    return provider
 
 
 StreamEventHandler = Callable[[ModelStreamEvent], Awaitable[None]]
@@ -5679,7 +5750,11 @@ _LAZY_FEATURE_EXPORTS = frozenset(
         "RealtimeSession",
         "RealtimeTransport",
         "ReflectionPass",
+        "FILE_SEARCH_TOOL_NAME",
         "RemoteAgentCard",
+        "register_file_search_tool",
+        "resolve_vector_stores",
+        "vector_store_registry_from_config",
         "RemoteAgentClient",
         "RemoteAgentDirectory",
         "RemoteAgentRegistry",

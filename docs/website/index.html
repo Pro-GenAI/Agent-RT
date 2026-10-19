@@ -800,7 +800,7 @@
 
           <ol class="quickstart-steps reveal">
             <li><span>01</span><p>Install <code>agent-rt</code>.</p></li>
-            <li><span>02</span><p>Set <code>OPENAI_MODEL</code> and your OpenAI-compatible endpoint/key as needed.</p></li>
+            <li><span>02</span><p>Describe your models and vector stores in <code>agent-rt.yaml</code> (secrets via <code>os.environ/NAME</code>).</p></li>
             <li><span>03</span><p>Run the agent through <code>AgentLoop</code>.</p></li>
           </ol>
         </div>
@@ -825,18 +825,17 @@
 
           <div class="code-panel active" id="python-panel" role="tabpanel" aria-labelledby="python-tab">
             <pre tabindex="0"><code id="python-code"><span class="tok-key">import</span> asyncio
-<span class="tok-key">import</span> os
 <span class="tok-key">from</span> agent_rt <span class="tok-key">import</span> (
     AgentConfig, AgentLoop, ContentPart,
-    ModelMessage, ModelSettings, load_model,
+    ModelMessage, ModelSettings, load_config, load_model,
 )
 
 <span class="tok-key">async def</span> <span class="tok-fn">main</span>():
-    provider = load_model(validate=<span class="tok-num">False</span>)
+    provider = load_model(load_config())
     agent = AgentConfig(
         name=<span class="tok-str">"assistant"</span>,
         instructions=<span class="tok-str">"Be concise and precise."</span>,
-        model=ModelSettings(model=os.environ[<span class="tok-str">"OPENAI_MODEL"</span>]),
+        model=ModelSettings(model=<span class="tok-str">"my-model"</span>),
     )
     message = ModelMessage(
         role=<span class="tok-str">"user"</span>,
@@ -852,15 +851,16 @@ asyncio.run(main())</code></pre>
           <div class="code-panel" id="typescript-panel" role="tabpanel" aria-labelledby="typescript-tab" hidden>
             <pre tabindex="0"><code id="typescript-code"><span class="tok-key">const</span> {
   AgentLoop,
+  loadConfig,
   loadModel,
 } = <span class="tok-fn">require</span>(<span class="tok-str">"agent-rt"</span>);
 
 <span class="tok-key">async function</span> <span class="tok-fn">main</span>() {
-  <span class="tok-key">const</span> provider = <span class="tok-key">await</span> loadModel(process.env, { validate: <span class="tok-num">false</span> });
+  <span class="tok-key">const</span> provider = <span class="tok-key">await</span> loadModel(<span class="tok-key">await</span> loadConfig());
   <span class="tok-key">const</span> agent = {
     name: <span class="tok-str">"assistant"</span>,
     instructions: <span class="tok-str">"Be concise and precise."</span>,
-    model: { model: process.env.OPENAI_MODEL },
+    model: { model: <span class="tok-str">"my-model"</span> },
   };
   <span class="tok-key">const</span> message = {
     role: <span class="tok-str">"user"</span>,

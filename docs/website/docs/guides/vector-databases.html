@@ -43,11 +43,12 @@
 <aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools &amp; policy</a><a href="../concepts/state-memory.html">State &amp; memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html" aria-current="page">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html">Development</a></div></aside>
 <main class="docs-main" id="main"><article class="content">
 <div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Guides<span>/</span>Vector databases</div>
-<section class="section-intro"><span class="eyebrow">Guides</span><h1 class="doc-title">Vector databases</h1><p class="doc-lede">Register the built-in vector adapters once, change the selected backend with environment variables, or keep familiar LangChain and LlamaIndex vector-store imports while routing retrieval through Agent RT. The built-in service integrations remain dependency-light and do not require vendor SDKs.</p></section>
+<section class="section-intro"><span class="eyebrow">Guides</span><h1 class="doc-title">Vector databases</h1><p class="doc-lede">Register the built-in vector adapters once, declare several stores in <code>agent-rt.yaml</code>, switch a store's backend by changing one key, or keep familiar LangChain and LlamaIndex vector-store imports while routing retrieval through Agent RT. The HTTP adapters require no vendor SDKs; Bedrock Knowledge Bases uses an optional AWS SDK.</p></section>
 
 <h2>Supported backends</h2>
-<p>Agent RT includes dependency-light HTTP adapters for Chroma, Milvus, Pinecone, Qdrant, and Weaviate. FAISS and pgvector remain registry extensions because their normal integration paths require native/local or database drivers.</p>
-<div class="table-wrap"><table><thead><tr><th>Backend</th><th><code>AGENT_RT_VECTOR_DB</code></th><th>Credential variable</th><th>Notes</th></tr></thead><tbody>
+<p>Agent RT includes dependency-light HTTP adapters for Chroma, Milvus, Pinecone, Qdrant, and Weaviate. FAISS and pgvector remain registry extensions because their normal integration paths require native/local or database drivers. Amazon Bedrock Knowledge Bases is supported with <code>custom_llm_provider: bedrock</code>, using the hosted Retrieve API. Store clients are initialized lazily on first search. FAISS/pgvector and other hosted providers remain extensibility points.</p>
+<div class="table-wrap"><table><thead><tr><th>Backend</th><th><code>custom_llm_provider</code></th><th>Credential variable</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Bedrock Knowledge Bases</td><td><code>bedrock</code></td><td>AWS IAM credentials</td><td>Hosted Retrieve API (optional AWS SDK).</td></tr>
 <tr><td>Chroma</td><td><code>chroma</code></td><td><code>CHROMA_API_KEY</code></td><td>Optional tenant/database options.</td></tr>
 <tr><td>Milvus</td><td><code>milvus</code></td><td><code>MILVUS_TOKEN</code></td><td>Uses the Milvus REST vector search endpoint.</td></tr>
 <tr><td>Pinecone</td><td><code>pinecone</code></td><td><code>PINECONE_API_KEY</code></td><td>Optional namespace via an option variable.</td></tr>
@@ -56,69 +57,73 @@
 </tbody></table></div>
 
 <h2>Configure once</h2>
-<p>The common environment variables are the same for every backend:</p>
-<pre><code class="language-bash">export AGENT_RT_VECTOR_DB="qdrant"
-export AGENT_RT_VECTOR_DB_URL="https://your-vector-db.example"
-export AGENT_RT_VECTOR_DB_COLLECTION="docs"
+<p>Vector stores live in the <code>vector_store_registry</code> of your <code>agent-rt.yaml</code>. Declare as many as you need; each is addressable by its name and its <code>vector_store_id</code>, and secrets are referenced as <code>os.environ/NAME</code>.</p>
+<pre><code class="language-yaml">model_list:
+  - model_name: embed-small
+    agent_rt_params:
+      model: openai/text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
 
-# Optional generic credential and timeout.
-export AGENT_RT_VECTOR_DB_API_KEY="..."
-export AGENT_RT_VECTOR_DB_TIMEOUT_SECONDS="20"</code></pre>
-<p>You may use the backend-native credential variable instead of <code>AGENT_RT_VECTOR_DB_API_KEY</code>. Backend-specific settings use the <code>AGENT_RT_VECTOR_DB_OPTION_*</code> prefix.</p>
+vector_store_registry:
+  - vector_store_name: docs-kb
+    agent_rt_params:
+      vector_store_id: T37J8R4WTM
+      custom_llm_provider: qdrant        # chroma|milvus|pinecone|qdrant|weaviate
+      api_base: https://your-vector-db.example
+      collection: docs
+      api_key: os.environ/QDRANT_API_KEY
+      embedding_model: embed-small
+      timeout: 20
+      options: {}                        # backend-specific, non-secret</code></pre>
+<p>Backend-specific settings go under <code>options</code>. For Bedrock, <code>options.region</code> is optional; the AWS SDK can resolve its region and IAM credentials normally. Install <code>agent-rt[bedrock]</code> (Python) or <code>@aws-sdk/client-bedrock-agent-runtime</code> (TypeScript). HTTP stores require endpoint and collection, while Bedrock needs only the knowledge base ID. Both are lazily initialized.</p>
+<pre><code class="language-yaml">vector_store_registry:
+  - vector_store_name: bedrock-litellm-website-knowledgebase
+    litellm_params:
+      vector_store_id: T37J8R4WTM
+      custom_llm_provider: bedrock
+      options: {region: us-west-2}
+      vector_store_description: Bedrock documentation knowledge base</code></pre>
 
-<h2>Switch backends without changing code</h2>
-<p>The application registers the popular backends once. Selection happens later from the environment.</p>
-<pre><code class="language-bash"># Qdrant
-export AGENT_RT_VECTOR_DB="qdrant"
-export AGENT_RT_VECTOR_DB_URL="https://qdrant.example"
-export AGENT_RT_VECTOR_DB_COLLECTION="docs"
-export QDRANT_API_KEY="..."
-
-# Switch the same code to Pinecone
-export AGENT_RT_VECTOR_DB="pinecone"
-export AGENT_RT_VECTOR_DB_URL="https://your-index.svc.pinecone.io"
-export AGENT_RT_VECTOR_DB_COLLECTION="docs"
-export PINECONE_API_KEY="..."
-export AGENT_RT_VECTOR_DB_OPTION_NAMESPACE="production"</code></pre>
-<div class="note"><strong>What changes?</strong>Only environment configuration. Your retrieval code continues to call the same Agent RT <code>RetrievalProvider</code> interface.</div>
+<h2>Pass stores to a model with <code>file_search</code></h2>
+<p>The Python API server accepts the OpenAI-style tool on Chat Completions and Responses requests. The model gets a request-scoped <code>file_search</code> tool limited to the listed stores; results are treated as untrusted tool output.</p>
+<pre><code class="language-python">client.chat.completions.create(
+    model="claude-sonnet-5",
+    messages=[{"role": "user", "content": "What is litellm?"}],
+    tools=[{"type": "file_search", "vector_store_ids": ["T37J8R4WTM"]}],
+)</code></pre>
+<p>Unknown stores, and stores whose <code>allowed_models</code> excludes the model, are rejected with a 400. No other request-defined tool is accepted.</p>
 
 <h2>Python</h2>
 <pre><code class="language-python">from agent_rt import (
     RetrievalQuery,
-    VectorDBProviderRegistry,
+    load_config,
     load_model,
-    register_popular_vector_db_backends,
-    vector_db_provider_from_environment,
+    vector_store_registry_from_config,
 )
 
-embedding_provider = load_model()
-
-registry = VectorDBProviderRegistry()
-register_popular_vector_db_backends(
-    registry,
-    embedding_provider=embedding_provider,
+config = load_config()
+registry = vector_store_registry_from_config(
+    config,
+    embedding_provider=load_model(config),
 )
 
-provider = vector_db_provider_from_environment(registry)
-results = await provider.search(
-    RetrievalQuery("How does Agent RT handle tools?", limit=5)
+results = await registry.search(
+    "docs-kb", RetrievalQuery("How does Agent RT handle tools?", limit=5)
 )</code></pre>
 
 <h2>TypeScript</h2>
 <pre><code class="language-javascript">const {
-  VectorDBProviderRegistry,
+  loadConfig,
   loadModel,
-  registerPopularVectorDBBackends,
-  vectorDBProviderFromEnvironment,
+  vectorStoreRegistryFromConfig,
 } = require("agent-rt");
 
-const embeddingProvider = await loadModel();
+const config = await loadConfig();
+const registry = vectorStoreRegistryFromConfig(config, {
+  embeddingProvider: await loadModel(config),
+});
 
-const registry = new VectorDBProviderRegistry();
-registerPopularVectorDBBackends(registry, { embeddingProvider });
-
-const provider = vectorDBProviderFromEnvironment(registry);
-const results = await provider.search({
+const results = await registry.search("docs-kb", {
   text: "How does Agent RT handle tools?",
   limit: 5,
 });</code></pre>
@@ -185,7 +190,7 @@ const nodes = await index.asRetriever({
   similarityTopK: 4,
 }).retrieve("How does Agent RT migrate vector retrieval?");</code></pre>
 
-<div class="note"><strong>Compatibility scope</strong>LangChain and LlamaIndex adapters support read/query operations against existing collections. Collection creation, ingestion/upsert, deletion, index administration, and vendor-specific sparse/hybrid lifecycle APIs remain backend-native. Use native Agent RT retrieval when you want backend selection to come entirely from <code>AGENT_RT_VECTOR_DB</code>.</div>
+<div class="note"><strong>Compatibility scope</strong>LangChain and LlamaIndex adapters support read/query operations against existing collections. Collection creation, ingestion/upsert, deletion, index administration, and vendor-specific sparse/hybrid lifecycle APIs remain backend-native. Use native Agent RT retrieval with <code>vector_store_registry</code> when you want backend selection to come entirely from <code>agent-rt.yaml</code>.</div>
 
 <h2>Embedding queries</h2>
 <p>Vector databases search numeric embeddings while Agent RT retrieval queries are text-first. Supply an <code>EmbeddingModelProvider</code> when registering the built-in backends. OpenAI and OpenAI-compatible Agent RT providers support embeddings. If your application already creates embeddings elsewhere, pass a numeric <code>filters.vector</code> instead.</p>
@@ -202,10 +207,10 @@ const nodes = await index.asRetriever({
 
 <h2>Backend options</h2>
 <div class="table-wrap"><table><thead><tr><th>Backend</th><th>Example option</th><th>Purpose</th></tr></thead><tbody>
-<tr><td>Chroma</td><td><code>AGENT_RT_VECTOR_DB_OPTION_TENANT</code><br><code>AGENT_RT_VECTOR_DB_OPTION_DATABASE</code></td><td>Select Chroma tenant and database.</td></tr>
-<tr><td>Pinecone</td><td><code>AGENT_RT_VECTOR_DB_OPTION_NAMESPACE</code></td><td>Select a Pinecone namespace.</td></tr>
-<tr><td>Milvus</td><td><code>AGENT_RT_VECTOR_DB_OPTION_FILTER</code></td><td>Pass a Milvus filter expression.</td></tr>
-<tr><td>Weaviate</td><td><code>AGENT_RT_VECTOR_DB_OPTION_CONTENT_FIELD</code><br><code>AGENT_RT_VECTOR_DB_OPTION_TITLE_FIELD</code><br><code>AGENT_RT_VECTOR_DB_OPTION_URI_FIELD</code></td><td>Map your schema fields into Agent RT retrieval results.</td></tr>
+<tr><td>Chroma</td><td><code>options.tenant</code><br><code>options.database</code></td><td>Select Chroma tenant and database.</td></tr>
+<tr><td>Pinecone</td><td><code>options.namespace</code></td><td>Select a Pinecone namespace.</td></tr>
+<tr><td>Milvus</td><td><code>options.filter</code></td><td>Pass a Milvus filter expression.</td></tr>
+<tr><td>Weaviate</td><td><code>options.content_field</code><br><code>options.title_field</code><br><code>options.uri_field</code></td><td>Map your schema fields into Agent RT retrieval results.</td></tr>
 </tbody></table></div>
 
 <h2>Runnable examples</h2>

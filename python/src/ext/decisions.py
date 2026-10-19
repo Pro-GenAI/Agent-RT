@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from agent_rt import (
+    runtime_settings,
     ContextItem,
     FailureDisposition,
     GuardrailResult,
@@ -75,7 +76,7 @@ class JevDecisionProvider:
         timeout_seconds: float | None = None,
         environ: Mapping[str, str] | None = None,
     ) -> None:
-        env = os.environ if environ is None else environ
+        env = runtime_settings() if environ is None else environ
         resolved_base_url = (
             base_url
             if base_url is not None

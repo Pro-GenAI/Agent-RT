@@ -1,6 +1,7 @@
 import {
 	MemoryWritePolicy,
 	Toolbase,
+	runtimeSettings,
 	type ContextItem,
 	type FailureDisposition,
 	type FailureKind,
@@ -48,16 +49,6 @@ export const JEV_MODEL_ENV = 'AGENT_RT_JEV_MODEL';
 export const JEV_TIMEOUT_SECONDS_ENV = 'AGENT_RT_JEV_TIMEOUT_SECONDS';
 export const DEFAULT_JEV_BASE_URL = 'http://127.0.0.1:8000';
 
-function runtimeEnv(): Record<string, string | undefined> {
-	return (
-		(
-			globalThis as {
-				process?: { env?: Record<string, string | undefined> };
-			}
-		).process?.env ?? {}
-	);
-}
-
 export class JevDecisionProvider implements DecisionProvider {
 	readonly baseUrl: string;
 	readonly model?: string;
@@ -73,7 +64,7 @@ export class JevDecisionProvider implements DecisionProvider {
 			environ?: Record<string, string | undefined>;
 		} = {},
 	) {
-		const env = options.environ ?? runtimeEnv();
+		const env = options.environ ?? runtimeSettings();
 		const baseUrl =
 			options.baseUrl ?? env[JEV_BASE_URL_ENV] ?? DEFAULT_JEV_BASE_URL;
 		const model = options.model ?? env[JEV_MODEL_ENV];
@@ -884,7 +875,10 @@ export class DecisionFilteredRetrievalProvider implements RetrievalProvider {
 		} = {},
 	) {
 		this.kind = provider.kind;
-		this.reranker = new DecisionRetrievalReranker(decisionProvider, options);
+		this.reranker = new DecisionRetrievalReranker(
+			decisionProvider,
+			options,
+		);
 	}
 
 	async search(query: RetrievalQuery): Promise<RetrievalResult[]> {

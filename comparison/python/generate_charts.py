@@ -17,6 +17,10 @@ PALETTE = {
     "LangChain.js": "#14B8A6",
     "LlamaIndex": "#F59E0B",
     "LlamaIndex.TS": "#F59E0B",
+    "Codex": "#10B981",
+    "Claude Code": "#D97757",
+    "opencode": "#94A3B8",
+    "Copilot CLI": "#38BDF8",
 }
 FALLBACK = "#64748B"
 
@@ -214,6 +218,20 @@ def generate_charts() -> None:
         ),
         encoding="utf-8",
     )
+
+    cli_path = HERE / "cli-harness-measured-results.csv"
+    if not cli_path.exists():
+        return
+    cli = [row for row in read_csv(cli_path) if row.get("median_wall_ms")]
+    for name, title, subtitle, field, unit in (
+        ("cli-harness-time", "Agent CLI end-to-end time", "Median one-shot prompt wall time against a localhost mock model", "median_wall_ms", " ms"),
+        ("cli-harness-memory", "Agent CLI peak memory", "Median peak RSS of the whole CLI process tree", "median_peak_rss_mib", " MiB"),
+        ("cli-harness-tokens", "Agent CLI input tokens", "Median model input tokens sent for the same one-line prompt", "median_input_tokens", " tokens"),
+    ):
+        (ASSETS / f"{name}.svg").write_text(
+            chart_svg(title, subtitle, [(row["harness"], float(row[field])) for row in cli], unit=unit),
+            encoding="utf-8",
+        )
 
 
 if __name__ == "__main__":

@@ -224,11 +224,9 @@ ModelStreamEvent
 ModelTarget
 ModelUsage
 MultimodalMessage
-MODEL_PROVIDER_ENV
 OPENAI_API_KEY_ENV
 OPENAI_BASE_URL_ENV
 OPENAI_MODEL_ENV
-OPENAI_WEBSOCKET_ENV
 OpenAIModelProvider
 OpenAIProviderSettings
 OpenLLMetryConfig
@@ -456,3 +454,14 @@ AGENT_RT_VECTOR_DB_API_KEY_ENV
 AGENT_RT_VECTOR_DB_TIMEOUT_ENV
 register_popular_vector_db_backends
 JSON_OBJECT_OUTPUT
+AgentRTConfig
+ConfigError
+ConfigNotFoundError
+ConfiguredModelProvider
+FILE_SEARCH_TOOL_NAME
+configure_runtime
+load_config
+register_file_search_tool
+resolve_vector_stores
+runtime_settings
+vector_store_registry_from_config

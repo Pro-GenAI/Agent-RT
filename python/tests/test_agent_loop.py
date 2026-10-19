@@ -1,6 +1,8 @@
 import asyncio
 import os
 
+import agent_rt as agent_rt_core
+
 import pytest
 
 from agent_rt import (
@@ -1151,10 +1153,8 @@ class TestAgentLoop:
             "AGENT_RT_EXECUTION_MEMORY_BYTES",
             "AGENT_RT_EXECUTION_CPU_SECONDS",
         )
-        previous = {name: os.environ.get(name) for name in names}
-        os.environ[names[0]] = "0"
-        os.environ[names[1]] = "4096"
-        os.environ[names[2]] = "2.5"
+        previous = agent_rt_core._RUNTIME_SETTINGS
+        agent_rt_core._RUNTIME_SETTINGS = {names[0]: "0", names[1]: "4096", names[2]: "2.5"}
         seen_limits = []
         side_effects = []
         try:
@@ -1213,11 +1213,7 @@ class TestAgentLoop:
             payload = provider.requests[1].messages[-1].content[0].data
             assert payload["error"]["type"] == "tool_timeout"
         finally:
-            for name, value in previous.items():
-                if value is None:
-                    os.environ.pop(name, None)
-                else:
-                    os.environ[name] = value
+            agent_rt_core._RUNTIME_SETTINGS = previous
 
     async def test_zero_tool_timeout_prevents_handler_side_effect(self):
         registry = ToolRegistry()

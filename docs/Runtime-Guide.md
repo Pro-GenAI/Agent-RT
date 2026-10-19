@@ -4,12 +4,7 @@ Detailed usage notes for features that the package READMEs only mention briefly.
 
 ## Providers
 
-`load_model()` (Python) / `loadModel()` (TypeScript) selects a provider from the environment:
-
-- `OPENAI_BASE_URL` selects OpenAI and takes precedence when both base URLs are set; otherwise `ANTHROPIC_BASE_URL` selects Anthropic.
-- With neither base URL, `OPENAI_MODEL` alone selects OpenAI.
-- `MODEL_PROVIDER=openai|anthropic` overrides auto-detection; invalid values fail fast.
-- API keys alone, or `ANTHROPIC_MODEL` alone, never choose a provider.
+`load_model(load_config())` (Python) / `loadModel(await loadConfig())` (TypeScript) builds a provider from the `model_list` of a YAML config file (`agent-rt.yaml` in the current folder, `~/.agent-rt/config.yaml`, or an explicit path). It supports several models, ordered fallbacks for repeated `model_name`s, and several vector stores; see [Configuration](Configuration.md). The process environment is only used to resolve `os.environ/NAME` secret references.
 
 The OpenAI provider uses the native OpenAI-compatible transport by default and supports HTTP/SSE plus Responses WebSocket operation where available. The Anthropic provider uses the optional official Anthropic SDK. Reasoning/thinking controls are normalized into the provider-neutral `ReasoningConfig`, and each provider translates them into vendor-specific request fields.
 
@@ -77,10 +72,10 @@ A custom Python blocker may be a callable or an object exposing `check`; it can 
 Install `agent-rt[api]` to expose configured agents through OpenAI-compatible Chat Completions/Responses APIs and an Anthropic-compatible Messages API.
 
 ```python
-from agent_rt import AgentConfig, AgentLoop, ModelSettings, load_model
+from agent_rt import AgentConfig, AgentLoop, ModelSettings, load_config, load_model
 from agent_rt_api import serve
 
-provider = load_model()
+provider = load_model(load_config())
 loop = AgentLoop(provider)
 agent = AgentConfig(
     name="assistant",
@@ -131,7 +126,7 @@ const safeText = morpher.morphText("Contact alice@example.com");
 const lookup = morpher.mapping;
 ```
 
-`PIIMorpher` is enabled by default when used through `PrivacyRedactor`. It detects a conservative set of high-confidence identifiers in free text (email, North American phone number, SSN, Luhn-valid payment-card number, and IPv4), uses common structured field names for person/address/date values, and accepts explicit entity spans from external PII/NER detectors. The same PII maps to the same realistic synthetic value in Python and TypeScript. Its in-memory lookup stores only a 20-hex fingerprint (10 SHA-256 hex characters plus 10 MD5 hex characters) to fake-data mapping, never the original PII. Set `AGENT_RT_DISABLE_PII_MORPHER=true` to disable morphing; the Python CLI can also receive it through `--env-file`.
+`PIIMorpher` is enabled by default when used through `PrivacyRedactor`. It detects a conservative set of high-confidence identifiers in free text (email, North American phone number, SSN, Luhn-valid payment-card number, and IPv4), uses common structured field names for person/address/date values, and accepts explicit entity spans from external PII/NER detectors. The same PII maps to the same realistic synthetic value in Python and TypeScript. Its in-memory lookup stores only a 20-hex fingerprint (10 SHA-256 hex characters plus 10 MD5 hex characters) to fake-data mapping, never the original PII. Pass `enabled=False` (Python) / `{ enabled: false }` (TypeScript) to disable morphing.
 
 The short unkeyed fingerprint is for deterministic lookup, not a cryptographic privacy boundary. Treat the mapping as sensitive metadata, and use keyed HMAC or deterministic encryption/tokenization when dictionary-attack resistance or reversible pseudonymization is required.
 
@@ -142,19 +137,42 @@ Install `agent-rt[cli]` to add the `agent-rt` command:
 ```bash
 agent-rt
 agent-rt -p "explain this stack trace"
-agent-rt --env-file=./.env -p "explain this stack trace"
+agent-rt --config ./agent-rt.yaml -p "explain this stack trace"
 agent-rt --session refactor --prompt "plan the migration"
 agent-rt --session refactor --resume
+agent-rt --max-output-tokens 4096 -p "summarize this diff"
 ```
 
-The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--env-file=PATH` loads configuration variables from a UTF-8 dotenv-style file before provider and runtime configuration is resolved. Existing process environment variables take precedence over the file, while file values take precedence over the CLI's global settings fallback. The file supports blank lines, `#` comments, optional `export`, single- and double-quoted values, and double-quoted escapes; it is parsed as data and is never shell-evaluated. Workspace writes require approval; Git integration is inspection-only. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
+The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
+
+### Reuse another agent CLI's setup
+
+`agent-rt claude`, `agent-rt codex`, `agent-rt opencode`, and `agent-rt copilot` accept that tool's own one-shot command and flags. They read its model, provider, and API-key settings from its usual environment variables and config files, so no `agent-rt.yaml` is needed:
+
+```bash
+agent-rt claude -p "explain this stack trace" --model opus
+agent-rt codex exec "explain this stack trace" -m gpt-5.5
+agent-rt opencode run "explain this stack trace"
+agent-rt copilot -p "explain this stack trace"
+```
+
+| Command | Flags | Environment variables | Config files |
+| --- | --- | --- | --- |
+| `agent-rt claude` | `-p`, `--model`, `--system-prompt`, `--append-system-prompt`, `--max-turns`, `-r/--resume`, `--session-id` | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL` / `_OPUS_` / `_HAIKU_` / `_FABLE_MODEL` (alias targets), `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, `CLAUDE_CONFIG_DIR` | `model` and `env` in `$CLAUDE_CONFIG_DIR/settings.json` (default `~/.claude`); `model` only from `.claude/settings.json` and `.claude/settings.local.json` |
+| `agent-rt codex` | `exec`, `-m`, `-c key=value`, `-p/--profile`, `--oss`, `--local-provider`, `-C`, `--ephemeral` | `CODEX_HOME`, `CODEX_API_KEY` (then `OPENAI_API_KEY`), a provider's `env_key`, `OPENAI_BASE_URL` | `$CODEX_HOME/config.toml`: `model`, `model_provider`, `openai_base_url`, `oss_provider`, `model_providers.<id>` (`base_url`, `env_key`, `requires_openai_auth`, `experimental_bearer_token`), profiles as `$CODEX_HOME/<name>.config.toml` or `[profiles.<name>]`; the API key in `$CODEX_HOME/auth.json`; built-in `ollama` and `lmstudio` providers |
+| `agent-rt opencode` | `run`, `-m provider/model`, `-s`, `--dir` | `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, `OPENCODE_CONFIG_CONTENT`, `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | `~/.config/opencode/opencode.json(c)` (JSONC, `{env:NAME}` and `{file:path}` substitution), `model` only from the project `opencode.json(c)`; API-key entries in `~/.local/share/opencode/auth.json` |
+| `agent-rt copilot` | `-p`, `--model`, `-C`, `--resume` | `COPILOT_PROVIDER_BASE_URL`, `COPILOT_PROVIDER_TYPE` (`openai`/`anthropic`), `COPILOT_PROVIDER_API_KEY`, `COPILOT_PROVIDER_BEARER_TOKEN` (OpenAI-compatible only), `COPILOT_MODEL`, `COPILOT_PROVIDER_MODEL_ID`, `COPILOT_PROVIDER_WIRE_MODEL`, `COPILOT_PROVIDER_MAX_OUTPUT_TOKENS` | none (BYOK is environment-only) |
+
+These are the variables each tool documents for models, endpoints, and credentials ([Claude Code](https://code.claude.com/docs/en/env-vars), [Codex](https://learn.chatgpt.com/docs/config-file/environment-variables), [opencode](https://opencode.ai/docs/cli/), and `copilot help providers` for Copilot CLI). Project-level files may only choose the model. Endpoints and keys come from user-level config or the environment, so a cloned repository cannot send your API key to its own server; Codex's project `.codex/config.toml` is not read for the same reason. Documented variables that Agent RT cannot honor are reported rather than silently dropped. `ANTHROPIC_CUSTOM_HEADERS`, `ANTHROPIC_BETAS`, Codex `http_headers`/`env_http_headers`/`query_params`, `COPILOT_PROVIDER_WIRE_API=responses`, and the permission variable `COPILOT_ALLOW_ALL` print a notice. `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY`, `CODEX_ACCESS_TOKEN`, and Copilot's `azure` provider type stop with a message saying what to set instead.
+
+Only API-key credentials are reused. Subscription and OAuth sign-ins (Claude.ai, ChatGPT, GitHub Copilot's hosted models, opencode OAuth providers) belong to the official clients and are refused with a hint about which key to set. The CLI's own `agent-rt.yaml` is not read in these modes.
 
 ## Sandboxes
 
-`SandboxSession` runs commands through a fail-closed backend selected with `AGENT_RT_SANDBOX_BACKEND` (`native`, `docker`, `e2b`, `microsandbox`, `swe-rex`).
+`SandboxSession` runs commands through a fail-closed backend selected with `agent_rt_settings.sandbox.backend` (`native`, `docker`, `e2b`, `microsandbox`, `swe-rex`).
 
-- **Native:** requires an explicit restricted account and runs as that account's primary gid unless `AGENT_RT_SANDBOX_GID` is set; it never keeps the caller's gid. The TypeScript backend uses `setpriv --clear-groups --no-new-privs` and reads the primary gid from `/etc/passwd`; the Python backend drops supplementary groups.
-- **Docker:** containers run with all capabilities dropped, `no-new-privileges`, and swap capped to the memory limit. Set `AGENT_RT_SANDBOX_DOCKER_USER` to run as a non-root user and `AGENT_RT_SANDBOX_DOCKER_READ_ONLY=true` for a read-only root filesystem.
+- **Native:** requires an explicit restricted account and runs as that account's primary gid unless `sandbox.gid` is set; it never keeps the caller's gid. The TypeScript backend uses `setpriv --clear-groups --no-new-privs` and reads the primary gid from `/etc/passwd`; the Python backend drops supplementary groups.
+- **Docker:** containers run with all capabilities dropped, `no-new-privileges`, and swap capped to the memory limit. Set `sandbox.docker_user` to run as a non-root user and `sandbox.docker_read_only: true` for a read-only root filesystem.
 - **Lifetime:** timeouts and cancellation kill the command (the process group for native, the container for Docker), not just await it. TypeScript backends receive an `AbortSignal` in their execute context.
 - **Limits:** output is capped while it is read (`SandboxResourceLimits.output_bytes` in Python, `outputBytes` in TypeScript; default 16 MiB), and `memory_bytes`/`process_count` (`memoryBytes`/`processCount`) of `0` are rejected.
 - **Cleanup:** call `await session.close()` to release E2B/microsandbox sessions and microVMs.
@@ -187,8 +205,11 @@ Prepend the package name to a supported upstream import path.
 | `agents` / `@openai/agents` | `agent_rt.agents` | `agent-rt/@openai/agents` |
 | `autogen_agentchat.agents` | `agent_rt.autogen_agentchat.agents` | Python-only |
 | `crewai` | `agent_rt.crewai` | Python-only |
+| `deepagents` | `agent_rt.deepagents` | `agent-rt/deepagents` |
+| `litellm` | `agent_rt.litellm` | Python-only |
+| `openrouter` / `@openrouter/sdk` | `agent_rt.openrouter` | `agent-rt/@openrouter/sdk` |
 
-TypeScript also keeps the historical aliases `agent-rt/langchain`, `agent-rt/llamaindex`, and `agent-rt/anthropic`. Compatibility routes model execution through Agent RT provider contracts instead of creating a second runtime; AutoGen and CrewAI compatibility are Python-only because Agent RT does not invent JavaScript APIs without an upstream surface to preserve. See [Migration](MIGRATION.md) for the supported subset and semantic gaps.
+TypeScript also keeps the historical aliases `agent-rt/langchain`, `agent-rt/llamaindex`, and `agent-rt/anthropic`. Compatibility routes model execution through Agent RT provider contracts instead of creating a second runtime; AutoGen, CrewAI, and LiteLLM compatibility are Python-only because Agent RT does not invent JavaScript APIs without an upstream surface to preserve. See [Migration](MIGRATION.md) for the supported subset and semantic gaps.
 
 ## Vector databases
 

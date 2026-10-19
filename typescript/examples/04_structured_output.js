@@ -1,15 +1,14 @@
 const {
   AgentLoop,
-  loadModel,
 } = require("../dist/index.js");
-const { configuredModel, message } = require("./_common.js");
+const { exampleProvider, configuredModel, message } = require("./_common.js");
 
 async function main() {
-  const provider = await loadModel();
+  const provider = await exampleProvider();
   const agent = {
     name: "extractor",
     instructions: "Extract the requested fields and return only valid JSON.",
-    model: { model: configuredModel() },
+    model: { model: await configuredModel() },
     output: {
       format: "json",
       schema: {

@@ -49,12 +49,13 @@
 source .venv/bin/activate
 pip install agent-rt</code></pre>
 <h2>TypeScript / Node.js</h2><pre><code class="language-bash">npm install agent-rt</code></pre>
-<h2>Configure a provider</h2><p>For OpenAI or an OpenAI-compatible endpoint, configure the model and credentials in the environment.</p><pre><code class="language-bash">export OPENAI_MODEL="your-model"
-export OPENAI_API_KEY="..."
-# Optional:
-export OPENAI_BASE_URL="https://your-provider.example/v1"</code></pre><p>For Anthropic, set <code>ANTHROPIC_BASE_URL</code>, <code>ANTHROPIC_API_KEY</code>, and <code>ANTHROPIC_MODEL</code>.</p>
+<h2>Configure models</h2><p>Agent RT is configured with one YAML file: <code>agent-rt.yaml</code> in the current folder, <code>~/.agent-rt/config.yaml</code> in your home folder, or any path passed with <code>--config</code> / <code>load_config(path)</code>. Declare as many models as you need; secrets are referenced as <code>os.environ/NAME</code> and are the only thing read from the environment.</p><pre><code class="language-yaml">model_list:
+  - model_name: my-model
+    agent_rt_params:
+      model: openai/your-model          # or anthropic/...; add api_base for compatible endpoints
+      api_key: os.environ/OPENAI_API_KEY</code></pre><p>Repeating a <code>model_name</code> adds an ordered fallback. See the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md">configuration reference</a> and the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml">example file</a>.</p>
 <div class="note"><strong>Provider-neutral by design</strong>Agent code is built against Agent RT contracts. OpenAI, Anthropic, compatible endpoints, Decision models, and custom providers can sit behind that boundary.</div>
-<h2>Vector databases</h2><p>No Chroma, Pinecone, Qdrant, Milvus, Weaviate, LangChain, or LlamaIndex package is required for Agent RT's built-in vector retrieval and compatibility adapters. Configure the service through <code>AGENT_RT_VECTOR_DB</code>, <code>AGENT_RT_VECTOR_DB_URL</code>, and <code>AGENT_RT_VECTOR_DB_COLLECTION</code>, then see the <a href="../guides/vector-databases.html">vector database guide</a> for backend credentials and framework migration imports.</p>
+<h2>Vector databases</h2><p>No Chroma, Pinecone, Qdrant, Milvus, Weaviate, LangChain, or LlamaIndex package is required for Agent RT's built-in vector retrieval and compatibility adapters. Declare services in <code>vector_store_registry</code> (several are allowed), then see the <a href="../guides/vector-databases.html">vector database guide</a> for backend credentials and framework migration imports.</p>
 <div class="page-nav"><a class="next-link" href="../"><small>Previous</small><strong>Documentation overview</strong></a><a class="next-link" href="./quickstart.html"><small>Next</small><strong>Quickstart →</strong></a></div></article>
 <footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
 </div>

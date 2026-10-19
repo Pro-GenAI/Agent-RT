@@ -142,6 +142,30 @@ test(
 	},
 );
 
+test(
+	'docker binary is found on the host PATH without a config file',
+	{ skip: !posix },
+	async () => {
+		const directory = fs.mkdtempSync(
+			path.join(os.tmpdir(), 'agent-rt-docker-path-'),
+		);
+		stubScript(directory, 'docker', 'printf found');
+		const previous = process.env.PATH;
+		process.env.PATH = directory + path.delimiter + previous;
+		try {
+			const session = new SandboxSession(
+				'path',
+				new DockerSandboxBackend('img'),
+				{ networkPolicy: { mode: 'none' } },
+			);
+			const result = await session.execute({ argv: ['true'] });
+			assert.equal(Buffer.from(result.stdout).toString(), 'found');
+		} finally {
+			process.env.PATH = previous;
+		}
+	},
+);
+
 test('docker backend validates workspace root and cwd', () => {
 	assert.throws(
 		() => new DockerSandboxBackend('img', { workspaceRoot: '/tmp/a,b' }),

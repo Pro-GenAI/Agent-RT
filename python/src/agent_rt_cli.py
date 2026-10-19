@@ -28,8 +28,11 @@ from agent_rt import (
     ToolCall,
     ToolDefinition,
     ToolRegistry,
+    configure_runtime,
+    load_config,
     load_model,
 )
+from ext.cli_tools import TOOLS, ToolCLIError, translate_tool_cli
 from ext.extensions import SkillPackage, SkillRegistry
 
 DEFAULT_INSTRUCTIONS = (
@@ -50,9 +53,6 @@ COMPACTION_INSTRUCTIONS = (
 )
 COMPACTION_REQUEST = "Compact the conversation above now. Return only the context that should be carried forward."
 DEFAULT_COMPACT_TOKEN_THRESHOLD = 32_000
-COMPACT_LIMIT_ENV = "AGENT_RT_CLI_COMPACT_LIMIT"
-MAX_ENV_FILE_BYTES = 1_048_576
-_ENV_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 USER_INPUT_PROMPT = [
     ("bold fg:#00afff", "you"),
@@ -169,101 +169,15 @@ def _message_text(message: ModelMessage) -> str:
     return "".join(part.text or "" for part in message.content if part.type == "text")
 
 
-def _parse_env_value(raw: str, *, path: Path, line_number: int) -> str:
-    value = raw.strip()
-    if not value:
-        return ""
-    if value[0] == "'":
-        closing = value.find("'", 1)
-        if closing < 0:
-            raise ValueError(f"{path}:{line_number}: unterminated single-quoted value")
-        trailing = value[closing + 1 :].strip()
-        if trailing and not trailing.startswith("#"):
-            raise ValueError(
-                f"{path}:{line_number}: unexpected text after quoted value"
-            )
-        return value[1:closing]
-    if value[0] == '"':
-        decoded: list[str] = []
-        index = 1
-        escapes = {"n": "\n", "r": "\r", "t": "\t", "\\": "\\", '"': '"'}
-        while index < len(value):
-            char = value[index]
-            if char == '"':
-                trailing = value[index + 1 :].strip()
-                if trailing and not trailing.startswith("#"):
-                    raise ValueError(
-                        f"{path}:{line_number}: unexpected text after quoted value"
-                    )
-                return "".join(decoded)
-            if char == "\\":
-                index += 1
-                if index >= len(value):
-                    raise ValueError(
-                        f"{path}:{line_number}: unterminated escape in quoted value"
-                    )
-                escaped = value[index]
-                decoded.append(escapes.get(escaped, "\\" + escaped))
-            else:
-                decoded.append(char)
-            index += 1
-        raise ValueError(f"{path}:{line_number}: unterminated double-quoted value")
-
-    for index, char in enumerate(value):
-        if char == "#" and index > 0 and value[index - 1].isspace():
-            return value[:index].rstrip()
-    return value
-
-
-def _load_env_file(
-    path: Path,
-    environ: MutableMapping[str, str] | None = None,
-) -> None:
-    target = os.environ if environ is None else environ
-    try:
-        if path.stat().st_size > MAX_ENV_FILE_BYTES:
-            raise ValueError(
-                f"environment file exceeds {MAX_ENV_FILE_BYTES} byte limit: {path}"
-            )
-        text = path.read_text(encoding="utf-8-sig")
-    except OSError as exc:
-        raise ValueError(f"unable to read environment file {path}: {exc}") from exc
-    if "\x00" in text:
-        raise ValueError(f"environment file contains a NUL byte: {path}")
-
-    parsed: dict[str, str] = {}
-    for line_number, raw_line in enumerate(text.splitlines(), start=1):
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export") and len(line) > 6 and line[6].isspace():
-            line = line[7:].lstrip()
-        if "=" not in line:
-            raise ValueError(f"{path}:{line_number}: expected NAME=VALUE")
-        name, raw_value = line.split("=", 1)
-        name = name.strip()
-        if not _ENV_NAME_PATTERN.fullmatch(name):
-            raise ValueError(f"{path}:{line_number}: invalid environment variable name")
-        parsed[name] = _parse_env_value(
-            raw_value,
-            path=path,
-            line_number=line_number,
-        )
-
-    for name, value in parsed.items():
-        target.setdefault(name, value)
+_CLI_SETTINGS: dict[str, Any] = {}
 
 
 def _compact_token_threshold() -> int:
-    raw = os.environ.get(COMPACT_LIMIT_ENV)
-    if raw is None or not raw.strip():
+    value = _CLI_SETTINGS.get("compact_token_limit")
+    if value is None:
         return DEFAULT_COMPACT_TOKEN_THRESHOLD
-    try:
-        value = int(raw)
-    except ValueError as exc:
-        raise ValueError(f"{COMPACT_LIMIT_ENV} must be a positive integer") from exc
-    if value <= 0:
-        raise ValueError(f"{COMPACT_LIMIT_ENV} must be a positive integer")
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError("cli.compact_token_limit must be a positive integer")
     return value
 
 
@@ -893,9 +807,9 @@ def _safe_session_name(value: str) -> str:
     return cleaned[:120]
 
 
-def _agent_rt_home(environ: Mapping[str, str] | None = None) -> Path:
-    env = os.environ if environ is None else environ
-    return Path(env.get("AGENT_RT_HOME", str(Path.home() / ".agent-rt"))).expanduser()
+def _agent_rt_home() -> Path:
+    configured = _CLI_SETTINGS.get("home")
+    return Path(configured or Path.home() / ".agent-rt").expanduser()
 
 
 _CLI_WORKSPACE_SKILL_ROOTS = (
@@ -1152,96 +1066,6 @@ def _register_skill_tools(tool_registry: ToolRegistry, skills: SkillRegistry) ->
     )
 
 
-def _provider_environment_with_global_config(
-    environ: Mapping[str, str] | None = None,
-    *,
-    config_path: Path | None = None,
-) -> dict[str, str]:
-    env = dict(os.environ if environ is None else environ)
-    path = config_path or (_agent_rt_home(env) / "settings.json")
-    if not path.exists():
-        return env
-    try:
-        config = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"unable to read global config {path}: {exc}") from exc
-    if not isinstance(config, Mapping):
-        raise ValueError(f"global config {path} must contain a JSON object")
-
-    provider = config.get("provider", "openai")
-    if not isinstance(provider, str) or provider.strip().lower() not in {
-        "openai",
-        "anthropic",
-    }:
-        raise ValueError("global config provider must be 'openai' or 'anthropic'")
-    provider = provider.strip().lower()
-
-    provider_override = str(env.get("MODEL_PROVIDER", "")).strip().lower()
-    if provider_override and provider_override not in {"openai", "anthropic"}:
-        raise ValueError("MODEL_PROVIDER must be 'openai' or 'anthropic'")
-
-    openai_key_name = "OPENAI_" + "API_KEY"
-    anthropic_key_name = "ANTHROPIC_" + "API_KEY"
-    if provider_override:
-        environment_provider = provider_override
-    elif "OPENAI_BASE_URL" in env or "OPENAI_MODEL" in env:
-        environment_provider = "openai"
-    elif "ANTHROPIC_BASE_URL" in env:
-        environment_provider = "anthropic"
-    elif openai_key_name in env and anthropic_key_name not in env:
-        environment_provider = "openai"
-    elif anthropic_key_name in env and openai_key_name not in env:
-        environment_provider = "anthropic"
-    else:
-        environment_provider = None
-    if environment_provider is not None and environment_provider != provider:
-        return env
-    provider = environment_provider or provider
-
-    credential = config.get("credential")
-    if credential is None:
-        credential = config.get("api_" + "key")
-    model = config.get("model")
-    base_url = config.get("base_url")
-    for name, value in (
-        ("credential", credential),
-        ("model", model),
-        ("base_url", base_url),
-    ):
-        if value is not None and not isinstance(value, str):
-            raise ValueError(f"global config {name} must be a string")
-
-    if provider == "openai":
-        keys = {
-            "base_url": "OPENAI_BASE_URL",
-            "api_key": openai_key_name,
-            "model": "OPENAI_MODEL",
-        }
-        default_base_url = "https://api.openai.com/v1"
-        websocket = config.get("websocket")
-        if websocket is not None and not isinstance(websocket, bool):
-            raise ValueError("global config websocket must be a boolean")
-        if websocket is not None:
-            env.setdefault("OPENAI_WEBSOCKET", "true" if websocket else "false")
-    else:
-        keys = {
-            "base_url": "ANTHROPIC_BASE_URL",
-            "api_key": anthropic_key_name,
-            "model": "ANTHROPIC_MODEL",
-        }
-        default_base_url = "https://api.anthropic.com"
-
-    values = {
-        keys["base_url"]: base_url or default_base_url,
-        keys["api_key"]: credential,
-        keys["model"]: model,
-    }
-    for key, value in values.items():
-        if isinstance(value, str) and value.strip():
-            env.setdefault(key, value.strip())
-    return env
-
-
 @dataclass
 class TranscriptStore:
     root: Path = field(default_factory=lambda: _agent_rt_home() / "sessions")
@@ -1323,9 +1147,13 @@ class ChatSession:
         workspace_tools: WorkspaceCodeTools | None = None,
         skills: SkillRegistry | None = None,
         compact_token_threshold: int | None = None,
+        max_output_tokens: int | None = None,
     ) -> None:
         if not model.strip():
             raise ValueError("model must not be empty")
+        if max_output_tokens is not None and max_output_tokens <= 0:
+            raise ValueError("max_output_tokens must be positive")
+        self.max_output_tokens = max_output_tokens
         self.loop = loop
         self.model = model.strip()
         self.instructions = instructions
@@ -1349,7 +1177,7 @@ class ChatSession:
         return AgentConfig(
             name="cli",
             instructions=self.instructions,
-            model=ModelSettings(model=self.model),
+            model=ModelSettings(model=self.model, max_output_tokens=self.max_output_tokens),
         )
 
     def resume(self) -> None:
@@ -1373,7 +1201,7 @@ class ChatSession:
         compaction_agent = AgentConfig(
             name="cli-compactor",
             instructions=COMPACTION_INSTRUCTIONS,
-            model=ModelSettings(model=self.model),
+            model=ModelSettings(model=self.model, max_output_tokens=self.max_output_tokens),
         )
         request_messages = self.messages + (
             ModelMessage(
@@ -1981,10 +1809,22 @@ async def _stdio_workspace_approval(
         print("Enter y, n, or a.", file=sys.stderr)
 
 
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="agent-rt",
         description="Interactive Agent RT terminal chat client.",
+        epilog=(
+            "Reuse another agent CLI's commands, models and API-key credentials: "
+            "agent-rt claude -p PROMPT | agent-rt codex exec PROMPT | "
+            "agent-rt opencode run PROMPT | agent-rt copilot -p PROMPT"
+        ),
     )
     parser.add_argument(
         "-p",
@@ -1993,11 +1833,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-m", "--model", help="provider model name")
     parser.add_argument(
-        "--env-file",
+        "-c",
+        "--config",
         type=Path,
         help=(
-            "load configuration variables from a .env file without overriding "
-            "variables already set in the process environment"
+            "path to the YAML config file (default: agent-rt.yaml in the current "
+            "folder, then ~/.agent-rt/config.yaml)"
         ),
     )
     parser.add_argument(
@@ -2033,6 +1874,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="maximum model/tool turns per prompt",
     )
     parser.add_argument(
+        "--max-output-tokens",
+        type=_positive_int,
+        help="maximum output tokens per model request",
+    )
+    parser.add_argument(
         "--timeout",
         type=float,
         help="per-prompt execution timeout in seconds",
@@ -2046,22 +1892,33 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 async def async_main(argv: Sequence[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    invocation = None
+    if argv and argv[0] in TOOLS:
+        try:
+            invocation = translate_tool_cli(argv[0], argv[1:])
+        except ToolCLIError as exc:
+            print(f"agent-rt: {exc}", file=sys.stderr)
+            return 2
+        for note in invocation.notes:
+            print(f"agent-rt: {note}", file=sys.stderr)
+        if invocation.cwd is not None:
+            try:
+                os.chdir(invocation.cwd)
+            except OSError as exc:
+                print(f"agent-rt: {exc}", file=sys.stderr)
+                return 2
+        argv = invocation.argv
     args = build_parser().parse_args(argv)
     launch_workspace = Path.cwd()
-    if args.env_file is not None:
-        try:
-            _load_env_file(args.env_file)
-        except ValueError as exc:
-            print(f"agent-rt: environment file error: {exc}", file=sys.stderr)
-            return 2
     try:
-        provider_environment = _provider_environment_with_global_config()
-        provider = load_model(
-            environ=provider_environment,
-            validate=args.validate_provider,
-        )
+        config = invocation.config if invocation else load_config(args.config)
+        configure_runtime(config)
+        _CLI_SETTINGS.clear()
+        _CLI_SETTINGS.update(config.settings.get("cli") or {})
+        provider = load_model(config, validate=args.validate_provider)
     except Exception as exc:
-        print(f"agent-rt: provider configuration error: {exc}", file=sys.stderr)
+        print(f"agent-rt: configuration error: {exc}", file=sys.stderr)
         return 2
 
     try:
@@ -2093,6 +1950,7 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         ),
         workspace_tools=workspace_tools,
         skills=skills,
+        max_output_tokens=args.max_output_tokens,
     )
     if args.resume:
         if not args.session:

@@ -2,6 +2,8 @@ import {
 	AgentLoop,
 	OpenAIModelProvider,
 	ToolRegistry,
+	ConfigNotFoundError,
+	loadConfig,
 	loadModel,
 	type AgentConfig,
 	type AgentRunResult,
@@ -13,6 +15,7 @@ import {
 	type ToolCall,
 	type ToolDefinition,
 } from '../../index.js';
+import { modelNames as configModelNames } from '../config.js';
 import {
 	SdkModelProvider,
 	isSdkItemList,
@@ -1020,7 +1023,26 @@ async function resolveProvider(
 			);
 		return provider;
 	}
-	return await loadModel();
+	const requested =
+		typeof agent.model === 'string' ? agent.model : runner?.config.model;
+	try {
+		const config = await loadConfig();
+		if (
+			requested !== undefined &&
+			configModelNames(config).includes(requested)
+		)
+			return await loadModel(config);
+	} catch (error) {
+		if (!(error instanceof ConfigNotFoundError)) throw error;
+	}
+	// Migrated code without an Agent RT config, or asking for a model the
+	// config does not declare, keeps the SDK's environment-driven defaults.
+	const apiKey = sdkEnv('OPENAI_API_KEY');
+	const baseUrl = sdkEnv('OPENAI_BASE_URL');
+	return new OpenAIModelProvider({
+		...(apiKey !== undefined ? { apiKey } : {}),
+		...(baseUrl !== undefined ? { baseUrl } : {}),
+	});
 }
 
 async function runAgent(

@@ -1,40 +1,27 @@
 import asyncio
-import os
+import sys
 
-from agent_rt import (
-    RetrievalQuery,
-    VectorDBProviderRegistry,
-    load_model,
-    register_popular_vector_db_backends,
-    vector_db_provider_from_environment,
-)
+from agent_rt import RetrievalQuery, vector_store_registry_from_config
+
+from _common import example_config, example_provider
 
 
 async def main() -> None:
-    # OpenAI/OpenAI-compatible providers implement Agent RT's embedding contract.
-    # Alternatively, pass a precomputed numeric vector as filters={"vector": [...]}.
-    embedding_provider = load_model()
-    if not hasattr(embedding_provider, "embed"):
-        raise RuntimeError(
-            "This example needs an embedding-capable provider (for example OpenAI) "
-            "or a precomputed filters.vector."
-        )
-
-    registry = VectorDBProviderRegistry()
-    register_popular_vector_db_backends(
-        registry,
-        embedding_provider=embedding_provider,
+    # Every vector_store_registry entry in agent-rt.yaml is registered under its
+    # name and id; each store embeds queries with its configured embedding_model.
+    config = example_config()
+    if not config.vector_stores:
+        raise RuntimeError("Add a vector_store_registry entry to your agent-rt.yaml.")
+    registry = vector_store_registry_from_config(
+        config,
+        embedding_provider=example_provider(),
     )
 
-    # AGENT_RT_VECTOR_DB chooses chroma|milvus|pinecone|qdrant|weaviate.
-    # Changing only the environment selects a different registered backend.
-    provider = vector_db_provider_from_environment(registry)
+    store = sys.argv[1] if len(sys.argv) > 1 else config.vector_stores[0].name
+    query = sys.argv[2] if len(sys.argv) > 2 else "What is Agent RT?"
+    results = await registry.search(store, RetrievalQuery(query, limit=5))
 
-    query = os.environ.get("AGENT_RT_VECTOR_DB_QUERY", "What is Agent RT?")
-    limit = int(os.environ.get("AGENT_RT_VECTOR_DB_LIMIT", "5"))
-    results = await provider.search(RetrievalQuery(query, limit=limit))
-
-    print(f"backend={os.environ['AGENT_RT_VECTOR_DB']} results={len(results)}")
+    print(f"vector_store={store} results={len(results)}")
     for result in results:
         print(f"- {result.score!s:>8}  {result.title}")
         if result.uri:

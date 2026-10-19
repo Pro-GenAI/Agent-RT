@@ -14,6 +14,7 @@ dependencies = [
     "websockets>=13,<18",
     "requests>=2,<3",
     "httpx>=0.27,<1",
+    "PyYAML>=6,<7",
 ]
 license = "MIT"
 classifiers = [
@@ -27,6 +28,7 @@ classifiers = [
 [project.optional-dependencies]
 openai = ["openai>=1.31,<4"]
 anthropic = ["anthropic>=0.29,<2"]
+bedrock = ["boto3>=1.34,<2"]
 providers = [
     "openai>=1.31,<4",
     "anthropic>=0.29,<2",

@@ -1,0 +1,50 @@
+# Copy to ./agent-rt.yaml, ~/.agent-rt/config.yaml, or pass --config PATH.
+# Secrets are read with `os.environ/NAME`; nothing else reads the environment.
+
+model_list:
+  - model_name: claude-sonnet-5            # public name clients request
+    agent_rt_params:                       # `litellm_params` is accepted as an alias
+      model: anthropic/claude-sonnet-5     # <provider>/<model>; openai | anthropic
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: claude-sonnet-5            # same name again = ordered fallback
+    agent_rt_params:
+      model: openai/gpt-5.5
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: embed-small
+    agent_rt_params:
+      model: openai/text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
+
+vector_store_registry:
+  - vector_store_name: docs-kb
+    agent_rt_params:
+      vector_store_id: T37J8R4WTM          # what clients pass in file_search
+      custom_llm_provider: qdrant          # chroma | milvus | pinecone | qdrant | weaviate
+      api_base: https://qdrant.internal:6333
+      collection: docs
+      api_key: os.environ/QDRANT_API_KEY
+      embedding_model: embed-small         # a model_name above
+      vector_store_description: Product documentation
+      vector_store_metadata:
+        source: https://example.com/docs
+      # allowed_models: [claude-sonnet-5]  # optional: restrict which models may search it
+  - vector_store_name: hosted-bedrock-kb
+    litellm_params:
+      vector_store_id: EXAMPLE_BEDROCK_KB_ID
+      custom_llm_provider: bedrock        # AWS Bedrock Knowledge Bases Retrieve API
+      options: {region: us-west-2}        # optional; IAM credentials via AWS SDK chain
+      vector_store_description: Hosted documentation knowledge base
+
+agent_rt_settings:
+  default_model: claude-sonnet-5
+  server:
+    host: 127.0.0.1
+    port: 8000
+    api_keys: [os.environ/AGENT_RT_API_KEY]
+  execution_limits:
+    timeout_seconds: 30
+  # sandbox: {backend: docker, docker_image: python:3.12-slim, network_mode: none}
+  # web_search: {tool: tavily, api_key: os.environ/TAVILY_API_KEY}
+  # decision_model: {base_url: https://jev.example.com, model: laya}
+  # observability: {api_key: os.environ/TRACELOOP_API_KEY}
+  # cli: {home: ~/.agent-rt, compact_token_limit: 60000}

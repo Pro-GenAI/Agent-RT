@@ -6,14 +6,13 @@ from agent_rt import (
     AgentLoop,
     AgentOutputRequirements,
     ModelSettings,
-    load_model,
 )
 
-from _common import configured_model, user_message
+from _common import example_provider, configured_model, user_message
 
 
 async def main() -> None:
-    provider = load_model()
+    provider = example_provider()
     agent = AgentConfig(
         name="extractor",
         instructions="Extract the requested fields and return only valid JSON.",

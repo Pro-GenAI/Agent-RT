@@ -33,6 +33,9 @@ const {
   registerPopularVectorDBBackends,
   VectorDBProviderRegistry,
   vectorDBConfigFromEnvironment,
+  configureRuntime,
+  configFromObject,
+  runtimeSettings,
   vectorDBProviderFromEnvironment,
   RetrievalRegistry,
   RealtimeSession,
@@ -104,13 +107,10 @@ const {
   OpenAIRateLimitGate,
   initializeOpenLLMetryFromEnv,
   openLLMetryConfigFromEnv,
-  loadModel,
   resolveAnthropicModel,
   resolveAnthropicProviderSettings,
-  resolveAnthropicProviderSettingsFromEnv,
   resolveOpenAIModel,
   resolveOpenAIProviderSettings,
-  resolveOpenAIProviderSettingsFromEnv,
   validateAnthropicProviderSettings,
   validateOpenAIProviderSettings,
   StructuredOutputValidationError,
@@ -710,88 +710,6 @@ async function startResponsesWebSocketServer() {
   };
 }
 
-test("OpenAI provider settings load environment and validate startup model", async () => {
-  const calls = [];
-  const settings = await resolveOpenAIProviderSettingsFromEnv(
-    {
-      OPENAI_BASE_URL: "https://gateway.example.test/v1/",
-      ["OPENAI_" + "API_KEY"]: " env-key ",
-      OPENAI_MODEL: " env-model ",
-    },
-    { clientFactory: modelClientFactory(["env-model", "other"], calls) },
-  );
-  assert.deepEqual(settings, {
-    baseUrl: "https://gateway.example.test/v1",
-    apiKey: "env-key",
-    defaultModel: "env-model",
-    websocket: true,
-  });
-  assert.deepEqual(calls, [{ baseURL: "https://gateway.example.test/v1", apiKey: "env-key" }]);
-});
-
-test("OpenAI provider settings allow blank API key for custom base URL", async () => {
-  const calls = [];
-  const settings = await resolveOpenAIProviderSettingsFromEnv(
-    {
-      OPENAI_BASE_URL: "https://gateway.example.test/v1",
-      ["OPENAI_" + "API_KEY"]: "   ",
-    },
-    { clientFactory: modelClientFactory(["model-a"], calls) },
-  );
-  assert.deepEqual(settings, {
-    baseUrl: "https://gateway.example.test/v1",
-    websocket: true,
-  });
-  assert.deepEqual(calls, [{ baseURL: "https://gateway.example.test/v1", apiKey: "not-provided" }]);
-});
-
-test("OpenAI provider settings require API key for default base URL", async () => {
-  await assert.rejects(
-    resolveOpenAIProviderSettingsFromEnv(
-      { ["OPENAI_" + "API_KEY"]: "   " },
-      { validate: false },
-    ),
-    /API key is required/,
-  );
-});
-
-test("OpenAI provider settings allow WebSocket opt out from environment", async () => {
-  const settings = await resolveOpenAIProviderSettingsFromEnv(
-    { OPENAI_BASE_URL: "https://gateway.example.test/v1", OPENAI_WEBSOCKET: "off" },
-    { validate: false },
-  );
-  assert.equal(settings.websocket, false);
-  await assert.rejects(
-    resolveOpenAIProviderSettingsFromEnv(
-      { OPENAI_BASE_URL: "https://gateway.example.test/v1", OPENAI_WEBSOCKET: "sometimes" },
-      { validate: false },
-    ),
-    /boolean environment value/,
-  );
-});
-
-test("OpenAI provider settings reject unavailable environment model", async () => {
-  await assert.rejects(
-    resolveOpenAIProviderSettingsFromEnv(
-      { OPENAI_BASE_URL: "https://gateway.example.test/v1", OPENAI_MODEL: "missing-model" },
-      { clientFactory: modelClientFactory(["other-model"]) },
-    ),
-    /is not available/,
-  );
-});
-
-test("OpenAI provider settings validate base URL before startup SDK call", async () => {
-  const calls = [];
-  await assert.rejects(
-    resolveOpenAIProviderSettingsFromEnv(
-      { OPENAI_BASE_URL: "not-a-url" },
-      { clientFactory: modelClientFactory([], calls) },
-    ),
-    /absolute http/,
-  );
-  assert.equal(calls.length, 0);
-});
-
 test("OpenAI provider startup validation rejects SDK failure", async () => {
   await assert.rejects(
     validateOpenAIProviderSettings(
@@ -799,89 +717,6 @@ test("OpenAI provider startup validation rejects SDK failure", async () => {
       { clientFactory: modelClientFactory([], [], new Error("HTTP 401")) },
     ),
     /401/,
-  );
-});
-
-test("Anthropic provider settings load environment and validate startup model", async () => {
-  const calls = [];
-  const settings = await resolveAnthropicProviderSettingsFromEnv(
-    {
-      ANTHROPIC_BASE_URL: "https://anthropic.example.test/",
-      ["ANTHROPIC_" + "API_KEY"]: " a-key ",
-      ANTHROPIC_MODEL: " claude-test ",
-    },
-    { clientFactory: modelClientFactory(["claude-test"], calls) },
-  );
-  assert.deepEqual(settings, {
-    baseUrl: "https://anthropic.example.test",
-    apiKey: "a-key",
-    defaultModel: "claude-test",
-  });
-  assert.equal(resolveAnthropicModel(settings), "claude-test");
-  assert.equal(calls[0].apiKey, "a-key");
-});
-
-test("environment provider selection uses base URLs then OpenAI model fallback", async () => {
-  const openaiClient = fakeOpenAIClient({}, []);
-  const openai = await loadModel(
-    {
-      OPENAI_BASE_URL: "https://openai.example.test/v1",
-      ANTHROPIC_BASE_URL: "https://anthropic.example.test",
-    },
-    { validate: false, openaiClient },
-  );
-  assert.ok(openai instanceof OpenAIModelProvider);
-
-  const anthropicClient = fakeAnthropicClient({}, []);
-  const anthropic = await loadModel(
-    { ANTHROPIC_BASE_URL: "https://anthropic.example.test" },
-    { validate: false, anthropicClient },
-  );
-  assert.ok(anthropic instanceof AnthropicModelProvider);
-
-  const openaiFromModel = await loadModel(
-    { OPENAI_MODEL: "gpt-test", ["OPENAI_" + "API_KEY"]: "test-key" },
-    { validate: false, openaiClient },
-  );
-  assert.ok(openaiFromModel instanceof OpenAIModelProvider);
-
-  for (const environment of [
-    {},
-    { ["OPENAI_" + "API_KEY"]: "key" },
-    { ["ANTHROPIC_" + "API_KEY"]: "key" },
-    { ANTHROPIC_MODEL: "claude-test" },
-  ]) {
-    await assert.rejects(
-      loadModel(environment, { validate: false }),
-      /OPENAI_BASE_URL/,
-    );
-  }
-});
-
-test("MODEL_PROVIDER overrides model provider auto-detection", async () => {
-  const anthropic = await loadModel(
-    {
-      MODEL_PROVIDER: " anthropic ",
-      OPENAI_BASE_URL: "https://openai.example.test/v1",
-      ANTHROPIC_BASE_URL: "https://anthropic.example.test",
-    },
-    { validate: false, anthropicClient: fakeAnthropicClient({}, []) },
-  );
-  assert.ok(anthropic instanceof AnthropicModelProvider);
-
-  const openai = await loadModel(
-    {
-      MODEL_PROVIDER: "OPENAI",
-      ANTHROPIC_BASE_URL: "https://anthropic.example.test",
-      ["OPENAI_" + "API_KEY"]: "test-key",
-    },
-    { validate: false, openaiClient: fakeOpenAIClient({}, []) },
-  );
-  assert.ok(openai instanceof OpenAIModelProvider);
-
-  await assert.rejects(
-    loadModel({ MODEL_PROVIDER: "unknown" }, { validate: false }),
-    /MODEL_PROVIDER/,
   );
 });
 
@@ -2878,10 +2713,12 @@ test("sandbox session inherits execution env limits", () => {
     "AGENT_RT_EXECUTION_MEMORY_BYTES",
     "AGENT_RT_EXECUTION_CPU_SECONDS",
   ];
-  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
-  process.env[names[0]] = "3.5";
-  process.env[names[1]] = "8192";
-  process.env[names[2]] = "1.25";
+  const previous = runtimeSettings();
+  configureRuntime(configFromObject({
+    agent_rt_settings: {
+      execution_limits: { timeout_seconds: 3.5, memory_bytes: 8192, cpu_seconds: 1.25 },
+    },
+  }));
   try {
     const session = new SandboxSession(
       "env-limits",
@@ -2892,10 +2729,8 @@ test("sandbox session inherits execution env limits", () => {
     assert.equal(session.limits.memoryBytes, 16384);
     assert.equal(session.limits.cpuSeconds, 1.25);
   } finally {
-    for (const name of names) {
-      if (previous[name] === undefined) delete process.env[name];
-      else process.env[name] = previous[name];
-    }
+    configureRuntime({ models: [], vectorStores: [], settings: {} });
+    void previous;
   }
 });
 
@@ -6984,10 +6819,12 @@ test("execution env defaults apply to tool calls", async () => {
     "AGENT_RT_EXECUTION_MEMORY_BYTES",
     "AGENT_RT_EXECUTION_CPU_SECONDS",
   ];
-  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
-  process.env[names[0]] = "0";
-  process.env[names[1]] = "4096";
-  process.env[names[2]] = "2.5";
+  void names;
+  configureRuntime(configFromObject({
+    agent_rt_settings: {
+      execution_limits: { timeout_seconds: 0, memory_bytes: 4096, cpu_seconds: 2.5 },
+    },
+  }));
   try {
     const seen = [];
     const registry = new ToolRegistry();
@@ -7033,10 +6870,7 @@ test("execution env defaults apply to tool calls", async () => {
     const payload = provider.requests[1].messages.at(-1).content[0].data;
     assert.equal(payload.error.type, "tool_timeout");
   } finally {
-    for (const name of names) {
-      if (previous[name] === undefined) delete process.env[name];
-      else process.env[name] = previous[name];
-    }
+    configureRuntime(configFromObject({}));
   }
 });
 

@@ -1,12 +1,11 @@
 const {
   AgentLoop,
-  loadModel,
 } = require("../dist/index.js");
-const { makeAgent, message, responseText } = require("./_common.js");
+const { exampleProvider, makeAgent, message, responseText } = require("./_common.js");
 
 async function main() {
-  const provider = await loadModel();
-  const agent = makeAgent(
+  const provider = await exampleProvider();
+  const agent = await makeAgent(
     "basic",
     "Answer clearly and concisely. Do not use tools.",
   );

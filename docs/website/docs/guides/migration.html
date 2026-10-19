@@ -77,6 +77,21 @@
     <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from anthropic import AsyncAnthropic</code></div>
     <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt</span>.anthropic import AsyncAnthropic</code></div>
   </div>
+  <div class="compat-card">
+    <div class="compat-label">Deep Agents</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from deepagents import create_deep_agent</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>deepagents import create_deep_agent</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">LiteLLM</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from litellm import completion</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>litellm import completion</code></div>
+  </div>
+  <div class="compat-card">
+    <div class="compat-label">OpenRouter</div>
+    <div class="diff-line diff-remove"><span class="diff-sign">−</span><code>from openrouter import OpenRouter</code></div>
+    <div class="diff-line diff-add"><span class="diff-sign">+</span><code>from <span class="diff-new">agent_rt.</span>openrouter import OpenRouter</code></div>
+  </div>
 </div>
 <h3>TypeScript / JavaScript</h3>
 <div class="compat-grid" aria-label="TypeScript compatibility import replacements">
@@ -86,6 +101,8 @@
   <div class="compat-card"><div class="compat-label">LlamaIndex · Qdrant</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { QdrantVectorStore } from "@llamaindex/qdrant";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { QdrantVectorStore } from "<span class="diff-new">agent-rt/</span>@llamaindex/qdrant";</code></div></div>
   <div class="compat-card"><div class="compat-label">OpenAI</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import OpenAI from "openai";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import OpenAI from "<span class="diff-new">agent-rt/</span>openai";</code></div></div>
   <div class="compat-card"><div class="compat-label">Anthropic</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import Anthropic from "@anthropic-ai/sdk";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import Anthropic from "<span class="diff-new">agent-rt/</span>@anthropic-ai/sdk";</code></div></div>
+  <div class="compat-card"><div class="compat-label">Deep Agents</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { createDeepAgent } from "deepagents";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { createDeepAgent } from "<span class="diff-new">agent-rt/</span>deepagents";</code></div></div>
+  <div class="compat-card"><div class="compat-label">OpenRouter</div><div class="diff-line diff-remove"><span class="diff-sign">−</span><code>import { OpenRouter } from "@openrouter/sdk";</code></div><div class="diff-line diff-add"><span class="diff-sign">+</span><code>import { OpenRouter } from "<span class="diff-new">agent-rt/</span>@openrouter/sdk";</code></div></div>
 </div>
 <h2>Adopt in layers</h2><p>Start at the compatibility entry point closest to the code you already have. Once behavior is stable, move runtime-sensitive concerns—tools, run limits, sandboxing, retrieval, memory, policy, and checkpoints—onto Agent RT-native contracts where the control boundary is explicit.</p>
 <h2>Supported compatibility themes</h2><p>The migration layer covers common chat/completion entry points, streaming, tool history, OpenAI Responses continuation, file-search integration through Agent RT retrieval providers, web retrieval integration, reasoning/thinking controls, batch lifecycle compatibility, and read/query vector-store adapters for Chroma, Pinecone, Qdrant, Milvus, and Weaviate.</p><p>LangChain compatibility exposes vendor-shaped imports such as <code>agent_rt.langchain_qdrant</code> and <code>agent-rt/@langchain/qdrant</code>. LlamaIndex compatibility exposes <code>agent_rt.llama_index.vector_stores.qdrant</code> and <code>agent-rt/@llamaindex/qdrant</code>, including integration with <code>VectorStoreIndex.from_vector_store()</code> / <code>fromVectorStore()</code>. These adapters query existing collections; vendor write/admin lifecycle APIs remain outside the compatibility layer. See the <a href="./vector-databases.html">vector database guide</a> for the complete mapping.</p>

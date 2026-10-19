@@ -1,9 +1,8 @@
 const {
   AgentLoop,
   ToolRegistry,
-  loadModel,
 } = require("../dist/index.js");
-const { makeAgent, message, responseText } = require("./_common.js");
+const { exampleProvider, makeAgent, message, responseText } = require("./_common.js");
 
 async function main() {
   const registry = new ToolRegistry();
@@ -29,8 +28,8 @@ async function main() {
     },
   );
 
-  const provider = await loadModel();
-  const agent = makeAgent(
+  const provider = await exampleProvider();
+  const agent = await makeAgent(
     "weather-assistant",
     "Use get_weather when the user asks about weather. Summarize the tool result.",
   );

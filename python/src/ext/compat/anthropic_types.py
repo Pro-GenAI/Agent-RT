@@ -33,6 +33,13 @@ class BaseModel(SimpleNamespace):
     def to_dict(self, **kwargs: Any) -> dict[str, Any]:
         return self.model_dump(**kwargs)
 
+    def __getitem__(self, key: str) -> Any:
+        # LiteLLM responses also allow `response["choices"][0]["message"]`.
+        try:
+            return getattr(self, key)
+        except (AttributeError, TypeError):
+            raise KeyError(key) from None
+
     def model_dump_json(self, **kwargs: Any) -> str:
         import json
 

@@ -13,6 +13,7 @@ dependencies = [
     "nltk @ git+https://github.com/nltk/nltk.git@d51c48a09765e9e3e97e7de36c2588c676d788d6",
     "websockets==16.1.1",
     "tiktoken>=0.14.0",
+    "psutil>=7.0",
 ]
 
 [tool.uv.sources]

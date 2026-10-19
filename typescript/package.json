@@ -9,6 +9,10 @@
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
 		},
+		"./config": {
+			"types": "./dist/ext/config.d.ts",
+			"default": "./dist/ext/config.js"
+		},
 		"./evaluation": {
 			"types": "./dist/ext/evaluation.d.ts",
 			"default": "./dist/ext/evaluation.js"
@@ -105,6 +109,14 @@
 			"types": "./dist/ext/compat/openai_agents.d.ts",
 			"default": "./dist/ext/compat/openai_agents.js"
 		},
+		"./deepagents": {
+			"types": "./dist/ext/compat/deepagents.d.ts",
+			"default": "./dist/ext/compat/deepagents.js"
+		},
+		"./@openrouter/sdk": {
+			"types": "./dist/ext/compat/openrouter.d.ts",
+			"default": "./dist/ext/compat/openrouter.js"
+		},
 		"./@langchain/chroma": {
 			"types": "./dist/ext/compat/langchain.d.ts",
 			"default": "./dist/ext/compat/langchain.js"
@@ -170,7 +182,7 @@
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"test": "npm run build && npm run test:run",
-		"test:run": "node --test tests/test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js",
+		"test:run": "node --test tests/test.js tests/config.test.js tests/bedrock-config.test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/deepagents_openrouter.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js",
 		"evaluate": "node scripts/evaluate-harness.js --scope all",
 		"evaluate:evals": "node scripts/evaluate-harness.js --scope evals",
 		"evaluate:tests": "node scripts/evaluate-harness.js --scope tests",
@@ -217,10 +229,12 @@
 		"typescript-eslint": "^8.71.0"
 	},
 	"dependencies": {
-		"ws": "^8.22.0"
+		"ws": "^8.22.0",
+		"yaml": "^2.8.0"
 	},
 	"peerDependencies": {
 		"@anthropic-ai/sdk": ">=0.23.0",
+		"@aws-sdk/client-bedrock-agent-runtime": ">=3.600.0 <4",
 		"@traceloop/node-server-sdk": "^0.27.0",
 		"agent-action-guard": "^1.2.1",
 		"e2b": ">=1.4.0 <3",
@@ -229,6 +243,9 @@
 	},
 	"peerDependenciesMeta": {
 		"@anthropic-ai/sdk": {
+			"optional": true
+		},
+		"@aws-sdk/client-bedrock-agent-runtime": {
 			"optional": true
 		},
 		"agent-action-guard": {

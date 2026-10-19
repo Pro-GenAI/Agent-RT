@@ -9,7 +9,6 @@ from typing import ClassVar
 import pytest
 
 from agent_rt import (
-    MODEL_PROVIDER_ENV,
     AnthropicModelProvider,
     AnthropicProviderSettings,
     ContentPart,
@@ -29,7 +28,6 @@ from agent_rt import (
     RoutingRequirements,
     StructuredOutputRequirement,
     ToolDefinition,
-    load_model,
 )
 
 
@@ -505,171 +503,6 @@ class TestModelRouting:
             OpenAIProviderSettings(default_model=" ")
         with pytest.raises(ValueError):
             OpenAIProviderSettings().resolve_model()
-
-    def test_openai_provider_settings_from_env_allow_blank_api_key_for_custom_base_url(
-        self,
-    ):
-        calls = []
-        settings = OpenAIProviderSettings.from_env(
-            environ={
-                "OPENAI_BASE_URL": "https://gateway.example.test/v1",
-                "OPENAI_" + "API_KEY": "   ",
-            },
-            client_factory=_model_client_factory(("model-a",), calls),
-        )
-        assert settings.api_key is None
-        assert calls == [
-            {"base_url": "https://gateway.example.test/v1", "api_key": "not-provided"}
-        ]
-
-    def test_openai_provider_settings_from_env_require_api_key_for_default_base_url(
-        self,
-    ):
-        with pytest.raises(ValueError, match="API key is required"):
-            OpenAIProviderSettings.from_env(
-                environ={"OPENAI_" + "API_KEY": "   "}, validate=False
-            )
-
-    def test_openai_provider_settings_from_env_validate_startup_and_model(self):
-        calls = []
-        settings = OpenAIProviderSettings.from_env(
-            environ={
-                "OPENAI_BASE_URL": "https://gateway.example.test/v1/",
-                "OPENAI_" + "API_KEY": " env-key ",
-                "OPENAI_MODEL": " env-model ",
-            },
-            client_factory=_model_client_factory(("env-model", "other"), calls),
-        )
-        assert settings.base_url == "https://gateway.example.test/v1"
-        assert settings.resolve_model() == "env-model"
-        assert settings.websocket
-        assert calls == [
-            {"base_url": "https://gateway.example.test/v1", "api_key": "env-key"}
-        ]
-
-    def test_openai_provider_settings_websocket_env_opt_out(self):
-        settings = OpenAIProviderSettings.from_env(
-            environ={
-                "OPENAI_BASE_URL": "https://gateway.example.test/v1",
-                "OPENAI_WEBSOCKET": "off",
-            },
-            validate=False,
-        )
-        assert not settings.websocket
-        with pytest.raises(ValueError, match="boolean environment value"):
-            OpenAIProviderSettings.from_env(
-                environ={
-                    "OPENAI_BASE_URL": "https://gateway.example.test/v1",
-                    "OPENAI_WEBSOCKET": "sometimes",
-                },
-                validate=False,
-            )
-
-    def test_openai_provider_settings_from_env_rejects_unavailable_model(self):
-        with pytest.raises(ValueError, match="is not available"):
-            OpenAIProviderSettings.from_env(
-                environ={
-                    "OPENAI_BASE_URL": "https://gateway.example.test/v1",
-                    "OPENAI_MODEL": "missing-model",
-                },
-                client_factory=_model_client_factory(("other-model",)),
-            )
-
-    def test_openai_provider_settings_validate_base_url_before_startup_sdk_call(self):
-        calls = []
-        with pytest.raises(ValueError, match="absolute http"):
-            OpenAIProviderSettings.from_env(
-                environ={"OPENAI_BASE_URL": "not-a-url"},
-                client_factory=_model_client_factory((), calls),
-            )
-        assert calls == []
-
-    def test_openai_provider_settings_startup_rejects_sdk_failure(self):
-        with pytest.raises(ValueError, match="401"):
-            OpenAIProviderSettings.from_env(
-                environ={"OPENAI_" + "API_KEY": "bad-key"},
-                client_factory=_model_client_factory(
-                    (), error=RuntimeError("HTTP 401")
-                ),
-            )
-
-    def test_anthropic_provider_settings_from_env_validate_startup_and_model(self):
-        calls = []
-        settings = AnthropicProviderSettings.from_env(
-            environ={
-                "ANTHROPIC_BASE_URL": "https://anthropic.example.test/",
-                "ANTHROPIC_" + "API_KEY": " a-key ",
-                "ANTHROPIC_MODEL": " claude-test ",
-            },
-            client_factory=_model_client_factory(("claude-test",), calls),
-        )
-        assert settings.base_url == "https://anthropic.example.test"
-        assert settings.resolve_model() == "claude-test"
-        assert calls[0]["api_key"] == "a-key"
-
-    def test_environment_provider_selection_uses_base_urls_then_openai_model_fallback(
-        self,
-    ):
-        openai = load_model(
-            environ={
-                "OPENAI_BASE_URL": "https://openai.example.test/v1",
-                "ANTHROPIC_BASE_URL": "https://anthropic.example.test",
-            },
-            validate=False,
-            openai_async_client=object(),
-        )
-        assert isinstance(openai, OpenAIModelProvider)
-
-        anthropic = load_model(
-            environ={"ANTHROPIC_BASE_URL": "https://anthropic.example.test"},
-            validate=False,
-            anthropic_async_client=object(),
-        )
-        assert isinstance(anthropic, AnthropicModelProvider)
-
-        openai_from_model = load_model(
-            environ={"OPENAI_MODEL": "gpt-test", "OPENAI_" + "API_KEY": "test-key"},
-            validate=False,
-            openai_async_client=object(),
-        )
-        assert isinstance(openai_from_model, OpenAIModelProvider)
-
-        invalid_environments = (
-            {},
-            {"OPENAI_" + "API_KEY": "key"},
-            {"ANTHROPIC_" + "API_KEY": "key"},
-            {"ANTHROPIC_MODEL": "claude-test"},
-        )
-        for environment in invalid_environments:
-            with pytest.raises(ValueError, match="OPENAI_BASE_URL"):
-                load_model(environ=environment, validate=False)
-
-    def test_model_provider_override_wins_over_auto_detection(self):
-        anthropic = load_model(
-            environ={
-                MODEL_PROVIDER_ENV: " anthropic ",
-                "OPENAI_BASE_URL": "https://openai.example.test/v1",
-                "ANTHROPIC_BASE_URL": "https://anthropic.example.test",
-            },
-            validate=False,
-            anthropic_async_client=object(),
-        )
-        assert isinstance(anthropic, AnthropicModelProvider)
-
-        openai = load_model(
-            environ={
-                MODEL_PROVIDER_ENV: "OPENAI",
-                "ANTHROPIC_BASE_URL": "https://anthropic.example.test",
-                "OPENAI_" + "API_KEY": "test-key",
-            },
-            validate=False,
-            openai_async_client=object(),
-        )
-        assert isinstance(openai, OpenAIModelProvider)
-
-        with pytest.raises(ValueError, match="MODEL_PROVIDER"):
-            load_model(environ={MODEL_PROVIDER_ENV: "unknown"}, validate=False)
-
 
 class TestProviderResponse:
     def request(self, model=None, text="hello"):
