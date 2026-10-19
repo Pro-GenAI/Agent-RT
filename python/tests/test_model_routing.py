@@ -222,7 +222,7 @@ class _OpenAICompatibleHandler(BaseHTTPRequestHandler):
     def handle(self):
         try:
             super().handle()
-        except (BrokenPipeError, ConnectionResetError):
+        except ConnectionError:  # BrokenPipe, Reset, and Windows' Aborted (WinError 10053)
             pass
 
     def do_GET(self):
@@ -390,7 +390,7 @@ class _OpenAICompatibleHandler(BaseHTTPRequestHandler):
         self.end_headers()
         try:
             self.wfile.write(body)
-        except BrokenPipeError:
+        except ConnectionError:
             pass
 
 

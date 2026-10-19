@@ -19,6 +19,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = "tests/test_web_browsers.py"
 ENGINES = ("chromium", "firefox", "webkit")
+# Playwright's Windows builds expect the Microsoft Visual C++ runtime (for example
+# msvcp140_1.dll), which none of its bundles ship and only an administrator can install.
+VC_RUNTIME_NOTE = (
+    "needs the Microsoft Visual C++ Redistributable (x64), which only an administrator can "
+    "install: https://aka.ms/vs/17/release/vc_redist.x64.exe"
+)
 SAFARI_NOTE = {
     "Darwin": "Playwright cannot drive Safari itself (safaridriver needs `sudo safaridriver --enable`); "
     "webkit covers its engine",
@@ -158,6 +164,9 @@ def main() -> int:
             reason = probe(target)
         if reason is None:
             runnable.append(target)
+        elif system == "Windows" and re.search(r"(msvcp|vcruntime)\d+\S*\.dll", reason):
+            # A missing system runtime, not a bug here; installing it is outside this script.
+            results.append((target, "SKIP", VC_RUNTIME_NOTE))
         else:
             results.append((target, "FAIL", f"cannot launch:\n{tail(reason)}"))
 
