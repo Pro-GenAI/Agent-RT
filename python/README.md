@@ -92,6 +92,7 @@ Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_
 
 - **API server** (`agent-rt[api]`): OpenAI-compatible Chat Completions/Responses and Anthropic-compatible Messages endpoints.
 - **Terminal CLI** (`agent-rt[cli]`): `agent-rt -p "explain this stack trace"` or `agent-rt --config ./agent-rt.yaml -p "..."`. Reuse an existing agent CLI's models and API keys with `agent-rt claude -p "..."`, `agent-rt codex exec "..."`, `agent-rt opencode run "..."`, or `agent-rt copilot -p "..."` ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#reuse-another-agent-cli)).
+- **Web UI** (`agent-rt[web]`): run `agent-rt-web` in a project folder to chat in your browser, with sessions saved in the browser and in-page approval for file edits ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#web-ui)).
 
 ## Learn more
 

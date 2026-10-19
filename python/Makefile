@@ -3,7 +3,7 @@
 UV ?= uv
 RUN := $(UV) run --extra dev
 
-.PHONY: help install install-dev test test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
+.PHONY: help install install-dev test test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
 
 # GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
 require-bash:
@@ -19,6 +19,7 @@ help:
 		'  make install           Install locked development dependencies' \
 		'  make install-dev       Alias for make install' \
 		'  make test              Run the regression test suite' \
+		'  make test-browsers     Run web UI tests in every browser this OS can run' \
 		'  make test-matrix       Run tests across all supported Python versions' \
 		'  make test-deps-matrix  Run tests across supported dependency versions (mid-2024+)' \
 		'  make lint              Run Ruff lint checks' \
@@ -39,6 +40,13 @@ install-dev: install
 
 test:
 	$(RUN) pytest -n auto --dist worksteal
+
+# Playwright is added for this run only and its browsers go to a temp folder, not the system.
+# BROWSER_ARGS passes runner options, e.g. BROWSER_ARGS="--browsers-dir ~/agent-rt-browsers".
+# Pinned: each Playwright release needs its own browser builds, and CircleCI caches them by this file.
+PLAYWRIGHT_VERSION ?= 1.64.0
+test-browsers:
+	$(RUN) --with "playwright==$(PLAYWRIGHT_VERSION)" python scripts/test_browsers.py $(BROWSER_ARGS)
 
 test-matrix: require-bash
 	bash ./scripts/test-matrix.sh

@@ -12,7 +12,7 @@ A complete annotated example is [`agent-rt.example.yaml`](../agent-rt.example.ya
 | 2 | `./agent-rt.yaml`, then `./.agent-rt/config.yaml` (current folder) |
 | 3 | `~/.agent-rt/config.yaml`, then `~/.config/agent-rt/config.yaml` (home folder) |
 
-`.yml` is accepted wherever `.yaml` is. The first file found wins; files are never merged. An explicit path that does not exist is an error, and when nothing is found the error lists every location that was checked. A bare `./config.yaml` is deliberately not searched (too easy to pick up another tool's file); pass it with `--config config.yaml`.
+`.yml` is accepted wherever `.yaml` is. The first file found wins; files are never merged. An explicit path that does not exist is an error, and when nothing is found the error lists every location that was checked. The `agent-rt` command, when run in a terminal without `--config`, instead offers to create an owner-only starter config in `~/.agent-rt/config.yaml` (home folder) or `./agent-rt.yaml` (current folder); the library and non-interactive runs keep the error. `agent-rt-web` needs no file at all: with no config, or one without `model_list` (even a blank file), it uses OpenAI with `os.environ/OPENAI_API_KEY` (plus `os.environ/OPENAI_BASE_URL` when that variable is set, as the OpenAI SDK does) and offers the models its `/v1/models` lists, starting with the first (or `--model`). A bare `./config.yaml` is deliberately not searched (too easy to pick up another tool's file); pass it with `--config config.yaml`.
 
 ## `model_list`
 
@@ -92,14 +92,14 @@ client.chat.completions.create(
 
 | Section | Keys |
 | --- | --- |
-| `default_model` | A `model_name`; defaults to the first entry. |
+| `default_model` | A `model_name`; defaults to the first entry. `agent-rt` and `agent-rt-web` select it at startup. |
 | `server` | `host`, `port`, `api_keys`, `default_agent`, `allowed_websocket_origins`, `max_concurrent_requests`, `max_queued_requests` |
 | `execution_limits` | `timeout_seconds`, `memory_bytes`, `cpu_seconds` (defaults for every tool call and sandbox session) |
 | `sandbox` | `backend`, `workspace_root`, `native_root`, `docker_image`, `docker_binary`, `docker_user`, `docker_read_only`, `e2b_template`, `microsandbox_image`, `swerex_url`, `swerex_api_key`, `uid`, `gid`, `network_mode`, `network_max_transfer_bytes`, `network_max_bytes_per_second`, `allowed_domains`, `blocked_domains`, `allow_http`, `allow_ip`, `allow_proxy`, `allow_websocket`, `setpriv_binary`, `prlimit_binary` |
 | `web_search` | `tool` (`tavily`, `brave`, `serper`), `api_key`, `timeout_seconds` |
 | `decision_model` | `base_url`, `model`, `timeout_seconds` (Jev-compatible Decision model host) |
 | `observability` | `api_key`, `base_url`, `headers`, `trace_content`, `telemetry_enabled`, `enrich_tokens`, `app_name` (OpenLLMetry/Traceloop) |
-| `cli` | `home` (sessions and skills root, default `~/.agent-rt`), `compact_token_limit` |
+| `cli` | `home` (sessions and skills root, default `~/.agent-rt`), `compact_token_limit` (`agent-rt-web` uses `compact_token_limit` and `home` for skills; its sessions live in the browser) |
 
 Lists are written as YAML lists; `headers` is a mapping. Unknown sections and keys fail at load time. `configure_runtime(config)` / `configureRuntime(config)` applies these settings to the runtime's implicit defaults (and starts OpenLLMetry when configured); the CLI and `agent_rt_api.build_from_config` call it for you. Settings that are passed explicitly to a constructor always win.
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import threading
 
 import agent_rt as agent_rt_core
 import time
@@ -1026,9 +1027,11 @@ class TestToolContract:
     def test_agent_action_guard_is_default_model_backed_tool_input_guardrail(self):
         classified = []
         executed = []
+        threads = []
 
         def classify(action):
             classified.append(action)
+            threads.append(threading.get_ident())
             name = action["function"]["name"]
             return (
                 "harmful" if name == "delete_user" else None,
@@ -1076,6 +1079,8 @@ class TestToolContract:
         assert classified[0]["type"] == "function"
         assert classified[0]["function"]["name"] == "read_user"
         assert classified[1]["function"]["name"] == "delete_user"
+        # The blocking classifier runs in a worker thread, not on the event loop.
+        assert threading.get_ident() not in threads
         with pytest.raises(ValueError):
             ToolRegistry(
                 enable_model_tool_input_guardrail=True,

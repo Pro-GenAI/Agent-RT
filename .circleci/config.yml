@@ -75,6 +75,36 @@ jobs:
           paths:
             - ~/.cache/uv
 
+  python_browsers:
+    executor: apple_silicon
+    steps:
+      - checkout
+      - verify_apple_silicon
+      - install_uv
+      - restore_cache:
+          keys:
+            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-
+      # Keyed on the Makefile's pinned Playwright version; no prefix fallback, so old browser
+      # builds are not restored and re-saved alongside new ones.
+      - restore_cache:
+          keys:
+            - browsers-v2-{{ arch }}-{{ checksum "python/Makefile" }}-{{ checksum "python/scripts/test_browsers.py" }}
+      - run:
+          name: Run web UI tests in every macOS browser
+          command: |
+            set -euo pipefail
+            cd python
+            make test-browsers BROWSER_ARGS="--browsers-dir $HOME/agent-rt-browsers"
+      - save_cache:
+          key: browsers-v2-{{ arch }}-{{ checksum "python/Makefile" }}-{{ checksum "python/scripts/test_browsers.py" }}
+          paths:
+            - ~/agent-rt-browsers
+      - save_cache:
+          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          paths:
+            - ~/.cache/uv
+
   python_deps_matrix:
     executor: apple_silicon
     steps:
@@ -255,6 +285,7 @@ workflows:
     when: << pipeline.parameters.run_mac_ci >>
     jobs:
       - python_tests
+      - python_browsers
       - python_security
       - typescript_tests
       - typescript_security

@@ -2,7 +2,7 @@
 
 NPM ?= npm
 
-.PHONY: help install install-dev test test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
+.PHONY: help install install-dev test test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
 
 # GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
 require-bash:
@@ -38,6 +38,12 @@ install-dev: install
 
 test:
 	$(NPM) test
+
+# The web UI (agent-rt-web) and its browser tests exist only in the Python package.
+# Plain echo with no quotes or shell operators, so it reads the same under sh and cmd.exe.
+test-browsers:
+	@echo ERROR: browser tests are Python-only because the web UI is. Run make test-browsers in the python folder instead. >&2
+	@exit 1
 
 test-matrix: require-bash
 	$(NPM) run test:matrix

@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent RT</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2305060a'/%3E%3Cpath d='M9 22l7-12 7 12' stroke='%23c8ff4d' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style nonce="__AGENT_RT_NONCE__">
+:root {
+  --bg: #07080c; --rail: #0c0f15; --panel: #10141c; --line: #1d2330; --line-2: #2a3242;
+  --text: #eef0f3; --muted: #8b93a1; --acid: #c8ff4d; --mint: #5ef1c4; --amber: #ffc76a;
+  --red: #ff6b7a; --code: #0a0d13; --on-acid: #0b0d06;
+  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --sans: Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f1ea; --rail: #e9e6dc; --panel: #fbfaf6; --line: #d9d5c8; --line-2: #c4bfae;
+    --text: #15181d; --muted: #5d6470; --acid: #4f7a00; --mint: #0b8a68; --amber: #9a5b00;
+    --red: #b3263a; --code: #ece9df; --on-acid: #fbfaf6;
+    color-scheme: light;
+  }
+}
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+/* Thin, low-contrast scroll bars; the ::-webkit rules cover Safari, which lacks scrollbar-color. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-2); border: 3px solid transparent; border-radius: 10px; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--muted); }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.6 var(--sans); display: grid; grid-template-columns: var(--rail-width, 260px) 1fr; }
+button, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+.mono { font-family: var(--mono); }
+
+/* rail */
+aside { position: relative; background: var(--rail); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px; font: 600 15px var(--mono); letter-spacing: .04em; }
+.brand i { width: 10px; height: 10px; background: var(--acid); transform: rotate(45deg); display: block; }
+.brand span { color: var(--muted); font-weight: 400; }
+.new { margin: 0 14px 12px; padding: 9px 12px; border: 1px dashed var(--line-2); background: none; border-radius: 6px; text-align: left; font-family: var(--mono); font-size: 13px; }
+.new:hover { border-color: var(--acid); color: var(--acid); }
+.label { padding: 6px 18px; font: 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+#sessions { list-style: none; margin: 0; padding: 0 8px 12px; overflow-y: auto; flex: 1; }
+#sessions li { display: flex; align-items: center; border-radius: 6px; }
+#sessions li.on { background: var(--panel); box-shadow: inset 2px 0 var(--acid); }
+#sessions .open { flex: 1; min-width: 0; background: none; border: 0; text-align: left; padding: 7px 10px; font: 13px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#sessions .del { background: none; border: 0; color: var(--muted); padding: 4px 9px; opacity: 0; }
+#sessions li:hover .del, #sessions .del:focus-visible { opacity: 1; }
+@media (hover: none) { #sessions .del { opacity: 1; } }
+#sessions .del:hover { color: var(--red); }
+.ws { padding: 12px 18px; border-top: 1px solid var(--line); font: 11px var(--mono); color: var(--muted); word-break: break-all; }
+.storage-warning { margin: 4px 12px 8px; padding: 8px; font: 11px/1.5 var(--mono); color: var(--amber); border: 1px solid var(--amber); border-radius: 5px; }
+.storage-warning[hidden] { display: none; }
+
+/* main */
+main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+header { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--line); }
+#menu { display: none; background: none; border: 1px solid var(--line-2); border-radius: 6px; padding: 4px 10px; }
+#sid { font: 13px var(--mono); color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#sid b { color: var(--text); font-weight: 500; }
+.model { display: flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--muted); }
+select { background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 5px 8px; font: 13px var(--mono); max-width: 240px; }
+#log { flex: 1; overflow-y: auto; padding: 28px 24px 12px; }
+.inner { max-width: 820px; margin: 0 auto; }
+.empty { margin-top: 12vh; text-align: center; color: var(--muted); }
+.empty h1 { font: 600 28px var(--mono); color: var(--text); margin: 0 0 8px; letter-spacing: -.01em; }
+.empty h1 em { font-style: normal; color: var(--acid); }
+.turn { padding: 10px 0; }
+.turn + .turn { margin-top: 6px; }
+/* The speaker is shown by layout (your messages on the right); the label stays for screen readers. */
+.who { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.user .col { display: flex; flex-direction: column; align-items: flex-end; }
+.user .body { max-width: min(80%, 620px); padding: 9px 15px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 18px 18px 4px 18px; color: var(--text); white-space: pre-wrap; }
+.body { min-width: 0; overflow-wrap: anywhere; }
+.body .part { display: contents; }
+.body > :first-child { margin-top: 0; } .body > :last-child { margin-bottom: 0; }
+.body p { margin: 0 0 .7em; }
+.body h3 { font-size: 16px; margin: 1em 0 .4em; }
+.body ul, .body ol { margin: 0 0 .7em; padding-left: 1.3em; }
+.body code { font: 13px var(--mono); background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+.body pre { background: var(--code); border: 1px solid var(--line); border-left: 2px solid var(--mint); border-radius: 6px; padding: 12px 14px; overflow-x: auto; margin: 0 0 .8em; }
+.body pre code { border: 0; padding: 0; background: none; }
+.body a { color: var(--mint); }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tools span { font: 11px var(--mono); color: var(--mint); border: 1px solid var(--line-2); border-radius: 4px; padding: 1px 7px; }
+.tools span::before { content: "⚙ "; }
+.note { font: 12px var(--mono); color: var(--amber); margin-top: 6px; }
+.err { color: var(--red); }
+.cursor::after { content: "▍"; color: var(--acid); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.approval { border: 1px solid var(--amber); border-radius: 8px; padding: 12px 14px; margin: 8px 0; background: var(--panel); }
+.approval h4 { margin: 0 0 6px; font: 600 12px var(--mono); color: var(--amber); text-transform: uppercase; letter-spacing: .1em; }
+.approval .path { font: 13px var(--mono); margin-bottom: 8px; }
+.approval pre { max-height: 220px; overflow: auto; font: 12px var(--mono); background: var(--code); border-radius: 6px; padding: 8px 10px; margin: 0 0 8px; white-space: pre-wrap; }
+.approval .k { font: 11px var(--mono); color: var(--muted); margin: 4px 0 2px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line-2); background: none; border-radius: 6px; padding: 6px 12px; font: 13px var(--mono); }
+.btn.go { background: var(--acid); color: var(--on-acid); border-color: var(--acid); }
+.btn:hover { border-color: var(--acid); }
+
+/* composer */
+form { padding: 12px 24px 20px; }
+.box { max-width: 820px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 10px 10px 14px; }
+.box:focus-within { border-color: var(--muted); }
+/* The box border already shows focus; the global :focus-visible outline would add a lime ring. */
+.box textarea:focus-visible { outline: none; }
+.box b { font: 600 14px/26px var(--mono); color: var(--acid); }
+textarea { flex: 1; resize: none; border: 0; background: none; outline: none; max-height: 220px; line-height: 26px; padding: 0; }
+#send { background: var(--acid); color: var(--on-acid); border: 0; border-radius: 7px; padding: 6px 14px; font: 600 13px var(--mono); }
+#send.stop { background: none; color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
+.hint { max-width: 820px; margin: 6px auto 0; font: 11px var(--mono); color: var(--muted); }
+
+#resize { position: absolute; top: 0; right: -4px; width: 8px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
+#resize:hover, #resize.drag { background: linear-gradient(var(--line-2), var(--line-2)) center / 2px 100% no-repeat; }
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; }
+  #resize { display: none; }
+  aside { position: fixed; inset: 0 auto 0 0; width: 260px; z-index: 5; transform: translateX(-100%); transition: transform .2s; }
+  body.rail aside { transform: none; }
+  #menu { display: block; }
+  header, #log, form { padding-left: 16px; padding-right: 16px; }
+  .user .body { max-width: 88%; }
+  select { max-width: 140px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<aside id="rail" aria-label="Sessions">
+  <div class="brand"><i></i>agent-rt <span>web</span></div>
+  <button class="new" id="new" type="button">+ new session</button>
+  <div class="label">sessions</div>
+  <ul id="sessions"></ul>
+  <div class="storage-warning" id="storage-warning" role="status" aria-live="polite" hidden></div>
+  <div class="ws" id="ws"></div>
+  <div id="resize" role="separator" aria-orientation="vertical" aria-label="Resize sessions panel" aria-valuemin="180" aria-valuemax="480" aria-valuenow="260" tabindex="0"></div>
+</aside>
+<main>
+  <header>
+    <button id="menu" type="button" aria-label="Show sessions" aria-controls="rail">☰</button>
+    <div id="sid"></div>
+    <label class="model">model <select id="model"></select></label>
+  </header>
+  <div id="log" aria-live="polite"><div class="inner" id="turns"></div></div>
+  <form id="form">
+    <div class="box">
+      <b aria-hidden="true">&gt;</b>
+      <textarea id="input" rows="1" placeholder="Ask about this workspace…" aria-label="Message"></textarea>
+      <button id="send" type="submit">run ↵</button>
+    </div>
+    <div class="hint">Enter to run · Shift+Enter for a new line · file edits ask for your approval · sessions are saved in this browser</div>
+  </form>
+</main>
+<script nonce="__AGENT_RT_NONCE__">
+"use strict";
+const $ = (id) => document.getElementById(id);
+const turns = $("turns"), log = $("log"), input = $("input"), send = $("send");
+let info = null, current = null, busy = false, controller = null;
+
+// Sessions live only in this browser (IndexedDB, falling back to memory), never on the server.
+const memory = new Map();
+let temporaryStorage = false;
+function useTemporaryStorage() {
+  if (temporaryStorage) return;
+  temporaryStorage = true;
+  const warning = $("storage-warning");
+  warning.textContent = "Temporary storage: conversations may be lost when you reload or close this page.";
+  warning.hidden = false;
+}
+// "meta" holds only list fields, so drawing the session list never loads whole transcripts.
+const metaOf = (s) => ({ id: s.id, workspace: s.workspace, title: s.title, updated: s.updated });
+const dbp = new Promise((resolve, reject) => {
+  const req = indexedDB.open("agent-rt", 2);
+  req.onupgradeneeded = (e) => {
+    const db = req.result;
+    if (e.oldVersion < 1) db.createObjectStore("sessions", { keyPath: "id" });
+    if (e.oldVersion < 2) {
+      const meta = db.createObjectStore("meta", { keyPath: "id" });
+      if (e.oldVersion >= 1) {
+        req.transaction.objectStore("sessions").openCursor().onsuccess = (c) => {
+          const cursor = c.target.result;
+          if (cursor) { meta.put(metaOf(cursor.value)); cursor.continue(); }
+        };
+      }
+    }
+  };
+  req.onsuccess = () => resolve(req.result);
+  req.onerror = () => reject(req.error);
+});
+async function tx(mode, fn) {
+  const db = await dbp;
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(["sessions", "meta"], mode);
+    const req = fn(t.objectStore("sessions"), t.objectStore("meta"));
+    t.oncomplete = () => resolve(req.result);
+    t.onerror = () => reject(t.error);
+  });
+}
+async function withStorage(operation, fallback) {
+  if (temporaryStorage) return fallback();
+  // Fall back only when the database cannot open; one failed write (e.g. quota) is an ordinary
+  // error, not a reason to hide every saved session for the rest of the page's life.
+  try { await dbp; } catch (_) { useTemporaryStorage(); return fallback(); }
+  return operation();
+}
+const store = {
+  list: () => withStorage(() => tx("readonly", (_, m) => m.getAll()), () => [...memory.values()].map(metaOf)),
+  get: (id) => withStorage(() => tx("readonly", (s) => s.get(id)), () => memory.get(id)),
+  put: (v) => withStorage(() => tx("readwrite", (s, m) => (m.put(metaOf(v)), s.put(v))), () => memory.set(v.id, structuredClone(v))),
+  del: (id) => withStorage(() => tx("readwrite", (s, m) => (m.delete(id), s.delete(id))), () => memory.delete(id)),
+};
+// Tells other tabs a session changed so their lists and transcripts stay current.
+const channel = "BroadcastChannel" in window ? new BroadcastChannel("agent-rt") : null;
+const announce = (id) => channel && channel.postMessage(id);
+const sessionLock = (id, fn) => navigator.locks
+  ? navigator.locks.request("agent-rt-session:" + id, fn) : fn();
+
+function newSession() {
+  const id = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  return { id, workspace: info.workspace, title: "", model: info.model, autoApprove: false, messages: [], updated: Date.now() };
+}
+function shown(messages) {
+  return messages
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .map((m) => ({
+      role: m.role,
+      text: m.content.filter((p) => p.type === "text" && p.text).map((p) => p.text).join(""),
+      tools: (m.tool_calls || []).map((c) => c.name),
+    }))
+    .filter((m) => m.text || m.tools.length);
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { ...options, headers: { "content-type": "application/json", "x-agent-rt": "1", ...(options.headers || {}) } });
+  if (!res.ok) {
+    let msg = res.statusText;
+    try { msg = (await res.json()).detail || msg; } catch (_) {}
+    throw new Error(msg);
+  }
+  return res;
+}
+const post = (path, data, options) => api(path, { ...options, method: "POST", body: JSON.stringify(data || {}) });
+
+function esc(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
+
+// Small Markdown subset; everything is escaped first, so model output cannot inject HTML.
+function inline(s) {
+  return s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+function md(text) {
+  const out = [];
+  const parts = esc(text).split(/^```[^\n]*\n?/m);
+  parts.forEach((chunk, i) => {
+    if (i % 2) { out.push("<pre><code>" + chunk.replace(/\n$/, "") + "</code></pre>"); return; }
+    for (const block of chunk.split(/\n{2,}/)) {
+      const lines = block.split("\n").filter((l) => l.trim());
+      if (!lines.length) continue;
+      if (lines.every((l) => /^\s*([-*]|\d+\.)\s/.test(l))) {
+        const items = lines.map((l) => "<li>" + inline(l.replace(/^\s*([-*]|\d+\.)\s/, "")) + "</li>").join("");
+        // Keep the model's numbering: blank lines between items split one list into several blocks.
+        const n = /^\s*(\d+)\./.exec(lines[0]);
+        out.push(n ? '<ol start="' + Number(n[1]) + '">' + items + "</ol>" : "<ul>" + items + "</ul>");
+      } else if (/^#{1,6}\s/.test(lines[0]) && lines.length === 1) {
+        out.push("<h3>" + inline(lines[0].replace(/^#+\s/, "")) + "</h3>");
+      } else {
+        out.push("<p>" + lines.map(inline).join("<br>") + "</p>");
+      }
+    }
+  });
+  return out.join("");
+}
+
+// End of the last finished block (a blank line outside a code fence) after `from`.
+function blockEnd(text, from) {
+  const re = /^```|\n\n/gm;
+  re.lastIndex = from;
+  let cut = from, fences = 0;
+  for (let m; (m = re.exec(text)); ) {
+    if (m[0] === "```") fences++;
+    else if (fences % 2 === 0) cut = m.index + 2;
+  }
+  return cut;
+}
+// Scan each character once. Hold back two bytes to recognize markers split over chunks.
+function newBlockScanner() {
+  let scanned = 0, fences = 0, cut = 0;
+  return (text, final = false) => {
+    const re = /^```|\n\n/gm;
+    re.lastIndex = scanned;
+    const limit = final ? text.length : Math.max(0, text.length - 2);
+    for (let m; (m = re.exec(text)); ) {
+      if (m.index >= limit) break;
+      if (m[0] === "```") fences++;
+      else if (fences % 2 === 0) cut = m.index + 2;
+    }
+    scanned = Math.max(scanned, limit);
+    return cut;
+  };
+}
+const LIVE_MARKDOWN_LIMIT = 4096;
+
+function turn(role) {
+  const el = document.createElement("div");
+  el.className = "turn " + role;
+  el.innerHTML = '<div class="who"></div><div class="col"><div class="tools"></div><div class="body"></div></div>';
+  el.querySelector(".who").textContent = role === "user" ? "you" : "agent";
+  turns.appendChild(el);
+  return el;
+}
+function addTool(el, name) {
+  const span = document.createElement("span");
+  span.textContent = name;
+  el.querySelector(".tools").appendChild(span);
+}
+const scroll = () => { log.scrollTop = log.scrollHeight; };
+
+function renderEmpty() {
+  turns.innerHTML = '<div class="empty"><h1>agent-rt<em>_</em></h1><div>Chat with your agent about the code in this folder.</div></div>';
+}
+
+async function render() {
+  await renderRail();
+  renderTurns();
+}
+async function renderRail() {
+  // A new session gets an address (and a place in the list) only once its first message is sent.
+  history.replaceState(null, "", current.title ? "#" + encodeURIComponent(current.id) : location.pathname);
+  $("sid").innerHTML = "<b></b>";
+  $("sid").querySelector("b").textContent = current.title || "new session";
+  $("ws").textContent = info.workspace;
+  const models = [...new Set([...info.models, current.model])];
+  $("model").replaceChildren(...models.map((m) => new Option(m, m, false, m === current.model)));
+  const saved = (await store.list())
+    .filter((s) => s.workspace === info.workspace)
+    .sort((a, b) => b.updated - a.updated);
+  const list = $("sessions");
+  list.replaceChildren();
+  for (const s of saved) {
+    const li = document.createElement("li");
+    li.className = s.id === current.id ? "on" : "";
+    const open = document.createElement("button");
+    open.className = "open"; open.type = "button"; open.textContent = open.title = s.title || "untitled";
+    open.onclick = () => act(async () => { current = (await store.get(s.id)) || current; });
+    const del = document.createElement("button");
+    del.className = "del"; del.type = "button"; del.textContent = "×";
+    del.setAttribute("aria-label", "Delete session " + (s.title || "untitled"));
+    del.onclick = () => {
+      if (!confirm("Delete this session from this browser?")) return;
+      act(async () => {
+        // A running turn holds this same lock until its transcript has been saved.
+        await sessionLock(s.id, () => store.del(s.id));
+        announce(s.id);
+        if (s.id === current.id) current = newSession();
+      });
+    };
+    li.append(open, del);
+    list.appendChild(li);
+  }
+}
+function renderTurns() {
+  turns.replaceChildren();
+  const messages = shown(current.messages);
+  if (!messages.length) renderEmpty();
+  let last = null;
+  for (const m of messages) {
+    // Tool-call steps and the final answer of one run share a single agent turn.
+    const el = m.role === "assistant" && last && last.classList.contains("assistant") ? last : turn(m.role);
+    m.tools.forEach((t) => addTool(el, t));
+    if (m.text) {
+      const body = el.querySelector(".body");
+      if (m.role === "user") body.textContent = m.text; else body.insertAdjacentHTML("beforeend", md(m.text));
+    }
+    last = el;
+  }
+  scroll();
+}
+
+async function act(fn) {
+  if (busy) return;
+  try { await fn(); await render(); } catch (e) { flash(e.message); }
+  document.body.classList.remove("rail");
+}
+
+function flash(msg) {
+  const el = turn("assistant");
+  el.querySelector(".body").innerHTML = '<span class="err"></span>';
+  el.querySelector(".err").textContent = "error: " + msg;
+  scroll();
+}
+
+function approvalCard(el, a) {
+  const card = document.createElement("div");
+  card.className = "approval";
+  card.innerHTML = '<h4>edit needs approval</h4><div class="path"></div>';
+  card.querySelector(".path").textContent = a.action + " → " + a.path;
+  for (const [k, v] of Object.entries(a.details)) {
+    const label = document.createElement("div"); label.className = "k"; label.textContent = k.replace("_", " ");
+    const pre = document.createElement("pre"); pre.textContent = v;
+    card.append(label, pre);
+  }
+  const row = document.createElement("div"); row.className = "row";
+  for (const [decision, text, cls] of [["approve", "approve", "btn go"], ["approve_session", "approve all this session", "btn"], ["deny", "deny", "btn"]]) {
+    const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = text;
+    b.onclick = async () => {
+      row.querySelectorAll("button").forEach((x) => (x.disabled = true));
+      try { await post("/api/approval", { id: a.id, decision }); card.querySelector("h4").textContent = decision === "deny" ? "denied" : "approved"; }
+      catch (e) { card.querySelector("h4").textContent = "error: " + e.message; }
+      row.remove();
+    };
+    row.appendChild(b);
+  }
+  card.appendChild(row);
+  el.querySelector(".col").insertBefore(card, el.querySelector(".body"));
+  row.querySelector("button").focus();
+  scroll();
+}
+
+
+async function run(text) {
+  busy = true; controller = new AbortController();
+  // act() ignores changes while busy, so the menu must not show a model the run is not using.
+  $("model").disabled = true;
+  const { signal } = controller;
+  send.textContent = "stop ■"; send.classList.add("stop"); send.setAttribute("aria-label", "Stop this run");
+  // Screen readers announce the reply once it is finished, not every streamed frame.
+  log.setAttribute("aria-busy", "true");
+  if (turns.querySelector(".empty")) turns.replaceChildren();
+  turn("user").querySelector(".body").textContent = text;
+  const el = turn("assistant");
+  const body = el.querySelector(".body");
+  body.classList.add("cursor");
+  scroll();
+  let raw = "", failed = false, painting = false, stale = false, doneLen = 0;
+  body.innerHTML = '<div class="part"></div><div class="part"></div>';
+  const [finished, tail] = body.children;
+  const scanBlocks = newBlockScanner();
+  let plainTail = false, paintedLength = 0;
+  // Short tails are Markdown. Beyond the limit, append plain text cheaply until the
+  // block completes; then parse that block only once to recover correct Markdown.
+  const paint = (final = false) => {
+    painting = false;
+    const cut = scanBlocks(raw, final);
+    if (cut > doneLen) {
+      finished.insertAdjacentHTML("beforeend", md(raw.slice(doneLen, cut)));
+      doneLen = cut;
+      tail.replaceChildren(); plainTail = false; paintedLength = 0;
+    }
+    const remainingLength = raw.length - doneLen;
+    if (final || remainingLength <= LIVE_MARKDOWN_LIMIT) {
+      tail.innerHTML = md(raw.slice(doneLen));
+      plainTail = false;
+    } else if (!plainTail) {
+      tail.textContent = raw.slice(doneLen);
+      plainTail = true;
+    } else {
+      tail.firstChild.appendData(raw.slice(doneLen + paintedLength));
+    }
+    paintedLength = remainingLength;
+    scroll();
+  };
+  const paintSoon = () => { if (!painting) { painting = true; requestAnimationFrame(() => painting && paint()); } };
+  const notes = [];
+  const note = (msg, cls) => {
+    notes.push([msg, cls]);
+    const n = document.createElement("div"); n.className = cls; n.textContent = msg;
+    el.querySelector(".col").appendChild(n);
+  };
+  const session = current;
+  const lockName = "agent-rt-session:" + session.id;
+  const locks = navigator.locks;
+
+  async function go() {
+    // Another tab may have finished a turn in this session while this one waited.
+    const latest = await store.get(session.id);
+    stale = !!latest && latest.messages.length !== session.messages.length;
+    if (!latest && session.messages.length) throw new Error("Session was deleted in another tab.");
+    if (latest) { session.messages = latest.messages; session.autoApprove = latest.autoApprove; }
+    session.title = session.title || text.replace(/\s+/g, " ").slice(0, 60);
+    session.updated = Date.now();
+    await store.put(session);
+    announce(session.id);
+    await renderRail();
+    const res = await post("/api/chat", { text, model: session.model, messages: session.messages, auto_approve: session.autoApprove }, { signal });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines) {
+        const ev = JSON.parse(line);
+        if (ev.type === "ping") continue; // keepalive only; must not scroll the reader away
+        if (ev.type === "text") { raw += ev.text; paintSoon(); }
+        else if (ev.type === "tool") {
+          // A tool call ends this step's text; keep the next step's text in its own block.
+          if (raw && !raw.endsWith("\n\n")) raw += "\n\n";
+          addTool(el, ev.name);
+        }
+        else if (ev.type === "approval") approvalCard(el, ev);
+        else if (ev.type === "error") throw new Error(ev.message);
+        else if (ev.type === "done") {
+          if (raw) paint(true); else if (ev.text) body.innerHTML = md(ev.text);
+          if (ev.reason !== "completed") note("run ended: " + ev.reason, "note");
+          session.messages = ev.messages;
+          session.autoApprove = ev.auto_approve;
+          session.updated = Date.now();
+          // No Web Locks on older browsers: still avoid reviving a deleted record.
+          if (await store.get(session.id)) {
+            await store.put(session);
+            announce(session.id);
+          } else {
+            note("session deleted in another tab; reply not saved", "note");
+          }
+        }
+        if (ev.type !== "text") scroll();
+      }
+    }
+  }
+
+  try {
+    if (locks) {
+      const { held = [] } = await locks.query();
+      if (held.some((l) => l.name === lockName)) note("waiting for another tab's run in this session…", "note");
+      // Web Locks queue same-session sends across tabs; a closed tab releases its lock.
+      await locks.request(lockName, { signal }, go);
+    } else {
+      await go();
+    }
+  } catch (e) {
+    failed = true;
+    // Stopping closes the stream; the server then cancels the run and denies its pending edits.
+    if (signal.aborted) note("stopped", "note"); else note("error: " + e.message, "note err");
+  } finally {
+    body.classList.remove("cursor");
+    el.querySelectorAll(".approval .row").forEach((row) => row.remove());
+    busy = false; controller = null; $("model").disabled = false;
+    send.textContent = "run ↵"; send.classList.remove("stop"); send.removeAttribute("aria-label");
+    log.removeAttribute("aria-busy");
+    try {
+      // A failed run is not saved, so keep its live view and error in place.
+      // Redraw the transcript only if another tab added turns while this one waited.
+      if (failed || session !== current || !stale) await renderRail();
+      else {
+        await render();
+        const col = [...turns.querySelectorAll(".turn.assistant .col")].pop();
+        for (const [msg, cls] of notes.filter(([m]) => !m.startsWith("waiting"))) {
+          const n = document.createElement("div"); n.className = cls; n.textContent = msg;
+          if (col) col.appendChild(n);
+        }
+      }
+    } catch (_) {}
+    scroll(); input.focus();
+  }
+}
+
+$("form").onsubmit = (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text || busy) return;
+  input.value = ""; grow();
+  run(text);
+};
+// While a run is going the button stops it; Enter never does.
+send.onclick = (e) => { if (busy) { e.preventDefault(); if (controller) controller.abort(); } };
+input.onkeydown = (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); }
+};
+function grow() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 220) + "px"; }
+input.oninput = grow;
+$("new").onclick = () => act(async () => { current = newSession(); });
+$("model").onchange = (e) => act(async () => {
+  current.model = e.target.value;
+  if (current.messages.length) { current.updated = Date.now(); await store.put(current); announce(current.id); }
+});
+// Sidebar width: drag the edge or use the arrow keys; remembered in this browser only.
+const RAIL_KEY = "agent-rt-rail-width", resize = $("resize");
+function setRailWidth(px, save) {
+  const width = Math.round(Math.min(480, Math.max(180, px)));
+  document.body.style.setProperty("--rail-width", width + "px");
+  resize.setAttribute("aria-valuenow", width);
+  if (save) try { localStorage.setItem(RAIL_KEY, String(width)); } catch (_) {}
+}
+try { const saved = Number(localStorage.getItem(RAIL_KEY)); if (saved) setRailWidth(saved, false); } catch (_) {}
+const railWidth = () => $("rail").getBoundingClientRect().width;
+resize.onpointerdown = (e) => {
+  e.preventDefault(); // no text selection while dragging
+  resize.setPointerCapture(e.pointerId);
+  resize.classList.add("drag");
+  resize.onpointermove = (m) => setRailWidth(m.clientX, false);
+  resize.onpointerup = resize.onpointercancel = () => {
+    resize.onpointermove = resize.onpointerup = resize.onpointercancel = null;
+    resize.classList.remove("drag");
+    setRailWidth(railWidth(), true);
+  };
+};
+resize.onkeydown = (e) => {
+  const step = { ArrowLeft: -16, ArrowRight: 16 }[e.key];
+  if (step) { e.preventDefault(); setRailWidth(railWidth() + step, true); }
+};
+$("menu").onclick = () => document.body.classList.toggle("rail");
+// On a phone the open drawer covers the menu button and there is no Escape key, so a tap beside it closes it.
+document.querySelector("main").addEventListener("click", (e) => { if (!e.target.closest("#menu")) document.body.classList.remove("rail"); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.body.classList.remove("rail"); });
+if (channel) channel.onmessage = async (e) => {
+  if (busy) return;
+  if (e.data === current.id) {
+    const latest = await store.get(current.id);
+    current = latest || newSession();
+    await render();
+  } else {
+    await renderRail();
+  }
+};
+
+(async () => {
+  info = await (await api("/api/info")).json();
+  const id = decodeURIComponent(location.hash.slice(1));
+  const saved = id && (await store.get(id));
+  // A link to another workspace's session opens a new one: its history belongs to that folder.
+  current = saved && saved.workspace === info.workspace ? saved : newSession();
+  await render();
+  // Each endpoint's /v1/models arrives after the page is usable; add them to the menu then.
+  api("/api/models").then((r) => r.json()).then((d) => { info.models = d.models; return renderRail(); }).catch(() => {});
+})().catch((e) => flash(e.message));
+input.focus();
+</script>
+</body>
+</html>

@@ -886,6 +886,11 @@ def make_agent_action_guard_tool_input_guardrail(
             )
         return GuardrailResult(classifications=("agent-action-guard",))
 
+    async def acall(call: ToolCall, definition: ToolDefinition) -> GuardrailResult:
+        # The classifier (and its first-use model load) blocks; keep it off the event loop.
+        return await asyncio.to_thread(guard, call, definition)
+
+    guard.acall = acall  # type: ignore[attr-defined]
     return guard
 
 
@@ -2492,7 +2497,9 @@ class ToolRegistry:
         for guardrail in self.tool_input_guardrails:
             guarded = _apply_guardrail_result(
                 effective_call,
-                guardrail(effective_call, registered.definition),
+                await _call_maybe_async(
+                    guardrail, effective_call, registered.definition
+                ),
             )
             if not isinstance(guarded, ToolCall):
                 raise TypeError("tool input guardrail transform must return ToolCall")
@@ -5501,6 +5508,9 @@ class ConfiguredModelProvider:
         self.config = config
         self._factory = provider_factory or self._default_factory
         self._providers: dict[int, Any] = {}
+        # Upstream model ids found by discover_models(), routed to the deployment that listed them.
+        self._discovered: dict[str, Any] = {}
+        self.discovery_errors: list[str] = []
         self.settings = _ConfiguredModelSettings(config.default_model)
 
     @property
@@ -5535,13 +5545,43 @@ class ConfiguredModelProvider:
             self._providers[key] = provider
         return provider
 
-    def _targets(self, requested: str | None) -> tuple[Any, ...]:
+    def _targets(self, requested: str | None) -> tuple[tuple[Any, str], ...]:
+        """(deployment, upstream model) pairs to try in order."""
         name = requested or self.config.default_model
         deployments = self.config.deployments(name) if name else ()
-        if not deployments:
-            configured = ", ".join(self.model_names)
-            raise ValueError(f"unknown model {name!r}; configured models: {configured}")
-        return deployments
+        if deployments:
+            return tuple((deployment, deployment.model) for deployment in deployments)
+        if name in self._discovered:
+            return ((self._discovered[name], name),)
+        configured = ", ".join(self.model_names)
+        raise ValueError(f"unknown model {name!r}; configured models: {configured}")
+
+    async def discover_models(self, timeout: float = 10.0) -> tuple[str, ...]:
+        """Ask each configured endpoint for its models and make them selectable by id.
+
+        Best effort: an endpoint that fails or cannot list models is skipped. Configured
+        ``model_name`` values always win over a discovered id with the same name.
+        """
+        seen: set[tuple[Any, ...]] = set()
+        self.discovery_errors: list[str] = []
+        for deployment in self.config.models:
+            endpoint = (deployment.provider, str(deployment.api_base), str(deployment.api_key))
+            if endpoint in seen:
+                continue
+            seen.add(endpoint)
+            try:
+                entries = await asyncio.wait_for(
+                    self._provider(deployment).list_models(), timeout
+                )
+            except Exception as exc:  # noqa: BLE001 - a down or listing-less endpoint is not fatal
+                self.discovery_errors.append(
+                    f"{deployment.model_name}: {type(exc).__name__}: {exc}"
+                )
+                continue
+            for entry in entries:
+                if entry.id and not self.config.deployments(entry.id):
+                    self._discovered.setdefault(entry.id, deployment)
+        return tuple(self._discovered)
 
     def validate(self) -> None:
         for deployment in self.config.models:
@@ -5554,10 +5594,10 @@ class ConfiguredModelProvider:
 
     async def complete(self, request: ModelRequest) -> ModelResponse:
         last_error: Exception | None = None
-        for deployment in self._targets(request.model):
+        for deployment, model in self._targets(request.model):
             try:
                 return await self._provider(deployment).complete(
-                    replace(request, model=deployment.model)
+                    replace(request, model=model)
                 )
             except Exception as exc:
                 last_error = exc
@@ -5566,11 +5606,11 @@ class ConfiguredModelProvider:
 
     async def stream(self, request: ModelRequest) -> AsyncIterator[ModelStreamEvent]:
         last_error: Exception | None = None
-        for deployment in self._targets(request.model):
+        for deployment, model in self._targets(request.model):
             started = False
             try:
                 provider = self._provider(deployment)
-                inner = replace(request, model=deployment.model)
+                inner = replace(request, model=model)
                 if hasattr(provider, "stream"):
                     async for event in provider.stream(inner):
                         started = True
@@ -5588,10 +5628,10 @@ class ConfiguredModelProvider:
 
     async def embed(self, request: EmbeddingRequest) -> EmbeddingResponse:
         last_error: Exception | None = None
-        for deployment in self._targets(request.model):
+        for deployment, model in self._targets(request.model):
             try:
                 return await self._provider(deployment).embed(
-                    replace(request, model=deployment.model)
+                    replace(request, model=model)
                 )
             except Exception as exc:
                 last_error = exc

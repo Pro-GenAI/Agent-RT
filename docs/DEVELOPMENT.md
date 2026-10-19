@@ -38,6 +38,7 @@ The Python Makefile exposes the routine contributor commands:
 make help
 make install
 make test
+make test-browsers
 make test-matrix
 make test-deps-matrix
 make lint
@@ -55,6 +56,7 @@ make check
 | --- | --- |
 | `make install` | Install locked development dependencies (`uv sync --extra dev --locked`). |
 | `make test` | Run the regression suite in parallel. |
+| `make test-browsers` | Run the web UI tests in every browser this OS can run (see below). |
 | `make test-matrix` | Run the suite across all supported Python versions. |
 | `make test-deps-matrix` | Run the suite across supported dependency versions (`openai`, `anthropic`, `httpx`, `websockets`, ... released since mid-2024). |
 | `make lint` / `make format` / `make format-check` | Ruff lint; Black formatting; Black check without changes. |
@@ -91,6 +93,15 @@ DEPS_PYTHON=3.13 ./scripts/test-deps-matrix.sh                    # other interp
 ```
 
 Each profile (`mid-2024`, `late-2024`, `mid-2025`, `late-2025`, `mid-2026`, `latest`) installs the `dev` extra into a disposable virtual environment with that profile's pins applied as `uv pip install --override`, runs the full suite, deletes the environment, and ends with a per-profile PASS/FAIL summary; `uv.lock` and the `make test` environment are untouched. Keep the first profile at the `pyproject.toml` floors and the last at the newest releases, and widen the declared ranges when a new major SDK release passes. `tests/test_sdk_versions.py` drives the installed real SDKs against a loopback wire-format double, so SDK-specific breakage (for example request fields an older SDK rejects, or APIs it lacks) shows up offline. Old `openai` (<1.55.3) and `anthropic` (<0.40) releases need `httpx<0.28`, which their applications already pin.
+
+Run the `agent-rt-web` page in real browsers:
+
+```bash
+make test-browsers
+make test-browsers BROWSER_ARGS="--browsers-dir /path/to/cache"
+```
+
+`scripts/test_browsers.py` drives `tests/test_web_browsers.py` (streaming, Markdown escaping, in-page edit approval, stopping a run, multi-step replies, sessions surviving a reload, two tabs queuing on one session, phone width and light theme) once per browser against a real local server with a fake model, then prints a per-browser PASS/FAIL/SKIP summary. Nothing is installed system-wide: Playwright (pinned by `PLAYWRIGHT_VERSION` in the Makefile, because each release needs its own browser builds) comes from a throwaway `uv --with` environment (`uv.lock` is untouched), and its Chromium, Firefox, and WebKit builds download into `<temp>/agent-rt-browsers` (about 1.3 GB; reused between runs, delete it to reclaim space). Branded Chrome and Edge (and their beta/dev/canary channels) are not tested separately: they are Chromium-based, so Chromium covers them. When WebKit on Debian/Ubuntu lacks system libraries, the script fetches those packages with `apt-get download`, unpacks them with `dpkg-deb -x` into the same temp folder, and copies the libraries into WebKit's bundled `sys/lib` folder, so no `sudo` and no host package changes. Safari itself is reported as skipped: Apple ships no Safari for Linux or current Windows, and on macOS Playwright cannot drive Safari (its `safaridriver` needs `sudo safaridriver --enable`); WebKit, Safari's engine, is tested on every OS instead. The normal `make test` run skips these tests.
 
 The regression suite is pytest-native. Async tests use pytest-asyncio in auto mode with function-scoped test and fixture loops. Vector database integration coverage runs entirely on localhost through `tests/helpers/vector_mock.py` and `tests/test_vector_mock_integration.py`, covering Chroma, Milvus, Pinecone, Qdrant, and Weaviate through core Agent RT plus LangChain and LlamaIndex compatibility paths.
 
@@ -306,6 +317,7 @@ CircleCI configuration lives in `.circleci/config.yml` and intentionally uses th
 The CircleCI workflow runs:
 
 - Python regression tests across Python 3.10-3.14.
+- `make test-browsers`: the `agent-rt-web` page in every browser the macOS runner can run (Playwright Chromium, Firefox, and WebKit, plus any preinstalled Chrome or Edge), with the downloaded browsers cached in `~/agent-rt-browsers`. This is the only CI that runs the browser tests; GitHub cross-platform CI does not.
 - Python built-in static security scanning, deterministic offline adversarial scanning, and the third-party developer security gate.
 - TypeScript regression tests across Node 20, 22, 24, and 26.
 - TypeScript type/lint/dead-code checks plus the deterministic security gate.

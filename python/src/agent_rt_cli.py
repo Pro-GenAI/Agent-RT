@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import base64
+import importlib.metadata
 import json
 import os
 import re
@@ -33,6 +34,7 @@ from agent_rt import (
     load_model,
 )
 from ext.cli_tools import TOOLS, ToolCLIError, translate_tool_cli
+from ext.config import ConfigNotFoundError
 from ext.extensions import SkillPackage, SkillRegistry
 
 DEFAULT_INSTRUCTIONS = (
@@ -1598,6 +1600,7 @@ class TerminalChat:
 
     async def _send(self, text: str) -> None:
         streamed_parts: list[str] = []
+        announced_tools: set[tuple[str | None, str]] = set()
         assistant_started = False
         status = self.console.status("[dim]Waiting for response…[/dim]", spinner="dots")
         status_running = True
@@ -1627,8 +1630,15 @@ class TerminalChat:
                     assistant_started = True
                 streamed_parts.append(event.text)
             elif event.type == "tool_call_delta" and event.tool_name:
+                # Providers repeat the tool name on every argument chunk; announce each call once.
+                key = (event.tool_call_id, event.tool_name)
+                if key in announced_tools:
+                    return
+                announced_tools.add(key)
                 stop_status()
-                self.console.print(f"[dim]tool: {event.tool_name}[/dim]")
+                self.console.print(
+                    f"tool: {event.tool_name}", style="dim", markup=False
+                )
                 resume_status()
 
         try:
@@ -1710,6 +1720,10 @@ def _model_ids_from_payload(payload: Any) -> tuple[str, ...]:
 
 
 async def _provider_model_ids(provider: Any) -> tuple[str, ...]:
+    # A YAML-configured provider already knows its model_list names; no network call needed.
+    configured = getattr(provider, "model_names", None)
+    if isinstance(configured, tuple) and configured:
+        return configured
     client = getattr(provider, "client", None)
     models = getattr(client, "models", None)
     list_models = getattr(models, "list", None)
@@ -1759,6 +1773,40 @@ async def _startup_model(provider: Any, requested_model: str | None) -> str:
         return default_model
     models = await _provider_model_ids(provider)
     return models[0]
+
+
+def build_workspace_session(
+    provider: Any,
+    model: str,
+    workspace: Path,
+    *,
+    approval_callback: Callable[[str, Mapping[str, Any]], Any],
+    skills: SkillRegistry | None = None,
+    **session_options: Any,
+) -> ChatSession:
+    """Create a ChatSession with the workspace and skill tools shared by the terminal and web clients.
+
+    Pass already discovered ``skills`` to skip discovery (the web UI builds one session per request).
+    """
+    workspace_tools = WorkspaceCodeTools(workspace)
+    workspace_tools.approval_callback = approval_callback
+    workspace_registry = workspace_tools.registry()
+    if skills is None:
+        skills, skill_warnings = _discover_cli_skills(workspace)
+        for warning in skill_warnings:
+            print(f"agent-rt: skill warning: {warning}", file=sys.stderr)
+    _register_skill_tools(workspace_registry, skills)
+    return ChatSession(
+        AgentLoop(
+            provider,
+            tool_executor=workspace_registry,
+            tool_registry=workspace_registry,
+        ),
+        model=model,
+        workspace_tools=workspace_tools,
+        skills=skills,
+        **session_options,
+    )
 
 
 async def _stdio_workspace_approval(
@@ -1886,9 +1934,62 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="agent-rt 0.0.1",
+        version=f"agent-rt {_package_version()}",
     )
     return parser
+
+
+STARTER_CONFIG = """\
+# Agent RT starter config. Full reference: https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md
+# Secrets are read with `os.environ/NAME`; set OPENAI_API_KEY (or switch to the Anthropic entry below).
+model_list:
+  - model_name: gpt-5.5
+    agent_rt_params:
+      model: openai/gpt-5.5
+      api_key: os.environ/OPENAI_API_KEY
+  # - model_name: claude-sonnet-5
+  #   agent_rt_params:
+  #     model: anthropic/claude-sonnet-5
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+# agent_rt_settings:
+#   default_model: gpt-5.5   # selected at startup; otherwise the first model above
+"""
+
+
+def load_config_or_offer(explicit: Path | None, prog: str) -> Any:
+    """Load the config; when none exists and a person is at the terminal, offer to create one."""
+    try:
+        return load_config(explicit)
+    except ConfigNotFoundError:
+        if explicit is not None or not (sys.stdin.isatty() and sys.stdout.isatty()):
+            raise
+    choices = (
+        Path.home() / ".agent-rt" / "config.yaml",
+        Path.cwd() / "agent-rt.yaml",
+    )
+    print(
+        f"{prog}: no config file found. Create a starter config?\n"
+        f"  1) {choices[0]}  (home folder: used everywhere)\n"
+        f"  2) {choices[1]}  (current folder only)\n"
+        "  3) cancel"
+    )
+    answer = input("Choose [1]: ").strip() or "1"
+    if answer not in {"1", "2"}:
+        raise ConfigNotFoundError("no config file created")
+    path = choices[int(answer) - 1]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Owner-only, and never overwrite: the file will hold key references (or keys) later.
+    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as file:
+        file.write(STARTER_CONFIG)
+    print(f"{prog}: created {path}; edit it to choose your models and keys.")
+    return load_config(path)
+
+
+def _package_version() -> str:
+    try:
+        return importlib.metadata.version("agent-rt")
+    except importlib.metadata.PackageNotFoundError:  # running from a source checkout
+        return "unknown"
 
 
 async def async_main(argv: Sequence[str] | None = None) -> int:
@@ -1912,7 +2013,11 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     launch_workspace = Path.cwd()
     try:
-        config = invocation.config if invocation else load_config(args.config)
+        config = (
+            invocation.config
+            if invocation
+            else load_config_or_offer(args.config, "agent-rt")
+        )
         configure_runtime(config)
         _CLI_SETTINGS.clear()
         _CLI_SETTINGS.update(config.settings.get("cli") or {})
@@ -1927,20 +2032,11 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         print(f"agent-rt: unable to load models: {exc}", file=sys.stderr)
         return 2
 
-    workspace_tools = WorkspaceCodeTools(launch_workspace)
-    workspace_tools.approval_callback = _stdio_workspace_approval
-    workspace_registry = workspace_tools.registry()
-    skills, skill_warnings = _discover_cli_skills(launch_workspace)
-    for warning in skill_warnings:
-        print(f"agent-rt: skill warning: {warning}", file=sys.stderr)
-    _register_skill_tools(workspace_registry, skills)
-    session = ChatSession(
-        AgentLoop(
-            provider,
-            tool_executor=workspace_registry,
-            tool_registry=workspace_registry,
-        ),
-        model=model,
+    session = build_workspace_session(
+        provider,
+        model,
+        launch_workspace,
+        approval_callback=_stdio_workspace_approval,
         instructions=args.instructions,
         session_id=args.session,
         autosave=not args.no_save,
@@ -1948,8 +2044,6 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
             max_turns=args.max_turns,
             timeout_seconds=args.timeout,
         ),
-        workspace_tools=workspace_tools,
-        skills=skills,
         max_output_tokens=args.max_output_tokens,
     )
     if args.resume:
@@ -2007,6 +2101,8 @@ __all__ = (
     "TranscriptStore",
     "async_main",
     "build_parser",
+    "build_workspace_session",
+    "load_config_or_offer",
     "main",
 )
 

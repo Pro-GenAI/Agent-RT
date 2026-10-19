@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -34,7 +35,9 @@ from agent_rt_cli import (
     _CLI_SETTINGS,
     async_main,
     build_parser,
+    load_config_or_offer,
 )
+from ext.config import ConfigNotFoundError
 
 
 class FakeModels:
@@ -810,6 +813,10 @@ class TestTerminalChat:
         assert await _startup_model(provider, None) == "model-a"
         assert await _startup_model(provider, "explicit") == "explicit"
 
+    async def test_provider_model_ids_use_configured_model_names_without_a_network_call(self):
+        provider = SimpleNamespace(client=None, model_names=("demo", "second"))
+        assert await _provider_model_ids(provider) == ("demo", "second")
+
     async def test_provider_model_ids_rejects_non_http_base_url(self):
         provider = SimpleNamespace(
             client=None,
@@ -938,9 +945,13 @@ class TestTerminalChat:
 
         class FakeSession:
             async def send(self, text, *, stream, on_event):
-                on_event(
-                    ModelStreamEvent(type="tool_call_delta", tool_name="search_files")
-                )
+                # Providers repeat the name on every argument chunk; it prints once.
+                for _ in range(3):
+                    on_event(
+                        ModelStreamEvent(
+                            type="tool_call_delta", tool_name="search_files"
+                        )
+                    )
                 on_event(ModelStreamEvent(type="text_delta", text="done"))
                 return SimpleNamespace(termination_reason="completed")
 
@@ -953,7 +964,8 @@ class TestTerminalChat:
 
         await chat._send("find files")
 
-        tool_index = events.index(("print", "[dim]tool: search_files[/dim]"))
+        assert events.count(("print", "tool: search_files")) == 1
+        tool_index = events.index(("print", "tool: search_files"))
         assert events[tool_index - 1] == "loading:stop"
         assert events[tool_index + 1] == "loading:start"
 
@@ -1116,3 +1128,51 @@ class TestParser:
         assert "--config" in help_text
         assert "PROMPT" in help_text
         assert "positional arguments:" not in help_text
+
+
+class TestStarterConfig:
+    @pytest.fixture
+    def folders(self, tmp_path, monkeypatch):
+        home, work = tmp_path / "home", tmp_path / "work"
+        home.mkdir()
+        work.mkdir()
+        monkeypatch.chdir(work)
+        monkeypatch.setattr(Path, "home", lambda: home)
+        return home, work
+
+    def tty(self, monkeypatch, answer):
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        monkeypatch.setattr("builtins.input", lambda _prompt: answer)
+
+    def test_without_a_terminal_the_missing_config_error_stays(self, folders):
+        with pytest.raises(ConfigNotFoundError):
+            load_config_or_offer(None, "agent-rt")
+
+    @pytest.mark.parametrize(
+        ("answer", "where"),
+        [("", ("home", ".agent-rt/config.yaml")), ("2", ("work", "agent-rt.yaml"))],
+    )
+    def test_creates_an_owner_only_starter_config_where_chosen(
+        self, folders, monkeypatch, answer, where
+    ):
+        self.tty(monkeypatch, answer)
+        config = load_config_or_offer(None, "agent-rt")
+        home, work = folders
+        path = (home if where[0] == "home" else work) / where[1]
+        assert config.model_names == ("gpt-5.5",)
+        assert path.is_file()
+        if os.name == "posix":
+            assert path.stat().st_mode & 0o777 == 0o600
+
+    def test_cancel_creates_nothing(self, folders, monkeypatch):
+        self.tty(monkeypatch, "3")
+        with pytest.raises(ConfigNotFoundError):
+            load_config_or_offer(None, "agent-rt")
+        home, work = folders
+        assert not any(home.rglob("*.yaml")) and not any(work.rglob("*.yaml"))
+
+    def test_explicit_missing_path_is_never_replaced(self, folders, monkeypatch):
+        self.tty(monkeypatch, "1")
+        with pytest.raises(ConfigNotFoundError):
+            load_config_or_offer(Path("missing.yaml"), "agent-rt")

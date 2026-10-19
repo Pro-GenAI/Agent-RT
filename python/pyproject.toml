@@ -51,6 +51,12 @@ cli = [
     "prompt-toolkit>=3.0.47,<4",
     "rich>=13.7,<15",
 ]
+web = [
+    "agent-action-guard[harmactionseval]>=1.2.1,<2",
+    "onnxruntime<1.24; python_version < '3.11'",
+    "starlette>=0.37,<2",
+    "uvicorn>=0.30,<1",
+]
 all = [
     "openai>=1.31,<4",
     "anthropic>=0.29,<2",
@@ -61,6 +67,7 @@ all = [
     "microsandbox>=0.7.4,<0.8; sys_platform != 'darwin' or platform_machine == 'arm64'",
     "swe-rex>=1.4,<2",
     "fastapi>=0.115,<1",
+    "starlette>=0.37,<2",
     "uvicorn[standard]>=0.30,<1",
     "prompt-toolkit>=3.0.47,<4",
     "rich>=13.7,<15",
@@ -76,6 +83,7 @@ dev = [
     "microsandbox>=0.7.4,<0.8; sys_platform != 'darwin' or platform_machine == 'arm64'",
     "swe-rex>=1.4,<2",
     "fastapi>=0.115,<1",
+    "starlette>=0.37,<2",
     "uvicorn[standard]>=0.30,<1",
     "prompt-toolkit>=3.0.47,<4",
     "rich>=13.7,<15",
@@ -108,6 +116,7 @@ dev = [
 
 [project.scripts]
 agent-rt = "agent_rt_cli:main"
+agent-rt-web = "agent_rt_web:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -119,9 +128,12 @@ filterwarnings = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-py-modules = ["agent_rt", "agent_rt_api", "agent_rt_cli"]
+py-modules = ["agent_rt", "agent_rt_api", "agent_rt_cli", "agent_rt_web"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["ext", "ext.*"]
+
+[tool.setuptools.package-data]
+ext = ["web_ui.html"]
 

@@ -235,6 +235,12 @@ class RecordingProvider:
             raise RuntimeError(f"{self.label} down")
         yield SimpleNamespace(type="completed", response=text_response(self.label))
 
+    async def list_models(self):
+        if self.fail:
+            raise RuntimeError(f"{self.label} down")
+        # "claude-sonnet-5" collides with a configured model_name, which must win.
+        return (SimpleNamespace(id=f"{self.label}-extra"), SimpleNamespace(id="claude-sonnet-5"))
+
     async def embed(self, request):
         self.requests.append(request)
         return EmbeddingResponse(data=(EmbeddingItem(index=0, embedding=(0.1, 0.2)),))
@@ -280,6 +286,16 @@ class TestConfiguredModelProvider:
         provider, _ = self.make(anthropic_down=True)
         events = [event async for event in provider.stream(user_request("claude-sonnet-5"))]
         assert events[-1].response.message.content[0].text == "openai"
+
+    async def test_discovered_models_route_to_the_endpoint_that_listed_them(self):
+        provider, providers = self.make(anthropic_down=True)
+        # The down endpoint is skipped, and each endpoint is asked once.
+        assert await provider.discover_models() == ("openai-extra",)
+        assert provider.discovery_errors == ["claude-sonnet-5: RuntimeError: anthropic down"]
+        await provider.complete(user_request("openai-extra"))
+        assert providers["openai"].requests[-1].model == "openai-extra"
+        await provider.complete(user_request("claude-sonnet-5"))
+        assert providers["anthropic"].requests[-1].model == "claude-sonnet-5"
 
     async def test_unknown_model_lists_configured_models(self):
         provider, _ = self.make()
