@@ -17,7 +17,7 @@ from typing import Any
 from ext.compat.base import OpenAI, _rt
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_API_KEY_ENV = "OPENROUTER_API_KEY"
+OPENROUTER_API_KEY_ENV = "OPENROUTER_API_KEY"  # pragma: allowlist secret
 
 
 _CHAT_OPTIONS = frozenset({

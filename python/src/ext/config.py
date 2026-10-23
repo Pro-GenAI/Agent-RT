@@ -62,7 +62,7 @@ _SECTION_ENVIRONMENT = {
     },
     "web_search": {
         "tool": "AGENT_RT_WEB_SEARCH_TOOL",
-        "api_key": "AGENT_RT_WEB_SEARCH_API_KEY",
+        "api_key": "AGENT_RT_WEB_SEARCH_API_KEY",  # pragma: allowlist secret
         "timeout_seconds": "AGENT_RT_WEB_SEARCH_TIMEOUT_SECONDS",
     },
     "decision_model": {
@@ -71,7 +71,7 @@ _SECTION_ENVIRONMENT = {
         "timeout_seconds": "AGENT_RT_JEV_TIMEOUT_SECONDS",
     },
     "observability": {
-        "api_key": "TRACELOOP_API_KEY",
+        "api_key": "TRACELOOP_API_KEY",  # pragma: allowlist secret
         "base_url": "TRACELOOP_BASE_URL",
         "headers": "TRACELOOP_HEADERS",
         "trace_content": "TRACELOOP_TRACE_CONTENT",
