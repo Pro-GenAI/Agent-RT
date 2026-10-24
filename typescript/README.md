@@ -1,8 +1,12 @@
+<img src="https://raw.githubusercontent.com/Pro-GenAI/Agent-RT/main/docs/assets/logo-mark.png" alt="Agent RT robot logo" width="88">
+
 # Agent RT for TypeScript
 
-**A lightweight, provider-neutral runtime for building AI agents with explicit control over tools, safety, state, and orchestration.**
+**Production AI agents without the framework tax.** A lightweight, provider-neutral runtime with explicit control over tools, safety, state, and orchestration.
 
 🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT)
+
+[![66x smaller npm install than LangChain.js](https://raw.githubusercontent.com/Pro-GenAI/Agent-RT/main/docs/website/assets/share/install.png)](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
 
 Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero provider SDKs, then add tools, approvals, memory, sandboxing, retrieval, and multi-agent orchestration as needed.
 
@@ -13,7 +17,7 @@ Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero 
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI, Anthropic, Agent Action Guard, and sandbox integrations are optional peers.
 - **Production-ready.** Checkpoints, events, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
+- **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
 ## Install
 
@@ -24,6 +28,15 @@ npm install agent-rt
 ```
 
 Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-guard` only when you need them. Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
+
+## Migrate in one line
+
+```diff
+- import OpenAI from "openai";
++ import OpenAI from "agent-rt/openai";
+```
+
+Prefix a supported import with `agent-rt/`, for example `import { ChatOpenAI } from "agent-rt/@langchain/openai"`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
 
 ## Quick start
 
@@ -72,10 +85,6 @@ model_list:
 ```
 
 More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/typescript/examples).
-
-## Migrate in one line
-
-Prefix a supported import with `agent-rt/`, for example `import OpenAI from "agent-rt/openai"` or `import { ChatOpenAI } from "agent-rt/@langchain/openai"`. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
 
 ## Learn more
 

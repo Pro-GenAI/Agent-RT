@@ -13,11 +13,15 @@ Keep body and footer text at WCAG AA contrast (4.5:1) against its background; `-
 
 Before a release, check every page at 375px wide for sideways scroll (`document.documentElement.scrollWidth` must equal 375): wrap every docs `<table>` in `<div class="table-wrap">`, and keep decorative glows clipped by `.docs-main`. Run a link/anchor/sitemap check too, and keep `-webkit-` prefixes next to `backdrop-filter` for older Safari.
 
+## Brand assets
+
+`favicon.ico` (16/32/48 px), `apple-touch-icon.png` (180 px), and `assets/logo-mark.png` (the header/footer mark used by `styles.css` and `docs/docs.css`) are the running robot cut out of the original mascot artwork (without the tool tiles; the full artwork is not kept in the repo), with three fading speed lines so the motion still reads at icon sizes. `og-image.png` and the cards in `assets/share/` use the full mascot. `docs/assets/logo-mark.png` is the 512 px transparent master of that running mark (used by the package READMEs and videos). The Python web chat app (`python/src/ext/web_ui.html`) inlines a 48 px favicon and a 64 px brand mark as `data:` PNGs, because its CSP allows only `data:` images. Regenerate all of them together if the mascot changes.
+
 ## Homepage
 
 `robots.txt` allows all crawlers (search and AI) and points to `sitemap.xml`; `llms.txt` is a plain-text site summary for LLM crawlers. Keep both in sync with the docs pages.
 
-`index.html`, `styles.css`, and `script.js` are homepage-only; documentation pages do not load them. The homepage's animated hero canvas, trace console, scroll effects, and pointer effects are on by default, unless the OS `prefers-reduced-motion` setting asks for reduced motion. The header/footer **Motion** toggle (with a hover/focus tooltip) lets visitors override either default, and the choice is stored in `localStorage` (`agent-rt-motion`). Any new animation must be disabled under `:root[data-motion="reduce"]`, and the page must stay fully readable without JavaScript. Benchmark figures and product claims on the homepage must stay aligned with the repository documentation.
+`index.html`, `styles.css`, and `script.js` are homepage-only; documentation pages do not load them. The homepage's animated hero canvas, trace console, scroll effects, and pointer effects are on by default, unless the OS `prefers-reduced-motion` setting asks for reduced motion. The header/footer **Motion** toggle (with a hover/focus tooltip) lets visitors override either default, and the choice is stored in `localStorage` (`agent-rt-motion`). Any new animation must be disabled under `:root[data-motion="reduce"]`, and the page must stay fully readable without JavaScript. Benchmark figures and product claims on the homepage must stay aligned with the repository documentation. The hero stats, migration section, attack scoreboard (from `security_attack_scan`), recipe line counts, `og-image.png`, and the share cards in `assets/share/` repeat those figures, so update them together when a number changes. The migration wall is generated from `scripts/migration_test/migration_results.csv`: run `python3 scripts/render_migration_wall.py` after new field-test results (`--check` reports whether it is stale). The Approve/Deny buttons in the hero trace must keep working with reduced motion, when the trace swaps to the outcome instantly.
 
 ## Documentation site
 

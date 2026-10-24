@@ -23,3 +23,12 @@
 - [Architecture](https://agent-rt-pro.github.io/docs/reference/architecture.html)
 - [Development](https://agent-rt-pro.github.io/docs/reference/development.html)
 - [Privacy & terms](https://agent-rt-pro.github.io/docs/reference/privacy-terms.html)
+
+## Highlights
+
+- Install footprint: 1.24 MiB fresh npm install vs 82.44 MiB for LangChain.js; 46.43 MiB fresh Python install vs 69.87 MiB for LangChain (measured 2026-10-03).
+- Framework overhead: 1.56 ms median warm completion in Python vs 9.03 ms for LangChain, against a deterministic localhost mock (framework overhead only, not model latency).
+- Migration: prepend `agent_rt.` (Python) or `agent-rt/` (TypeScript) to a supported LangChain, LlamaIndex, OpenAI, or Anthropic import. In ongoing field testing, 65+ migrated third-party repositories pass their own test suites before and after migration.
+- Security: an offline adversarial scan puts a deterministic malicious model in the loop (hidden-tool injection, malformed arguments, permission and approval bypass, data exfiltration, token flooding) and runs on every CI build in both runtimes, with no real LLM calls.
+- Decision models (such as Laya and other Jev-compatible models) answer typed choice and score questions to gate tool safety, tool relevance, memory, and retrieval; they feed deterministic runtime policy rather than replacing it.
+- Coding-agent CLI (Python, `agent-rt[cli]`): `agent-rt claude`, `agent-rt codex`, `agent-rt opencode`, and `agent-rt copilot` reuse that tool's flags and API-key configuration on the Agent RT runtime.

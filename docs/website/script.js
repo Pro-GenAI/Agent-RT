@@ -334,6 +334,8 @@
   staggerGroup(".section-heading", 90);
   staggerGroup(".section-heading > div", 90);
   staggerGroup(".quickstart-copy", 80);
+  staggerGroup(".attack-list", 90);
+  staggerGroup(".recipe-grid", 70);
 
   const heroVisual = document.querySelector(".hero-visual");
   heroVisual?.style.setProperty("--reveal-delay", "520ms");
@@ -417,6 +419,38 @@
       ["✓", "ev-done", "termination_reason", "completed", "", "", true],
     ],
   ];
+  const deniedScenario = [
+    ["01", "ev-state", "checkpoint.load", "run_42 · turn_02", "restored", ""],
+    ["02", "ev-policy", "approval.resolve", "send_email", "denied", "warn"],
+    ["03", "ev-tool", "tool_result", "send_email → denied, not run", "0 writes", "ok"],
+    ["04", "ev-model", "text_delta", '"Understood — I won\'t send it."', "8ms", ""],
+    ["05", "ev-state", "checkpoint", "turn_03 committed", "saved", ""],
+    ["✓", "ev-done", "termination_reason", "completed", "", "", true],
+  ];
+  const outcomes = { approve: scenarios[1], deny: deniedScenario };
+  const approvalActions = document.getElementById("approval-actions");
+
+  // Resolves with the visitor's choice; a passive visitor gets "approve" after timeoutMs (0 = wait forever).
+  const askApproval = (timeoutMs) => new Promise((resolve) => {
+    if (!approvalActions) {
+      resolve("approve");
+      return;
+    }
+    let timer = 0;
+    const onClick = (event) => {
+      const choice = event.target.closest("[data-approval]")?.dataset.approval;
+      if (choice) finish(choice);
+    };
+    const finish = (choice) => {
+      window.clearTimeout(timer);
+      approvalActions.removeEventListener("click", onClick);
+      approvalActions.hidden = true;
+      resolve(choice);
+    };
+    approvalActions.hidden = false;
+    approvalActions.addEventListener("click", onClick);
+    if (timeoutMs) timer = window.setTimeout(() => finish("approve"), timeoutMs);
+  });
 
   const buildLine = ([n, evClass, event, message, meta, metaClass, end]) => {
     const li = document.createElement("li");
@@ -448,42 +482,62 @@
     caret.remove();
   };
 
+  let tokens = 0;
+  const playScenario = async (rows, spanOffset) => {
+    const lines = rows.map(buildLine);
+    traceList.replaceChildren(...lines);
+    if (meterTurns) meterTurns.style.width = spanOffset === 0 ? "12%" : "50%";
+    await wait(500);
+
+    for (let index = 0; index < lines.length; index += 1) {
+      await waitUntilVisible();
+      const line = lines[index];
+      lines.forEach((item) => item.classList.remove("fresh"));
+      line.classList.add("on", "fresh");
+      await typeInto(line.querySelector(".tl-msg"), line.dataset.msg);
+
+      tokens += 90 + Math.round(Math.random() * 160);
+      if (statTokens) statTokens.textContent = tokens.toLocaleString("en-US");
+      if (statSpans) statSpans.textContent = String(index + 1 + spanOffset);
+      if (meterTurns) meterTurns.style.width = `${clamp((spanOffset + index + 2) / 14, 0, 1) * 100}%`;
+      await wait(380 + Math.random() * 260);
+    }
+    lines.forEach((item) => item.classList.remove("fresh"));
+    return lines;
+  };
+
+  const clearLines = async (lines) => {
+    await waitUntilVisible();
+    lines.forEach((item) => item.classList.remove("on"));
+    await wait(500);
+  };
+
   const runConsole = async () => {
     if (!consoleNode || !traceList) return;
     consoleNode.classList.add("is-animating");
-    let scenarioIndex = 0;
-    let tokens = 0;
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const lines = scenarios[scenarioIndex].map(buildLine);
-      traceList.replaceChildren(...lines);
-      if (meterTurns) meterTurns.style.width = scenarioIndex === 0 ? "12%" : "50%";
-      await wait(500);
-
-      for (let index = 0; index < lines.length; index += 1) {
-        await waitUntilVisible();
-        const line = lines[index];
-        lines.forEach((item) => item.classList.remove("fresh"));
-        line.classList.add("on", "fresh");
-        await typeInto(line.querySelector(".tl-msg"), line.dataset.msg);
-
-        tokens += 90 + Math.round(Math.random() * 160);
-        if (statTokens) statTokens.textContent = tokens.toLocaleString("en-US");
-        if (statSpans) statSpans.textContent = String(index + 1 + scenarioIndex * 6);
-        if (meterTurns) meterTurns.style.width = `${clamp((scenarioIndex * 6 + index + 2) / 14, 0, 1) * 100}%`;
-        await wait(380 + Math.random() * 260);
-      }
-
-      lines.forEach((item) => item.classList.remove("fresh"));
+      tokens = 0;
+      const request = await playScenario(scenarios[0], 0);
+      const choice = await askApproval(9000);
+      await clearLines(request);
+      const outcome = await playScenario(outcomes[choice], 6);
       await wait(3400);
-      await waitUntilVisible();
-      lines.forEach((item) => item.classList.remove("on"));
-      await wait(500);
-      scenarioIndex = (scenarioIndex + 1) % scenarios.length;
-      if (scenarioIndex === 0) tokens = 0;
+      await clearLines(outcome);
     }
   };
+
+  if (consoleNode && reducedMotion && traceList) {
+    // No typing animation: show the static trace and swap in the outcome instantly.
+    askApproval(0).then((choice) => {
+      traceList.replaceChildren(...outcomes[choice].map((row) => {
+        const line = buildLine(row);
+        line.querySelector(".tl-msg").textContent = line.dataset.msg;
+        return line;
+      }));
+    });
+  }
 
   if (consoleNode && !reducedMotion) {
     if (hasIO) {

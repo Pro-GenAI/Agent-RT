@@ -1,8 +1,14 @@
+<img src="https://raw.githubusercontent.com/Pro-GenAI/Agent-RT/main/docs/assets/logo-mark.png" alt="Agent RT robot logo" width="88">
+
 # Agent RT for Python
 
-**A lightweight, provider-neutral runtime for building AI agents with explicit control over tools, safety, state, and orchestration.**
+**Production AI agents without the framework tax.** A lightweight, provider-neutral runtime with explicit control over tools, safety, state, and orchestration.
 
 🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT)
+
+[![5.8x less framework overhead than LangChain](https://raw.githubusercontent.com/Pro-GenAI/Agent-RT/main/docs/website/assets/share/overhead.png)](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
+
+The `agent-rt` CLI also sends **8–37× fewer input tokens per prompt** than Codex, Claude Code, opencode, and Copilot CLI, with 5–14× less memory. All numbers come from deterministic localhost mocks and measure runtime overhead, not model latency or task quality ([method and data](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)).
 
 Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, sandboxing, retrieval, and multi-agent orchestration without replacing your runtime. `asyncio`-native, with an optional API server and terminal CLI.
 
@@ -13,7 +19,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI support is included; Anthropic, guardrails, API serving, CLI, and sandboxes are opt-in extras.
 - **Production-ready.** Checkpoints, event streams, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LiteLLM, LangChain, Deep Agents, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 69 third-party repositories pass before and after migration.
+- **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LiteLLM, LangChain, Deep Agents, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
 ## Install
 
@@ -27,6 +33,24 @@ pip install 'agent-rt[all]'   # or pick extras: anthropic, observability, api, c
 Works with the `openai` (1.31+, including 2.x and 3.x) and `anthropic` (0.29+, including 1.x) SDK versions your project already pins — any release since mid-2024.
 
 OpenLLMetry/Traceloop export is optional. Install `agent-rt[observability]` only when TRACELOOP-based telemetry is needed; the core runtime does not require it.
+
+**Try it in 10 seconds** with the API key you already use for Claude Code, Codex, opencode, or Copilot CLI (no config file needed):
+
+```bash
+pip install 'agent-rt[cli,anthropic]'
+agent-rt claude -p "explain this stack trace"   # or: agent-rt codex exec "..." · agent-rt opencode run "..." · agent-rt copilot -p "..."
+```
+
+Only API-key setups are reused; subscription sign-ins stay with the official clients ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#reuse-another-agent-cli)).
+
+## Migrate in one line
+
+```diff
+- from openai import OpenAI
++ from agent_rt.openai import OpenAI
+```
+
+Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_openai import ChatOpenAI`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
 
 ## Quick start
 
@@ -83,10 +107,6 @@ asyncio.run(main())
 ```
 
 More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/python/examples).
-
-## Migrate in one line
-
-Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_openai import ChatOpenAI` or `from agent_rt.openai import OpenAI`. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
 
 ## Also included
 

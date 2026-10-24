@@ -1,6 +1,6 @@
 ![Agent RT — AI agent runtime](./docs/assets/banner.jpg)
 
-**A fast, lightweight runtime for building production AI agents in Python and TypeScript.** ⚡
+**Production AI agents without the framework tax: in Python and TypeScript.** ⚡
 
 Agent RT gives agents a clear execution boundary for **tools, streaming, structured output, permissions, approvals, memory, checkpoints, sandboxing, observability, and deployment**—without requiring a heavyweight orchestration stack.
 
@@ -17,6 +17,22 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 <!-- [![PyPI Downloads](https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=Downloads)](https://pepy.tech/projects/agent-rt) -->
 <!-- [![PyPI Downloads](https://img.shields.io/pepy/dt/agent-rt?style=for-the-badge&label=Downloads)](https://pepy.tech/projects/agent-rt) -->
 
+## 📈 By the Numbers
+
+- 🪙 **8–37× fewer input tokens** per prompt than Codex, Claude Code, opencode, and Copilot CLI
+- 🧠 **5–14× less memory** per CLI process than the same agent CLIs
+- 📦 **66× smaller npm install** than LangChain.js (1.24 MiB vs 82.44 MiB)
+- ⚡ **5.8× less framework overhead** than LangChain in Python (1.56 ms vs 9.03 ms warm)
+- 🔄 **65+ third-party repositories** pass their tests before and after migration
+
+![Agent CLI input tokens per prompt](comparison/assets/cli-harness-tokens.svg)
+
+<sub>Measured against deterministic localhost mock models, so the numbers show runtime and harness overhead, not model latency or task quality. Part of the CLI token gap comes from Agent RT's smaller built-in tool set. Method and raw data: [`comparison/`](comparison/README.md).</sub>
+
+![Agent RT CLI demo: Agent Action Guard blocks an injected curl | sh tool call, then a README edit waits for user approval](docs/assets/agent-rt-demo.gif)
+
+<sub>A real `agent-rt` CLI session driven by a scripted offline mock model.</sub>
+
 ## 🚀 Quick Start
 
 **Python**
@@ -31,14 +47,39 @@ pip install agent-rt
 npm install agent-rt
 ```
 
+**⏱️ Try it in 10 seconds** with the API key you already use for Claude Code, Codex, opencode, or Copilot CLI (no config file needed):
+
+```bash
+pip install 'agent-rt[cli,anthropic]'
+agent-rt claude -p "explain this stack trace"   # or: agent-rt codex exec "..." · agent-rt opencode run "..." · agent-rt copilot -p "..."
+```
+
+Only API-key setups are reused; subscription sign-ins stay with the official clients ([details](docs/website/docs/guides/runtime-guide.html#reuse-another-agent-cli)).
+
 ➡️ [Installation](docs/website/docs/getting-started/installation.html) · [Quickstart](docs/website/docs/getting-started/quickstart.html)
+
+## 🔄 Migrate by Changing One Import
+
+```diff
+- from openai import OpenAI
++ from agent_rt.openai import OpenAI
+```
+
+```diff
+- import OpenAI from "openai";
++ import OpenAI from "agent-rt/openai";
+```
+
+The same prefix works for supported subsets of Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents (plus LiteLLM, AutoGen, and CrewAI in Python). See the [migration guide](docs/website/docs/guides/migration.html).
+
+![65+ third-party repositories pass their tests after migrating to Agent RT](docs/website/assets/share/migration.png)
 
 ## ✨ Why Agent RT?
 
 - 🪶 **Lightweight and measurable** — start with the runtime core and add integrations only when needed; reproducible cross-framework benchmarks live in [`comparison/`](comparison/README.md).
 - 🛡️ **Controlled** — permissions, composable action blockers, approvals, deterministic PII morphing, limits, guardrails, and sandbox boundaries are runtime concepts, not add-ons.
 - 🔌 **Provider-neutral, two languages** — OpenAI, Anthropic, compatible endpoints, or custom providers, with aligned contracts in <img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Python and <img src="docs/website/assets/typescript.svg" alt="TypeScript" width="18" height="18"> TypeScript.
-- 🔄 **Migration-tested** — ongoing compatibility field testing has 69 third-party repositories passing their test suites both before and after migration to Agent RT.
+- 🔄 **Migration-tested** — ongoing compatibility field testing has 65+ third-party repositories passing their test suites both before and after migration to Agent RT.
 
 **Decision models** (such as Laya and other Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text. `Toolbase` can combine local, deferred, and MCP tools, remove unsafe definitions with a Decision model, pass only the relevant subset to each turn, and keep `tool_search` available for safe fallback discovery; the same Decision layer also gates memory, reranks retrieval results with optional top-k selection, and classifies failures.
 
@@ -58,8 +99,8 @@ npm install agent-rt
 | **📦 Sandboxing** | ✅ Fail-closed backend selection | ◐ | ◐ |
 | **♻️ Budget-preserving checkpoints** | ✅ Resume with prior turn/tool/token budgets | ◐ | ◐ |
 | **💾 Memory & checkpoints** | ✅ Built-in | ✅ | ✅ |
-| **🗃️ Switch vector DBs** | ✅ Simple env/registry switch | ◐ Integration-dependent | ◐ Integration-dependent |
-| **Post-retrieval reranking** | Built-in provider-neutral hook + optional top-k | Available | Available |
+| **🗃️ Switch vector DBs** | ✅ One `agent-rt.yaml` registry switch | ◐ Integration-dependent | ◐ Integration-dependent |
+| **🔁 Post-retrieval reranking** | ✅ Built-in provider-neutral hook + optional top-k | ◐ Available | ◐ Available |
 | **🔌 Provider-neutral** | ✅ | ✅ | ✅ |
 | **🪶 Lightweight runtime focus** | ✅ | ◐ | ◐ |
 | **<img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Fresh install footprint** | **46.43 MiB** | 69.87 MiB | 219.91 MiB |
