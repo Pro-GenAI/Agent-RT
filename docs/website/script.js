@@ -23,7 +23,7 @@
   const toast = document.getElementById("copy-toast");
 
   /* ---------------------------------------------------------------
-     Motion toggle: animations are on by default; the visitor's
+     Motion toggle: animations follow the OS reduced-motion setting; the visitor's
      choice is remembered for this browser only.
      --------------------------------------------------------------- */
   document.querySelectorAll("[data-motion-toggle]").forEach((button) => {

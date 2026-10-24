@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Agent RT Development &amp; Contributor Guide — Reference</title>
   <meta name="description" content="Set up Agent RT development for Python and TypeScript, run tests and builds, understand cross-platform CI, and follow documentation and security requirements.">
   <meta name="author" content="Pro-GenAI">
@@ -27,8 +28,8 @@
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
   <script>document.documentElement.classList.add("js")</script>
   <link rel="stylesheet" href="../../docs/docs.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <link rel="stylesheet" href="../../docs/vendor/github-dark-dimmed.min.css">
+  <script src="../../docs/vendor/highlight.min.js" defer></script>
   <script src="../../docs/docs.js" defer></script>
 </head>
 <body>
@@ -38,9 +39,9 @@
   <span class="docs-label">Documentation</span>
   <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
 </div></header>
-<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html" aria-current="page">Development</a></div></details></div>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html" aria-current="page">Development</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a></div></details></div>
 <div class="docs-shell">
-<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html" aria-current="page">Development</a></div></aside>
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/development.html" aria-current="page">Development</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a></div></aside>
 <main class="docs-main" id="main"><article class="content">
 <div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Reference<span>/</span>Development</div><section class="section-intro"><span class="eyebrow">Reference</span><h1 class="doc-title">Development</h1><p class="doc-lede">Agent RT keeps the Python and TypeScript runtimes aligned and verifies them across supported runtime versions and operating systems. Use the repository guide as the source of truth for contributor commands.</p></section>
 <h2>Python workflow</h2><pre><code class="language-bash">cd python
@@ -53,7 +54,7 @@ npm test</code></pre>
 <h2>Cross-platform expectations</h2><p>CI covers both runtime implementations on Linux, macOS, and Windows. Security and adversarial runtime scans are deterministic and must not depend on live model APIs.</p>
 <h2>Documentation expectations</h2><p>Durable architecture and design concepts live under the repository <code>docs/</code> directory. User-facing capabilities, requirements, packaging, and current workflows stay aligned with the root and package READMEs. The static website under <code>docs/website/</code> remains dependency-free and has no build step.</p>
 <div class="note"><strong>Contributor source guide</strong>See the repository's <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/DEVELOPMENT.md">development guide ↗</a> for the current test matrix and all supported commands.</div>
-<div class="page-nav"><a class="next-link" href="./architecture.html"><small>Previous</small><strong>← Architecture</strong></a><a class="next-link" href="../"><small>Next</small><strong>Documentation overview →</strong></a></div></article>
-<footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer></main>
+<div class="page-nav"><a class="next-link" href="./architecture.html"><small>Previous</small><strong>← Architecture</strong></a><a class="next-link" href="./privacy-terms.html"><small>Next</small><strong>Privacy &amp; terms →</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
 </div>
 </body></html>

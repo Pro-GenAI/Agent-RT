@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Agent RT Documentation — Python &amp; TypeScript AI Agent Runtime</title>
   <meta name="description" content="Learn Agent RT for Python and TypeScript: installation, quickstarts, tools, memory, migration, production patterns, architecture, and development.">
@@ -29,8 +30,8 @@
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <script>document.documentElement.classList.add("js")</script>
   <link rel="stylesheet" href="./docs.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/github-dark-dimmed.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js" defer></script>
+  <link rel="stylesheet" href="./vendor/github-dark-dimmed.min.css">
+  <script src="./vendor/highlight.min.js" defer></script>
   <script src="./docs.js" defer></script>
 </head>
 <body>
@@ -58,7 +59,7 @@
         <a href="./reference/features-defaults.html">Features &amp; defaults</a>
         <a href="./reference/comparison.html">Comparison</a>
         <a href="./reference/architecture.html">Architecture</a>
-        <a href="./reference/development.html">Development</a>
+        <a href="./reference/development.html">Development</a><a href="./reference/privacy-terms.html">Privacy &amp; terms</a>
       </div>
     </details>
   </div>
@@ -69,7 +70,7 @@
       <div class="nav-group"><h2>Getting started</h2><a href="./getting-started/installation.html">Installation</a><a href="./getting-started/quickstart.html">Quickstart</a></div>
       <div class="nav-group"><h2>Core concepts</h2><a href="./concepts/runtime.html">Runtime model</a><a href="./concepts/tools-policy.html">Tools &amp; policy</a><a href="./concepts/state-memory.html">State &amp; memory</a></div>
       <div class="nav-group"><h2>Guides</h2><a href="./guides/migration.html">Migration</a><a href="./guides/production.html">Production patterns</a><a href="./guides/vector-databases.html">Vector databases</a><a href="./guides/runtime-guide.html">Runtime guide</a></div>
-      <div class="nav-group"><h2>Reference</h2><a href="./reference/features-defaults.html">Features & defaults</a><a href="./reference/comparison.html">Comparison</a><a href="./reference/architecture.html">Architecture</a><a href="./reference/development.html">Development</a></div>
+      <div class="nav-group"><h2>Reference</h2><a href="./reference/features-defaults.html">Features & defaults</a><a href="./reference/comparison.html">Comparison</a><a href="./reference/architecture.html">Architecture</a><a href="./reference/development.html">Development</a><a href="./reference/privacy-terms.html">Privacy &amp; terms</a></div>
     </aside>
 
     <main class="docs-main" id="main">
@@ -124,7 +125,7 @@
           </div>
         </section>
       </article>
-      <footer class="docs-footer">Agent RT documentation · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a></footer>
+      <footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="./reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer>
     </main>
   </div>
 </body>

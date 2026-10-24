@@ -318,7 +318,7 @@ The CircleCI workflow runs:
 
 - Python regression tests across Python 3.10-3.14.
 - `make test-browsers`: the `agent-rt-web` page in every browser the macOS runner can run (Playwright Chromium, Firefox, and WebKit, plus any preinstalled Chrome or Edge), with the downloaded browsers cached in `~/agent-rt-browsers`. This is the only CI that runs the browser tests; GitHub cross-platform CI does not.
-- Python built-in static security scanning, deterministic offline adversarial scanning, and the third-party developer security gate.
+- Python built-in static security scanning, deterministic offline adversarial scanning, the website CSP check (`scripts/check_website_csp.py`) and its regression tests (`scripts/test_check_website_csp.py`), and the third-party developer security gate.
 - TypeScript regression tests across Node 20, 22, 24, and 26.
 - TypeScript type/lint/dead-code checks plus the deterministic security gate.
 

@@ -29,7 +29,7 @@
   --line-strong: rgba(255, 255, 255, 0.16);
   --text: #f5f6f8;
   --muted: #9aa1ad;
-  --muted-2: #656d7a;
+  --muted-2: #838b99;
   --acid: #c8ff4d;
   --mint: #5ef1c4;
   --cyan: #5ee0f1;
@@ -2257,6 +2257,8 @@ main, .site-footer { position: relative; z-index: 1; }
   padding-bottom: 30px;
   border-bottom: 1px solid var(--line);
 }
+.footer-legal { max-width: 78ch; margin: 22px auto 0; padding: 0 24px; color: var(--muted-2); font-size: 12.5px; line-height: 1.6; text-align: center; }
+.footer-legal a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .footer-brand { display: flex; align-items: center; gap: 14px; }
 .footer-brand strong { display: block; font-size: 15px; }
 .footer-brand > div > span { display: block; color: var(--muted-2); font-size: 13px; }

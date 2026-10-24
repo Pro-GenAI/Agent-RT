@@ -157,6 +157,12 @@ jobs:
             cd python
             uv run --python 3.13 --extra dev python scripts/security_attack_scan.py
       - run:
+          name: Check website CSP hashes and third-party assets
+          command: |
+            set -euo pipefail
+            python3 -m unittest discover -s scripts -p 'test_check_website_csp.py'
+            python3 scripts/check_website_csp.py
+      - run:
           name: Run third-party developer security gate
           command: |
             set -euo pipefail

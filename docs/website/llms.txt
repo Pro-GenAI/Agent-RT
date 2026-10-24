@@ -22,3 +22,4 @@
 - [Comparison](https://agent-rt-pro.github.io/docs/reference/comparison.html)
 - [Architecture](https://agent-rt-pro.github.io/docs/reference/architecture.html)
 - [Development](https://agent-rt-pro.github.io/docs/reference/development.html)
+- [Privacy & terms](https://agent-rt-pro.github.io/docs/reference/privacy-terms.html)
