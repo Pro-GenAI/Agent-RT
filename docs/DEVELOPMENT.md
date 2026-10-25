@@ -66,6 +66,8 @@ make check
 | `make security-attacks` | Offline adversarial runtime scan. |
 | `make security` | Both gates plus the third-party developer security scan; runs all checks and prints a final PASS/FAIL summary (failures appear in red on color terminals). |
 | `make check` | `quality` + `test` + `security`. |
+| `make verify` | Runs outside conda (its variables and PATH entries are dropped). `install`, `test`, `test-matrix`, `test-deps-matrix`, `security` (plus `test-browsers` in `python/`), stopping at the first failure. |
+| `make verify` (repository root) | Runs `make python-verify` then `make ts-verify` (each runs `make verify` in its folder), stopping at the first failure. |
 
 To run a single test file or test: `uv run --extra dev pytest tests/test_agent_loop.py -k name`.
 

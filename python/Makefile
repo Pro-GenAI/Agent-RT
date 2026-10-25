@@ -3,7 +3,7 @@
 UV ?= uv
 RUN := $(UV) run --extra dev
 
-.PHONY: help install install-dev test test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check require-bash
+.PHONY: help install install-dev test test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check verify require-bash
 
 # GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
 require-bash:
@@ -31,6 +31,7 @@ help:
 		'  make security-attacks  Run offline adversarial runtime attacks' \
 		'  make security          Run the full security/vulnerability gate' \
 		'  make vuln              Alias for make security' \
+		'  make verify            Run install + test + test-matrix + test-deps-matrix + test-browsers + security, stopping at the first failure' \
 		'  make check             Run quality + tests + full security gate'
 
 install:
@@ -83,3 +84,20 @@ security: require-bash
 vuln: security
 
 check: quality test security
+
+# `make verify` runs without conda: a child process cannot deactivate the caller's shell,
+# so drop conda's variables and its PATH entries (base and every env) for these steps.
+ifneq ($(CONDA_EXE),)
+CONDA_ROOT := $(patsubst %/,%,$(dir $(patsubst %/,%,$(dir $(CONDA_EXE)))))
+verify: export PATH := $(shell printf '%s' "$$PATH" | tr ':' '\n' | grep -v '^$(CONDA_ROOT)/' | paste -sd: -)
+NO_CONDA := env -u CONDA_EXE -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u CONDA_SHLVL -u CONDA_PYTHON_EXE -u CONDA_PROMPT_MODIFIER -u _CE_CONDA -u _CE_M
+endif
+
+# Sequential recipe lines: make stops at the first failing step.
+verify:
+	@$(NO_CONDA) $(MAKE) install
+	@$(NO_CONDA) $(MAKE) test
+	@$(NO_CONDA) $(MAKE) test-matrix
+	@$(NO_CONDA) $(MAKE) test-deps-matrix
+	@$(NO_CONDA) $(MAKE) test-browsers
+	@$(NO_CONDA) $(MAKE) security
