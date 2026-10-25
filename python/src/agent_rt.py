@@ -3992,7 +3992,8 @@ class _OpenAIRateLimitGate:
         if remaining <= 0:
             self._blocked_until.pop(model, None)
             return 0.0
-        return remaining
+        # Float subtraction on a large monotonic clock can overshoot the cap.
+        return min(remaining, MAX_RATE_LIMIT_BLOCK_SECONDS)
 
     def check(self, model: str) -> None:
         remaining = self.retry_after_seconds(model)
