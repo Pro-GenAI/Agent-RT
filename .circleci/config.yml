@@ -7,12 +7,24 @@ parameters:
   run_deps_matrix:
     type: boolean
     default: false
+  run_pi_ci:
+    type: boolean
+    default: false
 
 executors:
   apple_silicon:
     macos:
       xcode: "27.0.0"
     resource_class: m4pro.medium
+  # Native Linux arm64 (the Raspberry Pi 3/4/5 ISA). macOS executors have no Docker, so the
+  # Pi-limited jobs run here; arm.large has 4 vCPU / 16 GB and the container is capped below it.
+  raspberry_pi:
+    machine:
+      image: ubuntu-2404:current
+    resource_class: arm.large
+    environment:
+      # Pi 4/5 class: 4 cores, 4 GB RAM, no swap beyond RAM.
+      PI_DOCKER_LIMITS: --platform linux/arm64 --cpus=4 --memory=4g --memory-swap=4g
 
 commands:
   verify_apple_silicon:
@@ -287,7 +299,53 @@ jobs:
             - ~/.npm
             - ~/.nvm/.cache
 
+  python_raspberry_pi:
+    executor: raspberry_pi
+    steps:
+      - checkout
+      - run:
+          name: Run Python tests and security gates in a Raspberry Pi-limited arm64 container (4 CPUs, 4 GB)
+          command: |
+            set -euo pipefail
+            docker run --rm $PI_DOCKER_LIMITS --entrypoint bash \
+              -v "$PWD":/work -w /work/python \
+              -e UV_PROJECT_ENVIRONMENT=/tmp/venv -e UV_LINK_MODE=copy \
+              ghcr.io/astral-sh/uv:python3.12-bookworm -euo pipefail -c '
+                test "$(uname -m)" = aarch64
+                test "$(cat /sys/fs/cgroup/memory.max)" = 4294967296
+                uv run --locked --python 3.12 --extra dev \
+                  pytest -q -n 4 --dist worksteal -p no:cacheprovider
+                uv run --locked --python 3.12 --extra dev \
+                  python scripts/security_scan.py --fail-on medium
+                uv run --locked --python 3.12 --extra dev \
+                  python scripts/security_attack_scan.py
+              '
+
+  typescript_raspberry_pi:
+    executor: raspberry_pi
+    steps:
+      - checkout
+      - run:
+          name: Run TypeScript tests and security gate in a Raspberry Pi-limited arm64 container (4 CPUs, 4 GB)
+          command: |
+            set -euo pipefail
+            docker run --rm $PI_DOCKER_LIMITS \
+              -v "$PWD":/work -w /work/typescript \
+              node:22-bookworm bash -euo pipefail -c '
+                test "$(uname -m)" = aarch64
+                test "$(cat /sys/fs/cgroup/memory.max)" = 4294967296
+                npm ci --omit=optional --ignore-scripts
+                npm test
+                npm run security:gate
+              '
+
 workflows:
+  raspberry_pi_ci:
+    when: << pipeline.parameters.run_pi_ci >>
+    jobs:
+      - python_raspberry_pi
+      - typescript_raspberry_pi
+
   apple_silicon_ci:
     when: << pipeline.parameters.run_mac_ci >>
     jobs:
