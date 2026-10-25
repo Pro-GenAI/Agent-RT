@@ -16963,9 +16963,8 @@ export class AgentLoop {
 				);
 			}
 
-			const iterator = this.provider
-				.stream(request)
-				[Symbol.asyncIterator]();
+			const stream = this.provider.stream(request);
+			const iterator = stream[Symbol.asyncIterator]();
 			let completed: ModelResponse | undefined;
 			while (true) {
 				const next = await withDeadline(iterator.next());
