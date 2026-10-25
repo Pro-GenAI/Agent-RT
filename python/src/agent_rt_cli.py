@@ -1871,7 +1871,8 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Reuse another agent CLI's commands, models and API-key credentials: "
             "agent-rt claude -p PROMPT | agent-rt codex exec PROMPT | "
-            "agent-rt opencode run PROMPT | agent-rt copilot -p PROMPT"
+            "agent-rt opencode run PROMPT | agent-rt copilot -p PROMPT. "
+            "Move a project's framework imports to Agent RT, verified by its tests: agent-rt migrate [PATH]"
         ),
     )
     parser.add_argument(
@@ -2088,6 +2089,11 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["migrate"]:
+        from ext.migrate import main as migrate_main
+
+        return migrate_main(argv[1:])
     try:
         return asyncio.run(async_main(argv))
     except KeyboardInterrupt:

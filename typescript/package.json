@@ -4,6 +4,9 @@
 	"description": "Lightweight utilities for building AI agent harnesses",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"bin": {
+		"agent-rt": "dist/ext/migrate.js"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -182,7 +185,7 @@
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"test": "npm run build && npm run test:run",
-		"test:run": "node --test tests/test.js tests/config.test.js tests/bedrock-config.test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/deepagents_openrouter.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js",
+		"test:run": "node --test tests/test.js tests/config.test.js tests/bedrock-config.test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/deepagents_openrouter.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js tests/migrate.test.js",
 		"evaluate": "node scripts/evaluate-harness.js --scope all",
 		"evaluate:evals": "node scripts/evaluate-harness.js --scope evals",
 		"evaluate:tests": "node scripts/evaluate-harness.js --scope tests",

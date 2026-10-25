@@ -1013,6 +1013,7 @@ main, .site-footer { position: relative; z-index: 1; }
   color: var(--muted-2);
 }
 .facts-strip strong { display: block; margin-top: 6px; font-size: 16px; font-weight: 600; }
+.facts-strip div:nth-child(5) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
 
 .scroll-cue {
   position: absolute;
@@ -2819,3 +2820,9 @@ main, .site-footer { position: relative; z-index: 1; }
   :root:not(.js) .split .char { transform: none; opacity: 1; }
   :root:not(.js) .cursor-glow { display: none; }
 }
+
+.platform-badges { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 0; padding: 0; list-style: none; }
+.platform-badges li { padding: 12px 22px; border-radius: 4px; background: var(--c); color: var(--t, #fff); font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.platform-badges li { display: inline-flex; align-items: center; gap: 10px; }
+.platform-badges img { filter: invert(1); }
+.platform-badges li:first-child img { filter: none; }

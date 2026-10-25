@@ -21,7 +21,7 @@ Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero 
 
 ## Install
 
-Node 20, 22, 24, or 26.
+Node 20, 22, 24, or 26. Runs on Linux, Windows, macOS (Intel and Apple M-series), and Raspberry Pi.
 
 ```bash
 npm install agent-rt
@@ -37,6 +37,14 @@ Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-
 ```
 
 Prefix a supported import with `agent-rt/`, for example `import { ChatOpenAI } from "agent-rt/@langchain/openai"`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
+
+Or let Agent RT rewrite every supported import for you (after `npm install agent-rt`):
+
+```bash
+npx agent-rt migrate
+```
+
+It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall. Per-test comparison needs Vitest or Jest.
 
 ## Quick start
 

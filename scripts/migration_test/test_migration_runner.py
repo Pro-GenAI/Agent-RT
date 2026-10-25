@@ -177,5 +177,73 @@ class MockServerTests(unittest.TestCase):
             self.assertEqual(usage["output_tokens_details"], {"reasoning_tokens": 0})
 
 
+
+class FailingBaselineComparisonTests(TempRepoCase):
+    """ARieS719/agentic-qa-engine: a failing baseline was skipped instead of migrated and compared."""
+
+    def result(self, exit_code: int) -> mt.CommandResult:
+        return mt.CommandResult(["pytest"], exit_code, 1.0, "output")
+
+    def junit(self, failures: dict[str, int]) -> None:
+        cases = "".join(
+            f'<testcase classname="tests.test_x" name="{name}"><failure message="boom">'
+            f"tests/test_x.py:{line}: AssertionError</failure></testcase>"
+            for name, line in failures.items()
+        )
+        write(self.repo, "test-report.xml", f'<testsuite><testcase classname="tests.test_x" name="ok"/>{cases}</testsuite>')
+
+    def run_with(self, failures: dict[str, int], exit_code: int = 1):
+        def run(command: list[str]) -> mt.CommandResult:
+            self.assertIn(f"--junitxml={self.repo / 'test-report.xml'}", command)
+            self.junit(failures)
+            return self.result(exit_code)
+
+        return run
+
+    def test_same_failure_at_same_line_is_matched(self) -> None:
+        compared = mt.failing_baseline(self.run_with({"broken": 9}), ["pytest"], "Python", self.repo, self.repo)
+        self.assertIsNotNone(compared)
+        command, report, baseline = compared
+        result, suite = mt.run_reported(self.run_with({"broken": 9}), command, report, "Python", self.repo)
+        payload = mt.compared_after_payload(result, baseline, suite)
+        self.assertEqual(payload["status"], "matched_failures")
+        self.assertEqual(mt.result_status(json.dumps(payload)), "MATCHED_FAILURES")
+        self.assertEqual(payload["baseline_failures"], {"tests.test_x::broken": "tests/test_x.py:9"})
+
+    def test_moved_or_new_failure_fails_and_a_pass_passes(self) -> None:
+        _, report, baseline = mt.failing_baseline(self.run_with({"broken": 9}), ["pytest"], "Python", self.repo, self.repo)
+        for failures, status in (({"broken": 12}, "fail"), ({"broken": 9, "other": 3}, "fail"), ({}, "pass")):
+            result, suite = mt.run_reported(
+                self.run_with(failures, 1 if failures else 0), ["pytest", f"--junitxml={report}"], report, "Python", self.repo
+            )
+            self.assertEqual(mt.compared_after_payload(result, baseline, suite)["status"], status, failures)
+
+    def test_runner_without_report_still_skips(self) -> None:
+        write(self.repo, "package.json", json.dumps({"scripts": {"test": "mocha"}}))
+        self.assertIsNone(mt.failing_baseline(self.run_with({}), ["npm", "test", "--"], "TS/JS", self.repo, self.repo))
+
+    def test_js_reports(self) -> None:
+        write(self.repo, "package.json", json.dumps({"scripts": {"test": "npm run build && jest"}}))
+        command, report = mt.report_command(["npm", "test", "--"], "TS/JS", self.repo, self.repo)
+        self.assertEqual(command[-2:], ["--json", f"--outputFile={report}"])
+        write(
+            self.repo,
+            "test-report.json",
+            json.dumps({"testResults": [{"name": str(self.repo / "test/app.test.js"), "assertionResults": [
+                {"fullName": "bad", "status": "failed", "failureMessages": [
+                    f"Error\n    at x ({self.repo}/node_modules/agent-rt/dist/a.js:1:1)\n    at y ({self.repo}/test/app.test.js:7:11)"
+                ]},
+                {"fullName": "ok", "status": "passed"},
+            ]}]}),
+        )
+        self.assertEqual(
+            mt.read_report(report, "TS/JS", self.repo), (2, {"test/app.test.js::bad": "test/app.test.js:7"})
+        )
+        write(self.repo, "package.json", json.dumps({"scripts": {"test": "vitest run"}}))
+        command, report = mt.report_command(["npm", "test", "--"], "TS/JS", self.repo, self.repo)
+        self.assertEqual(report.suffix, ".xml")
+        self.assertIn(f"--outputFile.junit={report}", command)
+
+
 if __name__ == "__main__":
     unittest.main()

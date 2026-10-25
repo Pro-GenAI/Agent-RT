@@ -8,6 +8,19 @@ Migration compatibility field testing is ongoing. So far, 65+ third-party reposi
 
 The adapters deliberately keep the upstream SDKs' environment behavior (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`) so migrated code runs unchanged. Agent RT's own runtime is configured with `agent-rt.yaml` instead; see [Configuration](Configuration.md).
 
+## Automatic migration (`agent-rt migrate`)
+
+`uvx agent-rt migrate [PATH]` (Python) and `npx agent-rt migrate [PATH]` (TypeScript/JavaScript) rewrite every supported import in a project and verify the result with the project's own tests:
+
+1. Plan the rewrite in memory. Python rewrites the same roots as the field tests (`openai`, `anthropic`, `langchain*`, `llama_index`, `agents`, `autogen_*`, `crewai`), skipping a root the project defines itself (a local `agents/` package). TypeScript rewrites only specifiers that the installed `agent-rt` package exports.
+2. Run the tests before the rewrite: `python -m pytest` in the project environment (the active virtual environment, then `./.venv`, then `python3`; `--python` overrides it, and extra pytest arguments go after `--`), or `npm test`. Nothing is changed when no tests are found or no test report is produced.
+3. Write the rewrite and run the tests again.
+4. Keep the rewrite if the tests pass, or if every test that fails afterwards also failed before, in the same test at the same line (the innermost traceback or stack frame inside the project, so library frames do not count). Any other failure, an unreadable report, or an interrupted run restores every rewritten file.
+
+Per-test comparison reads pytest's JUnit report, Vitest's JUnit report, or Jest's JSON report. With any other JavaScript test runner only the exit code is known, so a suite that already fails before migration cannot be verified and the rewrite is restored.
+
+Both commands print a before-and-after card: tests passed, test-suite time, peak memory of the test process (Python only), and the size of the directly imported upstream packages compared with `agent-rt` (dependency trees are not counted). The project environment must already contain `agent-rt` (and `pytest` for Python). For a repository whose `origin` is on GitHub, a successful run prints a pre-filled GitHub issue link to add it to the [migration wall](https://agent-rt-pro.github.io/); nothing is sent automatically.
+
 Minimum environment for the snippets below:
 
 - OpenAI: set `OPENAI_API_KEY` to use the default `https://api.openai.com/v1` endpoint, or set `OPENAI_BASE_URL` for an OpenAI-compatible endpoint (a key is then optional if that endpoint does not require one). `OPENAI_MODEL` supplies the default model.

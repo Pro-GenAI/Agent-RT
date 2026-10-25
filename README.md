@@ -31,7 +31,9 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 
 ![Agent RT CLI demo: Agent Action Guard blocks an injected curl | sh tool call, then a README edit waits for user approval](docs/assets/agent-rt-demo.gif)
 
-<sub>A real `agent-rt` CLI session driven by a scripted offline mock model.</sub>
+**Runs on:**
+
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white) ![macOS Intel](https://img.shields.io/badge/macOS%20Intel-000000?style=for-the-badge&logo=apple&logoColor=white) ![macOS Apple Silicon](https://img.shields.io/badge/macOS%20Apple%20Silicon-555555?style=for-the-badge&logo=apple&logoColor=white) ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=raspberrypi&logoColor=white)
 
 ## 🚀 Quick Start
 
@@ -71,6 +73,8 @@ Only API-key setups are reused; subscription sign-ins stay with the official cli
 ```
 
 The same prefix works for supported subsets of Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents (plus LiteLLM, AutoGen, and CrewAI in Python). See the [migration guide](docs/website/docs/guides/migration.html).
+
+Or run `uvx agent-rt migrate` (Python) or `npx agent-rt migrate` (TypeScript/JavaScript) in your project. It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall. See [automatic migration](docs/MIGRATION.md#automatic-migration-agent-rt-migrate).
 
 ![65+ third-party repositories pass their tests after migrating to Agent RT](docs/website/assets/share/migration.png)
 

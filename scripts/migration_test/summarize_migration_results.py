@@ -2,7 +2,9 @@
 
 A PASS/PASS row passed its test suite both before and after migration. The
 "Baseline PASS" column counts rows whose suite passed before migration (the
-rows where a migration result is meaningful), and "Rows" counts all rows.
+rows where a migration result is meaningful), "FAIL/MATCHED" counts rows whose
+baseline failed and whose migrated suite failed only in the same tests at the same
+lines, and "Rows" counts all rows.
 """
 
 from __future__ import annotations
@@ -16,11 +18,12 @@ from pathlib import Path
 DEFAULT_RESULTS = Path(__file__).with_name("migration_results.csv")
 
 
-def summarize(path: Path) -> list[tuple[str, str, int, int, int]]:
+def summarize(path: Path) -> list[tuple[str, str, int, int, int, int]]:
     csv.field_size_limit(sys.maxsize)
     rows: Counter[tuple[str, str]] = Counter()
     baseline: Counter[tuple[str, str]] = Counter()
     passed: Counter[tuple[str, str]] = Counter()
+    matched: Counter[tuple[str, str]] = Counter()
     with path.open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             key = (row["Package"], row["Language"])
@@ -29,7 +32,9 @@ def summarize(path: Path) -> list[tuple[str, str, int, int, int]]:
                 baseline[key] += 1
                 if row["TestStatusAfterMigration"] == "PASS":
                     passed[key] += 1
-    return [(*key, passed[key], baseline[key], rows[key]) for key in sorted(rows)]
+            elif row["TestStatusAfterMigration"] == "MATCHED_FAILURES":
+                matched[key] += 1
+    return [(*key, passed[key], baseline[key], matched[key], rows[key]) for key in sorted(rows)]
 
 
 def main() -> None:
@@ -38,8 +43,8 @@ def main() -> None:
     args = parser.parse_args()
 
     summary = summarize(args.results)
-    headers = ("Package", "Language", "PASS/PASS", "Baseline PASS", "Rows")
-    totals = ("Total", "", *(sum(item[i] for item in summary) for i in (2, 3, 4)))
+    headers = ("Package", "Language", "PASS/PASS", "Baseline PASS", "FAIL/MATCHED", "Rows")
+    totals = ("Total", "", *(sum(item[i] for item in summary) for i in (2, 3, 4, 5)))
     table = [headers, *summary, totals]
     widths = [max(len(str(line[i])) for line in table) for i in range(len(headers))]
 

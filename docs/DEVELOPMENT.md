@@ -308,7 +308,7 @@ npm pack --dry-run
 
 ## Cross-platform CI
 
-Cross-platform CI lives in `.github/workflows/cross-platform.yml` and keeps both runtimes covered on Linux, macOS, and Windows.
+Cross-platform CI lives in `.github/workflows/cross-platform.yml` and keeps both runtimes covered on Linux, Windows, macOS (Intel and Apple M-series), and Raspberry Pi (arm64).
 
 Both publish workflows depend on the cross-platform workflow so publishing does not proceed before the cross-platform release checks finish successfully.
 

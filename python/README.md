@@ -23,7 +23,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 
 ## Install
 
-Python 3.10–3.14.
+Python 3.10–3.14. Runs on Linux, Windows, macOS (Intel and Apple M-series), and Raspberry Pi.
 
 ```bash
 pip install agent-rt
@@ -51,6 +51,14 @@ Only API-key setups are reused; subscription sign-ins stay with the official cli
 ```
 
 Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_openai import ChatOpenAI`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
+
+Or let Agent RT rewrite every supported import for you (install `agent-rt` and `pytest` in the project environment first):
+
+```bash
+uvx agent-rt migrate
+```
+
+It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall.
 
 ## Quick start
 

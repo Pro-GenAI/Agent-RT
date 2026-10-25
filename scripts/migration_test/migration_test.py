@@ -32,6 +32,16 @@ from typing import Iterable, Sequence
 
 from heavy_package_audit import find_heavy_dependencies, read_manifest_text
 
+# The Python import rewrite is the one `agent-rt migrate` ships, so field tests measure what users run.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "python" / "src"))
+from ext.migrate import (  # noqa: E402
+    PYTHON_IMPORT_ROOTS,
+    SuiteRun,
+    compare,
+    parse_junit,
+    rewrite_python_imports,
+)
+
 
 RESULT_FIELDS = [
     "Index",
@@ -271,25 +281,6 @@ NETWORK_ENV_NAME = re.compile(r"(URL|URI|HOST|ENDPOINT|BASE|DSN|PORT|ADDR)", re.
 NON_NETWORK_URL_PLACEHOLDERS = {
     "CELERY_BROKER_URL": "memory://",
     "CELERY_RESULT_BACKEND": "cache+memory://",
-}
-
-PYTHON_IMPORT_ROOTS = {
-    "LangChain": (
-        "langchain",
-        "langchain_openai",
-        "langchain_anthropic",
-        "langchain_chroma",
-        "langchain_pinecone",
-        "langchain_qdrant",
-        "langchain_milvus",
-        "langchain_weaviate",
-    ),
-    "LlamaIndex": ("llama_index",),
-    "OpenAI": ("openai",),
-    "Anthropic": ("anthropic",),
-    "OpenAI Agents": ("agents",),
-    "AutoGen": ("autogen_agentchat", "autogen_ext"),
-    "CrewAI": ("crewai",),
 }
 
 # TypeScript/JavaScript migration compatibility is intentionally absent for
@@ -984,6 +975,7 @@ def result_status(result_json: str) -> str:
         "runner_error": "RUNNER_ERROR",
         "filtered_heavy": "FILTERED_HEAVY",
         "no_tests": "NO_TESTS",
+        "matched_failures": "MATCHED_FAILURES",
     }.get(status, status.upper())
 
 
@@ -2594,91 +2586,6 @@ def iter_source_files(repo: Path, language: str) -> Iterable[Path]:
                 yield path
 
 
-def rewrite_plain_import(match: re.Match[str]) -> str:
-    prefix, module = match.group("prefix"), match.group("module")
-    alias, rest = match.group("alias"), match.group("rest")
-    if alias:
-        return f"{prefix}agent_rt.{module}{alias}{rest}"
-    head, _, tail = module.partition(".")
-    if not tail:
-        return f"{prefix}agent_rt.{module} as {module}{rest}"
-    # `import pkg.sub` binds `pkg` with `sub` loaded on it.
-    return f"{prefix}agent_rt.{module}; from agent_rt import {head}{rest}"
-
-
-def rewrite_python_imports(text: str, package: str) -> tuple[str, int]:
-    roots = PYTHON_IMPORT_ROOTS.get(package, ())
-    if not roots:
-        return text, 0
-
-    changes = 0
-    for root in sorted(roots, key=len, reverse=True):
-        # from pkg.submodule import X -> from agent_rt.pkg.submodule import X
-        from_pattern = re.compile(
-            rf"(?m)^(?P<prefix>\s*from\s+)(?P<module>{re.escape(root)}(?:\.[A-Za-z_][\w.]*)?)(?=\s+import\b)"
-        )
-        text, count = from_pattern.subn(
-            lambda match: f"{match.group('prefix')}agent_rt.{match.group('module')}",
-            text,
-        )
-        changes += count
-
-        # import pkg[.submodule] [as alias]. Without an alias, keep the name the
-        # original statement bound (`import anthropic` binds `anthropic`, not
-        # `agent_rt`), so later `anthropic.X` references still resolve.
-        import_pattern = re.compile(
-            rf"(?m)^(?P<prefix>\s*import\s+)(?P<module>{re.escape(root)}(?:\.[A-Za-z_][\w.]*)?)"
-            r"(?P<alias>\s+as\s+\w+)?(?P<rest>\s*(?:#.*)?)$"
-        )
-        text, count = import_pattern.subn(rewrite_plain_import, text)
-        changes += count
-
-        # Mock targets name modules too: `patch("pkg.Client")`,
-        # `monkeypatch.setattr("pkg.x", ...)`, and `sys.modules["pkg"]` stubs
-        # must point at the migrated module or they stop intercepting it.
-        # String imports (`pytest.importorskip("pkg")`, `import_module("pkg")`)
-        # must too, or `pkg.RateLimitError` no longer matches what the
-        # migrated code raises.
-        target_pattern = re.compile(
-            rf"(?P<quote>['\"])(?P<module>{re.escape(root)}(?:\.[A-Za-z_][\w.]*)?)(?P=quote)"
-        )
-        mock_line = re.compile(
-            r"sys\.modules|\bpatch(?:\.object|\.dict)?\s*\(|monkeypatch\.(?:setattr|delattr|setitem|delitem)\s*\("
-            r"|\bimportorskip\s*\(|\bimport_module\s*\(|\b__import__\s*\("
-        )
-
-        # A file that mocks often keeps its targets in a list or constant
-        # ("openai.resources.chat.completions.Completions.create") away from
-        # the patch() call, so there any dotted module path under the root is
-        # a target. Domain-like strings ("openai.com") are left alone.
-        dotted_target = re.compile(
-            rf"(?P<quote>['\"])(?P<module>{re.escape(root)}\.(?!(?:com|org|net|io|ai|dev)\b)[A-Za-z_][\w.]*)(?P=quote)"
-        )
-        file_mocks = bool(mock_line.search(text))
-
-        def rewrite_targets(line_match: re.Match[str]) -> str:
-            nonlocal changes
-            line = line_match.group(0)
-            if not mock_line.search(line):
-                if not file_mocks:
-                    return line
-                line, count = dotted_target.subn(
-                    lambda match: f"{match.group('quote')}agent_rt.{match.group('module')}{match.group('quote')}",
-                    line,
-                )
-                changes += count
-                return line
-            line, count = target_pattern.subn(
-                lambda match: f"{match.group('quote')}agent_rt.{match.group('module')}{match.group('quote')}",
-                line,
-            )
-            changes += count
-            return line
-
-        text = re.sub(r"(?m)^.*$", rewrite_targets, text)
-    return text, changes
-
-
 AGENT_RT_TS_PACKAGE_JSON = Path(__file__).resolve().parents[2] / "typescript" / "package.json"
 
 
@@ -2752,6 +2659,116 @@ def apply_migration(repo: Path, target: RepoTarget) -> tuple[int, list[str]]:
         total_changes += changes
         changed_files.append(str(path.relative_to(repo)))
     return total_changes, changed_files
+
+
+JS_LOCATION = re.compile(r"(?:^|[\s(]|file://)([^\s()'\"]+?\.[cm]?[jt]sx?):(\d+):\d+", re.MULTILINE)
+
+
+def js_failure_location(text: str, project: Path) -> str | None:
+    """The innermost stack frame inside the project (JS stacks list innermost first)."""
+    for match in JS_LOCATION.finditer(text):
+        path = Path(match.group(1))
+        if path.is_absolute():
+            try:
+                path = path.relative_to(project)
+            except ValueError:
+                continue
+        if any(part in SKIP_DIRS or part == ".." for part in path.parts):
+            continue
+        return f"{path.as_posix()}:{match.group(2)}"
+    return None
+
+
+def report_command(
+    test_command: list[str], language: str, project: Path, report_dir: Path
+) -> tuple[list[str], Path] | None:
+    """The test command plus a per-test report and the report's path, or None when the runner has no known report flag."""
+    if language == "Python":
+        report = report_dir / "test-report.xml"
+        return [*test_command, f"--junitxml={report}"], report
+    script = " ".join(test_command)
+    if test_command[0] in {"npm", "pnpm", "yarn", "bun"}:
+        script = str((load_package_json(project).get("scripts") or {}).get("test", ""))
+    if re.search(r"\bvitest\b", script):
+        report = report_dir / "test-report.xml"
+        return [*test_command, "--reporter=default", "--reporter=junit", f"--outputFile.junit={report}"], report
+    if re.search(r"\bjest\b", script):
+        report = report_dir / "test-report.json"
+        return [*test_command, "--json", f"--outputFile={report}"], report
+    return None
+
+
+def read_report(report: Path, language: str, project: Path) -> tuple[int, dict[str, str | None]] | None:
+    if language == "Python":
+        return parse_junit(report, project)
+    if report.suffix == ".xml":
+        return parse_junit(report, project, js_failure_location)
+    try:
+        suites = json.loads(report.read_text(encoding="utf-8")).get("testResults") or []
+    except (OSError, ValueError, AttributeError):
+        return None
+    total, failures = 0, {}
+    for suite in suites:
+        file = os.path.relpath(suite.get("name", ""), project).replace(os.sep, "/")
+        tests = suite.get("assertionResults") or []
+        if not tests and suite.get("status") == "failed":
+            total += 1
+            failures[file] = js_failure_location(suite.get("message") or "", project)
+        for test in tests:
+            total += 1
+            if test.get("status") == "failed":
+                failures[f"{file}::{test.get('fullName', '')}"] = js_failure_location(
+                    "\n".join(test.get("failureMessages") or []), project
+                )
+    return total, failures
+
+
+def run_reported(
+    run, command: list[str], report: Path, language: str, project: Path
+) -> tuple[CommandResult, SuiteRun | None]:
+    """Run a reporting test command; the SuiteRun is None when no usable report was written."""
+    report.unlink(missing_ok=True)
+    result = run(command)
+    parsed = None if result.timed_out else read_report(report, language, project)
+    if parsed is None:
+        return result, None
+    exit_code = result.exit_code if result.exit_code is not None else -1
+    return result, SuiteRun(exit_code, result.duration_seconds, None, parsed[0], parsed[1], result.output)
+
+
+def failing_baseline(
+    run, test_command: list[str], language: str, project: Path, report_dir: Path
+) -> tuple[list[str], Path, SuiteRun] | None:
+    """Rerun a failing baseline with a per-test report so the migrated run can be compared to it.
+
+    None (migration skipped) when the runner has no report, the report is unreadable, or the
+    rerun shows no failing test to match against.
+    """
+    reporting = report_command(test_command, language, project, report_dir)
+    if reporting is None:
+        return None
+    command, report = reporting
+    print("  initial tests failed; rerunning them with a per-test report", flush=True)
+    _, suite = run_reported(run, command, report, language, project)
+    if suite is None or suite.passed or not suite.failures:
+        return None
+    return command, report, suite
+
+
+def compared_after_payload(result: CommandResult, baseline: SuiteRun, migrated: SuiteRun | None) -> dict:
+    """PASS, MATCHED_FAILURES (every failure also failed before at the same test and line), or FAIL."""
+    payload = json.loads(command_json(result))
+    if migrated is None:
+        ok, problems = result.ok, [] if result.ok else ["the migrated test report could not be read"]
+    else:
+        ok, problems = compare(baseline, migrated)
+    if ok and not result.ok:
+        payload["status"] = "matched_failures"
+    elif not ok:
+        payload["status"] = "fail"
+    payload["baseline_failures"] = baseline.failures
+    payload["new_failures"] = problems
+    return payload
 
 
 def first_failed(results: Sequence[CommandResult]) -> CommandResult | None:
@@ -3078,13 +3095,25 @@ def process_target(
                     "No tests were collected, so migration was not attempted.",
                 )
                 return result_row(target, commit, before, after)
-            if not baseline.ok:
-                print("  initial tests failed; skipping migration and post-migration tests", flush=True)
-                after = synthetic_result(
-                    "skipped",
-                    "Initial tests failed, so migration was not attempted.",
+            def run_python(command: list[str]) -> CommandResult:
+                return run_command(
+                    command,
+                    cwd=repo,
+                    timeout=timeout,
+                    max_output_chars=max_output_chars,
+                    env=repo_env,
                 )
-                return result_row(target, commit, before, after)
+
+            compared = None
+            if not baseline.ok:
+                compared = failing_baseline(run_python, test_command, "Python", repo, cache_root)
+                if compared is None:
+                    print("  initial tests failed without a comparable report; skipping migration", flush=True)
+                    after = synthetic_result(
+                        "skipped",
+                        "Initial tests failed and no per-test report could be compared, so migration was not attempted.",
+                    )
+                    return result_row(target, commit, before, after)
 
             print("  phase: apply migration rewrites", flush=True)
             changes, changed_files = apply_migration(repo, target)
@@ -3112,14 +3141,13 @@ def process_target(
                 return result_row(target, commit, before, after)
 
             print("  phase: tests after migration", flush=True)
-            migrated = run_command(
-                test_command,
-                cwd=repo,
-                timeout=timeout,
-                max_output_chars=max_output_chars,
-                env=repo_env,
-            )
-            after_payload = json.loads(command_json(migrated))
+            if compared:
+                command, report, baseline_suite = compared
+                migrated, suite = run_reported(run_python, command, report, "Python", repo)
+                after_payload = compared_after_payload(migrated, baseline_suite, suite)
+            else:
+                migrated = run_python(test_command)
+                after_payload = json.loads(command_json(migrated))
             after_payload["migration_changes"] = changes
             after_payload["changed_files"] = changed_files
             after = json.dumps(after_payload, ensure_ascii=False, separators=(",", ":"))
@@ -3288,20 +3316,26 @@ def process_target(
                     "No tests were found, so migration was not attempted.",
                 )
                 return result_row(target, commit, before, after)
-            if not baseline.ok:
-                print("  initial tests failed; skipping migration and post-migration tests", flush=True)
-                after = synthetic_result(
-                    "skipped",
-                    "Initial tests failed, so migration was not attempted.",
-                )
-                return result_row(target, commit, before, after)
-
             if target.package not in TS_SPECIFIER_RULES:
                 after = synthetic_result(
                     "unsupported",
                     f"Agent RT has no TypeScript/JavaScript migration surface for {target.package}.",
                 )
                 return result_row(target, commit, before, after)
+
+            def run_suite(command: list[str]) -> CommandResult:
+                return run_node(command, cwd=node_root)
+
+            compared = None
+            if not baseline.ok:
+                compared = failing_baseline(run_suite, test_command, "TS/JS", node_root, cache_root)
+                if compared is None:
+                    print("  initial tests failed without a comparable report; skipping migration", flush=True)
+                    after = synthetic_result(
+                        "skipped",
+                        "Initial tests failed and no per-test report could be compared, so migration was not attempted.",
+                    )
+                    return result_row(target, commit, before, after)
 
             print("  phase: apply migration rewrites", flush=True)
             changes, changed_files = apply_migration(repo, target)
@@ -3329,8 +3363,13 @@ def process_target(
                 return result_row(target, commit, before, after)
 
             print("  phase: tests after migration", flush=True)
-            migrated = run_node(test_command, cwd=node_root)
-            after_payload = json.loads(command_json(migrated))
+            if compared:
+                command, report, baseline_suite = compared
+                migrated, suite = run_reported(run_suite, command, report, "TS/JS", node_root)
+                after_payload = compared_after_payload(migrated, baseline_suite, suite)
+            else:
+                migrated = run_suite(test_command)
+                after_payload = json.loads(command_json(migrated))
             after_payload["migration_changes"] = changes
             after_payload["changed_files"] = changed_files
             after = json.dumps(after_payload, ensure_ascii=False, separators=(",", ":"))
