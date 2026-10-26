@@ -323,6 +323,8 @@ class Agent:
             item if isinstance(item, OutputGuardrail) else OutputGuardrail(item)
             for item in output_guardrails
         ]
+        # Agent RT extension: AgentConfig.memory sources (also used by AutoGen).
+        self.memory = list(kwargs.pop("memory", None) or ())
         self.metadata = dict(kwargs)
 
     def as_tool(
@@ -520,6 +522,7 @@ class Runner:
             instructions=starting_agent.instructions,
             description=starting_agent.handoff_description,
             model=rt.ModelSettings(model=str(model_name)),
+            memory=tuple(starting_agent.memory),
         )
         result = await rt.AgentLoop(
             provider,

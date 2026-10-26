@@ -8123,3 +8123,49 @@ test("vector DB provider accepts precomputed vectors without an embedder", async
     await mock.stop();
   }
 });
+
+test("agent memory merges multiple sources and custom objects", async () => {
+  const { InMemoryLongTermMemoryStore, MemorySource } = require("../dist/index.js");
+  class Profile {
+    constructor() { this.name = "Ada"; this.tags = new Set(["b", "a"]); }
+  }
+  const store = new InMemoryLongTermMemoryStore();
+  store.write({ id: "m1", kind: "fact", content: "Prefers metric units" });
+  store.write({ id: "m2", kind: "fact", content: "Lives in Oslo" });
+  const queries = [];
+  const requests = [];
+  const provider = {
+    name: "fake",
+    complete: async (request) => {
+      requests.push(request);
+      return { message: message("assistant", "ok") };
+    },
+  };
+  const memoryAgent = {
+    ...agent(),
+    memory: [
+      "Always answer in English.",
+      new Profile(),
+      new MemorySource(store, { name: "facts", limit: 1 }),
+      new MemorySource(async (query) => {
+        queries.push(query);
+        return ["Booked a flight on Monday", null];
+      }, { name: "history", trust: "trusted" }),
+    ],
+  };
+  await new AgentLoop(provider).run(memoryAgent, [message("user", "metric units?")]);
+
+  assert.deepEqual(queries, ["metric units?"]);
+  const trusted = requests[0].messages[0].content[0].data.context.retrievedData;
+  const untrusted = requests[0].messages[1].content[0].data.untrustedContext;
+  assert.deepEqual(trusted.map((item) => item.id), [
+    "memory:memory-1:1",
+    "memory:memory-2:1",
+    "memory:history:1",
+  ]);
+  assert.deepEqual(trusted[1].content[0].data, { name: "Ada", tags: ["a", "b"] });
+  const facts = untrusted.retrievedData;
+  assert.deepEqual(facts.map((item) => item.content[0].text), ["Prefers metric units"]);
+  assert.deepEqual(facts[0].metadata, { memory_source: "facts" });
+  assert.throws(() => new MemorySource("x", { limit: 0 }));
+});

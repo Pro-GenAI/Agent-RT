@@ -2403,3 +2403,53 @@ class TestAgentLoop:
             limits=AgentRunLimits(timeout_seconds=0.001),
         )
         assert result.termination_reason == "timeout"
+
+
+async def test_agent_memory_merges_multiple_sources_and_custom_objects():
+    from dataclasses import dataclass as _dataclass
+
+    from agent_rt import InMemoryLongTermMemoryStore, MemoryRecord, MemorySource
+
+    @_dataclass
+    class Profile:
+        name: str
+        tags: set
+
+    store = InMemoryLongTermMemoryStore()
+    store.write(MemoryRecord(id="m1", kind="fact", content="Prefers metric units"))
+    store.write(MemoryRecord(id="m2", kind="fact", content="Lives in Oslo"))
+    queries = []
+
+    async def recall(query):
+        queries.append(query)
+        return ["Booked a flight on Monday", None]
+
+    provider = FakeProvider([ModelResponse(message=text_message("assistant", "ok"))])
+    agent = AgentConfig(
+        name="test",
+        instructions="Be concise.",
+        model=ModelSettings(model="fake-model"),
+        memory=(
+            "Always answer in English.",
+            Profile(name="Ada", tags={"b", "a"}),
+            MemorySource(store, name="facts", limit=1),
+            MemorySource(recall, name="history", trust="trusted"),
+        ),
+    )
+    await AgentLoop(provider).run(agent, [text_message("user", "metric units?")])
+
+    assert queries == ["metric units?"]
+    request = provider.requests[0]
+    trusted = request.messages[0].content[0].data["context"]["retrieved_data"]
+    untrusted = request.messages[1].content[0].data["untrusted_context"]
+    assert [item["id"] for item in trusted] == [
+        "memory:memory-1:1",
+        "memory:memory-2:1",
+        "memory:history:1",
+    ]
+    assert trusted[1]["content"][0]["data"] == {"name": "Ada", "tags": ["a", "b"]}
+    facts = untrusted["retrieved_data"]
+    assert [item["content"][0]["text"] for item in facts] == ["Prefers metric units"]
+    assert facts[0]["metadata"] == {"memory_source": "facts"}
+    with pytest.raises(ValueError):
+        MemorySource("x", limit=0)

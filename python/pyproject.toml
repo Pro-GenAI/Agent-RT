@@ -52,6 +52,14 @@ web = [
     "starlette>=0.37,<2",
     "uvicorn>=0.30,<1",
 ]
+# Memory packages. "memory" installs the default backend (mem0); the others
+# are opt-in and stay out of "all" because each pulls a large dependency tree.
+memory = ["mem0ai>=2,<3"]
+mem0 = ["mem0ai>=2,<3"]
+memu = ["memu-py>=1.5,<2; python_version >= '3.13'"]
+zep = ["zep-cloud>=4,<5"]
+letta = ["letta-client>=1,<2"]
+supermemory = ["supermemory>=5,<6"]
 all = [
     "openai>=1.31,<4",
     "anthropic>=0.29,<2",
@@ -128,3 +136,22 @@ include = ["ext", "ext.*"]
 [tool.setuptools.package-data]
 ext = ["web_ui.html", "debug_ui.html"]
 
+
+[tool.uv]
+# Memory packages pin shared libraries (mem0ai: protobuf<7; memU: numpy).
+# Resolve them apart from dev/all so the locked environments keep their own
+# versions; pip users can still combine any extras.
+conflicts = [
+    [{ extra = "memory" }, { extra = "dev" }],
+    [{ extra = "memory" }, { extra = "all" }],
+    [{ extra = "mem0" }, { extra = "dev" }],
+    [{ extra = "mem0" }, { extra = "all" }],
+    [{ extra = "memu" }, { extra = "dev" }],
+    [{ extra = "memu" }, { extra = "all" }],
+    [{ extra = "zep" }, { extra = "dev" }],
+    [{ extra = "zep" }, { extra = "all" }],
+    [{ extra = "letta" }, { extra = "dev" }],
+    [{ extra = "letta" }, { extra = "all" }],
+    [{ extra = "supermemory" }, { extra = "dev" }],
+    [{ extra = "supermemory" }, { extra = "all" }],
+]

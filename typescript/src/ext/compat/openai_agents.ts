@@ -414,6 +414,8 @@ export interface AgentOptions {
 	toolUseBehavior?: ToolUseBehavior;
 	inputGuardrails?: InputGuardrail[];
 	outputGuardrails?: OutputGuardrail[];
+	/** Agent RT extension: `AgentConfig.memory` sources. */
+	memory?: readonly unknown[];
 	[key: string]: unknown;
 }
 
@@ -430,6 +432,7 @@ export class Agent {
 	readonly toolUseBehavior: ToolUseBehavior;
 	readonly inputGuardrails: InputGuardrail[];
 	readonly outputGuardrails: OutputGuardrail[];
+	readonly memory: readonly unknown[];
 	readonly metadata: Record<string, unknown>;
 	private readonly options: AgentOptions;
 
@@ -460,6 +463,7 @@ export class Agent {
 		this.tools = [...(options.tools ?? [])];
 		this.inputGuardrails = [...(options.inputGuardrails ?? [])];
 		this.outputGuardrails = [...(options.outputGuardrails ?? [])];
+		this.memory = [...(options.memory ?? [])];
 		const {
 			name: _name,
 			instructions: _instructions,
@@ -471,6 +475,7 @@ export class Agent {
 			outputType: _outputType,
 			inputGuardrails: _inputGuardrails,
 			outputGuardrails: _outputGuardrails,
+			memory: _memory,
 			...metadata
 		} = options;
 		this.metadata = metadata;
@@ -1354,6 +1359,7 @@ async function runAgent(
 		instructions: startingAgent.instructions,
 		description: startingAgent.handoffDescription,
 		model: { model: modelName },
+		memory: startingAgent.memory,
 	};
 	const inputCount = resumed ? 0 : messages.length;
 	let result: AgentRunResult;

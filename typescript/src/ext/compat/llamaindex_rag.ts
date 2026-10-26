@@ -127,6 +127,10 @@ export class TextNode {
 		return this.text;
 	}
 
+	getContent(): string {
+		return this.text;
+	}
+
 	toString(): string {
 		return this.text;
 	}

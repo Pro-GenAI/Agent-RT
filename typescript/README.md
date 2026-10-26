@@ -29,7 +29,7 @@ Node 20, 22, 24, or 26. Runs on Linux, Windows, macOS (Intel and Apple M-series)
 npm install agent-rt
 ```
 
-Provider SDKs are optional: add `openai` or `@anthropic-ai/sdk` only when you need them. Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
+Provider SDKs are optional: add `openai` or `@anthropic-ai/sdk` only when you need them. For agent memory, add one of `mem0ai` (the default), `@getzep/zep-cloud`, `@letta-ai/letta-client`, or `supermemory` and call `loadMemory()` ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#memory-packages)). Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
 
 ## Migrate in one line
 

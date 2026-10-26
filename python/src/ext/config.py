@@ -29,6 +29,7 @@ _DEFERRED_SECRET_PATH = re.compile(
     r"^config\.(model_list|vector_store_registry)\[\d+\]\."
     r"(agent_rt_params|litellm_params)\.(api_key|api_base)$"
     r"|^config\.agent_rt_settings\.server\."
+    r"|^config\.agent_rt_settings\.memory\.options\."
 )
 _MODEL_PARAM_FIELDS = {"model", "api_key", "api_base", "websocket"}
 _STORE_PARAM_FIELDS = {
@@ -53,6 +54,7 @@ _SETTINGS_SECTIONS = {
     "decision_model",
     "observability",
     "cli",
+    "memory",
 }
 _SECTION_ENVIRONMENT = {
     "execution_limits": {
@@ -527,6 +529,20 @@ def _parse_settings(raw: Any) -> dict[str, Any]:
     server = settings.get("server")
     if server is not None:
         _check_keys(_mapping(server, "agent_rt_settings.server"), _SERVER_FIELDS, "agent_rt_settings.server")
+    memory = settings.get("memory")
+    if memory is not None:
+        from ext.memory_backends import DEFAULT_MEMORY_BACKEND, MEMORY_BACKENDS
+
+        memory = _mapping(memory, "agent_rt_settings.memory")
+        _check_keys(memory, {"backend", "options"}, "agent_rt_settings.memory")
+        backend = memory.get("backend")
+        if backend is not None and backend not in MEMORY_BACKENDS:
+            raise ConfigError(
+                f"agent_rt_settings.memory.backend must be one of: {', '.join(MEMORY_BACKENDS)}"
+            )
+        options = _mapping(memory.get("options") or {}, "agent_rt_settings.memory.options")
+        allowed = MEMORY_BACKENDS[backend or DEFAULT_MEMORY_BACKEND][2]
+        _check_keys(options, set(allowed), "agent_rt_settings.memory.options")
     default_model = settings.get("default_model")
     if default_model is not None:
         settings["default_model"] = _text(default_model, "agent_rt_settings.default_model")

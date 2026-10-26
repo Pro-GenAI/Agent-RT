@@ -49,3 +49,5 @@ agent_rt_settings:
   # decision_model: {provider: openai, api_key: os.environ/OPENAI_API_KEY}  # OpenAI Decisions API
   # observability: {api_key: os.environ/TRACELOOP_API_KEY}
   # cli: {home: ~/.agent-rt, compact_token_limit: 60000}
+  # memory: {backend: mem0, options: {user_id: alice}}  # pip install 'agent-rt[memory]'
+  # memory: {backend: zep, options: {api_key: os.environ/ZEP_API_KEY, graph_id: alice, thread_id: chat-1}}

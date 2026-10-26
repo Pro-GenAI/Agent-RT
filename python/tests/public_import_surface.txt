@@ -202,7 +202,9 @@ MemoryLifecyclePolicy
 MemoryMigration
 MemoryRecord
 MemoryRetrievalPolicy
+MemoryBackend
 MemoryScope
+MemorySource
 MemorySearchQuery
 MemorySearchResult
 MemoryWriteCandidate
@@ -461,7 +463,9 @@ ConfiguredModelProvider
 FILE_SEARCH_TOOL_NAME
 configure_runtime
 load_config
+load_memory
 register_file_search_tool
+resolve_agent_memory
 resolve_vector_stores
 runtime_settings
 vector_store_registry_from_config

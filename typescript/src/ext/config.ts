@@ -24,7 +24,7 @@ export const SUPPORTED_VECTOR_STORE_PROVIDERS = [
 const PARAM_KEYS = ['agent_rt_params', 'litellm_params'] as const;
 // Unset references here fail only when that model, store or server is used.
 const DEFERRED_SECRET_PATH =
-	/^config\.(model_list|vector_store_registry)\[\d+\]\.(agent_rt_params|litellm_params)\.(api_key|api_base)$|^config\.agent_rt_settings\.server\./;
+	/^config\.(model_list|vector_store_registry)\[\d+\]\.(agent_rt_params|litellm_params)\.(api_key|api_base)$|^config\.agent_rt_settings\.server\.|^config\.agent_rt_settings\.memory\.options\./;
 const MODEL_PARAM_FIELDS = new Set([
 	'model',
 	'api_key',
@@ -53,7 +53,25 @@ const SETTINGS_SECTIONS = new Set([
 	'decision_model',
 	'observability',
 	'cli',
+	'memory',
 ]);
+export const DEFAULT_MEMORY_BACKEND = 'mem0';
+/** `agent_rt_settings.memory` backends and their options (same as Python). */
+export const MEMORY_BACKEND_OPTIONS: Record<string, readonly string[]> = {
+	mem0: ['api_key', 'host', 'config', 'user_id', 'agent_id', 'run_id'],
+	memu: [
+		'user_id',
+		'llm_profiles',
+		'blob_config',
+		'database_config',
+		'memorize_config',
+		'retrieve_config',
+		'user_config',
+	],
+	zep: ['api_key', 'base_url', 'graph_id', 'thread_id'],
+	letta: ['api_key', 'base_url', 'agent_id'],
+	supermemory: ['api_key', 'base_url', 'namespace'],
+};
 const SANDBOX_KEYS = [
 	'backend',
 	'workspace_root',
@@ -631,6 +649,34 @@ function parseSettings(raw: unknown): Record<string, unknown> {
 			mapping(settings['cli'], 'agent_rt_settings.cli'),
 			CLI_FIELDS,
 			'agent_rt_settings.cli',
+		);
+	}
+	if (settings['memory'] !== undefined && settings['memory'] !== null) {
+		const memory = mapping(settings['memory'], 'agent_rt_settings.memory');
+		checkKeys(
+			memory,
+			new Set(['backend', 'options']),
+			'agent_rt_settings.memory',
+		);
+		const backend = memory['backend'] ?? DEFAULT_MEMORY_BACKEND;
+		if (
+			typeof backend !== 'string' ||
+			!Object.prototype.hasOwnProperty.call(
+				MEMORY_BACKEND_OPTIONS,
+				backend,
+			)
+		)
+			throw new ConfigError(
+				'agent_rt_settings.memory.backend must be one of: ' +
+					Object.keys(MEMORY_BACKEND_OPTIONS).join(', '),
+			);
+		checkKeys(
+			mapping(
+				memory['options'] ?? {},
+				'agent_rt_settings.memory.options',
+			),
+			new Set(MEMORY_BACKEND_OPTIONS[backend]),
+			'agent_rt_settings.memory.options',
 		);
 	}
 	if (settings['default_model'] !== undefined) {

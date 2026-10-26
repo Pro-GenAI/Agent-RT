@@ -1465,16 +1465,36 @@ export class InMemoryStore {
 
 	search(
 		namespace: string | string[],
+		options: {
+			query?: string;
+			filter?: Record<string, unknown>;
+			limit?: number;
+			offset?: number;
+		} = {},
 	): Array<{ key: string; value: unknown }> {
+		// shortcut: no semantic index, so `query` is accepted but not ranked;
+		// results come in insertion order like an unindexed LangGraph store.
 		const ns = Array.isArray(namespace) ? namespace : [namespace];
 		const prefix = JSON.stringify(ns).slice(0, -1);
 		const result: Array<{ key: string; value: unknown }> = [];
 		for (const [encoded, value] of this.values) {
 			if (!encoded.includes(prefix)) continue;
+			const filter = Object.entries(options.filter ?? {});
+			if (
+				filter.length &&
+				!filter.every(
+					([name, expected]) =>
+						typeof value === 'object' &&
+						value !== null &&
+						(value as Record<string, unknown>)[name] === expected,
+				)
+			)
+				continue;
 			const parsed = JSON.parse(encoded) as [string[], string];
 			result.push({ key: parsed[1], value });
 		}
-		return result;
+		const offset = options.offset ?? 0;
+		return result.slice(offset, offset + (options.limit ?? 10));
 	}
 }
 
@@ -2169,7 +2189,8 @@ class FakeModelProvider implements ModelProvider {
 			name: call.name,
 			arguments: { ...(call.args ?? {}) },
 		}));
-		const text = next.kind === 'message' ? fakeText(next.message.content) : '';
+		const text =
+			next.kind === 'message' ? fakeText(next.message.content) : '';
 		return {
 			message: {
 				role: 'assistant',
@@ -2205,7 +2226,10 @@ export class FakeChatModel extends ChatModel {
 						message:
 							typeof response === 'string'
 								? { content: response }
-								: (response as { content?: unknown; tool_calls?: unknown }),
+								: (response as {
+										content?: unknown;
+										tool_calls?: unknown;
+									}),
 					},
 		);
 		return this;

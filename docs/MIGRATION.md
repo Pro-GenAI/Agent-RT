@@ -613,7 +613,7 @@ team = RoundRobinGroupChat(
 team_result = await team.run(task="Complete the task")
 ```
 
-Supported: `AssistantAgent`, callable tools through the Agent RT tool loop, `run()` / compatibility `run_stream()`, `RoundRobinGroupChat`, `TextMentionTermination`, `MaxMessageTermination`, `TokenUsageTermination`, `TimeoutTermination`, combined termination conditions with `dump_component()` configs, `TextMessage.dump()` / `load()` / `to_text()`, `UserProxyAgent` (`on_messages()` answers from a sync or async `input_func`, optionally taking the cancellation token), `autogen_agentchat.base` (`TaskResult`, `Response`, `TerminationCondition`), `autogen_agentchat.ui.Console`, and `OpenAIChatCompletionClient` as a lightweight Agent RT provider binding. `autogen_ext.models.anthropic.AnthropicChatCompletionClient` and `autogen_ext.models.ollama.OllamaChatCompletionClient` build their Agent RT provider lazily on first use. Team turns are bounded and normalized through Agent RT.
+Supported: `AssistantAgent` (including `memory=[...]`: AutoGen `Memory` objects such as `ListMemory`, plus any Agent RT memory source; see [Memory from other frameworks](#memory-from-other-frameworks)), callable tools through the Agent RT tool loop, `run()` / compatibility `run_stream()`, `RoundRobinGroupChat`, `TextMentionTermination`, `MaxMessageTermination`, `TokenUsageTermination`, `TimeoutTermination`, combined termination conditions with `dump_component()` configs, `TextMessage.dump()` / `load()` / `to_text()`, `UserProxyAgent` (`on_messages()` answers from a sync or async `input_func`, optionally taking the cancellation token), `autogen_agentchat.base` (`TaskResult`, `Response`, `TerminationCondition`), `autogen_agentchat.ui.Console`, and `OpenAIChatCompletionClient` as a lightweight Agent RT provider binding. `autogen_ext.models.anthropic.AnthropicChatCompletionClient` and `autogen_ext.models.ollama.OllamaChatCompletionClient` build their Agent RT provider lazily on first use. Team turns are bounded and normalized through Agent RT.
 
 This is not a reimplementation of AutoGen Core. Selector/swarm teams, distributed runtimes, component serialization, persisted team continuation without an explicit task, code executors, exact event streaming/backpressure, and the broader extension ecosystem remain outside the compatibility layer.
 
@@ -1689,6 +1689,37 @@ This matrix lists major OpenAI and Anthropic API/SDK capabilities that are usefu
 | Admin/usage/cost APIs | ❌ | Organization/project administration surfaces | Admin, usage and cost APIs |
 | Cloud-specific SDK clients | ❌ | Azure-specific ecosystem separately | Bedrock / Vertex integrations |
 | Native SDK retry/timeout/raw-response helpers | ❌ mostly missing | Full SDK | Full SDK |
+
+## Memory from other frameworks
+
+`AgentConfig.memory` (see [Runtime Guide](Runtime-Guide.md#agent-memory)) accepts memory objects from other packages directly, both the real upstream objects and the Agent RT compatibility shims, so existing memory can be reused without rewriting it. Each one is searched with the latest user prompt on every run and is untrusted by default.
+
+| Package | Python | TypeScript | How it is read |
+| --- | --- | --- | --- |
+| LangChain | retrievers, `Document`s, chat message histories | retrievers, `Document`s, chat message histories (`getMessages`) | retriever `ainvoke`/`invoke(query)`; history's last `limit` messages |
+| LangGraph | `BaseStore` (`InMemoryStore`, Postgres, ...) | `BaseStore` | `search(namespace, query=, limit=)`; pass the namespace as `search_kwargs={"namespace": (...)}` / `searchOptions: { namespace: [...] }` |
+| LlamaIndex | retrievers, nodes, `Memory` / `ChatMemoryBuffer` | retrievers, nodes, `Memory` / `ChatMemoryBuffer` | `aretrieve`/`retrieve(query)`; memory `aget(input=query)` / `getMessages(query)`, last `limit` messages |
+| AutoGen | `Memory` (`ListMemory`, ...) | — | `query(query)` results |
+| OpenAI Agents | `Session` | `Session` | `get_items(limit)` / `getItems(limit)` |
+| mem0 | `Memory` / `AsyncMemory` / `MemoryClient` | `Memory` / `MemoryClient` | `search(query, top_k=, **search_kwargs)` (`limit=` on mem0 1.x); scope it with `search_kwargs={"filters": {"user_id": ...}}` / `searchOptions: { filters: { user_id } }` |
+
+```python
+from agent_rt import AgentConfig, MemorySource, ModelSettings
+
+agent = AgentConfig(
+    name="assistant",
+    instructions="Be concise.",
+    model=ModelSettings(model="claude-sonnet-5"),
+    memory=[
+        vector_store.as_retriever(),                        # LangChain
+        MemorySource(langgraph_store, search_kwargs={"namespace": ("users", user_id)}),
+        index.as_retriever(similarity_top_k=3),             # LlamaIndex
+        MemorySource(mem0, search_kwargs={"filters": {"user_id": user_id}}),
+    ],
+)
+```
+
+Documents, nodes, records and chat messages are reduced to their text (plus role, tags and metadata when present) before they reach the model. The AutoGen `AssistantAgent(memory=[...])` and the OpenAI Agents compatibility `Agent(memory=[...])` (an Agent RT extension in both languages) pass their lists to `AgentConfig.memory`. Memory is read-only here: Agent RT does not write new turns back to these stores (use [`load_memory()`](Runtime-Guide.md#memory-packages) for a backend you can also write to), and an OpenAI Agents `Session` used this way supplies context rather than replacing the conversation history.
 
 ## Native Agent RT path
 

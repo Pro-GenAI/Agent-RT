@@ -20,6 +20,85 @@ The OpenAI provider uses the native OpenAI-compatible transport by default and s
 
 The `AgentLoop` keeps every tool call answered: if a run stops early (approval needed, timeout, cancellation, `max_tool_calls`) unexecuted calls receive a `tool_not_executed` tool message, completed results from a concurrent batch are kept, and loop-detector state is per run.
 
+## Agent memory
+
+Give an agent memory with `AgentConfig.memory`, a list of sources. Each run resolves every source and adds the results to the model context as `retrieved` context items (ids `memory:<name>:<n>`, metadata `memory_source`), so context policies, offloading and prompt-injection defenses apply to them as to any retrieved data.
+
+| Source | What the model sees | Default trust |
+| --- | --- | --- |
+| A string | The text | trusted |
+| Any custom object (dataclass, pydantic model, dict, class instance; `Set`/`Map` in TypeScript) | Its fields as JSON | trusted |
+| A memory store or retriever: Agent RT's `InMemoryLongTermMemoryStore`, or one from LangChain, LangGraph, LlamaIndex, AutoGen, OpenAI Agents (`Session`) or mem0 ([details](MIGRATION.md#memory-from-other-frameworks)) | The results for the latest user prompt | untrusted |
+| A function `(query) -> value or list` (may be async) | Its return values, each handled as above | untrusted |
+
+Wrap a source in `MemorySource` to set its `name`, `trust`, `limit` (default 5 results for stores and functions), `scope` (passed to an Agent RT store's search) or `search_kwargs` / `searchOptions` (passed to another framework's search, such as a mem0 `user_id` or a LangGraph `namespace`). Store and function results default to untrusted because they often hold user- or tool-written text; untrusted memory is sent as user-role data and, like other untrusted context, hides side-effecting tools unless `PromptInjectionDefense(allow_untrusted_side_effects=True)` is set. Mark a source `trust="trusted"` only when you control what is written to it.
+
+```python
+from agent_rt import AgentConfig, InMemoryLongTermMemoryStore, MemorySource, ModelSettings
+
+agent = AgentConfig(
+    name="assistant",
+    instructions="Be concise.",
+    model=ModelSettings(model="claude-sonnet-5"),
+    memory=[
+        "The user prefers metric units.",
+        user_profile,                                   # any custom object
+        MemorySource(store, name="facts", limit=3),     # searched every run
+        MemorySource(fetch_recent_orders, name="orders"),  # (query) -> values
+    ],
+)
+```
+
+```ts
+const agent = {
+  name: "assistant",
+  instructions: "Be concise.",
+  model: { model: "claude-sonnet-5" },
+  memory: [
+    "The user prefers metric units.",
+    userProfile,
+    new MemorySource(store, { name: "facts", limit: 3 }),
+    new MemorySource(fetchRecentOrders, { name: "orders" }),
+  ],
+};
+```
+
+`resolve_agent_memory(memory, query)` / `resolveAgentMemory(memory, query)` return the same context items without running the loop.
+
+### Memory packages
+
+`load_memory()` / `loadMemory()` connect a dedicated memory package and return a `MemoryBackend`: put it in `AgentConfig.memory` to recall memories for every run, and call `remember(messages)` after a run to store the conversation (only user and assistant turns are sent; system prompts and tool output are dropped).
+
+| Backend | Python install | TypeScript install | Options |
+| --- | --- | --- | --- |
+| `mem0` (default) | `pip install 'agent-rt[memory]'` or `'agent-rt[mem0]'` | `npm install mem0ai` | `user_id` (default `default`), `agent_id`, `run_id`; `config` for a self-hosted `Memory` config, or `api_key` (+ `host`) for the hosted platform |
+| `memu` | `pip install 'agent-rt[memu]'` (Python 3.13+) | — (Python-only) | `user_id`, plus memU's `llm_profiles`, `database_config`, `blob_config`, `memorize_config`, `retrieve_config`, `user_config` |
+| `zep` | `pip install 'agent-rt[zep]'` | `npm install @getzep/zep-cloud` | `api_key`, `base_url`, `graph_id` (searched), `thread_id` (written) |
+| `letta` | `pip install 'agent-rt[letta]'` | `npm install @letta-ai/letta-client` | `api_key`, `base_url`, `agent_id` (archival passages) |
+| `supermemory` | `pip install 'agent-rt[supermemory]'` | `npm install supermemory` | `api_key`, `base_url`, `namespace` (default `default`) |
+
+```python
+from agent_rt import AgentConfig, AgentLoop, ModelSettings, load_memory
+
+memory = load_memory(options={"user_id": "alice"})          # mem0
+# memory = load_memory(backend="zep", options={...})       # or any backend above
+# memory = load_memory(config)                             # agent_rt_settings.memory
+
+agent = AgentConfig(name="assistant", instructions="Be concise.",
+                    model=ModelSettings(model="claude-sonnet-5"), memory=[memory])
+result = await AgentLoop(provider).run(agent, messages)
+await memory.remember(result.messages)
+```
+
+```ts
+const memory = await loadMemory(undefined, { options: { user_id: 'alice' } });
+const agent = { name: 'assistant', instructions: 'Be concise.', model: { model: 'claude-sonnet-5' }, memory: [memory] };
+const result = await new AgentLoop(provider).run(agent, messages);
+await memory.remember(result.messages);
+```
+
+The backend can also be set once in `agent-rt.yaml` (`agent_rt_settings.memory: {backend, options}`, see [Configuration](Configuration.md)); `backend`/`options` passed in code win. Unknown backends and options fail at load time, and an uninstalled package raises with the install command. These packages call their own services: mem0 and memU use an LLM and embedding model to extract and index memories (mem0's self-hosted default is OpenAI, so it needs `OPENAI_API_KEY`), and mem0 sends its own anonymous telemetry unless `MEM0_TELEMETRY=False`. Recalled memories are untrusted by default, like any store.
+
 ## Tool access lists and unadvertised calls
 
 `Toolbase.initialize` accepts `allowlist`, `blocklist`, `read_allowlist`, `read_blocklist`, `write_allowlist`, and `write_blocklist` (TypeScript uses the same option keys in the `Toolbase.initialize({...})` object). Lists match exact exposed tool names, including MCP names such as `mcp.docs.weather`. An omitted allowlist imposes no restriction; an empty allowlist allows nothing. Deny rules override allow rules. Read scopes apply to tools marked `none` or `read`; all other side effects use write scopes.

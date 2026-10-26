@@ -753,17 +753,24 @@ class InMemoryStore:
         )
         return self._values.pop((ns, str(key)), None) is not None
 
-    def search(self, namespace):
+    def search(self, namespace, *, query=None, filter=None, limit=10, offset=0):
+        # shortcut: no semantic index, so `query` is accepted but not ranked;
+        # results come in insertion order like an unindexed LangGraph store.
         ns = (
             tuple(namespace)
             if isinstance(namespace, (list, tuple))
             else (str(namespace),)
         )
-        return [
+        found = [
             {"namespace": key_ns, "key": key, "value": value}
             for (key_ns, key), value in self._values.items()
             if key_ns[: len(ns)] == ns
+            and all(
+                isinstance(value, Mapping) and value.get(name) == expected
+                for name, expected in (filter or {}).items()
+            )
         ]
+        return found[offset : offset + limit]
 
 
 class AgentRuntime:

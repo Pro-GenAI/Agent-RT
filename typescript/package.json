@@ -186,7 +186,7 @@
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"test": "npm run build && npm run test:run",
-		"test:run": "node --test tests/test.js tests/config.test.js tests/bedrock-config.test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/deepagents_openrouter.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js tests/migrate.test.js tests/demo.test.js",
+		"test:run": "node --test tests/test.js tests/config.test.js tests/bedrock-config.test.js tests/migration.test.js tests/migration_field.test.js tests/langchain.test.js tests/llamaindex.test.js tests/openai_agents.test.js tests/memory_compat.test.js tests/deepagents_openrouter.test.js tests/vector-mock-integration.test.js tests/decisions.test.js tests/evaluation.test.js tests/management_extensions.test.js tests/deployment.test.js tests/optimization.test.js tests/operations.test.js tests/review-regressions.test.js tests/sdk-versions.test.js tests/migrate.test.js tests/demo.test.js",
 		"evaluate": "node scripts/evaluate-harness.js --scope all",
 		"evaluate:evals": "node scripts/evaluate-harness.js --scope evals",
 		"evaluate:tests": "node scripts/evaluate-harness.js --scope tests",
@@ -240,10 +240,14 @@
 	"peerDependencies": {
 		"@anthropic-ai/sdk": ">=0.23.0",
 		"@aws-sdk/client-bedrock-agent-runtime": ">=3.600.0 <4",
+		"@getzep/zep-cloud": ">=4 <5",
+		"@letta-ai/letta-client": ">=1 <2",
 		"@traceloop/node-server-sdk": "^0.27.0",
 		"e2b": ">=1.4.0 <3",
+		"mem0ai": ">=3 <4",
 		"microsandbox": ">=0.7.4 <0.8",
-		"openai": ">=4.48.1"
+		"openai": ">=4.48.1",
+		"supermemory": ">=5 <6"
 	},
 	"peerDependenciesMeta": {
 		"@anthropic-ai/sdk": {
@@ -252,7 +256,19 @@
 		"@aws-sdk/client-bedrock-agent-runtime": {
 			"optional": true
 		},
+		"@getzep/zep-cloud": {
+			"optional": true
+		},
+		"@letta-ai/letta-client": {
+			"optional": true
+		},
+		"@traceloop/node-server-sdk": {
+			"optional": true
+		},
 		"e2b": {
+			"optional": true
+		},
+		"mem0ai": {
 			"optional": true
 		},
 		"microsandbox": {
@@ -261,7 +277,7 @@
 		"openai": {
 			"optional": true
 		},
-		"@traceloop/node-server-sdk": {
+		"supermemory": {
 			"optional": true
 		}
 	},

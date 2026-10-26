@@ -180,11 +180,13 @@ class AssistantAgent:
         tools: Sequence[Any] = (),
         model_client_stream: bool = False,
         max_tool_iterations: int = 16,
+        memory: Sequence[Any] | None = None,
         **kwargs: Any,
     ) -> None:
         if not str(name).strip():
             raise ValueError("agent name must not be empty")
         self.name = str(name)
+        self.memory = list(memory or ())
         self.model_client = model_client
         self.description = description
         self.system_message = system_message
@@ -205,6 +207,7 @@ class AssistantAgent:
             provider=provider,
             tools=self.tools,
             handoff_description=self.description or None,
+            memory=self.memory,
         )
 
     async def run(self, *, task: Any = None, **_: Any) -> TaskResult:
