@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from statistics import mean
 from time import perf_counter
-from typing import Any, Awaitable, Callable, Mapping, Sequence
-import asyncio
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -22,7 +23,9 @@ class BenchmarkCase:
             raise ValueError("benchmark category must not be empty")
         if not isinstance(self.iterations, int) or isinstance(self.iterations, bool):
             raise TypeError("iterations must be an integer")
-        if not isinstance(self.warmup_iterations, int) or isinstance(self.warmup_iterations, bool):
+        if not isinstance(self.warmup_iterations, int) or isinstance(
+            self.warmup_iterations, bool
+        ):
             raise TypeError("warmup_iterations must be an integer")
         if self.iterations < 1:
             raise ValueError("iterations must be at least 1")
@@ -66,7 +69,9 @@ class BenchmarkRunner:
 
         return BenchmarkResult(case.name, case.category, tuple(durations))
 
-    async def run_all(self, cases: Sequence[BenchmarkCase]) -> tuple[BenchmarkResult, ...]:
+    async def run_all(
+        self, cases: Sequence[BenchmarkCase]
+    ) -> tuple[BenchmarkResult, ...]:
         return tuple([await self.run(case) for case in cases])
 
 

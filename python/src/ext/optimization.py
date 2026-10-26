@@ -1,12 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Generic, Mapping, MutableMapping, Sequence, TypeVar
 import asyncio
 import copy
+import functools
 import math
 import time
-
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Coroutine,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
+from dataclasses import dataclass
+from typing import (
+    Any,
+    Generic,
+    TypeVar,
+)
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -76,7 +88,9 @@ class ResponseCache:
         if policy.ttl_seconds is not None:
             expires_at = self._clock() + policy.ttl_seconds
         identity = (policy.namespace, key)
-        self._entries.pop(identity, None)  # re-insert so eviction order is by write time
+        self._entries.pop(
+            identity, None
+        )  # re-insert so eviction order is by write time
         self._entries[identity] = _CacheEntry(copy.deepcopy(value), expires_at)
         self._evict()
 
@@ -108,18 +122,18 @@ class SingleFlight:
         self._inflight: dict[str, asyncio.Task[Any]] = {}
         self._lock = asyncio.Lock()
 
-    async def run(self, key: str, operation: Callable[[], Awaitable[T]]) -> T:
+    async def run(self, key: str, operation: Callable[[], Coroutine[Any, Any, T]]) -> T:
         async with self._lock:
             task = self._inflight.get(key)
             if task is None:
                 task = asyncio.create_task(operation())
                 self._inflight[key] = task
-                task.add_done_callback(lambda done, k=key: self._release(k, done))
+                task.add_done_callback(functools.partial(self._release, key))
         # The shared task outlives any single waiter, including the one that
         # started it, so the entry is removed only when the task itself ends.
         return await asyncio.shield(task)
 
-    def _release(self, key: str, task: "asyncio.Task[Any]") -> None:
+    def _release(self, key: str, task: asyncio.Task[Any]) -> None:
         if self._inflight.get(key) is task:
             del self._inflight[key]
         if not task.cancelled():
@@ -141,7 +155,7 @@ class BatchExecutor(Generic[T, R]):
     async def execute(self, items: Sequence[T]) -> tuple[R, ...]:
         results: list[R] = []
         for index in range(0, len(items), self._max_batch_size):
-            batch = items[index:index + self._max_batch_size]
+            batch = items[index : index + self._max_batch_size]
             batch_results = tuple(await self._handler(batch))
             if len(batch_results) != len(batch):
                 raise ValueError("batch handler must return one result per input")
@@ -175,9 +189,13 @@ class LatencyOptimizationPolicy:
             async with semaphore:
                 return await operation()
 
-        return tuple(await asyncio.gather(*(invoke(operation) for operation in operations)))
+        return tuple(
+            await asyncio.gather(*(invoke(operation) for operation in operations))
+        )
 
-    def critical_path(self, durations: Mapping[str, float], dependencies: Mapping[str, Sequence[str]]) -> tuple[str, ...]:
+    def critical_path(
+        self, durations: Mapping[str, float], dependencies: Mapping[str, Sequence[str]]
+    ) -> tuple[str, ...]:
         memo: dict[str, tuple[float, tuple[str, ...]]] = {}
         visiting: set[str] = set()
 
@@ -189,7 +207,10 @@ class LatencyOptimizationPolicy:
             visiting.add(node)
             deps = dependencies.get(node, ())
             if not deps:
-                result = (durations.get(node, 0.0), (node,))
+                result: tuple[float, tuple[str, ...]] = (
+                    durations.get(node, 0.0),
+                    (node,),
+                )
             else:
                 options = [best(dep) for dep in deps]
                 weight, path = max(options, key=lambda item: item[0])
@@ -222,7 +243,9 @@ class ModelTier:
             raise ValueError("quality must be finite")
         if not 0 <= self.quality <= 1:
             raise ValueError("quality must be between 0 and 1")
-        if not isinstance(self.max_context_tokens, int) or isinstance(self.max_context_tokens, bool):
+        if not isinstance(self.max_context_tokens, int) or isinstance(
+            self.max_context_tokens, bool
+        ):
             raise TypeError("max_context_tokens must be an integer")
         if self.max_context_tokens < 1:
             raise ValueError("max_context_tokens must be at least 1")
@@ -247,7 +270,9 @@ class CostOptimizationPolicy:
         if not 0 <= self.minimum_quality <= 1:
             raise ValueError("minimum_quality must be between 0 and 1")
         if self.context_token_target is not None:
-            if not isinstance(self.context_token_target, int) or isinstance(self.context_token_target, bool):
+            if not isinstance(self.context_token_target, int) or isinstance(
+                self.context_token_target, bool
+            ):
                 raise TypeError("context_token_target must be an integer")
             if self.context_token_target < 1:
                 raise ValueError("context_token_target must be at least 1")
@@ -256,11 +281,14 @@ class CostOptimizationPolicy:
         eligible = [
             tier
             for tier in tiers
-            if tier.cost_per_call <= self.budget and tier.quality >= self.minimum_quality
+            if tier.cost_per_call <= self.budget
+            and tier.quality >= self.minimum_quality
         ]
         if not eligible:
             raise RuntimeError("no model tier satisfies budget and quality constraints")
-        return min(eligible, key=lambda tier: (tier.cost_per_call, -tier.quality, tier.name))
+        return min(
+            eligible, key=lambda tier: (tier.cost_per_call, -tier.quality, tier.name)
+        )
 
     def reduce_context(self, token_counts: Sequence[int]) -> tuple[int, ...]:
         for count in token_counts:
@@ -288,4 +316,7 @@ class CostOptimizationPolicy:
             raise ValueError("remaining_budget must be non-negative")
         if not self.allow_early_exit:
             return False
-        return confidence >= self.minimum_quality and remaining_budget <= self.budget * 0.25
+        return (
+            confidence >= self.minimum_quality
+            and remaining_budget <= self.budget * 0.25
+        )

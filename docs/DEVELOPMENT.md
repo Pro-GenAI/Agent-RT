@@ -59,7 +59,7 @@ make check
 | `make test-browsers` | Run the web UI tests in every browser this OS can run (see below). |
 | `make test-matrix` | Run the suite across all supported Python versions. |
 | `make test-deps-matrix` | Run the suite across supported dependency versions (`openai`, `anthropic`, `httpx`, `websockets`, ... released since mid-2024). |
-| `make lint` / `make format` / `make format-check` | Ruff lint; Black formatting; Black check without changes. |
+| `make lint` / `make format` / `make format-check` | Ruff lint (its default rules minus the documented ignores in `pyproject.toml`); Black formatting; Black check without changes. |
 | `make typecheck` | Run mypy on `src`. |
 | `make quality` | `typecheck` + `lint` + `format-check`. |
 | `make security-static` | Deterministic static security gate (fails on medium or higher). |
@@ -234,7 +234,7 @@ npm run format
 npm run format:check
 ```
 
-Formatting is intentionally separate from `quality:check`.
+Formatting is intentionally separate from `quality:check`. GitHub's cross-platform workflow runs both, plus the Python `mypy`/Ruff/Black gate, in its `quality` job, so a failing check blocks pull requests and releases.
 
 The runtime tests use Node's built-in test runner. OpenAI HTTP/SSE behavior, embeddings, batches, model listing, error injection, and vector protocol coverage use `@copilotkit/aimock` where possible. `tests/vector-mock.js` extends aimock for Agent RT-specific Chroma v2, Milvus, and Weaviate query routes. The vector integration suite covers all five built-in vector backends without live services.
 
@@ -310,13 +310,13 @@ npm pack --dry-run
 
 ## Cross-platform CI
 
-Cross-platform CI lives in `.github/workflows/cross-platform.yml` and keeps both runtimes covered on Linux, Windows, macOS (Intel and Apple M-series), and Raspberry Pi (arm64).
+Cross-platform CI lives in `.github/workflows/cross-platform.yml`. It runs on pull requests, pushes to `main`, and as a reusable prerequisite of PyPI publication. Both runtimes are tested on Linux x86-64 and arm64, Windows, and macOS (Intel and Apple Silicon); the arm64/Linux jobs cover the Raspberry Pi instruction-set architecture. The dedicated Raspberry Pi CPU/memory-limited checks run in CircleCI.
 
-Both publish workflows depend on the cross-platform workflow so publishing does not proceed before the cross-platform release checks finish successfully.
+The PyPI workflow triggers when a GitHub release is **published** and invokes cross-platform CI for the release tag before building and uploading the package. Publishing is blocked when any of those checks fail. The release matrix covers Python 3.13 and Node 22; the full language-version and SDK-dependency matrices are separate jobs.
 
 ## CircleCI on Apple Silicon macOS
 
-CircleCI configuration lives in `.circleci/config.yml` and intentionally uses the macOS `m4pro.medium` resource class. Every job verifies `uname -m` is `arm64`. The workflow is manual-only through the `run_mac_ci` pipeline parameter.
+CircleCI configuration lives in `.circleci/config.yml` and intentionally uses the macOS `m4pro.medium` resource class. Every macOS job verifies `uname -m` is `arm64`. Apple Silicon and Raspberry Pi workflows run by default (`run_mac_ci` and `run_pi_ci` are enabled); individual workflows can be disabled through the pipeline parameters.
 
 The CircleCI workflow runs:
 

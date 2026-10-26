@@ -2,7 +2,7 @@ import io
 import sys
 from pathlib import Path
 
-from ext.migrate import SuiteRun, compare, main, plan_rewrite
+from ext.migrate import SuiteRun, compare, main, parse_junit, plan_rewrite
 
 
 def run(exit_code: int, failures: dict[str, str | None] | None) -> SuiteRun:
@@ -19,6 +19,16 @@ def test_compare_accepts_only_the_same_failures_at_the_same_line():
     )[0]
     assert not compare(run(0, {}), run(1, {"t::a": "tests/test_x.py:4"}))[0]
     assert not compare(before, run(1, None))[0]
+
+
+def test_parse_junit_refuses_dtd_entity_bombs(tmp_path: Path):
+    report = tmp_path / "report.xml"
+    report.write_text('<testsuite><testcase classname="t" name="a"/></testsuite>')
+    assert parse_junit(report, tmp_path) == (1, {})
+    report.write_text(
+        '<!DOCTYPE x [<!ENTITY a "aaaa">]><testsuite><testcase name="&a;"/></testsuite>'
+    )
+    assert parse_junit(report, tmp_path) is None
 
 
 def test_local_module_named_like_a_root_is_not_rewritten(tmp_path: Path):

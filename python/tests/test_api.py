@@ -70,8 +70,6 @@ class RateLimitedProvider(FakeProvider):
         raise RateLimitExceededError("model:provider-a", 17.0)
 
 
-
-
 def make_server(provider=None):
     loop = AgentLoop(provider or FakeProvider())
     agent = AgentConfig(
@@ -266,6 +264,29 @@ class TestAgentRTAPIHTTP:
         response = client.get("/v1/models")
         assert response.status_code == 429
         assert "Retry-After" in response.headers
+
+    def test_api_rate_limit_shares_bucket_across_credential_forms(self):
+        loop, agents = make_server()
+        client = self.TestClient(
+            create_app(
+                loop,
+                agents,
+                api_keys={"secret"},
+                request_rate_limit=RateLimit(limit=1, window_seconds=60.0),
+            )
+        )
+        assert (
+            client.get(
+                "/v1/models", headers={"authorization": "Bearer secret"}
+            ).status_code
+            == 200
+        )
+        for headers in (
+            {"authorization": "bearer secret"},
+            {"authorization": "BEARER secret"},
+            {"x-api-key": "secret"},
+        ):
+            assert client.get("/v1/models", headers=headers).status_code == 429
 
     def test_websocket_origin_and_message_size_limits(self):
         from starlette.websockets import WebSocketDisconnect

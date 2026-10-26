@@ -9,6 +9,7 @@ import sys
 import threading
 import types
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
 from types import SimpleNamespace
@@ -2028,10 +2029,8 @@ class _SyncOpenAIStream:
         # open. Skip it on the loop thread (join would deadlock) and at shutdown.
         if sys.is_finalizing() or threading.current_thread() is self._thread:
             return
-        try:
+        with suppress(Exception):
             self.close()
-        except Exception:
-            pass
 
     def __enter__(self):
         return self

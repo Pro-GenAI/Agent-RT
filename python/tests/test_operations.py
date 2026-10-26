@@ -146,7 +146,9 @@ class TestOperations:
         assert "HarmActionsEval requires OPENAI_MODEL" in completed.stderr
 
     def test_dev_security_scan_prefers_project_venv_tools(self, tmp_path, monkeypatch):
-        script = Path(__file__).resolve().parents[1] / "scripts" / "dev_security_scan.py"
+        script = (
+            Path(__file__).resolve().parents[1] / "scripts" / "dev_security_scan.py"
+        )
         spec = importlib.util.spec_from_file_location("dev_security_scan_test", script)
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
@@ -172,7 +174,9 @@ class TestOperations:
         assert module._tool("bandit") == str(project_tool)
 
     def test_dev_security_scan_does_not_require_git_for_secret_scan(self):
-        script = Path(__file__).resolve().parents[1] / "scripts" / "dev_security_scan.py"
+        script = (
+            Path(__file__).resolve().parents[1] / "scripts" / "dev_security_scan.py"
+        )
         source = script.read_text()
 
         assert '"--all-files"' in source

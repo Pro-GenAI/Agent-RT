@@ -20,10 +20,19 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_API_KEY_ENV = "OPENROUTER_API_KEY"  # pragma: allowlist secret
 
 
-_CHAT_OPTIONS = frozenset({
-    "model", "messages", "temperature", "max_tokens", "max_completion_tokens",
-    "tools", "response_format", "reasoning_effort", "stream",
-})
+_CHAT_OPTIONS = frozenset(
+    {
+        "model",
+        "messages",
+        "temperature",
+        "max_tokens",
+        "max_completion_tokens",
+        "tools",
+        "response_format",
+        "reasoning_effort",
+        "stream",
+    }
+)
 
 
 def _chat_kwargs(kwargs, owner="OpenRouter chat.send", drop=False):
@@ -99,7 +108,7 @@ class OpenRouter:
 
 
 def install_openrouter_compat(parent: Any) -> None:
-    module = types.ModuleType(f"{parent.__name__}.openrouter")
+    module: Any = types.ModuleType(f"{parent.__name__}.openrouter")
     exports = {"OpenRouter": OpenRouter}
     module.__dict__.update(exports)
     module.__all__ = tuple(sorted(exports))

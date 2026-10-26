@@ -16,6 +16,7 @@ from dataclasses import replace
 from typing import Any
 
 from agent_rt import (
+    SECURE_RUN_LIMITS,
     AgentConfig,
     AgentLoop,
     AgentRunLimits,
@@ -45,12 +46,7 @@ except ModuleNotFoundError as exc:
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_API_RUN_LIMITS = AgentRunLimits(
-    max_turns=16,
-    max_tool_calls=64,
-    timeout_seconds=120.0,
-    max_total_tokens=100_000,
-)
+DEFAULT_API_RUN_LIMITS = SECURE_RUN_LIMITS
 DEFAULT_MAX_REQUEST_BODY_BYTES = 1_048_576
 DEFAULT_MAX_WEBSOCKET_MESSAGE_BYTES = 1_048_576
 DEFAULT_MAX_OUTPUT_TOKENS = 32_768
@@ -78,7 +74,9 @@ class APIQueueOverloadedError(RuntimeError):
 
 
 class _ModelExecutionQueue:
-    def __init__(self, *, max_running: int, max_queued: int, wait_timeout_seconds: float) -> None:
+    def __init__(
+        self, *, max_running: int, max_queued: int, wait_timeout_seconds: float
+    ) -> None:
         self.max_running = max_running
         self.max_queued = max_queued
         self.wait_timeout_seconds = wait_timeout_seconds
@@ -104,7 +102,9 @@ class _ModelExecutionQueue:
             waiter = asyncio.get_running_loop().create_future()
             self._waiters.append(waiter)
         try:
-            await asyncio.wait_for(asyncio.shield(waiter), timeout=self.wait_timeout_seconds)
+            await asyncio.wait_for(
+                asyncio.shield(waiter), timeout=self.wait_timeout_seconds
+            )
         except (asyncio.TimeoutError, TimeoutError) as exc:
             await self._withdraw(waiter)
             raise APIQueueOverloadedError(model) from exc
@@ -147,7 +147,9 @@ class _ModelExecutionQueue:
         }
 
 
-async def _read_json_object(request: Any, max_request_body_bytes: int) -> dict[str, Any]:
+async def _read_json_object(
+    request: Any, max_request_body_bytes: int
+) -> dict[str, Any]:
     content_length = request.headers.get("content-length")
     if content_length is not None:
         try:
@@ -243,7 +245,9 @@ def _content_text(value: Any) -> str:
                 parts.append(item)
                 continue
             if not isinstance(item, Mapping):
-                raise ValueError("unsupported content part: expected a string or object")
+                raise ValueError(
+                    "unsupported content part: expected a string or object"
+                )
             item_type = item.get("type")
             text = item.get("text")
             if item_type in {None, "text", "input_text", "output_text"} and isinstance(
@@ -255,7 +259,9 @@ def _content_text(value: Any) -> str:
             # without input the caller believes it received.
             raise ValueError(f"unsupported content part type: {item_type!r}")
         return "".join(parts)
-    raise ValueError("message content must be a string or an array of text content parts")
+    raise ValueError(
+        "message content must be a string or an array of text content parts"
+    )
 
 
 def _tool_calls(value: Any) -> tuple[ToolCall, ...]:
@@ -279,7 +285,9 @@ def _tool_calls(value: Any) -> tuple[ToolCall, ...]:
         elif isinstance(arguments, Mapping):
             parsed = dict(arguments)
         else:
-            raise ValueError("tool call arguments must be a JSON object or encoded object")
+            raise ValueError(
+                "tool call arguments must be a JSON object or encoded object"
+            )
         if not isinstance(parsed, Mapping):
             raise ValueError("tool call arguments must decode to an object")
         calls.append(
@@ -335,7 +343,9 @@ def _responses_messages(raw: Any) -> tuple[ModelMessage, ...]:
             if role not in {"system", "user", "assistant"}:
                 raise ValueError(f"unsupported input role: {role!r}")
             messages.append(
-                ModelMessage(role=role, content=_text_part(_content_text(item.get("content"))))
+                ModelMessage(
+                    role=role, content=_text_part(_content_text(item.get("content")))
+                )
             )
             continue
         if item_type == "function_call":
@@ -344,13 +354,15 @@ def _responses_messages(raw: Any) -> tuple[ModelMessage, ...]:
                     role="assistant",
                     content=(),
                     tool_calls=_tool_calls(
-                        [{
-                            "id": item.get("call_id") or item.get("id") or "",
-                            "function": {
-                                "name": item.get("name") or "",
-                                "arguments": item.get("arguments") or "{}",
-                            },
-                        }]
+                        [
+                            {
+                                "id": item.get("call_id") or item.get("id") or "",
+                                "function": {
+                                    "name": item.get("name") or "",
+                                    "arguments": item.get("arguments") or "{}",
+                                },
+                            }
+                        ]
                     ),
                 )
             )
@@ -383,7 +395,9 @@ def _usage_dict(usage: ModelUsage | None, total_tokens: int = 0) -> dict[str, in
         }
     prompt = usage.input_tokens or 0
     completion = usage.output_tokens or 0
-    total = usage.total_tokens if usage.total_tokens is not None else prompt + completion
+    total = (
+        usage.total_tokens if usage.total_tokens is not None else prompt + completion
+    )
     return {
         "prompt_tokens": prompt,
         "completion_tokens": completion,
@@ -391,7 +405,9 @@ def _usage_dict(usage: ModelUsage | None, total_tokens: int = 0) -> dict[str, in
     }
 
 
-def _response_usage_dict(usage: ModelUsage | None, total_tokens: int = 0) -> dict[str, int]:
+def _response_usage_dict(
+    usage: ModelUsage | None, total_tokens: int = 0
+) -> dict[str, int]:
     chat = _usage_dict(usage, total_tokens)
     return {
         "input_tokens": chat["prompt_tokens"],
@@ -431,7 +447,9 @@ def _chat_tool_calls(response: ModelResponse | None) -> list[dict[str, Any]] | N
     ]
 
 
-def _error_payload(message: str, *, error_type: str = "invalid_request_error") -> dict[str, Any]:
+def _error_payload(
+    message: str, *, error_type: str = "invalid_request_error"
+) -> dict[str, Any]:
     return {
         "error": {
             "message": message,
@@ -483,17 +501,17 @@ def _anthropic_messages(raw: Any, *, system: Any = None) -> tuple[ModelMessage, 
         text_parts: list[str] = []
         tool_calls: list[ToolCall] = []
 
-        def flush_text() -> None:
-            if text_parts or tool_calls:
+        def flush_text() -> None:  # closure runs within each message iteration
+            if text_parts or tool_calls:  # noqa: B023
                 messages.append(
                     ModelMessage(
-                        role=role,
-                        content=_text_part("".join(text_parts)),
-                        tool_calls=tuple(tool_calls),
+                        role=role,  # noqa: B023
+                        content=_text_part("".join(text_parts)),  # noqa: B023
+                        tool_calls=tuple(tool_calls),  # noqa: B023
                     )
                 )
-                text_parts.clear()
-                tool_calls.clear()
+                text_parts.clear()  # noqa: B023
+                tool_calls.clear()  # noqa: B023
 
         for block in content:
             if not isinstance(block, Mapping):
@@ -502,11 +520,15 @@ def _anthropic_messages(raw: Any, *, system: Any = None) -> tuple[ModelMessage, 
             if block_type == "text":
                 text = block.get("text")
                 if not isinstance(text, str):
-                    raise ValueError("Anthropic text blocks require a string text field")
+                    raise ValueError(
+                        "Anthropic text blocks require a string text field"
+                    )
                 text_parts.append(text)
             elif block_type == "tool_use":
                 if role != "assistant":
-                    raise ValueError("tool_use blocks are only valid in assistant messages")
+                    raise ValueError(
+                        "tool_use blocks are only valid in assistant messages"
+                    )
                 tool_input = block.get("input", {})
                 if not isinstance(tool_input, Mapping):
                     raise ValueError("tool_use input must be an object")
@@ -519,7 +541,9 @@ def _anthropic_messages(raw: Any, *, system: Any = None) -> tuple[ModelMessage, 
                 )
             elif block_type == "tool_result":
                 if role != "user":
-                    raise ValueError("tool_result blocks are only valid in user messages")
+                    raise ValueError(
+                        "tool_result blocks are only valid in user messages"
+                    )
                 flush_text()
                 result_content = block.get("content", "")
                 messages.append(
@@ -534,16 +558,24 @@ def _anthropic_messages(raw: Any, *, system: Any = None) -> tuple[ModelMessage, 
                     f"Anthropic {block_type} content blocks are not supported by this API adapter yet"
                 )
             else:
-                raise ValueError(f"unsupported Anthropic content block type: {block_type!r}")
+                raise ValueError(
+                    f"unsupported Anthropic content block type: {block_type!r}"
+                )
         flush_text()
         if not content:
             messages.append(ModelMessage(role=role, content=()))
     return tuple(messages)
 
 
-def _anthropic_stop_reason(response: ModelResponse | None, result: AgentRunResult) -> str:
+def _anthropic_stop_reason(
+    response: ModelResponse | None, result: AgentRunResult
+) -> str:
     if result.termination_reason != "completed":
-        return "max_tokens" if result.termination_reason in _LIMIT_TERMINATIONS else "end_turn"
+        return (
+            "max_tokens"
+            if result.termination_reason in _LIMIT_TERMINATIONS
+            else "end_turn"
+        )
     if response is not None and response.message.tool_calls:
         return "tool_use"
     if response is not None and response.finish_reason == "length":
@@ -617,12 +649,16 @@ class AgentRTAPIServer:
             raise ValueError("max_concurrent_requests must be positive")
         if max_queued_requests < 0:
             raise ValueError("max_queued_requests must be non-negative")
-        if queue_wait_timeout_seconds <= 0 or not math.isfinite(queue_wait_timeout_seconds):
+        if queue_wait_timeout_seconds <= 0 or not math.isfinite(
+            queue_wait_timeout_seconds
+        ):
             raise ValueError("queue_wait_timeout_seconds must be finite and positive")
         normalized_keys = tuple(dict.fromkeys(str(value) for value in api_keys))
         if any(not value for value in normalized_keys):
             raise ValueError("configured API keys must not be empty")
-        normalized_origins = frozenset(str(value).strip() for value in allowed_websocket_origins)
+        normalized_origins = frozenset(
+            str(value).strip() for value in allowed_websocket_origins
+        )
         if any(not value for value in normalized_origins):
             raise ValueError("allowed WebSocket origins must not be empty")
         if "*" in normalized_origins:
@@ -632,7 +668,9 @@ class AgentRTAPIServer:
         self.config = config
         self.retrieval = retrieval
         self.agents = dict(agents)
-        self.default_agent = default_agent or (next(iter(self.agents)) if len(self.agents) == 1 else None)
+        self.default_agent = default_agent or (
+            next(iter(self.agents)) if len(self.agents) == 1 else None
+        )
         if self.default_agent is not None and self.default_agent not in self.agents:
             raise ValueError("default_agent must name a configured agent")
         self.api_keys = normalized_keys
@@ -667,8 +705,12 @@ class AgentRTAPIServer:
                     "Request-defined tools are not supported except file_search"
                 )
             ids = tool.get("vector_store_ids")
-            if not isinstance(ids, list) or not all(isinstance(item, str) for item in ids):
-                raise ValueError("file_search vector_store_ids must be a list of strings")
+            if not isinstance(ids, list) or not all(
+                isinstance(item, str) for item in ids
+            ):
+                raise ValueError(
+                    "file_search vector_store_ids must be a list of strings"
+                )
             references.extend(ids)
             requested = tool.get("max_num_results")
             if requested is not None:
@@ -684,7 +726,9 @@ class AgentRTAPIServer:
             raise ValueError("max_num_results must be between 1 and 50")
         return stores, max_results
 
-    def loop_for_request(self, file_search: tuple[tuple[Any, ...], int] | None) -> AgentLoop:
+    def loop_for_request(
+        self, file_search: tuple[tuple[Any, ...], int] | None
+    ) -> AgentLoop:
         """Loop whose tools also include a ``file_search`` limited to the requested stores."""
         if file_search is None:
             return self.loop
@@ -708,7 +752,9 @@ class AgentRTAPIServer:
     def resolve_agent(self, model: Any) -> tuple[str, AgentConfig]:
         if model is None:
             if self.default_agent is None:
-                raise ValueError("model is required when multiple agents are configured")
+                raise ValueError(
+                    "model is required when multiple agents are configured"
+                )
             return self.default_agent, self.agents[self.default_agent]
         model_id = str(model)
         agent = self.agents.get(model_id)
@@ -749,12 +795,14 @@ class AgentRTAPIServer:
         """Rate-limit identity: a verified credential, otherwise the client address.
 
         Unverified credentials never mint their own bucket, so rotating
-        ``Authorization`` values cannot evade or flood the limiter.
+        ``Authorization`` values cannot evade or flood the limiter. The digest
+        covers only the verified token, so scheme casing or switching to
+        ``x-api-key`` shares one bucket per credential.
         """
         if self.api_keys:
             authorization = connection.headers.get("authorization")
             if authorization and self.authorize_header(authorization):
-                return _credential_digest(authorization)
+                return _credential_digest(authorization.partition(" ")[2])
             api_key = connection.headers.get("x-api-key")
             if api_key and self.authorize_value(api_key):
                 return _credential_digest(api_key)
@@ -848,7 +896,9 @@ class AgentRTAPIServer:
             await execution_queue.release()
         return model_id, result
 
-    def chat_response(self, model_id: str, result: AgentRunResult, request_id: str) -> dict[str, Any]:
+    def chat_response(
+        self, model_id: str, result: AgentRunResult, request_id: str
+    ) -> dict[str, Any]:
         response = result.final_response
         message = response.message if response is not None else None
         payload: dict[str, Any] = {
@@ -869,48 +919,68 @@ class AgentRTAPIServer:
             "object": "chat.completion",
             "created": int(time.time()),
             "model": model_id,
-            "choices": [{
-                "index": 0,
-                "message": payload,
-                "finish_reason": _finish_reason(response, result),
-            }],
-            "usage": _usage_dict(response.usage if response else None, result.total_tokens),
+            "choices": [
+                {
+                    "index": 0,
+                    "message": payload,
+                    "finish_reason": _finish_reason(response, result),
+                }
+            ],
+            "usage": _usage_dict(
+                response.usage if response else None, result.total_tokens
+            ),
         }
 
-    def responses_response(self, model_id: str, result: AgentRunResult, response_id: str) -> dict[str, Any]:
+    def responses_response(
+        self, model_id: str, result: AgentRunResult, response_id: str
+    ) -> dict[str, Any]:
         response = result.final_response
         output: list[dict[str, Any]] = []
         if response is not None:
             text = _message_text(response.message)
             if text:
-                output.append({
-                    "type": "message",
-                    "id": f"msg_{uuid.uuid4().hex}",
-                    "status": "completed",
-                    "role": "assistant",
-                    "content": [{
-                        "type": "output_text",
-                        "text": text,
-                        "annotations": [],
-                    }],
-                })
+                output.append(
+                    {
+                        "type": "message",
+                        "id": f"msg_{uuid.uuid4().hex}",
+                        "status": "completed",
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": text,
+                                "annotations": [],
+                            }
+                        ],
+                    }
+                )
             for call in response.message.tool_calls:
-                output.append({
-                    "type": "function_call",
-                    "id": f"fc_{uuid.uuid4().hex}",
-                    "call_id": call.id,
-                    "name": call.name,
-                    "arguments": json.dumps(dict(call.arguments), separators=(",", ":")),
-                    "status": "completed",
-                })
+                output.append(
+                    {
+                        "type": "function_call",
+                        "id": f"fc_{uuid.uuid4().hex}",
+                        "call_id": call.id,
+                        "name": call.name,
+                        "arguments": json.dumps(
+                            dict(call.arguments), separators=(",", ":")
+                        ),
+                        "status": "completed",
+                    }
+                )
         return {
             "id": response_id,
             "object": "response",
             "created_at": int(time.time()),
-            "status": "completed" if result.termination_reason == "completed" else "incomplete",
+            "status": (
+                "completed"
+                if result.termination_reason == "completed"
+                else "incomplete"
+            ),
             "model": model_id,
             "output": output,
-            "usage": _response_usage_dict(response.usage if response else None, result.total_tokens),
+            "usage": _response_usage_dict(
+                response.usage if response else None, result.total_tokens
+            ),
             "error": None,
             "incomplete_details": (
                 None
@@ -987,49 +1057,67 @@ def create_app(
     app.state.agent_rt_server = server
 
     @app.exception_handler(APIQueueOverloadedError)
-    async def queue_overloaded(request: Request, exc: APIQueueOverloadedError) -> JSONResponse:
+    async def queue_overloaded(
+        request: Request, exc: APIQueueOverloadedError
+    ) -> JSONResponse:
         headers = {"Retry-After": str(max(1, math.ceil(exc.retry_after_seconds)))}
         if request.headers.get("anthropic-version") is not None:
             return JSONResponse(
                 status_code=503,
-                content=_anthropic_error_payload("Server is overloaded. Retry later.", error_type="overloaded_error"),
+                content=_anthropic_error_payload(
+                    "Server is overloaded. Retry later.", error_type="overloaded_error"
+                ),
                 headers=headers,
             )
         return JSONResponse(
             status_code=503,
-            content=_error_payload("Server is overloaded. Retry later.", error_type="server_error"),
+            content=_error_payload(
+                "Server is overloaded. Retry later.", error_type="server_error"
+            ),
             headers=headers,
         )
 
     @app.exception_handler(RateLimitExceededError)
-    async def provider_rate_limited(request: Request, exc: RateLimitExceededError) -> JSONResponse:
+    async def provider_rate_limited(
+        request: Request, exc: RateLimitExceededError
+    ) -> JSONResponse:
         headers = {"Retry-After": str(max(1, math.ceil(exc.retry_after_seconds)))}
         if request.headers.get("anthropic-version") is not None:
             return JSONResponse(
                 status_code=429,
-                content=_anthropic_error_payload("Rate limit exceeded.", error_type="rate_limit_error"),
+                content=_anthropic_error_payload(
+                    "Rate limit exceeded.", error_type="rate_limit_error"
+                ),
                 headers=headers,
             )
         return JSONResponse(
             status_code=429,
-            content=_error_payload("Rate limit exceeded.", error_type="rate_limit_error"),
+            content=_error_payload(
+                "Rate limit exceeded.", error_type="rate_limit_error"
+            ),
             headers=headers,
         )
 
     @app.exception_handler(HTTPException)
-    async def openai_http_exception(_request: Request, exc: HTTPException) -> JSONResponse:
+    async def openai_http_exception(
+        _request: Request, exc: HTTPException
+    ) -> JSONResponse:
         detail = exc.detail
         if isinstance(detail, Mapping) and "error" in detail:
             content = dict(detail)
         else:
             content = _error_payload(str(detail))
-        return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
+        return JSONResponse(
+            status_code=exc.status_code, content=content, headers=exc.headers
+        )
 
     def require_http_auth(request: Any) -> None:
         if not server.authorize_header(request.headers.get("authorization")):
             raise HTTPException(
                 status_code=401,
-                detail=_error_payload("Invalid API key.", error_type="authentication_error"),
+                detail=_error_payload(
+                    "Invalid API key.", error_type="authentication_error"
+                ),
             )
 
     def anthropic_authorized(request: Any) -> bool:
@@ -1057,7 +1145,11 @@ def create_app(
         try:
             return await _read_json_object(request, server.max_request_body_bytes)
         except _RequestBodyError as exc:
-            message = exc.args[0] if exc.args and isinstance(exc.args[0], str) else "Invalid request body."
+            message = (
+                exc.args[0]
+                if exc.args and isinstance(exc.args[0], str)
+                else "Invalid request body."
+            )
             raise HTTPException(
                 status_code=exc.status_code,
                 detail=_error_payload(message),
@@ -1096,26 +1188,32 @@ def create_app(
             content=_error_payload("Internal server error.", error_type="server_error"),
         )
 
-    def stream_error_payload(exc: BaseException, *, anthropic: bool = False) -> dict[str, Any]:
+    def stream_error_payload(
+        exc: BaseException, *, anthropic: bool = False
+    ) -> dict[str, Any]:
         if isinstance(exc, RateLimitExceededError):
             payload = (
-                _anthropic_error_payload("Rate limit exceeded.", error_type="rate_limit_error")
+                _anthropic_error_payload(
+                    "Rate limit exceeded.", error_type="rate_limit_error"
+                )
                 if anthropic
-                else _error_payload("Rate limit exceeded.", error_type="rate_limit_error")
+                else _error_payload(
+                    "Rate limit exceeded.", error_type="rate_limit_error"
+                )
             )
-            payload["retry_after_seconds"] = max(
-                1, math.ceil(exc.retry_after_seconds)
-            )
+            payload["retry_after_seconds"] = max(1, math.ceil(exc.retry_after_seconds))
             return payload
         if isinstance(exc, APIQueueOverloadedError):
             payload = (
-                _anthropic_error_payload("Server is overloaded. Retry later.", error_type="overloaded_error")
+                _anthropic_error_payload(
+                    "Server is overloaded. Retry later.", error_type="overloaded_error"
+                )
                 if anthropic
-                else _error_payload("Server is overloaded. Retry later.", error_type="server_error")
+                else _error_payload(
+                    "Server is overloaded. Retry later.", error_type="server_error"
+                )
             )
-            payload["retry_after_seconds"] = max(
-                1, math.ceil(exc.retry_after_seconds)
-            )
+            payload["retry_after_seconds"] = max(1, math.ceil(exc.retry_after_seconds))
             return payload
         return (
             _anthropic_error_payload("Internal server error.", error_type="api_error")
@@ -1129,7 +1227,9 @@ def create_app(
             try:
                 server.check_request_rate(server.request_identity(request))
             except RateLimitExceededError as exc:
-                headers = {"Retry-After": str(max(1, math.ceil(exc.retry_after_seconds)))}
+                headers = {
+                    "Retry-After": str(max(1, math.ceil(exc.retry_after_seconds)))
+                }
                 if request.headers.get("anthropic-version") is not None:
                     return anthropic_http_error(
                         "Rate limit exceeded.",
@@ -1139,7 +1239,9 @@ def create_app(
                     )
                 return JSONResponse(
                     status_code=429,
-                    content=_error_payload("Rate limit exceeded.", error_type="rate_limit_error"),
+                    content=_error_payload(
+                        "Rate limit exceeded.", error_type="rate_limit_error"
+                    ),
                     headers=headers,
                 )
         return await call_next(request)
@@ -1232,7 +1334,9 @@ def create_app(
                             tools=body.get("tools"),
                             messages=messages,
                             temperature=body.get("temperature"),
-                            max_output_tokens=body.get("max_completion_tokens", body.get("max_tokens")),
+                            max_output_tokens=body.get(
+                                "max_completion_tokens", body.get("max_tokens")
+                            ),
                             stream_handler=on_event,
                         )
                     except BaseException as exc:
@@ -1255,15 +1359,17 @@ def create_app(
                         if event.type == "text_delta" and event.text:
                             delta["content"] = event.text
                         elif event.type == "tool_call_delta":
-                            delta["tool_calls"] = [{
-                                "index": 0,
-                                "id": event.tool_call_id,
-                                "type": "function",
-                                "function": {
-                                    "name": event.tool_name,
-                                    "arguments": event.arguments_delta or "",
-                                },
-                            }]
+                            delta["tool_calls"] = [
+                                {
+                                    "index": 0,
+                                    "id": event.tool_call_id,
+                                    "type": "function",
+                                    "function": {
+                                        "name": event.tool_name,
+                                        "arguments": event.arguments_delta or "",
+                                    },
+                                }
+                            ]
                         else:
                             continue
                         chunk = {
@@ -1271,7 +1377,9 @@ def create_app(
                             "object": "chat.completion.chunk",
                             "created": created,
                             "model": model_id,
-                            "choices": [{"index": 0, "delta": delta, "finish_reason": None}],
+                            "choices": [
+                                {"index": 0, "delta": delta, "finish_reason": None}
+                            ],
                         }
                         yield f"data: {json.dumps(chunk, separators=(',', ':'))}\n\n".encode()
 
@@ -1282,11 +1390,15 @@ def create_app(
                             "object": "chat.completion.chunk",
                             "created": created,
                             "model": model_id,
-                            "choices": [{
-                                "index": 0,
-                                "delta": {},
-                                "finish_reason": _finish_reason(response, completed_result),
-                            }],
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {},
+                                    "finish_reason": _finish_reason(
+                                        response, completed_result
+                                    ),
+                                }
+                            ],
                         }
                         yield f"data: {json.dumps(final_chunk, separators=(',', ':'))}\n\n".encode()
                     yield b"data: [DONE]\n\n"
@@ -1302,13 +1414,17 @@ def create_app(
                 tools=body.get("tools"),
                 messages=messages,
                 temperature=body.get("temperature"),
-                max_output_tokens=body.get("max_completion_tokens", body.get("max_tokens")),
+                max_output_tokens=body.get(
+                    "max_completion_tokens", body.get("max_tokens")
+                ),
             )
         except (TypeError, ValueError) as exc:
             return run_failure(exc)
         return server.chat_response(model_id, result, f"chatcmpl-{uuid.uuid4().hex}")
 
-    async def run_responses_stream(body: Mapping[str, Any]) -> AsyncIterator[dict[str, Any]]:
+    async def run_responses_stream(
+        body: Mapping[str, Any],
+    ) -> AsyncIterator[dict[str, Any]]:
         messages = _responses_messages(body.get("input", ""))
         model_id, _ = server.resolve_agent(body.get("model"))
         response_id = f"resp_{uuid.uuid4().hex}"
@@ -1391,6 +1507,7 @@ def create_app(
                 max_output_tokens=body.get("max_output_tokens"),
             )
             if body.get("stream"):
+
                 async def generate() -> AsyncIterator[bytes]:
                     try:
                         async for event in run_responses_stream(body):
@@ -1408,6 +1525,7 @@ def create_app(
                             **stream_error_payload(exc),
                         }
                         yield f"event: error\ndata: {json.dumps(error, separators=(',', ':'))}\n\n".encode()
+
                 return StreamingResponse(generate(), media_type="text/event-stream")
 
             messages = _responses_messages(body.get("input", ""))
@@ -1536,8 +1654,8 @@ def create_app(
                 },
                 "usage": {
                     "output_tokens": (
-                        response.usage.output_tokens or 0
-                        if response is not None
+                        (response.usage.output_tokens or 0)
+                        if response is not None and response.usage is not None
                         else 0
                     )
                 },
@@ -1558,7 +1676,11 @@ def create_app(
         try:
             body = await _read_json_object(request, server.max_request_body_bytes)
         except _RequestBodyError as exc:
-            message = exc.args[0] if exc.args and isinstance(exc.args[0], str) else "Invalid request body."
+            message = (
+                exc.args[0]
+                if exc.args and isinstance(exc.args[0], str)
+                else "Invalid request body."
+            )
             return anthropic_http_error(
                 message,
                 status_code=exc.status_code,
@@ -1587,6 +1709,7 @@ def create_app(
             )
 
         if body.get("stream"):
+
             async def generate() -> AsyncIterator[bytes]:
                 try:
                     async for event in run_anthropic_stream(body):
@@ -1608,7 +1731,9 @@ def create_app(
             return StreamingResponse(generate(), media_type="text/event-stream")
 
         try:
-            messages = _anthropic_messages(body.get("messages"), system=body.get("system"))
+            messages = _anthropic_messages(
+                body.get("messages"), system=body.get("system")
+            )
         except (TypeError, ValueError) as exc:
             status, message = public_request_error(exc)
             error_type = "not_found_error" if status == 404 else "invalid_request_error"
@@ -1664,30 +1789,38 @@ def create_app(
                     await websocket.close(code=1009, reason="Message too large")
                     return
                 except ValueError:
-                    await websocket.send_json({
-                        "type": "error",
-                        **_error_payload("Invalid WebSocket message."),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            **_error_payload("Invalid WebSocket message."),
+                        }
+                    )
                     continue
 
                 try:
                     server.check_request_rate(server.request_identity(websocket))
                 except RateLimitExceededError as exc:
-                    await websocket.send_json({
-                        "type": "error",
-                        **_error_payload(
-                            "Rate limit exceeded.",
-                            error_type="rate_limit_error",
-                        ),
-                        "retry_after_seconds": max(1, math.ceil(exc.retry_after_seconds)),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            **_error_payload(
+                                "Rate limit exceeded.",
+                                error_type="rate_limit_error",
+                            ),
+                            "retry_after_seconds": max(
+                                1, math.ceil(exc.retry_after_seconds)
+                            ),
+                        }
+                    )
                     continue
 
                 if body.get("type") != "response.create":
-                    await websocket.send_json({
-                        "type": "error",
-                        **_error_payload("Expected a response.create event."),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            **_error_payload("Expected a response.create event."),
+                        }
+                    )
                     continue
                 stream_id = body.get("stream_id")
                 try:
@@ -1710,7 +1843,9 @@ def create_app(
                             event = {"stream_id": stream_id, **event}
                         await websocket.send_json(event)
                 except Exception as exc:
-                    if not isinstance(exc, (RateLimitExceededError, APIQueueOverloadedError)):
+                    if not isinstance(
+                        exc, (RateLimitExceededError, APIQueueOverloadedError)
+                    ):
                         LOGGER.exception("Responses WebSocket stream failed")
                     event = {
                         "type": "error",
@@ -1815,9 +1950,7 @@ def build_from_config(
     resolved = config if config is not None else load_config(config_path)
     configure_runtime(resolved)
     provider = load_model(resolved, provider_factory=provider_factory)
-    loop = AgentLoop(
-        provider, tool_executor=tool_registry, tool_registry=tool_registry
-    )
+    loop = AgentLoop(provider, tool_executor=tool_registry, tool_registry=tool_registry)
     agents = {
         name: AgentConfig(
             name=name,
@@ -1828,7 +1961,8 @@ def build_from_config(
     }
     retrieval = (
         vector_store_registry_from_config(
-            resolved, embedding_provider=provider,
+            resolved,
+            embedding_provider=provider,
             bedrock_client_factory=bedrock_client_factory,
         )
         if resolved.vector_stores
@@ -1842,7 +1976,9 @@ def build_from_config(
         "retrieval": retrieval,
         "default_agent": options.get("default_agent") or resolved.default_model,
         "api_keys": tuple(options.get("api_keys") or ()),
-        "allowed_websocket_origins": tuple(options.get("allowed_websocket_origins") or ()),
+        "allowed_websocket_origins": tuple(
+            options.get("allowed_websocket_origins") or ()
+        ),
         "host": options.get("host", "127.0.0.1"),
         "port": int(options.get("port", 8000)),
         **{
@@ -1853,14 +1989,21 @@ def build_from_config(
     }
 
 
-def serve_from_config(config: Any = None, *, config_path: Any = None, **overrides: Any) -> None:
+def serve_from_config(
+    config: Any = None, *, config_path: Any = None, **overrides: Any
+) -> None:
     """Serve every configured model over the OpenAI/Anthropic-compatible API."""
     built = build_from_config(
         config,
         config_path=config_path,
         **{
             key: overrides.pop(key)
-            for key in ("instructions", "tool_registry", "provider_factory", "bedrock_client_factory")
+            for key in (
+                "instructions",
+                "tool_registry",
+                "provider_factory",
+                "bedrock_client_factory",
+            )
             if key in overrides
         },
     )
@@ -1871,7 +2014,9 @@ def serve_from_config(config: Any = None, *, config_path: Any = None, **override
 def main(argv: Sequence[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(prog="agent-rt-api", description="Serve configured models.")
+    parser = argparse.ArgumentParser(
+        prog="agent-rt-api", description="Serve configured models."
+    )
     parser.add_argument("-c", "--config", help="path to the YAML config file")
     args = parser.parse_args(argv)
     try:

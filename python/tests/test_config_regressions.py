@@ -106,8 +106,7 @@ async def test_bedrock_retrieval_and_aliases():
 @pytest.mark.asyncio
 async def test_unused_store_secret_is_deferred():
     config = parse_config(
-        BEDROCK_YAML
-        + """
+        BEDROCK_YAML + """
   - vector_store_name: optional
     litellm_params:
       custom_llm_provider: qdrant
@@ -129,8 +128,7 @@ async def test_unused_store_secret_is_deferred():
 
 def test_config_repr_redacts_sensitive_nested_values():
     config = parse_config(
-        BEDROCK_YAML
-        + """
+        BEDROCK_YAML + """
 agent_rt_settings:
   server:
     api_keys: [redacted-test-placeholder]

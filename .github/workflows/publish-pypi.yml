@@ -2,10 +2,16 @@ name: Publish Python Package to PyPI
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
+  verify-release:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cross-platform.yml
+
   publish-pypi:
+    needs: verify-release
     name: Publish release to PyPI
     runs-on: ubuntu-latest
     environment:

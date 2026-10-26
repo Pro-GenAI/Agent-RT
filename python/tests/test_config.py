@@ -37,8 +37,7 @@ from agent_rt import (
 from agent_rt_api import AgentRTAPIServer, build_from_config
 from ext.config import config_search_paths, discover_config_path, parse_config
 
-CONFIG = textwrap.dedent(
-    """
+CONFIG = textwrap.dedent("""
     model_list:
       - model_name: claude-sonnet-5
         litellm_params:
@@ -79,8 +78,7 @@ CONFIG = textwrap.dedent(
       sandbox:
         allowed_domains: [a.example.test, b.example.test]
         allow_http: false
-    """
-)
+    """)
 
 ENVIRONMENT = {"TEST_ANTHROPIC_KEY": "ak", "TEST_OPENAI_KEY": "ok"}
 
@@ -136,10 +134,15 @@ class TestParsing:
     def test_missing_secret_names_the_key_but_not_a_value(self):
         config = parse(environ={})  # model and store keys fail only when used
         provider = ConfiguredModelProvider(config, provider_factory=lambda _: None)
-        with pytest.raises(ConfigError, match=r"model_list\[0\]\.litellm_params\.api_key"):
+        with pytest.raises(
+            ConfigError, match=r"model_list\[0\]\.litellm_params\.api_key"
+        ):
             provider._provider(config.models[0])
         with pytest.raises(ConfigError, match=r"web_search\.api_key.*NOPE"):
-            parse("agent_rt_settings:\n  web_search: {api_key: os.environ/NOPE}\n", environ={})
+            parse(
+                "agent_rt_settings:\n  web_search: {api_key: os.environ/NOPE}\n",
+                environ={},
+            )
 
     async def test_unset_secret_in_unused_or_failed_deployment_does_not_block(self):
         openai = RecordingProvider("openai")
@@ -158,7 +161,11 @@ class TestParsing:
             config.server_options()
 
     def test_store_name_may_equal_its_id(self):
-        config = parse(CONFIG.replace("vector_store_name: docs-kb", "vector_store_name: T37J8R4WTM"))
+        config = parse(
+            CONFIG.replace(
+                "vector_store_name: docs-kb", "vector_store_name: T37J8R4WTM"
+            )
+        )
         assert config.vector_store("T37J8R4WTM").name == "T37J8R4WTM"
 
     def test_duplicate_names_become_ordered_fallbacks(self):
@@ -170,9 +177,13 @@ class TestParsing:
         with pytest.raises(ConfigError, match="unknown key"):
             parse("surprise: 1\n")
         with pytest.raises(ConfigError, match="unsupported provider"):
-            parse("model_list:\n  - model_name: x\n    agent_rt_params: {model: bedrock/x}\n")
+            parse(
+                "model_list:\n  - model_name: x\n    agent_rt_params: {model: bedrock/x}\n"
+            )
         with pytest.raises(ConfigError, match="<provider>/<model>"):
-            parse("model_list:\n  - model_name: x\n    agent_rt_params: {model: plain}\n")
+            parse(
+                "model_list:\n  - model_name: x\n    agent_rt_params: {model: plain}\n"
+            )
 
     def test_unsafe_yaml_tags_are_rejected(self):
         with pytest.raises(ConfigError, match="invalid YAML"):
@@ -184,20 +195,32 @@ class TestParsing:
         assert store is config.vector_store("docs-kb")
         assert store.metadata == {"source": "https://example.test/docs"}
         with pytest.raises(ConfigError, match="not in model_list"):
-            parse(CONFIG.replace("embedding_model: embed-small", "embedding_model: missing"))
+            parse(
+                CONFIG.replace(
+                    "embedding_model: embed-small", "embedding_model: missing"
+                )
+            )
         with pytest.raises(ConfigError, match="unsupported"):
-            parse(CONFIG.replace("custom_llm_provider: qdrant", "custom_llm_provider: azure"))
+            parse(
+                CONFIG.replace(
+                    "custom_llm_provider: qdrant", "custom_llm_provider: azure"
+                )
+            )
         with pytest.raises(ConfigError, match="duplicate vector store"):
             parse(CONFIG.replace("PRIVATE1", "T37J8R4WTM"))
 
     def test_default_model_must_exist(self):
         with pytest.raises(ConfigError, match="default_model"):
-            parse(CONFIG.replace("default_model: claude-sonnet-5", "default_model: nope"))
+            parse(
+                CONFIG.replace("default_model: claude-sonnet-5", "default_model: nope")
+            )
 
     def test_runtime_environment_comes_from_settings_only(self):
         env = parse().runtime_environment()
         assert env["AGENT_RT_EXECUTION_TIMEOUT_SECONDS"] == "7"
-        assert env["AGENT_RT_SANDBOX_ALLOWED_DOMAINS"] == "a.example.test,b.example.test"
+        assert (
+            env["AGENT_RT_SANDBOX_ALLOWED_DOMAINS"] == "a.example.test,b.example.test"
+        )
         assert env["AGENT_RT_SANDBOX_ALLOW_HTTP"] == "false"
 
     def test_configure_runtime_feeds_implicit_defaults(self):
@@ -211,7 +234,9 @@ class TestParsing:
 
 def text_response(text: str) -> ModelResponse:
     return ModelResponse(
-        message=ModelMessage(role="assistant", content=(ContentPart(type="text", text=text),)),
+        message=ModelMessage(
+            role="assistant", content=(ContentPart(type="text", text=text),)
+        ),
         finish_reason="stop",
     )
 
@@ -239,7 +264,10 @@ class RecordingProvider:
         if self.fail:
             raise RuntimeError(f"{self.label} down")
         # "claude-sonnet-5" collides with a configured model_name, which must win.
-        return (SimpleNamespace(id=f"{self.label}-extra"), SimpleNamespace(id="claude-sonnet-5"))
+        return (
+            SimpleNamespace(id=f"{self.label}-extra"),
+            SimpleNamespace(id="claude-sonnet-5"),
+        )
 
     async def embed(self, request):
         self.requests.append(request)
@@ -248,7 +276,9 @@ class RecordingProvider:
 
 def user_request(model=None) -> ModelRequest:
     return ModelRequest(
-        messages=(ModelMessage(role="user", content=(ContentPart(type="text", text="hi"),)),),
+        messages=(
+            ModelMessage(role="user", content=(ContentPart(type="text", text="hi"),)),
+        ),
         model=model,
     )
 
@@ -284,14 +314,18 @@ class TestConfiguredModelProvider:
 
     async def test_stream_falls_back_before_first_event(self):
         provider, _ = self.make(anthropic_down=True)
-        events = [event async for event in provider.stream(user_request("claude-sonnet-5"))]
+        events = [
+            event async for event in provider.stream(user_request("claude-sonnet-5"))
+        ]
         assert events[-1].response.message.content[0].text == "openai"
 
     async def test_discovered_models_route_to_the_endpoint_that_listed_them(self):
         provider, providers = self.make(anthropic_down=True)
         # The down endpoint is skipped, and each endpoint is asked once.
         assert await provider.discover_models() == ("openai-extra",)
-        assert provider.discovery_errors == ["claude-sonnet-5: RuntimeError: anthropic down"]
+        assert provider.discovery_errors == [
+            "claude-sonnet-5: RuntimeError: anthropic down"
+        ]
         await provider.complete(user_request("openai-extra"))
         assert providers["openai"].requests[-1].model == "openai-extra"
         await provider.complete(user_request("claude-sonnet-5"))
@@ -299,7 +333,9 @@ class TestConfiguredModelProvider:
 
     async def test_unknown_model_lists_configured_models(self):
         provider, _ = self.make()
-        with pytest.raises(ValueError, match="configured models: claude-sonnet-5, embed-small"):
+        with pytest.raises(
+            ValueError, match="configured models: claude-sonnet-5, embed-small"
+        ):
             await provider.complete(user_request("nope"))
 
     async def test_embed_routes_to_the_named_embedding_model(self):
@@ -340,7 +376,9 @@ class TestConfiguredModelProvider:
             websocket=False,
         )
         with pytest.raises(ValueError, match="not available"):
-            settings.validate_connection(check_default_model=True, client_factory=factory)
+            settings.validate_connection(
+                check_default_model=True, client_factory=factory
+            )
 
 
 class StubStore:
@@ -367,13 +405,18 @@ class TestVectorStores:
     def test_registry_registers_every_store_under_name_and_id(self):
         registry = vector_store_registry_from_config(parse())
         assert isinstance(registry, RetrievalRegistry)
-        assert {"docs-kb", "T37J8R4WTM", "private-kb", "PRIVATE1"} <= set(registry._providers)
+        assert {"docs-kb", "T37J8R4WTM", "private-kb", "PRIVATE1"} <= set(
+            registry._providers
+        )
 
     def test_embedding_is_pinned_to_configured_model(self):
         registry = vector_store_registry_from_config(
             parse(), embedding_provider=RecordingProvider("emb")
         )
-        assert registry._providers["docs-kb"].embedding_provider._model_name == "embed-small"
+        assert (
+            registry._providers["docs-kb"].embedding_provider._model_name
+            == "embed-small"
+        )
 
     def test_resolve_rejects_unknown_and_disallowed_stores(self):
         config = parse()
@@ -393,7 +436,9 @@ class TestVectorStores:
         registry.register("docs-kb", StubStore("docs", 0.4))
         registry.register("private-kb", StubStore("private", 0.9))
         tools = ToolRegistry()
-        register_file_search_tool(tools, registry, tuple(config.vector_stores), max_results=2)
+        register_file_search_tool(
+            tools, registry, tuple(config.vector_stores), max_results=2
+        )
 
         output = await tools.execute(
             ToolCall(id="1", name="file_search", arguments={"query": "what?"})
@@ -418,7 +463,9 @@ class ToolCallingProvider:
                     role="assistant",
                     content=(),
                     tool_calls=(
-                        ToolCall(id="c1", name="file_search", arguments={"query": "litellm"}),
+                        ToolCall(
+                            id="c1", name="file_search", arguments={"query": "litellm"}
+                        ),
                     ),
                 ),
                 finish_reason="tool_calls",
@@ -436,16 +483,23 @@ class TestApiFileSearch:
         for name in ("private-kb", "PRIVATE1"):
             registry.register(name, private)
         agents = {
-            name: AgentConfig(name=name, instructions="x", model=ModelSettings(model=name))
+            name: AgentConfig(
+                name=name, instructions="x", model=ModelSettings(model=name)
+            )
             for name in ("claude-sonnet-5", "embed-small")
         }
         loop = AgentLoop(provider or ToolCallingProvider())
-        return AgentRTAPIServer(loop, agents, config=parse(), retrieval=registry), private
+        return (
+            AgentRTAPIServer(loop, agents, config=parse(), retrieval=registry),
+            private,
+        )
 
     def test_non_file_search_tools_are_rejected(self):
         server, _ = self.make_server()
         with pytest.raises(ValueError, match="except file_search"):
-            server.file_search_request([{"type": "function", "function": {}}], "claude-sonnet-5")
+            server.file_search_request(
+                [{"type": "function", "function": {}}], "claude-sonnet-5"
+            )
         with pytest.raises(ValueError, match="list of strings"):
             server.file_search_request([{"type": "file_search"}], "claude-sonnet-5")
 
@@ -453,18 +507,22 @@ class TestApiFileSearch:
         server, _ = self.make_server()
         with pytest.raises(ValueError, match="unknown vector store"):
             server.file_search_request(
-                [{"type": "file_search", "vector_store_ids": ["evil"]}], "claude-sonnet-5"
+                [{"type": "file_search", "vector_store_ids": ["evil"]}],
+                "claude-sonnet-5",
             )
         with pytest.raises(ValueError, match="not available to this model"):
             server.file_search_request(
-                [{"type": "file_search", "vector_store_ids": ["PRIVATE1"]}], "claude-sonnet-5"
+                [{"type": "file_search", "vector_store_ids": ["PRIVATE1"]}],
+                "claude-sonnet-5",
             )
 
     def test_unconfigured_server_rejects_file_search(self):
         agent = AgentConfig(name="a", instructions="x", model=ModelSettings(model="a"))
         server = AgentRTAPIServer(AgentLoop(ToolCallingProvider()), {"a": agent})
         with pytest.raises(ValueError, match="not configured"):
-            server.file_search_request([{"type": "file_search", "vector_store_ids": ["x"]}], "a")
+            server.file_search_request(
+                [{"type": "file_search", "vector_store_ids": ["x"]}], "a"
+            )
 
     async def test_run_with_file_search_uses_request_scoped_tool(self):
         provider = ToolCallingProvider()
@@ -491,7 +549,9 @@ class TestApiFileSearch:
     def test_build_from_config_creates_agent_per_model(self, monkeypatch):
         # build_from_config calls configure_runtime; restore the global afterwards.
         monkeypatch.setattr(agent_rt, "_RUNTIME_SETTINGS", runtime_settings())
-        built = build_from_config(parse(), provider_factory=lambda _d: RecordingProvider("x"))
+        built = build_from_config(
+            parse(), provider_factory=lambda _d: RecordingProvider("x")
+        )
         assert set(built["agents"]) == {"claude-sonnet-5", "embed-small"}
         assert built["default_agent"] == "claude-sonnet-5"
         assert built["retrieval"] is not None
@@ -507,9 +567,12 @@ async def test_openai_agents_compat_reports_an_invalid_config(tmp_path, monkeypa
         await Runner.run(Agent(name="a"), "hi")
 
 
-async def test_openai_agents_compat_falls_back_for_an_unconfigured_model(tmp_path, monkeypatch):
-    import ext.compat.base as compat_base
+async def test_openai_agents_compat_falls_back_for_an_unconfigured_model(
+    tmp_path, monkeypatch
+):
     from agent_rt.agents import Agent, Runner
+
+    import ext.compat.base as compat_base
 
     (tmp_path / "agent-rt.yaml").write_text(
         "model_list:\n  - model_name: only-this\n    agent_rt_params: {model: openai/x, api_key: k}\n",

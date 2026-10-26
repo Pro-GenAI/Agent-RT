@@ -7,7 +7,7 @@ import sys
 import types
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from ext.compat._format import safe_format
 from ext.compat.base import ChatMessage as _BaseChatMessage
@@ -141,7 +141,7 @@ class FunctionTool:
             raise TypeError("FunctionTool.from_defaults requires fn or async_fn")
         schema = _schema_mapping(fn_schema) if fn_schema is not None else None
         metadata = ToolMetadata(
-            name=name or getattr(target, "__name__", "tool"),
+            name=name or str(getattr(target, "__name__", "tool")),
             description=description or inspect.getdoc(target) or "",
             fn_schema=schema or _callable_schema(target),
             return_direct=return_direct,
@@ -577,7 +577,7 @@ def _format_prompt(prompt: Any, values: Mapping[str, Any]) -> str:
 def _parse_partial_structured(schema: Any, text: str) -> Any:
     try:
         return _parse_structured_value(schema, text)
-    except Exception:  # noqa: BLE001 - partial structured JSON is expected
+    except Exception:
         candidate = text.strip()
         if not candidate:
             return None
@@ -587,7 +587,7 @@ def _parse_partial_structured(schema: Any, text: str) -> Any:
         candidate += "}" * max(0, candidate.count("{") - candidate.count("}"))
         try:
             return _parse_structured_value(schema, candidate)
-        except Exception:  # noqa: BLE001 - schema validation may reject partials
+        except Exception:
             try:
                 return json.loads(candidate)
             except json.JSONDecodeError:
@@ -827,7 +827,7 @@ def _estimate_message_tokens(message: ChatMessage) -> int:
 
 def _memory_block_from_dict(value: Mapping[str, Any]) -> MemoryBlock:
     kind = str(value.get("type", "MemoryBlock"))
-    common = {
+    common: dict[str, Any] = {
         "name": str(value.get("name", kind)),
         "priority": int(value.get("priority", 0)),
     }
@@ -1630,8 +1630,10 @@ class FunctionAgent:
         all_outputs: list[ToolOutput] = []
         for _ in range(self.max_iterations):
             response = await self.llm.achat(history, tools=self.tools)
-            history.append(response.message)
-            active_memory.put(response.message)
+            # The shim builds responses from this module's ChatMessage subclass.
+            reply = cast(ChatMessage, response.message)
+            history.append(reply)
+            active_memory.put(reply)
 
             if self.streaming and response.message.content:
                 await queue.put(
@@ -1794,8 +1796,10 @@ class ReActAgent(FunctionAgent):
         parse_failures = 0
         for _ in range(self.max_iterations):
             response = await self.llm.achat(history)
-            history.append(response.message)
-            active_memory.put(response.message)
+            # The shim builds responses from this module's ChatMessage subclass.
+            reply = cast(ChatMessage, response.message)
+            history.append(reply)
+            active_memory.put(reply)
             text = response.message.content or ""
             if self.streaming and text:
                 await queue.put(AgentStream(delta=text, current_agent_name=self.name))
@@ -1908,8 +1912,10 @@ class CodeActAgent(FunctionAgent):
         outputs: list[ToolOutput] = []
         for _ in range(self.max_iterations):
             response = await self.llm.achat(history)
-            history.append(response.message)
-            active_memory.put(response.message)
+            # The shim builds responses from this module's ChatMessage subclass.
+            reply = cast(ChatMessage, response.message)
+            history.append(reply)
+            active_memory.put(reply)
             text = response.message.content or ""
             if self.streaming and text:
                 await queue.put(AgentStream(delta=text, current_agent_name=self.name))
@@ -2108,8 +2114,8 @@ class AgentWorkflow:
         return WorkflowHandler(runner)
 
 
-def _module(name: str, **exports: Any) -> types.ModuleType:
-    module = types.ModuleType(name)
+def _module(name: str, **exports: Any) -> Any:
+    module: Any = types.ModuleType(name)
     module.__dict__.update(exports)
     module.__all__ = tuple(sorted(exports))
     return module

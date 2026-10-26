@@ -11,30 +11,20 @@ import random
 import re
 import threading
 import time
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from time import monotonic
 from typing import (
+    TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
     Literal,
-    Mapping,
     Protocol,
-    Sequence,
     runtime_checkable,
 )
 
-from ext.config import AgentRTConfig as AgentRTConfig
-from ext.config import ConfigError as ConfigError
-from ext.config import ConfigNotFoundError as ConfigNotFoundError
-from ext.config import require_resolved as _require_resolved
-from ext.config import load_config as load_config
-from ext.memory_backends import MemoryBackend as MemoryBackend
-from ext.memory_backends import load_memory as load_memory
 from ext.action_blockers import (
     DEFAULT_BLOCKED_COMMANDS as DEFAULT_BLOCKED_COMMANDS,
 )
@@ -57,6 +47,13 @@ from ext.action_blockers import (
 from ext.action_blockers import (
     make_rule_based_action_blocker as make_rule_based_action_blocker,
 )
+from ext.config import AgentRTConfig as AgentRTConfig
+from ext.config import ConfigError as ConfigError
+from ext.config import ConfigNotFoundError as ConfigNotFoundError
+from ext.config import load_config as load_config
+from ext.config import require_resolved as _require_resolved
+from ext.memory_backends import MemoryBackend as MemoryBackend
+from ext.memory_backends import load_memory as load_memory
 from ext.registration_safety import (
     RegistrationSafetyGuard,
     RegistrationSafetySubject,
@@ -87,7 +84,10 @@ class _LazyAsyncio:
         return getattr(module, name)
 
 
-asyncio = _LazyAsyncio()
+if TYPE_CHECKING:
+    import asyncio
+else:
+    asyncio = _LazyAsyncio()
 
 
 async def _default_async_sleep(delay: float) -> None:
@@ -239,7 +239,7 @@ def _validate_json_value(value: Any, path: str = "$") -> None:
     if value is None or isinstance(value, (str, bool, int)):
         return
     if isinstance(value, float):
-        if value != value or value in (float("inf"), float("-inf")):
+        if not math.isfinite(value):
             raise ValueError(f"{path}: non-finite numbers are not serializable")
         return
     if isinstance(value, list):
@@ -294,7 +294,7 @@ class WorkflowState:
         value: Mapping[str, Any],
         *,
         expected_state_type: str | None = None,
-    ) -> "WorkflowState":
+    ) -> WorkflowState:
         state_type = value.get("state_type")
         version = value.get("version")
         data = value.get("data")
@@ -316,7 +316,7 @@ class WorkflowState:
         payload: str,
         *,
         expected_state_type: str | None = None,
-    ) -> "WorkflowState":
+    ) -> WorkflowState:
         try:
             value = json.loads(payload)
         except json.JSONDecodeError as exc:
@@ -350,7 +350,7 @@ class MemoryScope:
     workspace: str | None = None
     task: str | None = None
 
-    def contains(self, other: "MemoryScope") -> bool:
+    def contains(self, other: MemoryScope) -> bool:
         for name in ("user", "tenant", "agent", "project", "workspace", "task"):
             expected = getattr(self, name)
             if expected is not None and getattr(other, name) != expected:
@@ -2220,7 +2220,7 @@ class ToolRegistry:
     def version(self) -> int:
         return self._version
 
-    def fork(self) -> "ToolRegistry":
+    def fork(self) -> ToolRegistry:
         """Shallow copy with independent tool tables, for per-request additions."""
         clone = copy.copy(self)
         clone._tools = dict(self._tools)
@@ -2414,17 +2414,17 @@ class ToolRegistry:
                 )
             )
         if include_deferred:
-            for name, tool in self._deferred.items():
-                if not include_disabled and not tool.enabled:
+            for name, deferred in self._deferred.items():
+                if not include_disabled and not deferred.enabled:
                     continue
                 capabilities.append(
                     CapabilityDescriptor(
                         id=f"tool:{name}",
                         kind="tool",
                         name=name,
-                        description=tool.description,
-                        namespace=tool.namespace,
-                        metadata=tool.metadata,
+                        description=deferred.description,
+                        namespace=deferred.namespace,
+                        metadata=deferred.metadata,
                     )
                 )
         return tuple(capabilities)
@@ -2567,6 +2567,7 @@ class ToolRegistry:
                         limits=limits,
                     ),
                 )
+            assert registered.handler is not None
             return await registered.handler(
                 effective_call.arguments,
                 cancellation_token,
@@ -2654,9 +2655,7 @@ class ToolRegistry:
             # The handler already ran; record a terminal audit event so the
             # trail never ends at "requested" for a call with side effects.
             if self.hooks.on_error is not None:
-                await self.hooks.on_error(
-                    effective_call, registered.definition, exc
-                )
+                await self.hooks.on_error(effective_call, registered.definition, exc)
             if self.hooks.audit is not None:
                 await self.hooks.audit(
                     ToolAuditEvent(
@@ -3768,19 +3767,29 @@ def _openai_content_parts(message: ModelMessage) -> list[dict[str, Any]]:
             blocks.append(
                 {
                     "type": "image_url",
-                    "image_url": {"url": url or _data_url(payload or "", mime, "image")},
+                    "image_url": {
+                        "url": url or _data_url(payload or "", mime, "image")
+                    },
                 }
             )
         elif part.type == "audio":
             if payload is None:
                 raise ValueError("OpenAI chat audio input must be inline base64 data")
-            audio_format = {"audio/wav": "wav", "audio/x-wav": "wav", "audio/mpeg": "mp3", "audio/mp3": "mp3"}.get(
-                (mime or "").lower()
-            )
+            audio_format = {
+                "audio/wav": "wav",
+                "audio/x-wav": "wav",
+                "audio/mpeg": "mp3",
+                "audio/mp3": "mp3",
+            }.get((mime or "").lower())
             if audio_format is None:
-                raise ValueError("OpenAI chat audio input supports audio/wav and audio/mpeg")
+                raise ValueError(
+                    "OpenAI chat audio input supports audio/wav and audio/mpeg"
+                )
             blocks.append(
-                {"type": "input_audio", "input_audio": {"data": payload, "format": audio_format}}
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": payload, "format": audio_format},
+                }
             )
         elif part.type in {"pdf", "document", "file"}:
             if payload is None:
@@ -3789,8 +3798,14 @@ def _openai_content_parts(message: ModelMessage) -> list[dict[str, Any]]:
                 {
                     "type": "file",
                     "file": {
-                        "file_data": _data_url(payload, mime or "application/pdf", part.type),
-                        "filename": "document.pdf" if (mime or "application/pdf") == "application/pdf" else "document",
+                        "file_data": _data_url(
+                            payload, mime or "application/pdf", part.type
+                        ),
+                        "filename": (
+                            "document.pdf"
+                            if (mime or "application/pdf") == "application/pdf"
+                            else "document"
+                        ),
                     },
                 }
             )
@@ -3820,7 +3835,9 @@ def _anthropic_content_blocks(message: ModelMessage) -> list[dict[str, Any]]:
             source: dict[str, Any] = {"type": "url", "url": url}
         else:
             if not mime:
-                raise ValueError(f"{part.type} content part needs a mime_type for inline data")
+                raise ValueError(
+                    f"{part.type} content part needs a mime_type for inline data"
+                )
             source = {"type": "base64", "media_type": mime, "data": payload}
         blocks.append(
             {"type": "image" if part.type == "image" else "document", "source": source}
@@ -3854,7 +3871,8 @@ def _parse_tool_call_arguments(
 
 def _provider_tool_call(call_id: str, name: str, raw_arguments: Any) -> ToolCall:
     arguments, error = _parse_tool_call_arguments(
-        raw_arguments if isinstance(raw_arguments, str) or raw_arguments is None
+        raw_arguments
+        if isinstance(raw_arguments, str) or raw_arguments is None
         else json.dumps(raw_arguments)
     )
     return ToolCall(call_id, name, arguments, argument_error=error)
@@ -3866,18 +3884,20 @@ def _finish_reason(
     if value is None:
         return None
     if anthropic:
-        return {
+        anthropic_reasons: dict[str, FinishReason] = {
             "end_turn": "stop",
             "stop_sequence": "stop",
             "tool_use": "tool_calls",
             "max_tokens": "length",
-        }.get(value, "other")
-    return {
+        }
+        return anthropic_reasons.get(value, "other")
+    reasons: dict[str, FinishReason] = {
         "stop": "stop",
         "tool_calls": "tool_calls",
         "length": "length",
         "content_filter": "content_filter",
-    }.get(value, "other")
+    }
+    return reasons.get(value, "other")
 
 
 def _openai_message(message: ModelMessage) -> dict[str, Any]:
@@ -4254,7 +4274,7 @@ class _OpenAICompatibleCoreStreamResponse:
 class _OpenAICompatibleCoreStreamContext:
     def __init__(
         self,
-        client: "_OpenAICompatibleCoreClient",
+        client: _OpenAICompatibleCoreClient,
         path: str,
         payload: Mapping[str, Any],
     ) -> None:
@@ -4275,7 +4295,7 @@ class _OpenAICompatibleCoreStreamContext:
         response = await context.__aenter__()
         return _OpenAICompatibleCoreStreamResponse(response)
 
-    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> Any:
+    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> Any:
         if self._context is None:
             raise RuntimeError("stream context exited before it was entered")
         return await self._context.__aexit__(exc_type, exc, tb)
@@ -4287,7 +4307,7 @@ class _OpenAICompatibleCoreClient:
 
         self._base_url = base_url.rstrip("/") + "/"
         self._headers = [
-            (b"authorization", f"Bearer {api_key}".encode("utf-8")),
+            (b"authorization", f"Bearer {api_key}".encode()),
             (b"content-type", b"application/json"),
         ]
         self._timeout_extensions = {
@@ -4299,7 +4319,7 @@ class _OpenAICompatibleCoreClient:
             }
         }
         proxy_url = _compatible_proxy_url(base_url)
-        pool_options = {
+        pool_options: dict[str, Any] = {
             "max_connections": 100,
             "max_keepalive_connections": 20,
             "keepalive_expiry": 5.0,
@@ -5064,7 +5084,9 @@ def _anthropic_message(
                     {
                         "type": "tool_result",
                         "tool_use_id": message.tool_call_id or "",
-                        "content": _anthropic_content_blocks(message) if has_media else text,
+                        "content": (
+                            _anthropic_content_blocks(message) if has_media else text
+                        ),
                     }
                 ],
             },
@@ -5140,7 +5162,7 @@ def _anthropic_params(
     if request.temperature is not None:
         params["temperature"] = request.temperature
     if request.reasoning is not None and request.reasoning.thinking is not None:
-        thinking = {"type": request.reasoning.thinking}
+        thinking: dict[str, Any] = {"type": request.reasoning.thinking}
         if request.reasoning.budget_tokens is not None:
             thinking["budget_tokens"] = request.reasoning.budget_tokens
         params["thinking"] = thinking
@@ -5549,7 +5571,12 @@ class AnthropicModelProvider:
                     chunk = _provider_value(delta, "thinking")
                     state = thinking_state.setdefault(
                         index,
-                        {"type": "thinking", "thinking": "", "signature": "", "data": ""},
+                        {
+                            "type": "thinking",
+                            "thinking": "",
+                            "signature": "",
+                            "data": "",
+                        },
                     )
                     if isinstance(chunk, str) and chunk:
                         state["thinking"] += chunk
@@ -5560,22 +5587,27 @@ class AnthropicModelProvider:
                     signature = _provider_value(delta, "signature")
                     state = thinking_state.setdefault(
                         index,
-                        {"type": "thinking", "thinking": "", "signature": "", "data": ""},
+                        {
+                            "type": "thinking",
+                            "thinking": "",
+                            "signature": "",
+                            "data": "",
+                        },
                     )
                     if isinstance(signature, str):
                         state["signature"] += signature
                 elif delta_type == "input_json_delta":
                     partial = _provider_value(delta, "partial_json")
-                    state = tool_state.get(index)
-                    if state is None:
-                        state = {"id": "", "name": "", "argument_parts": []}
-                        tool_state[index] = state
+                    json_state = tool_state.get(index)
+                    if json_state is None:
+                        json_state = {"id": "", "name": "", "argument_parts": []}
+                        tool_state[index] = json_state
                     if isinstance(partial, str):
-                        state["argument_parts"].append(partial)
+                        json_state["argument_parts"].append(partial)
                     yield ModelStreamEvent(
                         type="tool_call_delta",
-                        tool_call_id=state["id"] or None,
-                        tool_name=state["name"] or None,
+                        tool_call_id=json_state["id"] or None,
+                        tool_name=json_state["name"] or None,
                         arguments_delta=partial if isinstance(partial, str) else None,
                         raw=event,
                     )
@@ -5702,9 +5734,13 @@ class ConfiguredModelProvider:
         ``model_name`` values always win over a discovered id with the same name.
         """
         seen: set[tuple[Any, ...]] = set()
-        self.discovery_errors: list[str] = []
+        self.discovery_errors = []
         for deployment in self.config.models:
-            endpoint = (deployment.provider, str(deployment.api_base), str(deployment.api_key))
+            endpoint = (
+                deployment.provider,
+                str(deployment.api_base),
+                str(deployment.api_key),
+            )
             if endpoint in seen:
                 continue
             seen.add(endpoint)
@@ -5712,7 +5748,7 @@ class ConfiguredModelProvider:
                 entries = await asyncio.wait_for(
                     self._provider(deployment).list_models(), timeout
                 )
-            except Exception as exc:  # noqa: BLE001 - a down or listing-less endpoint is not fatal
+            except Exception as exc:
                 self.discovery_errors.append(
                     f"{deployment.model_name}: {type(exc).__name__}: {exc}"
                 )
@@ -5818,7 +5854,7 @@ StreamEventHandler = Callable[[ModelStreamEvent], Awaitable[None]]
 class ModelSettings:
     model: str
     provider: str | None = None
-    fallback_models: Sequence["ModelTarget"] = ()
+    fallback_models: Sequence[ModelTarget] = ()
     temperature: float | None = None
     max_output_tokens: int | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -5961,7 +5997,11 @@ async def _memory_lookup(value: Any, query: str, source: MemorySource) -> Any:
         )
     if _has(value, "search", "add", "get_all"):  # mem0 Memory / AsyncMemory / client
         # mem0 2.x takes top_k (scope via filters=); 1.x took limit.
-        size = "limit" if "limit" in inspect.signature(value.search).parameters else "top_k"
+        size = (
+            "limit"
+            if "limit" in inspect.signature(value.search).parameters
+            else "top_k"
+        )
         found = await _memory_call(value, ("search",), query, **{size: limit}, **kwargs)
         return found.get("results", []) if isinstance(found, Mapping) else found
     if _has(value, "query", "add", "update_context"):  # AutoGen Memory
@@ -6491,7 +6531,9 @@ class ContextAssembler:
             ("observations", assembly.observations),
         ):
             for item in items:
-                target = trusted_payload if item.trust == "trusted" else untrusted_payload
+                target = (
+                    trusted_payload if item.trust == "trusted" else untrusted_payload
+                )
                 target.setdefault(key, []).append(self._item_payload(item))
         if trusted_payload:
             request_messages.append(
@@ -6557,7 +6599,9 @@ class ContextAssembler:
         keep = min(policy.keep_recent_messages, len(messages))
         # Keep each tool exchange whole: the retained tail must not start with a
         # tool result whose assistant tool-call message would be summarised away.
-        while 0 < keep < len(messages) and messages[len(messages) - keep].role == "tool":
+        while (
+            0 < keep < len(messages) and messages[len(messages) - keep].role == "tool"
+        ):
             keep += 1
         if keep >= len(messages):
             return messages
@@ -6712,7 +6756,7 @@ class ToolFilterContext:
 
 ToolVisibilityFilter = Callable[
     [ToolFilterContext, Sequence[ToolDefinition]],
-    Sequence[str],
+    Sequence[str] | Awaitable[Sequence[str]],
 ]
 
 ToolSafetyFilter = Callable[
@@ -6761,7 +6805,7 @@ class Toolbase:
         read_blocklist: Sequence[str] = (),
         write_allowlist: Sequence[str] | None = None,
         write_blocklist: Sequence[str] = (),
-    ) -> "Toolbase":
+    ) -> Toolbase:
         if search_limit <= 0:
             raise ValueError("tool search limit must be positive")
         registry = tool_registry or ToolRegistry()
@@ -6770,9 +6814,12 @@ class Toolbase:
             reading = side_effect in ("none", "read")
             scoped_allow = read_allowlist if reading else write_allowlist
             scoped_block = read_blocklist if reading else write_blocklist
-            return (name not in blocklist and name not in scoped_block
-                    and (allowlist is None or name in allowlist)
-                    and (scoped_allow is None or name in scoped_allow))
+            return (
+                name not in blocklist
+                and name not in scoped_block
+                and (allowlist is None or name in allowlist)
+                and (scoped_allow is None or name in scoped_allow)
+            )
 
         for name in tuple(registry.deferred_names()):
             if name not in blocklist and (allowlist is None or name in allowlist):
@@ -6788,14 +6835,15 @@ class Toolbase:
         if TOOL_SEARCH_NAME in candidate_definitions:
             raise ValueError(f"tool name {TOOL_SEARCH_NAME!r} is reserved by Toolbase")
         candidate_definitions = {
-            name: definition for name, definition in candidate_definitions.items()
+            name: definition
+            for name, definition in candidate_definitions.items()
             if permitted(name, definition.side_effect)
         }
 
         mcp_bindings: dict[str, tuple[Any, str, ToolDefinition]] = {}
         for server_label, client in (mcp_clients or {}).items():
             inner = getattr(client, "client", client)
-            if hasattr(inner, "server_info") and getattr(inner, "server_info") is None:
+            if hasattr(inner, "server_info") and inner.server_info is None:
                 initialize = getattr(inner, "initialize", None)
                 if callable(initialize):
                     await initialize()
@@ -6878,7 +6926,7 @@ class Toolbase:
                 cancellation_token: CancellationToken | None,
                 *,
                 _client: Any = client,
-                _remote_name: str = remote_name,
+                _remote_name: Any = remote_name,
             ) -> Any:
                 del cancellation_token
                 call_tool = getattr(_client, "call_tool", None)
@@ -6984,7 +7032,7 @@ class Toolbase:
         requested_limit = arguments.get("limit", self.search_limit)
         limit = min(int(requested_limit), self.search_limit)
         catalog = CapabilityCatalog(self.capability_descriptors())
-        matches = catalog.search(query, kinds=("tool",), limit=limit)
+        matches = catalog.search(query, kinds=frozenset({"tool"}), limit=limit)
         definitions = {tool.name: tool for tool in self.definitions()}
         tools = []
         for match in matches:
@@ -7194,7 +7242,11 @@ def _plain_message_text(message: ModelMessage) -> str:
 
 def _extract_structured_output(message: ModelMessage) -> Any:
     for part in message.content:
-        if part.type == "json" and part.data is not None and not _is_provider_state(part):
+        if (
+            part.type == "json"
+            and part.data is not None
+            and not _is_provider_state(part)
+        ):
             return part.data
     text = _plain_message_text(message).strip()
     if not text:
@@ -7314,9 +7366,12 @@ def _validate_structured_value(
     if "const" in schema and not _json_equal(value, schema["const"]):
         issues.append(f"{path}: value does not equal the required constant")
     enum_values = schema.get("enum")
-    if isinstance(enum_values, Sequence) and not isinstance(enum_values, (str, bytes)):
-        if not any(_json_equal(value, candidate) for candidate in enum_values):
-            issues.append(f"{path}: value is not in enum")
+    if (
+        isinstance(enum_values, Sequence)
+        and not isinstance(enum_values, (str, bytes))
+        and not any(_json_equal(value, candidate) for candidate in enum_values)
+    ):
+        issues.append(f"{path}: value is not in enum")
 
     all_of = schema.get("allOf")
     if isinstance(all_of, Sequence) and not isinstance(all_of, (str, bytes)):
@@ -7590,7 +7645,7 @@ class ExecutionBudget:
 
     @staticmethod
     def _consume(
-        current: int | float, amount: int | float, limit: int | float | None, label: str
+        current: float, amount: float, limit: float | None, label: str
     ) -> int | float:
         if amount < 0:
             raise ValueError(f"{label} amount must be non-negative")
@@ -7630,7 +7685,7 @@ class Deadline:
     @classmethod
     def after(
         cls, seconds: float, *, clock: Callable[[], float] = monotonic
-    ) -> "Deadline":
+    ) -> Deadline:
         if seconds < 0:
             raise ValueError("deadline duration must be non-negative")
         return cls(clock() + seconds, clock)
@@ -7712,6 +7767,39 @@ class AgentRunLimits:
     timeout_seconds: float | None = None
     max_total_tokens: int | None = None
     concurrent_tool_calls: bool = False
+
+
+# Finite bounds for untrusted or production runs (the API server's defaults).
+SECURE_RUN_LIMITS = AgentRunLimits(
+    max_turns=16,
+    max_tool_calls=64,
+    timeout_seconds=120.0,
+    max_total_tokens=100_000,
+)
+
+
+def secure_tool_registry(
+    permission_rules: Sequence[PermissionRule] = (),
+    *,
+    approval_manager: ApprovalManager | None = None,
+    **options: Any,
+) -> ToolRegistry:
+    """ToolRegistry preset for untrusted or production use.
+
+    Permissions deny by default: only ``none``/``read`` tools are allowed until
+    ``permission_rules`` allow more (deny rules always win), and
+    consequential/destructive tools still need human approval.
+    """
+    return ToolRegistry(
+        permission_engine=PermissionEngine(
+            (
+                PermissionRule("allow", side_effects=("none", "read")),
+                *permission_rules,
+            )
+        ),
+        approval_manager=approval_manager or ApprovalManager(),
+        **options,
+    )
 
 
 @dataclass(frozen=True)
@@ -8564,7 +8652,9 @@ class InMemoryScheduler:
             if next_run <= now_ms:
                 # Jump straight past now; stepping one interval at a time can
                 # take billions of iterations after a long pause.
-                next_run += ((now_ms - next_run) // task.interval_ms + 1) * task.interval_ms
+                next_run += (
+                    (now_ms - next_run) // task.interval_ms + 1
+                ) * task.interval_ms
             self._scheduled[task.schedule_id] = ScheduledTask(
                 schedule_id=task.schedule_id,
                 payload=task.payload,
@@ -8779,7 +8869,7 @@ class InMemoryFileSystem:
         self.write(destination, data, overwrite=overwrite)
 
     @staticmethod
-    def _glob_regex(pattern: str) -> "re.Pattern[str]":
+    def _glob_regex(pattern: str) -> re.Pattern[str]:
         """``*`` and ``?`` stay within a path segment; ``**`` crosses segments."""
         pieces: list[str] = []
         index = 0
@@ -8897,7 +8987,9 @@ class WorkspaceFiles:
             old_count = 1 if match.group(2) is None else int(match.group(2))
             # An empty old range (-N,0) names the line *before* the insertion
             # point, so it already is the zero-based insertion index.
-            old_start = int(match.group(1)) if old_count == 0 else int(match.group(1)) - 1
+            old_start = (
+                int(match.group(1)) if old_count == 0 else int(match.group(1)) - 1
+            )
             index += 1
             body: list[str] = []
             while index < len(lines) and not lines[index].startswith("@@ "):
@@ -9151,7 +9243,7 @@ class AgentLoop:
             simple_text_fast_path=simple_text_fast_path,
             active_stages=active_stages,
         )
-        if stage_started is not None:
+        if stage_started is not None and self.metrics is not None:
             self.metrics.record(
                 "agent_loop.stage.duration_ms",
                 (monotonic() - stage_started) * 1000,
@@ -9656,9 +9748,13 @@ class AgentLoop:
                     )
 
             try:
-                if registered is not None and (
-                    registered.handler is not None
-                    or registered.contextual_handler is not None
+                if (
+                    registered is not None
+                    and self.tool_registry is not None
+                    and (
+                        registered.handler is not None
+                        or registered.contextual_handler is not None
+                    )
                 ):
                     effective_tool_context = dict(tool_context)
                     effective_tool_context["user_prompt"] = user_prompt
@@ -9828,11 +9924,11 @@ class AgentLoop:
             completed: ModelResponse | None = None
             while True:
                 try:
-                    operation = iterator.__anext__()
+                    next_event = iterator.__anext__()
                     event = (
-                        await await_with_deadline(operation)
+                        await await_with_deadline(next_event)
                         if deadline_checks_enabled
-                        else await operation
+                        else await next_event
                     )
                 except StopAsyncIteration:
                     break
@@ -9931,9 +10027,7 @@ class AgentLoop:
                 if tool_calls + len(pending) > limits.max_tool_calls:
                     return finish("max_tool_calls")
                 for call, index in pending:
-                    resumed_message, resumed_termination = await execute_tool_call(
-                        call
-                    )
+                    resumed_message, resumed_termination = await execute_tool_call(call)
                     if resumed_termination is not None:
                         return finish(resumed_termination)
                     if resumed_message is not None:
@@ -10060,10 +10154,10 @@ class AgentLoop:
                 else None
             )
             guarded_message = response.message
-            for guardrail in self.output_guardrails:
+            for output_guardrail in self.output_guardrails:
                 guarded = _apply_guardrail_result(
                     guarded_message,
-                    guardrail(guarded_message),
+                    output_guardrail(guarded_message),
                 )
                 if not isinstance(guarded, ModelMessage):
                     raise TypeError(
@@ -10101,7 +10195,9 @@ class AgentLoop:
 
             calls = tuple(response.message.tool_calls)
             if calls and self.tool_registry is None and self.tool_executor is None:
-                raise RuntimeError("model requested tool calls but no tool executor is configured")
+                raise RuntimeError(
+                    "model requested tool calls but no tool executor is configured"
+                )
             if not calls:
                 requirements = agent.output
                 if requirements is not None and (
@@ -10143,13 +10239,13 @@ class AgentLoop:
                 nonlocal tool_calls
                 tool_calls += 1
                 history.append(message)
-                answered.add(id(call))
+                answered.add(id(call))  # noqa: B023 - closures run within this turn
 
             def finish_turn(termination: TerminationReason) -> AgentRunResult:
                 # Keep the transcript provider-valid: every tool call the model
                 # made gets a tool message, even when the run stops early.
-                for call in calls:
-                    if id(call) in answered:
+                for call in calls:  # noqa: B023
+                    if id(call) in answered:  # noqa: B023
                         continue
                     history.append(
                         ModelMessage(
@@ -10218,11 +10314,11 @@ class AgentLoop:
                             if termination is not None:
                                 return finish_turn(termination)
 
-                        message, termination = await execute_tool_call(call)
+                        tool_message, termination = await execute_tool_call(call)
                         if termination is not None:
                             return finish_turn(termination)
-                        if message is not None:
-                            record_result(call, message)
+                        if tool_message is not None:
+                            record_result(call, tool_message)
                     else:
                         parallel_batch.append(call)
 
@@ -10232,11 +10328,11 @@ class AgentLoop:
                         return finish_turn(termination)
             else:
                 for call in calls:
-                    message, termination = await execute_tool_call(call)
+                    tool_message, termination = await execute_tool_call(call)
                     if termination is not None:
                         return finish_turn(termination)
-                    if message is not None:
-                        record_result(call, message)
+                    if tool_message is not None:
+                        record_result(call, tool_message)
 
     async def run_streaming(
         self,

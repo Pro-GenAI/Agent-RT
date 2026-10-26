@@ -222,7 +222,9 @@ class _OpenAICompatibleHandler(BaseHTTPRequestHandler):
     def handle(self):
         try:
             super().handle()
-        except ConnectionError:  # BrokenPipe, Reset, and Windows' Aborted (WinError 10053)
+        except (
+            ConnectionError
+        ):  # BrokenPipe, Reset, and Windows' Aborted (WinError 10053)
             pass
 
     def do_GET(self):
@@ -504,6 +506,7 @@ class TestModelRouting:
         with pytest.raises(ValueError):
             OpenAIProviderSettings().resolve_model()
 
+
 class TestProviderResponse:
     def request(self, model=None, text="hello"):
         return ModelRequest(
@@ -616,7 +619,9 @@ class TestProviderResponse:
             calls += 1
             error = RuntimeError("rate limited")
             error.status_code = 429
-            error.response = SimpleNamespace(headers={"retry-after": "60"}, status_code=429)
+            error.response = SimpleNamespace(
+                headers={"retry-after": "60"}, status_code=429
+            )
             raise error
 
         client.chat.completions.create = create

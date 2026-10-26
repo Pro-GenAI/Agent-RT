@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any, Protocol, runtime_checkable
@@ -10,7 +9,6 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from agent_rt import (
-    runtime_settings,
     ContextItem,
     FailureDisposition,
     GuardrailResult,
@@ -24,6 +22,7 @@ from agent_rt import (
     ToolRegistry,
     ToolSafetyFilter,
     ToolVisibilityFilter,
+    runtime_settings,
 )
 from ext.registration_safety import (
     RegistrationSafetyFinding,
@@ -32,6 +31,7 @@ from ext.registration_safety import (
 )
 from ext.runtime.optional import (
     LongTermMemoryStore,
+    MemoryKind,
     MemoryRecord,
     MemorySearchResult,
     MemoryWriteCandidate,
@@ -172,9 +172,7 @@ class OpenAIDecisionProvider(JevDecisionProvider):
     ) -> None:
         env = runtime_settings() if environ is None else environ
         super().__init__(
-            base_url
-            or env.get(JEV_BASE_URL_ENV)
-            or DEFAULT_OPENAI_DECISIONS_BASE_URL,
+            base_url or env.get(JEV_BASE_URL_ENV) or DEFAULT_OPENAI_DECISIONS_BASE_URL,
             model=model or env.get(JEV_MODEL_ENV) or DEFAULT_OPENAI_DECISIONS_MODEL,
             api_key=api_key,
             timeout_seconds=timeout_seconds,
@@ -216,9 +214,7 @@ def _openai_decision_input(state: Any) -> Any:
         return state
     if isinstance(state, (Mapping, list, tuple)):
         # input_json keeps untrusted state as data rather than message structure.
-        return [
-            {"role": "user", "content": [{"type": "input_json", "data": state}]}
-        ]
+        return [{"role": "user", "content": [{"type": "input_json", "data": state}]}]
     return json.dumps(state)
 
 
@@ -814,6 +810,10 @@ class DecisionMemoryGuard:
 class DecisionMemoryWritePolicy(MemoryWritePolicy):
     """Scores memory candidates with a decision model, then applies deterministic thresholds."""
 
+    # Set via object.__setattr__ because the base dataclass is frozen.
+    provider: DecisionProvider
+    memory_guard: DecisionMemoryGuard
+
     def __init__(
         self,
         provider: DecisionProvider,
@@ -824,7 +824,7 @@ class DecisionMemoryWritePolicy(MemoryWritePolicy):
         max_harmful_action: float = 0.5,
         max_misleading_influence: float = 0.5,
         reject_duplicates: bool = True,
-        allowed_kinds: frozenset[str] | None = None,
+        allowed_kinds: frozenset[MemoryKind] | None = None,
     ) -> None:
         super().__init__(
             min_relevance=min_relevance,
@@ -1124,15 +1124,15 @@ def make_model_response_failure_classifier(
 
 
 __all__ = [
+    "DECISION_API_KEY_ENV",
+    "DECISION_PROVIDER_ENV",
     "DEFAULT_JEV_BASE_URL",
     "DEFAULT_JEV_TIMEOUT_SECONDS",
+    "DEFAULT_OPENAI_DECISIONS_BASE_URL",
+    "DEFAULT_OPENAI_DECISIONS_MODEL",
     "JEV_BASE_URL_ENV",
     "JEV_MODEL_ENV",
     "JEV_TIMEOUT_SECONDS_ENV",
-    "DECISION_API_KEY_ENV",
-    "DECISION_PROVIDER_ENV",
-    "DEFAULT_OPENAI_DECISIONS_BASE_URL",
-    "DEFAULT_OPENAI_DECISIONS_MODEL",
     "DecisionAnswers",
     "DecisionFilteredRetrievalProvider",
     "DecisionMemoryGuard",

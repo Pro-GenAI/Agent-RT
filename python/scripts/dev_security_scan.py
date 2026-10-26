@@ -43,7 +43,7 @@ def _tool(name: str) -> str:
     raise ScanFailure(
         f"Required developer security tool {name!r} is not installed in PATH "
         f"or {ROOT / '.venv'}. Install with: uv pip install -e \".[dev]\" "
-        'or run with: uv run --extra dev python scripts/dev_security_scan.py'
+        "or run with: uv run --extra dev python scripts/dev_security_scan.py"
     )
 
 
@@ -80,13 +80,12 @@ def main() -> int:
 
         audit = _run(
             "pip-audit dependency scan",
-            [_tool("pip-audit"), "-f", "json"],
+            # pip-audit's 15s default read timeout trips on slow PyPI responses.
+            [_tool("pip-audit"), "-f", "json", "--timeout", "60"],
         )
         audit_payload = json.loads(audit.stdout)
         vulnerable = [
-            dep
-            for dep in audit_payload.get("dependencies", [])
-            if dep.get("vulns")
+            dep for dep in audit_payload.get("dependencies", []) if dep.get("vulns")
         ]
         if vulnerable:
             raise ScanFailure(

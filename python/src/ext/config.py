@@ -21,7 +21,14 @@ ENVIRONMENT_REFERENCE_PREFIX = "os.environ/"
 MAX_CONFIG_BYTES = 1_000_000
 CONFIG_FILE_NAMES = ("agent-rt.yaml", "agent-rt.yml")
 SUPPORTED_MODEL_PROVIDERS = ("openai", "anthropic")
-SUPPORTED_VECTOR_STORE_PROVIDERS = ("bedrock", "chroma", "milvus", "pinecone", "qdrant", "weaviate")
+SUPPORTED_VECTOR_STORE_PROVIDERS = (
+    "bedrock",
+    "chroma",
+    "milvus",
+    "pinecone",
+    "qdrant",
+    "weaviate",
+)
 
 _PARAM_KEYS = ("agent_rt_params", "litellm_params")
 # Unset references here fail only when that model, store or server is used.
@@ -418,7 +425,9 @@ def _parse_models(raw: Any) -> tuple[ModelDeployment, ...]:
         spec = _text(params.get("model"), f"{path}.params.model", required=True)
         provider, separator, model = (spec or "").partition("/")
         if not separator or not model.strip():
-            raise ConfigError(f"{path}.params.model must look like '<provider>/<model>'")
+            raise ConfigError(
+                f"{path}.params.model must look like '<provider>/<model>'"
+            )
         provider = provider.strip().lower()
         if provider not in SUPPORTED_MODEL_PROVIDERS:
             raise ConfigError(
@@ -455,11 +464,17 @@ def _parse_vector_stores(
         path = f"vector_store_registry[{index}]"
         entry = _mapping(item, path)
         _check_keys(entry, {"vector_store_name", *_PARAM_KEYS}, path)
-        name = _text(entry.get("vector_store_name"), f"{path}.vector_store_name", required=True)
+        name = _text(
+            entry.get("vector_store_name"), f"{path}.vector_store_name", required=True
+        )
         params = _params(entry, path)
         _check_keys(params, _STORE_PARAM_FIELDS, f"{path}.params")
         provider = (
-            _text(params.get("custom_llm_provider"), f"{path}.params.custom_llm_provider", required=True)
+            _text(
+                params.get("custom_llm_provider"),
+                f"{path}.params.custom_llm_provider",
+                required=True,
+            )
             or ""
         ).lower()
         if provider not in SUPPORTED_VECTOR_STORE_PROVIDERS:
@@ -468,8 +483,14 @@ def _parse_vector_stores(
                 f"supported: {', '.join(SUPPORTED_VECTOR_STORE_PROVIDERS)} "
                 "(other hosted stores are not supported)"
             )
-        store_id = _text(params.get("vector_store_id"), f"{path}.params.vector_store_id", required=True)
-        embedding = _text(params.get("embedding_model"), f"{path}.params.embedding_model")
+        store_id = _text(
+            params.get("vector_store_id"),
+            f"{path}.params.vector_store_id",
+            required=True,
+        )
+        embedding = _text(
+            params.get("embedding_model"), f"{path}.params.embedding_model"
+        )
         if embedding is not None and embedding not in model_names:
             raise ConfigError(
                 f"{path}.params.embedding_model {embedding!r} is not in model_list"
@@ -480,11 +501,17 @@ def _parse_vector_stores(
             for key, value in _mapping(options_raw, f"{path}.params.options").items()
         }
         allowed = params.get("allowed_models") or []
-        if not isinstance(allowed, list) or not all(isinstance(m, str) for m in allowed):
-            raise ConfigError(f"{path}.params.allowed_models must be a list of model names")
+        if not isinstance(allowed, list) or not all(
+            isinstance(m, str) for m in allowed
+        ):
+            raise ConfigError(
+                f"{path}.params.allowed_models must be a list of model names"
+            )
         for reference in dict.fromkeys((name, store_id)):
             if reference in seen:
-                raise ConfigError(f"{path}: duplicate vector store name or id {reference!r}")
+                raise ConfigError(
+                    f"{path}: duplicate vector store name or id {reference!r}"
+                )
             seen.add(reference or "")
         timeout = _number(params.get("timeout"), f"{path}.params.timeout")
         stores.append(
@@ -528,7 +555,11 @@ def _parse_settings(raw: Any) -> dict[str, Any]:
         )
     cli = settings.get("cli")
     if cli is not None:
-        _check_keys(_mapping(cli, "agent_rt_settings.cli"), {"home", "compact_token_limit"}, "agent_rt_settings.cli")
+        _check_keys(
+            _mapping(cli, "agent_rt_settings.cli"),
+            {"home", "compact_token_limit"},
+            "agent_rt_settings.cli",
+        )
     serve = settings.get("serve")
     if serve is not None:
         serve = _mapping(serve, "agent_rt_settings.serve")
@@ -538,7 +569,11 @@ def _parse_settings(raw: Any) -> dict[str, Any]:
             _check_keys(_mapping(values, path), {"bot_token", "allowed_users"}, path)
     server = settings.get("server")
     if server is not None:
-        _check_keys(_mapping(server, "agent_rt_settings.server"), _SERVER_FIELDS, "agent_rt_settings.server")
+        _check_keys(
+            _mapping(server, "agent_rt_settings.server"),
+            _SERVER_FIELDS,
+            "agent_rt_settings.server",
+        )
     memory = settings.get("memory")
     if memory is not None:
         from ext.memory_backends import DEFAULT_MEMORY_BACKEND, MEMORY_BACKENDS
@@ -550,12 +585,16 @@ def _parse_settings(raw: Any) -> dict[str, Any]:
             raise ConfigError(
                 f"agent_rt_settings.memory.backend must be one of: {', '.join(MEMORY_BACKENDS)}"
             )
-        options = _mapping(memory.get("options") or {}, "agent_rt_settings.memory.options")
+        options = _mapping(
+            memory.get("options") or {}, "agent_rt_settings.memory.options"
+        )
         allowed = MEMORY_BACKENDS[backend or DEFAULT_MEMORY_BACKEND][2]
         _check_keys(options, set(allowed), "agent_rt_settings.memory.options")
     default_model = settings.get("default_model")
     if default_model is not None:
-        settings["default_model"] = _text(default_model, "agent_rt_settings.default_model")
+        settings["default_model"] = _text(
+            default_model, "agent_rt_settings.default_model"
+        )
     return settings
 
 
@@ -568,7 +607,9 @@ def parse_config(
     try:
         import yaml  # type: ignore[import-untyped]
     except ModuleNotFoundError as exc:  # pragma: no cover - PyYAML is a core dependency
-        raise ConfigError("PyYAML is required to read config files: pip install pyyaml") from exc
+        raise ConfigError(
+            "PyYAML is required to read config files: pip install pyyaml"
+        ) from exc
     try:
         raw = yaml.safe_load(text)
     except yaml.YAMLError as exc:
@@ -589,7 +630,9 @@ def load_config(
     resolved = discover_config_path(path, cwd=cwd, home=home)
     try:
         if resolved.stat().st_size > MAX_CONFIG_BYTES:
-            raise ConfigError(f"config file exceeds {MAX_CONFIG_BYTES} bytes: {resolved}")
+            raise ConfigError(
+                f"config file exceeds {MAX_CONFIG_BYTES} bytes: {resolved}"
+            )
         text = resolved.read_text(encoding="utf-8-sig")
     except OSError as exc:
         raise ConfigError(f"unable to read config file {resolved}: {exc}") from exc

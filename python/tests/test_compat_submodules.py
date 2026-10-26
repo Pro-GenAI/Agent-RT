@@ -4,16 +4,17 @@ from types import SimpleNamespace
 
 from agent_rt.anthropic import Anthropic, AsyncAnthropic
 from agent_rt.langchain import ChatOpenAI, HumanMessage
+from agent_rt.langchain_anthropic import ChatAnthropic as ExactChatAnthropic
+from agent_rt.langchain_openai import ChatOpenAI as ExactChatOpenAI
+from agent_rt.llama_index import OpenAI as ExactRootLlamaOpenAI
+from agent_rt.llama_index.llms.anthropic import Anthropic as ExactLlamaAnthropic
+from agent_rt.llama_index.llms.openai import OpenAI as ExactLlamaOpenAI
 from agent_rt.llamaindex import ChatMessage, MessageRole
 from agent_rt.llamaindex import OpenAI as LlamaOpenAI
 from agent_rt.openai import AsyncOpenAI, OpenAI
-from agent_rt.langchain_openai import ChatOpenAI as ExactChatOpenAI
-from agent_rt.langchain_anthropic import ChatAnthropic as ExactChatAnthropic
-from agent_rt.llama_index import OpenAI as ExactRootLlamaOpenAI
-from agent_rt.llama_index.llms.openai import OpenAI as ExactLlamaOpenAI
-from agent_rt.llama_index.llms.anthropic import Anthropic as ExactLlamaAnthropic
 
 from agent_rt import (
+    POPULAR_VECTOR_DB_BACKENDS,
     AuthorizedMCPClient,
     BatchJob,
     CallbackSandboxBackend,
@@ -21,10 +22,8 @@ from agent_rt import (
     ContentPart,
     EmbeddingItem,
     EmbeddingResponse,
-    EnvironmentWebSearchProvider,
     EnvironmentVectorDBProvider,
-    POPULAR_VECTOR_DB_BACKENDS,
-    register_popular_vector_db_backends,
+    EnvironmentWebSearchProvider,
     MCPAccessPolicy,
     MCPCapabilityFilter,
     MCPClient,
@@ -36,12 +35,13 @@ from agent_rt import (
     RetrievalQuery,
     RetrievalRegistry,
     RetrievalResult,
-    VectorDBProviderRegistry,
-    vector_db_config_from_environment,
-    vector_db_provider_from_environment,
     SandboxCommandResult,
     SandboxSession,
     ToolCall,
+    VectorDBProviderRegistry,
+    register_popular_vector_db_backends,
+    vector_db_config_from_environment,
+    vector_db_provider_from_environment,
 )
 
 
@@ -1657,8 +1657,12 @@ async def test_vector_db_provider_can_switch_backends_from_environment() -> None
         },
     )
 
-    assert (await qdrant.search(RetrievalQuery("alpha")))[0].metadata["backend"] == "qdrant"
-    assert (await pinecone.search(RetrievalQuery("beta")))[0].metadata["backend"] == "pinecone"
+    assert (await qdrant.search(RetrievalQuery("alpha")))[0].metadata[
+        "backend"
+    ] == "qdrant"
+    assert (await pinecone.search(RetrievalQuery("beta")))[0].metadata[
+        "backend"
+    ] == "pinecone"
     assert configs[0].collection == "docs"
     assert configs[0].url == "http://qdrant.test:6333"
     assert configs[1].options["namespace"] == "tenant-a"
@@ -1706,33 +1710,80 @@ class FakeVectorDBHTTPClient:
 class FakeEmbeddingModelProvider:
     async def embed(self, request):
         assert request.input == "agent runtime"
-        return EmbeddingResponse(data=[EmbeddingItem(index=0, embedding=[0.1, 0.2, 0.3])])
+        return EmbeddingResponse(
+            data=[EmbeddingItem(index=0, embedding=[0.1, 0.2, 0.3])]
+        )
 
 
 async def test_popular_vector_db_backends_use_provider_neutral_http_adapters() -> None:
     cases = {
         "qdrant": (
-            {"result": [{"id": "q1", "score": 0.9, "payload": {"text": "qdrant hit", "title": "Q"}}]},
+            {
+                "result": [
+                    {
+                        "id": "q1",
+                        "score": 0.9,
+                        "payload": {"text": "qdrant hit", "title": "Q"},
+                    }
+                ]
+            },
             "/collections/docs/points/search",
         ),
         "pinecone": (
-            {"matches": [{"id": "p1", "score": 0.8, "metadata": {"text": "pinecone hit", "title": "P"}}]},
+            {
+                "matches": [
+                    {
+                        "id": "p1",
+                        "score": 0.8,
+                        "metadata": {"text": "pinecone hit", "title": "P"},
+                    }
+                ]
+            },
             "/query",
         ),
         "milvus": (
-            {"data": [{"id": "m1", "distance": 0.7, "text": "milvus hit", "title": "M"}]},
+            {
+                "data": [
+                    {"id": "m1", "distance": 0.7, "text": "milvus hit", "title": "M"}
+                ]
+            },
             "/v2/vectordb/entities/search",
         ),
         "weaviate": (
-            {"data": {"Get": {"Docs": [{"text": "weaviate hit", "title": "W", "url": "https://w.test", "_additional": {"id": "w1", "certainty": 0.95}}]}}},
+            {
+                "data": {
+                    "Get": {
+                        "Docs": [
+                            {
+                                "text": "weaviate hit",
+                                "title": "W",
+                                "url": "https://w.test",
+                                "_additional": {"id": "w1", "certainty": 0.95},
+                            }
+                        ]
+                    }
+                }
+            },
             "/v1/graphql",
         ),
         "chroma": (
-            {"ids": [["c1"]], "documents": [["chroma hit"]], "metadatas": [[{"title": "C"}]], "distances": [[0.2]], "uris": [["https://c.test"]]},
+            {
+                "ids": [["c1"]],
+                "documents": [["chroma hit"]],
+                "metadatas": [[{"title": "C"}]],
+                "distances": [[0.2]],
+                "uris": [["https://c.test"]],
+            },
             "/api/v2/tenants/default_tenant/databases/default_database/collections/docs/query",
         ),
     }
-    assert tuple(POPULAR_VECTOR_DB_BACKENDS) == ("chroma", "milvus", "pinecone", "qdrant", "weaviate")
+    assert tuple(POPULAR_VECTOR_DB_BACKENDS) == (
+        "chroma",
+        "milvus",
+        "pinecone",
+        "qdrant",
+        "weaviate",
+    )
 
     for backend, (payload, expected_path) in cases.items():
         client = FakeVectorDBHTTPClient(payload)
@@ -1789,7 +1840,9 @@ async def test_vector_db_provider_accepts_precomputed_vector_without_embedder() 
         client=client,
     )
     await provider.search(
-        RetrievalQuery("agent runtime", filters={"vector": [0.1, 0.2], "category": "runtime"})
+        RetrievalQuery(
+            "agent runtime", filters={"vector": [0.1, 0.2], "category": "runtime"}
+        )
     )
     body = client.calls[0][2]["json"]
     assert body["vector"] == [0.1, 0.2]

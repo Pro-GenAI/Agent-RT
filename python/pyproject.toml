@@ -117,6 +117,33 @@ dev = [
 agent-rt = "agent_rt_cli:main"
 artie = "agent_rt_cli:main"
 
+[tool.ruff.lint]
+# Deliberate idioms: `import X as X` is the explicit public re-export form,
+# runtime boundaries turn any exception into a tool/guardrail result, and
+# config validation keeps raising ValueError (callers catch it), and B008
+# defaults are all frozen dataclasses (B006 still catches mutable literals).
+extend-ignore = ["PLC0414", "BLE001", "TRY004", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures: blocking git setup in async tests and throwaway class attrs.
+"tests/**" = ["ASYNC221", "RUF012"]
+
+[[tool.mypy.overrides]]
+# Optional integrations without published type information.
+module = [
+    "agent_action_guard",
+    "boto3",
+    "botocore.*",
+    "docx2txt",
+    "letta_client",
+    "mem0",
+    "memu",
+    "pypdf",
+    "supermemory",
+    "zep_cloud.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

@@ -1704,3 +1704,37 @@ test('WebSocket transport survives a malformed frame', async () => {
 		server.close();
 	}
 });
+
+test('secureToolRegistry denies writes and gates destructive tools', async () => {
+	const { ApprovalRequiredError, PermissionDeniedError, SECURE_RUN_LIMITS, secureToolRegistry } =
+		require('../dist/index.js');
+	const ran = [];
+	const register = (registry, name, sideEffect) =>
+		registry.register(
+			{ name, description: 'd', inputSchema: { type: 'object' }, sideEffect },
+			{
+				handler: async (args) => {
+					ran.push(args.name);
+					return 'ok';
+				},
+			},
+		);
+	const registry = secureToolRegistry();
+	register(registry, 'lookup', 'read');
+	register(registry, 'save', 'write');
+	await registry.execute({ id: 'c1', name: 'lookup', arguments: { name: 'lookup' } });
+	await assert.rejects(
+		registry.execute({ id: 'c2', name: 'save', arguments: { name: 'save' } }),
+		PermissionDeniedError,
+	);
+	assert.deepEqual(ran, ['lookup']);
+
+	const allowed = secureToolRegistry([{ effect: 'allow', tools: ['wipe'] }]);
+	register(allowed, 'wipe', 'destructive');
+	await assert.rejects(
+		allowed.execute({ id: 'c3', name: 'wipe', arguments: { name: 'wipe' } }),
+		ApprovalRequiredError,
+	);
+	assert.deepEqual(ran, ['lookup']);
+	assert.ok(SECURE_RUN_LIMITS.timeoutMs && SECURE_RUN_LIMITS.maxTotalTokens);
+});

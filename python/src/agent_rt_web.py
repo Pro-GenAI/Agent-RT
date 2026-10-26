@@ -26,13 +26,13 @@ from agent_rt_cli import (
     TranscriptStore,
     _deserialize_message,
     _discover_cli_skills,
-    _skill_warning_consequences,
     _message_text,
     _package_version,
     _positive_int,
     _provider_model_ids,
     _safe_session_name,
     _serialize_message,
+    _skill_warning_consequences,
     _startup_model,
     build_workspace_session,
     discover_builtin_models,
@@ -240,7 +240,7 @@ class WebChat:
 
         try:
             session = self.make_session(model, approve)
-        except Exception as exc:  # noqa: BLE001 - stream startup errors to the caller
+        except Exception as exc:
             yield json.dumps({"type": "error", "message": str(exc)}) + "\n"
             return
         session.messages = tuple(history)
@@ -262,7 +262,7 @@ class WebChat:
                 yield json.dumps(item) + "\n"
             try:
                 result = task.result()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 yield json.dumps({"type": "error", "message": str(exc)}) + "\n"
                 return
             final = result.final_response
@@ -725,7 +725,7 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         else:
             model = await _startup_model(provider, args.model)
             models = await _provider_model_ids(provider)
-    except Exception as exc:  # noqa: BLE001 - configuration can fail in providers
+    except Exception as exc:
         print(f"agent-rt web: configuration error: {exc}", file=sys.stderr)
         return 2
     workspace = Path.cwd()

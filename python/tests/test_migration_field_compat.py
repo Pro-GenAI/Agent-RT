@@ -714,7 +714,9 @@ def test_openai_response_output_text_is_computed_from_output() -> None:
         output=[
             ResponseOutputMessage(
                 type="message",
-                content=[ResponseOutputText(type="output_text", text="{}", parsed={"a": 1})],
+                content=[
+                    ResponseOutputText(type="output_text", text="{}", parsed={"a": 1})
+                ],
             )
         ]
     )

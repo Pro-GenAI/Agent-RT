@@ -195,9 +195,7 @@ def _canonical(text: str) -> str:
     folded = unicodedata.normalize("NFKC", text)
     folded = _ZERO_WIDTH.sub("", folded)
     return "".join(
-        character
-        for character in folded
-        if unicodedata.category(character) != "Cf"
+        character for character in folded if unicodedata.category(character) != "Cf"
     )
 
 

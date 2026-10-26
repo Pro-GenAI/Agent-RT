@@ -253,11 +253,16 @@ def parse_junit(
     path: Path, project: Path, locate=failure_location
 ) -> tuple[int, dict[str, str | None]] | None:
     try:
-        tree = ET.parse(path)
+        data = path.read_bytes()
+        # The report comes from the migrated project's tests; JUnit XML never
+        # declares a DTD, so refusing one blocks entity-expansion bombs.
+        if b"<!DOCTYPE" in data or b"<!ENTITY" in data:
+            return None
+        root = ET.fromstring(data)  # nosec B314
     except (OSError, ET.ParseError):
         return None
     total, failures = 0, {}
-    for case in tree.iter("testcase"):
+    for case in root.iter("testcase"):
         total += 1
         problem = next(
             (child for child in case if child.tag in ("failure", "error")), None

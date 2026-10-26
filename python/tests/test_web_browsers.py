@@ -66,9 +66,7 @@ class DemoProvider:
             text = (
                 "x" * 50000
                 if "unbroken" in prompt_text
-                else REPLY * 300
-                if "long" in prompt_text
-                else REPLY
+                else REPLY * 300 if "long" in prompt_text else REPLY
             )
             message = ModelMessage(
                 role="assistant", content=(ContentPart(type="text", text=text),)

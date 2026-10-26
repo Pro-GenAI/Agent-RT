@@ -17,10 +17,7 @@ import {
 	type ToolCall as AgentRTToolCall,
 	type ToolDefinition,
 } from '../../index.js';
-import {
-	CallbackManager,
-	Settings,
-} from './llamaindex_prompts.js';
+import { CallbackManager, Settings } from './llamaindex_prompts.js';
 
 type JSONObject = Record<string, unknown>;
 type MessageRole = 'system' | 'user' | 'assistant' | 'tool';

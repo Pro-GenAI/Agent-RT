@@ -3,13 +3,13 @@ version: 2.1
 parameters:
   run_mac_ci:
     type: boolean
-    default: false
+    default: true
   run_deps_matrix:
     type: boolean
     default: false
   run_pi_ci:
     type: boolean
-    default: false
+    default: true
 
 executors:
   apple_silicon:

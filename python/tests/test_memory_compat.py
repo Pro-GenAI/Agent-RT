@@ -202,7 +202,9 @@ async def test_load_memory_defaults_to_mem0_and_scopes_by_user(monkeypatch):
     memory = load_memory(options={"user_id": "u1"})
     assert memory.name == "mem0"
     assert await memory.recall("drinks?", 3) == ["likes tea"]
-    assert client.search.calls == [(("drinks?",), {"filters": {"user_id": "u1"}, "top_k": 3})]
+    assert client.search.calls == [
+        (("drinks?",), {"filters": {"user_id": "u1"}, "top_k": 3})
+    ]
 
     await memory.remember(
         [
@@ -213,7 +215,12 @@ async def test_load_memory_defaults_to_mem0_and_scopes_by_user(monkeypatch):
     )
     assert client.add.calls == [
         (
-            ([{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}],),
+            (
+                [
+                    {"role": "user", "content": "hi"},
+                    {"role": "assistant", "content": "hello"},
+                ],
+            ),
             {"user_id": "u1"},
         )
     ]
@@ -242,9 +249,14 @@ async def test_load_memory_other_backends(monkeypatch, tmp_path):
     install(monkeypatch, "memu", MemoryService=MemoryService)
     memu = load_memory(
         backend="memu",
-        options={"user_id": "u1", "database_config": {"metadata_store": {"provider": "inmemory"}}},
+        options={
+            "user_id": "u1",
+            "database_config": {"metadata_store": {"provider": "inmemory"}},
+        },
     )
-    assert seen["options"] == {"database_config": {"metadata_store": {"provider": "inmemory"}}}
+    assert seen["options"] == {
+        "database_config": {"metadata_store": {"provider": "inmemory"}}
+    }
     assert await memu.recall("units") == ["prefers metric"]
     assert seen["retrieve"] == (
         [{"role": "user", "content": {"text": "units"}}],
@@ -260,16 +272,22 @@ async def test_load_memory_other_backends(monkeypatch, tmp_path):
     # Zep: graph search for recall, thread messages for remember.
     zep_client = types.SimpleNamespace(
         graph=types.SimpleNamespace(
-            search_edges=Recorder(types.SimpleNamespace(items=[types.SimpleNamespace(fact="F1")]))
+            search_edges=Recorder(
+                types.SimpleNamespace(items=[types.SimpleNamespace(fact="F1")])
+            )
         ),
         thread=types.SimpleNamespace(add_messages=Recorder()),
     )
     install(monkeypatch, "zep_cloud")
     install(monkeypatch, "zep_cloud.client", Zep=lambda **kwargs: zep_client)
     install(monkeypatch, "zep_cloud.types", AddMessage=lambda **kwargs: kwargs)
-    zep = load_memory(backend="zep", options={"api_key": "k", "graph_id": "g", "thread_id": "t"})
+    zep = load_memory(
+        backend="zep", options={"api_key": "k", "graph_id": "g", "thread_id": "t"}
+    )
     assert await zep.recall("q", 2) == ["F1"]
-    assert zep_client.graph.search_edges.calls == [(("g",), {"query": "q", "page_size": 2})]
+    assert zep_client.graph.search_edges.calls == [
+        (("g",), {"query": "q", "page_size": 2})
+    ]
     await zep.remember("hi")
     assert zep_client.thread.add_messages.calls == [
         (("t",), {"messages": [{"role": "user", "content": "hi"}]})
@@ -279,7 +297,9 @@ async def test_load_memory_other_backends(monkeypatch, tmp_path):
     letta_client = types.SimpleNamespace(
         agents=types.SimpleNamespace(
             passages=types.SimpleNamespace(
-                search=Recorder(types.SimpleNamespace(results=[types.SimpleNamespace(content="P1")])),
+                search=Recorder(
+                    types.SimpleNamespace(results=[types.SimpleNamespace(content="P1")])
+                ),
                 create=Recorder(),
             )
         )
@@ -287,9 +307,15 @@ async def test_load_memory_other_backends(monkeypatch, tmp_path):
     install(monkeypatch, "letta_client", Letta=lambda **kwargs: letta_client)
     letta = load_memory(backend="letta", options={"agent_id": "a1"})
     assert await letta.recall("q", 4) == ["P1"]
-    assert letta_client.agents.passages.search.calls == [(("a1",), {"query": "q", "top_k": 4})]
-    await letta.remember([{"role": "user", "content": "hi"}, {"role": "assistant", "content": "yo"}])
-    assert letta_client.agents.passages.create.calls == [(("a1",), {"text": "user: hi\nassistant: yo"})]
+    assert letta_client.agents.passages.search.calls == [
+        (("a1",), {"query": "q", "top_k": 4})
+    ]
+    await letta.remember(
+        [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "yo"}]
+    )
+    assert letta_client.agents.passages.create.calls == [
+        (("a1",), {"text": "user: hi\nassistant: yo"})
+    ]
 
     # Supermemory namespaces.
     result = types.SimpleNamespace(memory=None, chunk="C1")
@@ -326,4 +352,6 @@ def test_load_memory_errors_and_config(monkeypatch):
     with pytest.raises(ConfigError, match="memory.backend must be one of"):
         parse_config("agent_rt_settings:\n  memory: {backend: nope}\n", environ={})
     with pytest.raises(ConfigError, match="unknown key"):
-        parse_config("agent_rt_settings:\n  memory: {options: {graph_id: g}}\n", environ={})
+        parse_config(
+            "agent_rt_settings:\n  memory: {options: {graph_id: g}}\n", environ={}
+        )

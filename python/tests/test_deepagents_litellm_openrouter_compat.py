@@ -162,13 +162,17 @@ def test_deep_agent_rejects_unemulated_options():
         )
 
 
-@pytest.mark.parametrize("option", ["permissions", "mode", "graph", "graph_id", "runnable"])
+@pytest.mark.parametrize(
+    "option", ["permissions", "mode", "graph", "graph_id", "runnable"]
+)
 def test_deep_agent_rejects_unenforced_subagent_options(option):
     model = ChatOpenAI("m", provider=QueueProvider([]))
     with pytest.raises(NotImplementedError, match=option):
         create_deep_agent(
             model=model,
-            subagents=[{"name": "worker", "description": "Work", option: {"deny": True}}],
+            subagents=[
+                {"name": "worker", "description": "Work", option: {"deny": True}}
+            ],
         )
 
 
@@ -202,7 +206,9 @@ def test_litellm_rejects_unhonored_chat_options_unless_drop_params():
     provider = QueueProvider([response("hi")])
     for option in ("tool_choice", "top_p", "stop"):
         with pytest.raises(NotImplementedError, match=option):
-            completion(model="openai/test", messages=[], provider=provider, **{option: "x"})
+            completion(
+                model="openai/test", messages=[], provider=provider, **{option: "x"}
+            )
     assert provider.requests == []
     completion(
         model="openai/test", messages=[], provider=provider, drop_params=True, top_p=0.1
@@ -263,7 +269,9 @@ def test_litellm_and_openrouter_sync_streams_are_incremental():
                 yield ModelStreamEvent(type="text_delta", text="first")
                 await asyncio.to_thread(self.released.wait)
                 yield ModelStreamEvent(type="text_delta", text="second")
-                yield ModelStreamEvent(type="completed", response=response("firstsecond"))
+                yield ModelStreamEvent(
+                    type="completed", response=response("firstsecond")
+                )
             finally:
                 self.closed.set()
 
@@ -288,8 +296,7 @@ def test_litellm_and_openrouter_sync_streams_are_incremental():
                 assert not provider.released.is_set()
                 provider.released.set()
                 assert any(
-                    chunk.choices[0].delta.content == "second"
-                    for chunk in chunks
+                    chunk.choices[0].delta.content == "second" for chunk in chunks
                 )
             assert provider.closed.wait(1)
             with pytest.raises(StopIteration):
@@ -349,8 +356,10 @@ def test_openrouter_sdk_chat_send():
     provider = QueueProvider([response("sync")])
     with OpenRouter(provider=provider) as client:
         sent = client.chat.send(
-            model="openai/gpt-5", messages=[{"role": "user", "content": "x"}],
-            temperature=0.4, reasoning_effort="low",
+            model="openai/gpt-5",
+            messages=[{"role": "user", "content": "x"}],
+            temperature=0.4,
+            reasoning_effort="low",
         )
     assert sent.choices[0].message.content == "sync"
     assert provider.requests[0].model == "openai/gpt-5"

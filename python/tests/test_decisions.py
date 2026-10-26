@@ -236,7 +236,10 @@ class TestOpenAIDecisionProvider:
         }
         assert answers == {
             "ok": {"noul": 0.2},
-            "tool": {"choice": "search", "probabilities": {"search": 0.7, "shell": 0.3}},
+            "tool": {
+                "choice": "search",
+                "probabilities": {"search": 0.7, "shell": 0.3},
+            },
         }
 
     def test_jev_style_base_url_and_failures(self, monkeypatch):

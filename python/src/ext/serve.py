@@ -57,7 +57,10 @@ class ServeError(RuntimeError):
 def parse_platforms(values: Sequence[str]) -> tuple[str, ...]:
     """``["telegram,discord"]`` (or space-separated names) -> unique platform names."""
     names = [
-        name.strip().lower() for value in values for name in value.split(",") if name.strip()
+        name.strip().lower()
+        for value in values
+        for name in value.split(",")
+        if name.strip()
     ]
     if not names:
         raise ValueError(
@@ -132,7 +135,7 @@ class ChatBridge:
                 session = self.sessions[chat_id] = self.make_session(self.platform)
             try:
                 result = await session.send(text, stream=False)
-            except Exception as exc:  # noqa: BLE001 - one failed run must not stop the bot
+            except Exception as exc:
                 self.log(f"run failed: {exc}")
                 return "Sorry, that request failed. Please try again."
         response = result.final_response
@@ -145,7 +148,9 @@ async def run_telegram(bridge: ChatBridge, client: httpx.AsyncClient) -> None:
     try:
         me = await client.get(f"{base}/getMe")
     except httpx.HTTPError as exc:
-        raise ServeError(f"telegram: {exc}".replace(bridge.token, "<bot_token>")) from None
+        raise ServeError(
+            f"telegram: {exc}".replace(bridge.token, "<bot_token>")
+        ) from None
     if me.status_code in (401, 404):
         raise ServeError("telegram: bot token rejected")
     if me.status_code != 200:
@@ -169,7 +174,11 @@ async def run_telegram(bridge: ChatBridge, client: httpx.AsyncClient) -> None:
         try:
             polled = await client.get(
                 f"{base}/getUpdates",
-                params={"offset": offset, "timeout": POLL_SECONDS, "allowed_updates": '["message"]'},
+                params={
+                    "offset": offset,
+                    "timeout": POLL_SECONDS,
+                    "allowed_updates": '["message"]',
+                },
                 timeout=POLL_SECONDS + 10,
             )
             polled.raise_for_status()
@@ -205,14 +214,18 @@ async def run_discord(
             code = exc.rcvd.code if exc.rcvd else None
             reason = exc.rcvd.reason if exc.rcvd else ""
             if code in DISCORD_FATAL_CLOSE_CODES:
-                raise ServeError(f"discord: gateway closed with code {code} ({reason})") from None
+                raise ServeError(
+                    f"discord: gateway closed with code {code} ({reason})"
+                ) from None
             bridge.log(f"gateway closed ({code}), reconnecting")
         except OSError as exc:
             bridge.log(f"gateway connection failed: {exc}")
         await asyncio.sleep(RETRY_SECONDS)
 
 
-async def _discord_session(bridge: ChatBridge, client: httpx.AsyncClient, gateway: Any) -> None:
+async def _discord_session(
+    bridge: ChatBridge, client: httpx.AsyncClient, gateway: Any
+) -> None:
     """Identify and handle events until the gateway asks for a reconnect."""
     hello = json.loads(await gateway.recv())
     interval = hello["d"]["heartbeat_interval"] / 1000
@@ -235,7 +248,9 @@ async def _discord_session(bridge: ChatBridge, client: httpx.AsyncClient, gatewa
                     json={"content": part, "allowed_mentions": {"parse": []}},
                 )
                 sent.raise_for_status()
-            except httpx.HTTPError as exc:  # shortcut: no 429 retry, add one if replies get rate limited
+            except (
+                httpx.HTTPError
+            ) as exc:  # shortcut: no 429 retry, add one if replies get rate limited
                 bridge.log(f"sending a message failed: {exc}")
                 return
 
@@ -246,7 +261,11 @@ async def _discord_session(bridge: ChatBridge, client: httpx.AsyncClient, gatewa
                 "d": {
                     "token": bridge.token,
                     "intents": DISCORD_INTENTS,
-                    "properties": {"os": sys.platform, "browser": "agent-rt", "device": "agent-rt"},
+                    "properties": {
+                        "os": sys.platform,
+                        "browser": "agent-rt",
+                        "device": "agent-rt",
+                    },
                 },
             }
         )
@@ -264,18 +283,25 @@ async def _discord_session(bridge: ChatBridge, client: httpx.AsyncClient, gatewa
                 return
             elif kind == "READY":
                 state["bot_id"] = data["user"]["id"]
-                print(f"Serving on Discord as {data['user'].get('username')}", flush=True)
+                print(
+                    f"Serving on Discord as {data['user'].get('username')}", flush=True
+                )
             elif kind == "MESSAGE_CREATE" and state["bot_id"]:
                 author = data.get("author") or {}
                 text = data.get("content") or ""
                 if author.get("bot"):
                     continue
                 if data.get("guild_id"):  # in servers, answer only when mentioned
-                    if not any(m.get("id") == state["bot_id"] for m in data.get("mentions") or []):
+                    if not any(
+                        m.get("id") == state["bot_id"]
+                        for m in data.get("mentions") or []
+                    ):
                         continue
                     text = re.sub(rf"<@!?{state['bot_id']}>", "", text)
                 if text.strip():
-                    bridge.spawn(handle(data["channel_id"], author.get("id"), text.strip()))
+                    bridge.spawn(
+                        handle(data["channel_id"], author.get("id"), text.strip())
+                    )
     finally:
         beat.cancel()
 
@@ -318,7 +344,7 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
             model = (await discover_builtin_models(provider))[0]
         else:
             model = await _startup_model(provider, args.model)
-    except Exception as exc:  # noqa: BLE001 - report any config or provider error as one line
+    except Exception as exc:
         print(f"agent-rt serve: configuration error: {exc}", file=sys.stderr)
         return 2
 
@@ -332,8 +358,10 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
 
     serve = config.settings.get("serve") or {}
     try:
-        bridges = [ChatBridge(name, serve.get(name) or {}, make_session) for name in platforms]
-    except Exception as exc:  # noqa: BLE001 - missing tokens and bad lists are config errors
+        bridges = [
+            ChatBridge(name, serve.get(name) or {}, make_session) for name in platforms
+        ]
+    except Exception as exc:
         print(f"agent-rt serve: configuration error: {exc}", file=sys.stderr)
         return 2
 

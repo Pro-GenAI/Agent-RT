@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from agent_rt import (
-    RetrievalRegistry,
-    RetrievalResult,
     ContentPart,
     EmbeddingItem,
     EmbeddingResponse,
@@ -11,6 +9,8 @@ from agent_rt import (
     ModelResponse,
     ModelStreamEvent,
     ModelUsage,
+    RetrievalRegistry,
+    RetrievalResult,
 )
 from agent_rt import ToolCall as RTToolCall
 

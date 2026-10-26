@@ -171,4 +171,7 @@ async def test_web_round_trips_each_sessions_list_through_the_page(tmp_path):
     assert client.get("/api/sessions/s1").json()["todos"] == events[-1]["todos"]
     bad = {"model": "m", "messages": [], "todos": [{"id": 1}]}
     assert client.post("/api/sessions/s1/save", json=bad).status_code == 400
-    assert client.post("/api/chat", json={"text": "x", "model": "m", **bad}).status_code == 400
+    assert (
+        client.post("/api/chat", json={"text": "x", "model": "m", **bad}).status_code
+        == 400
+    )

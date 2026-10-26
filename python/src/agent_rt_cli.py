@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import base64
+import builtins
 import importlib.metadata
 import json
 import os
@@ -16,7 +17,7 @@ from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar, cast
 
 from agent_rt import (
     ActionBlockerLike,
@@ -25,6 +26,7 @@ from agent_rt import (
     AgentRunLimits,
     AgentRunResult,
     ContentPart,
+    ContentPartType,
     GuardrailViolationError,
     ModelMessage,
     ModelSettings,
@@ -169,7 +171,10 @@ def _require_cli_dependencies() -> tuple[Any, Any, Any, Any, Any, Any, Any, Any]
             yield self.text
 
     class TerminalMarkdown(Markdown):
-        elements = {**Markdown.elements, "heading_open": PlainHeading}
+        elements: ClassVar[dict[str, Any]] = {
+            **Markdown.elements,
+            "heading_open": PlainHeading,
+        }
 
     class SlashCommandCompleter(Completer):
         def get_completions(self, document, complete_event):
@@ -389,8 +394,10 @@ class WorkspaceCodeTools:
         matches: list[str] = []
         seen: set[str] = set()
         for search_root in search_roots:
-            for current, dirnames, filenames in os.walk(search_root, followlinks=False):
-                current_path = Path(current)
+            for walk_dir, dirnames, filenames in os.walk(
+                search_root, followlinks=False
+            ):
+                current_path = Path(walk_dir)
                 dirnames[:] = sorted(
                     dirname
                     for dirname in dirnames
@@ -456,8 +463,7 @@ class WorkspaceCodeTools:
                 ],
                 cwd=self.root,
                 env=dict(environment),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 check=False,
                 timeout=15,
             )
@@ -497,8 +503,7 @@ class WorkspaceCodeTools:
                 command,
                 cwd=self.root,
                 env=environment,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 check=False,
                 timeout=15,
             )
@@ -569,8 +574,11 @@ class WorkspaceCodeTools:
             raise TypeError("content must be a string")
         if len(content.encode("utf-8")) > 1_000_000:
             raise ValueError("content exceeds 1000000 bytes")
+        previous = path.read_bytes() if path.exists() else None
         await self._require_write_approval("write_file", arguments)
         path = self._path(arguments.get("path"), must_exist=False)
+        if (path.read_bytes() if path.is_file() else None) != previous:
+            raise RuntimeError("file changed during approval")
         path.write_text(content, encoding="utf-8")
         return {
             "path": path.relative_to(self.root).as_posix(),
@@ -599,6 +607,8 @@ class WorkspaceCodeTools:
             raise ValueError("updated file exceeds 1000000 bytes")
         await self._require_write_approval("replace_in_file", arguments)
         path = self._path(arguments.get("path"))
+        if path.read_text(encoding="utf-8") != content:
+            raise RuntimeError("file changed during approval")
         path.write_text(updated, encoding="utf-8")
         return {"path": path.relative_to(self.root).as_posix(), "replacements": 1}
 
@@ -800,7 +810,7 @@ def _deserialize_message(value: Mapping[str, Any]) -> ModelMessage:
             raise ValueError("stored content part must be an object")
         parts.append(
             ContentPart(
-                type=str(item.get("type") or "text"),
+                type=cast(ContentPartType, str(item.get("type") or "text")),
                 text=item.get("text") if isinstance(item.get("text"), str) else None,
                 data=item.get("data"),
                 mime_type=(
@@ -900,7 +910,7 @@ def _discover_cli_skills(
             continue
         root_skill = root / "SKILL.md"
         if root_skill.exists() or root_skill.is_symlink():
-            candidates = (root,)
+            candidates: tuple[Path, ...] = (root,)
         else:
             candidates = tuple(
                 sorted(
@@ -1204,7 +1214,7 @@ class TranscriptStore:
             return ()
         return tuple(sorted(path.stem for path in self.root.glob("*.json")))
 
-    def summaries(self) -> list[dict[str, Any]]:
+    def summaries(self) -> builtins.list[dict[str, Any]]:
         """List fields of every readable session, newest first; ``id`` is the file name to load."""
         # shortcut: parses every whole transcript, fine for hundreds; add an index file if lists get slow.
         found = []
@@ -1278,7 +1288,9 @@ class ChatSession:
         return AgentConfig(
             name="cli",
             instructions=self.instructions,
-            model=ModelSettings(model=self.model, max_output_tokens=self.max_output_tokens),
+            model=ModelSettings(
+                model=self.model, max_output_tokens=self.max_output_tokens
+            ),
         )
 
     def resume(self) -> None:
@@ -1306,7 +1318,9 @@ class ChatSession:
         compaction_agent = AgentConfig(
             name="cli-compactor",
             instructions=COMPACTION_INSTRUCTIONS,
-            model=ModelSettings(model=self.model, max_output_tokens=self.max_output_tokens),
+            model=ModelSettings(
+                model=self.model, max_output_tokens=self.max_output_tokens
+            ),
         )
         request_messages = self.messages + (
             ModelMessage(
@@ -1517,12 +1531,16 @@ class TerminalChat:
             Text("Artie", style="bold bright_cyan"),
             Text.assemble(("Agent RT", "bold"), f" {_package_version()}"),
             Text.assemble(
-                "model=", (str(self.session.model), "cyan"),
-                "  session=", (str(self.session.session_id), "cyan"),
+                "model=",
+                (str(self.session.model), "cyan"),
+                "  session=",
+                (str(self.session.session_id), "cyan"),
             ),
             Text.assemble(
-                ("Guard", "bold spring_green3"), (" | ", "dim"),
-                ("Checkpoints", "bold dark_orange"), (" | ", "dim"),
+                ("Guard", "bold spring_green3"),
+                (" | ", "dim"),
+                ("Checkpoints", "bold dark_orange"),
+                (" | ", "dim"),
                 ("Wall", "bold deep_pink2"),
             ),
         )
@@ -1573,7 +1591,9 @@ class TerminalChat:
             self.console.print("No todos in this session.")
             return
         marks = {"pending": "[ ]", "in_progress": "[~]", "completed": "[x]"}
-        lines = [f"{marks[item['status']]} {item['id']}. {item['content']}" for item in items]
+        lines = [
+            f"{marks[item['status']]} {item['id']}. {item['content']}" for item in items
+        ]
         # Model-written text: print it literally, never as Rich markup.
         self.console.print("\n".join(lines), markup=False)
 
@@ -1807,7 +1827,9 @@ class TerminalChat:
             stop_status()
             self.console.print(
                 pose("shield", f"Guard blocked it: {exc}"),
-                style="bold spring_green3", markup=False, highlight=False,
+                style="bold spring_green3",
+                markup=False,
+                highlight=False,
             )
         except Exception as exc:
             stop_status()
@@ -2157,7 +2179,9 @@ def load_config_or_create(explicit: Path | None, prog: str) -> AgentRTConfig:
             os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w"
         ) as file:
             file.write(STARTER_CONFIG)
-        print(f"{prog}: created {path}; edit it to pin models or keys.", file=sys.stderr)
+        print(
+            f"{prog}: created {path}; edit it to pin models or keys.", file=sys.stderr
+        )
     return load_config(path)
 
 
@@ -2318,8 +2342,12 @@ def session_main(argv: Sequence[str]) -> int:
         parents=[common],
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("list", parents=[common], help="list saved sessions, newest first")
-    delete = commands.add_parser("delete", parents=[common], help="delete a saved session")
+    commands.add_parser(
+        "list", parents=[common], help="list saved sessions, newest first"
+    )
+    delete = commands.add_parser(
+        "delete", parents=[common], help="delete a saved session"
+    )
     delete.add_argument("session_id")
     args = parser.parse_args(argv)
     try:
@@ -2329,7 +2357,7 @@ def session_main(argv: Sequence[str]) -> int:
             print(f"agent-rt session: config not found: {args.config}", file=sys.stderr)
             return 2
         config = AgentRTConfig()
-    except Exception as exc:  # noqa: BLE001 - report any config error as one line
+    except Exception as exc:
         print(f"agent-rt session: configuration error: {exc}", file=sys.stderr)
         return 2
     _CLI_SETTINGS.clear()
@@ -2340,7 +2368,9 @@ def session_main(argv: Sequence[str]) -> int:
         if not sessions:
             print("No saved sessions.")
         for item in sessions:
-            updated = datetime.fromtimestamp(item["updated"] / 1000, timezone.utc).astimezone()
+            updated = datetime.fromtimestamp(
+                item["updated"] / 1000, timezone.utc
+            ).astimezone()
             print(
                 f"{item['id']}\t{updated:%Y-%m-%d %H:%M}\t{item['messages']} messages\t"
                 f"{item['title'] or 'untitled'}\t{item['workspace']}"
@@ -2352,7 +2382,9 @@ def session_main(argv: Sequence[str]) -> int:
         print(f"agent-rt session: {exc}", file=sys.stderr)
         return 2
     if not deleted:
-        print(f"agent-rt session: session not found: {args.session_id}", file=sys.stderr)
+        print(
+            f"agent-rt session: session not found: {args.session_id}", file=sys.stderr
+        )
         return 1
     print(f"Deleted session {args.session_id}")
     return 0

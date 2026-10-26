@@ -2,13 +2,12 @@ import asyncio
 import json
 import os
 import threading
-
-import agent_rt as agent_rt_core
 import time
 from dataclasses import replace
 
 import pytest
 
+import agent_rt as agent_rt_core
 from agent_rt import (
     PII_MORPHER_DISABLE_ENV,
     ActionBlockedError,
@@ -1527,7 +1526,9 @@ class TestToolContract:
         with pytest.raises(ValueError, match="reranker k requires a reranker"):
             retrieval.register("missing-reranker", Retrieval(), reranker_k=2)
         with pytest.raises(ValueError, match="reranker k must be at least 1"):
-            retrieval.register("invalid-k", Retrieval(), reranker=Reranker(), reranker_k=0)
+            retrieval.register(
+                "invalid-k", Retrieval(), reranker=Reranker(), reranker_k=0
+            )
 
         multimodal = MultimodalMessage(
             role="user",
@@ -4504,7 +4505,11 @@ class TestToolContract:
             "AGENT_RT_EXECUTION_CPU_SECONDS",
         )
         previous = agent_rt_core._RUNTIME_SETTINGS
-        agent_rt_core._RUNTIME_SETTINGS = {names[0]: "3.5", names[1]: "8192", names[2]: "1.25"}
+        agent_rt_core._RUNTIME_SETTINGS = {
+            names[0]: "3.5",
+            names[1]: "8192",
+            names[2]: "1.25",
+        }
         try:
 
             async def runner(*_args, **_kwargs):

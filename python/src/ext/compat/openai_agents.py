@@ -118,7 +118,9 @@ class InputGuardrail:
     run_in_parallel: bool = True
 
     def get_name(self) -> str:
-        return self.name or getattr(self.guardrail_function, "__name__", "guardrail")
+        return self.name or str(
+            getattr(self.guardrail_function, "__name__", "guardrail")
+        )
 
 
 @dataclass(frozen=True)
@@ -127,7 +129,9 @@ class OutputGuardrail:
     name: str | None = None
 
     def get_name(self) -> str:
-        return self.name or getattr(self.guardrail_function, "__name__", "guardrail")
+        return self.name or str(
+            getattr(self.guardrail_function, "__name__", "guardrail")
+        )
 
 
 @dataclass(frozen=True)
@@ -259,7 +263,7 @@ def function_tool(
     **_: Any,
 ):
     def decorate(target: Any) -> FunctionTool:
-        name = name_override or getattr(target, "__name__", "tool")
+        name = name_override or str(getattr(target, "__name__", "tool"))
         return FunctionTool(
             name=name,
             # The SDK accepts undocumented functions; Agent RT tool
@@ -488,9 +492,7 @@ class Runner:
                 # config does not declare, keeps the vendor SDK's environment defaults.
                 from ext.compat.base import _openai_provider
 
-                provider = _openai_provider(
-                    model=None, credential=None, base_url=None
-                )
+                provider = _openai_provider(model=None, credential=None, base_url=None)
         registry = rt.ToolRegistry()
         state = {"last_agent": starting_agent}
 
@@ -536,14 +538,17 @@ class Runner:
         if result.termination_reason == "max_turns":
             raise MaxTurnsExceeded(f"Max turns ({max_turns}) exceeded")
         final_output = _extract_text(result)
-        for guardrail in starting_agent.output_guardrails:
+        for output_guardrail in starting_agent.output_guardrails:
             output = await _guardrail_output(
-                guardrail.guardrail_function, run_context, starting_agent, final_output
+                output_guardrail.guardrail_function,
+                run_context,
+                starting_agent,
+                final_output,
             )
             if output.tripwire_triggered:
                 raise OutputGuardrailTripwireTriggered(
                     OutputGuardrailResult(
-                        guardrail=guardrail,
+                        guardrail=output_guardrail,
                         agent_output=final_output,
                         agent=starting_agent,
                         output=output,
@@ -580,7 +585,7 @@ async def run(agent: Agent, input: Any, **kwargs: Any) -> RunResult:
 def install_openai_agents_compat(parent: Any) -> None:
     import types
 
-    module = types.ModuleType(f"{parent.__name__}.agents")
+    module: Any = types.ModuleType(f"{parent.__name__}.agents")
     exceptions = {
         "AgentsException": AgentsException,
         "InputGuardrailTripwireTriggered": InputGuardrailTripwireTriggered,
@@ -635,7 +640,7 @@ def install_openai_agents_compat(parent: Any) -> None:
         ("tracing", tracing),
         ("mcp", mcp),
     ):
-        submodule = types.ModuleType(f"{module.__name__}.{name}")
+        submodule: Any = types.ModuleType(f"{module.__name__}.{name}")
         submodule.__dict__.update(values)
         submodule.__all__ = tuple(sorted(values))
         sys.modules[submodule.__name__] = submodule

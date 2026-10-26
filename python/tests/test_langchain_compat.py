@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from agent_rt import (
-    RetrievalRegistry,
-    RetrievalResult,
     ContentPart,
     EmbeddingItem,
     EmbeddingResponse,
@@ -11,6 +9,8 @@ from agent_rt import (
     ModelResponse,
     ModelStreamEvent,
     ModelUsage,
+    RetrievalRegistry,
+    RetrievalResult,
     ToolCall,
 )
 
@@ -629,7 +629,9 @@ async def test_langchain_output_parsers_and_advanced_retrievers() -> None:
     assert [doc.id for doc in compressed] == ["beta"]
 
 
-async def test_langchain_extended_prompt_lcel_loaders_vector_bridge_and_chains() -> None:
+async def test_langchain_extended_prompt_lcel_loaders_vector_bridge_and_chains() -> (
+    None
+):
     from agent_rt.langchain import (
         ChatPromptTemplate,
         CSVLoader,

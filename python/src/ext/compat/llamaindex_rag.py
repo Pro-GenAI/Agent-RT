@@ -188,6 +188,8 @@ class SimpleDirectoryReader:
 
     def _load_file_system(self) -> list[Document]:
         file_system = self.file_system
+        if file_system is None:
+            raise RuntimeError("file_system is required to load documents")
         if self.input_files:
             paths = tuple(self.input_files)
         elif self.recursive:

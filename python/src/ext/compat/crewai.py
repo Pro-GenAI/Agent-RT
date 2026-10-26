@@ -273,7 +273,7 @@ class Crew:
 
 
 def install_crewai_compat(parent: Any) -> None:
-    module = types.ModuleType(f"{parent.__name__}.crewai")
+    module: Any = types.ModuleType(f"{parent.__name__}.crewai")
     exports = {
         "Agent": Agent,
         "Crew": Crew,

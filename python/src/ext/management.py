@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Mapping
 import copy
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -31,13 +32,21 @@ class PromptManager:
         self._versions: dict[str, list[PromptVersion]] = {}
         self._deployments: dict[tuple[str, str], int] = {}
 
-    def create(self, prompt_id: str, template: str, *, metadata: Mapping[str, Any] | None = None) -> PromptVersion:
+    def create(
+        self,
+        prompt_id: str,
+        template: str,
+        *,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> PromptVersion:
         if not prompt_id.strip():
             raise ValueError("prompt_id must not be empty")
         if not template:
             raise ValueError("prompt template must not be empty")
         versions = self._versions.setdefault(prompt_id, [])
-        item = PromptVersion(prompt_id, len(versions) + 1, template, dict(metadata or {}))
+        item = PromptVersion(
+            prompt_id, len(versions) + 1, template, dict(metadata or {})
+        )
         versions.append(item)
         return item
 
@@ -57,7 +66,9 @@ class PromptManager:
             raise KeyError(prompt_id)
         return tuple(self._versions[prompt_id])
 
-    def deploy(self, prompt_id: str, environment: str, version: int | None = None) -> PromptDeployment:
+    def deploy(
+        self, prompt_id: str, environment: str, version: int | None = None
+    ) -> PromptDeployment:
         if not environment.strip():
             raise ValueError("environment must not be empty")
         prompt = self.get(prompt_id, version)
@@ -70,7 +81,9 @@ class PromptManager:
             raise KeyError(key)
         return self.get(prompt_id, self._deployments[key])
 
-    def rollback(self, prompt_id: str, environment: str, *, steps: int = 1) -> PromptDeployment:
+    def rollback(
+        self, prompt_id: str, environment: str, *, steps: int = 1
+    ) -> PromptDeployment:
         if steps < 1:
             raise ValueError("steps must be at least 1")
         current = self.deployed(prompt_id, environment)
@@ -124,7 +137,9 @@ class ConfigurationManager:
             raise ValueError("environment name must not be empty")
         self._environments[name] = copy.deepcopy(dict(values))
 
-    def resolve(self, environment: str, *, overrides: Mapping[str, Any] | None = None) -> RuntimeConfiguration:
+    def resolve(
+        self, environment: str, *, overrides: Mapping[str, Any] | None = None
+    ) -> RuntimeConfiguration:
         values = _deep_merge(self._base, self._environments.get(environment, {}))
         if overrides:
             values = _deep_merge(values, overrides)
@@ -158,7 +173,9 @@ class FeatureFlagRegistry:
             raise KeyError(name)
         return self._flags[name]
 
-    def enabled(self, name: str, *, environment: str | None = None, subject: str | None = None) -> bool:
+    def enabled(
+        self, name: str, *, environment: str | None = None, subject: str | None = None
+    ) -> bool:
         flag = self.get(name)
         if not flag.enabled:
             return False
@@ -170,6 +187,6 @@ class FeatureFlagRegistry:
             return True
         if flag.percentage <= 0:
             return False
-        source = f"{name}:{subject or ''}:{environment or ''}".encode("utf-8")
+        source = f"{name}:{subject or ''}:{environment or ''}".encode()
         bucket = sum((index + 1) * byte for index, byte in enumerate(source)) % 100
         return bucket < flag.percentage

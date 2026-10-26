@@ -407,9 +407,9 @@ class Timeline:
                 events=events,
                 messages=[_view(m) for m in result.messages if m.role != "system"],
                 forkable=status == "turn",
-                tool_output=_text_of(new[-1])
-                if new and new[-1].role == "tool"
-                else None,
+                tool_output=(
+                    _text_of(new[-1]) if new and new[-1].role == "tool" else None
+                ),
             )
             if status != "turn":
                 return

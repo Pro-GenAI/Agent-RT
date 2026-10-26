@@ -182,7 +182,7 @@ class _RetryRunnable:
         for _ in range(self.max_attempts):
             try:
                 return await self.runnable.ainvoke(value, config=config, **kwargs)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 last_error = exc
         raise last_error
 
@@ -200,7 +200,7 @@ class _FallbackRunnable:
         for candidate in (self.runnable, *self.fallbacks):
             try:
                 return await candidate.ainvoke(value, config=config, **kwargs)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 last_error = exc
         raise last_error
 
@@ -302,7 +302,11 @@ class ChatPromptTemplate:
             elif normalized == "assistant":
                 output.append(AIMessage(content))
             elif normalized == "tool":
-                output.append(ToolMessage(content, tool_call_id=str(values.get("tool_call_id", ""))))
+                output.append(
+                    ToolMessage(
+                        content, tool_call_id=str(values.get("tool_call_id", ""))
+                    )
+                )
             else:
                 output.append(HumanMessage(content))
         return output

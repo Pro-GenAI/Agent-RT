@@ -39,7 +39,11 @@ MEMORY_BACKENDS: dict[str, tuple[str, str, frozenset[str]]] = {
             }
         ),
     ),
-    "zep": ("zep_cloud", "zep", frozenset({"api_key", "base_url", "graph_id", "thread_id"})),
+    "zep": (
+        "zep_cloud",
+        "zep",
+        frozenset({"api_key", "base_url", "graph_id", "thread_id"}),
+    ),
     "letta": ("letta_client", "letta", frozenset({"api_key", "base_url", "agent_id"})),
     "supermemory": (
         "supermemory",
@@ -55,7 +59,9 @@ Remember = Callable[[list[dict[str, str]]], Awaitable[Any]]
 class MemoryBackend:
     """A memory package exposed as ``recall(query, limit)`` / ``remember(messages)``."""
 
-    def __init__(self, name: str, client: Any, recall: Recall, remember: Remember) -> None:
+    def __init__(
+        self, name: str, client: Any, recall: Recall, remember: Remember
+    ) -> None:
         self.name = name
         self.client = client
         self._recall = recall
@@ -84,11 +90,13 @@ def _conversation(messages: Any) -> list[dict[str, str]]:
             role = getattr(message, "role", None)
             content = getattr(message, "content", None)
             if not isinstance(content, str) and content is not None:
-                content = "".join(
-                    getattr(part, "text", None) or "" for part in content
-                )
+                content = "".join(getattr(part, "text", None) or "" for part in content)
         # System prompts and tool output are not conversation memory.
-        if role in ("user", "assistant") and isinstance(content, str) and content.strip():
+        if (
+            role in ("user", "assistant")
+            and isinstance(content, str)
+            and content.strip()
+        ):
             turns.append({"role": role, "content": content})
     return turns
 
@@ -113,19 +121,26 @@ def _mem0(options: Mapping[str, Any]) -> MemoryBackend:
     import mem0
 
     if options.get("api_key"):
-        client: Any = mem0.MemoryClient(api_key=options["api_key"], host=options.get("host"))
+        client: Any = mem0.MemoryClient(
+            api_key=options["api_key"], host=options.get("host")
+        )
     elif options.get("config"):
         client = mem0.Memory.from_config(dict(options["config"]))
     else:
         client = mem0.Memory()
     entity = {
-        key: options[key] for key in ("user_id", "agent_id", "run_id") if options.get(key)
+        key: options[key]
+        for key in ("user_id", "agent_id", "run_id")
+        if options.get(key)
     } or {"user_id": "default"}
 
     async def recall(query: str, limit: int) -> list[Any]:
         found = await _in_thread(client.search, query, filters=entity, top_k=limit)
         results = found.get("results", []) if isinstance(found, Mapping) else found
-        return [item.get("memory", item) if isinstance(item, Mapping) else item for item in results]
+        return [
+            item.get("memory", item) if isinstance(item, Mapping) else item
+            for item in results
+        ]
 
     async def remember(turns: list[dict[str, str]]) -> Any:
         return await _in_thread(client.add, turns, **entity)
@@ -171,7 +186,9 @@ def _zep(options: Mapping[str, Any]) -> MemoryBackend:
 
     async def recall(query: str, limit: int) -> list[Any]:
         graph_id = _require(options, "graph_id", "zep")
-        page = await _in_thread(client.graph.search_edges, graph_id, query=query, page_size=limit)
+        page = await _in_thread(
+            client.graph.search_edges, graph_id, query=query, page_size=limit
+        )
         return [edge.fact for edge in list(getattr(page, "items", None) or [])[:limit]]
 
     async def remember(turns: list[dict[str, str]]) -> Any:
@@ -179,7 +196,9 @@ def _zep(options: Mapping[str, Any]) -> MemoryBackend:
         return await _in_thread(
             client.thread.add_messages,
             thread_id,
-            messages=[AddMessage(role=turn["role"], content=turn["content"]) for turn in turns],
+            messages=[
+                AddMessage(role=turn["role"], content=turn["content"]) for turn in turns
+            ],
         )
 
     return MemoryBackend("zep", client, recall, remember)
@@ -193,11 +212,15 @@ def _letta(options: Mapping[str, Any]) -> MemoryBackend:
     agent_id = _require(options, "agent_id", "letta")
 
     async def recall(query: str, limit: int) -> list[Any]:
-        found = await _in_thread(client.agents.passages.search, agent_id, query=query, top_k=limit)
+        found = await _in_thread(
+            client.agents.passages.search, agent_id, query=query, top_k=limit
+        )
         return [result.content for result in found.results]
 
     async def remember(turns: list[dict[str, str]]) -> Any:
-        return await _in_thread(client.agents.passages.create, agent_id, text=_transcript(turns))
+        return await _in_thread(
+            client.agents.passages.create, agent_id, text=_transcript(turns)
+        )
 
     return MemoryBackend("letta", client, recall, remember)
 
@@ -248,7 +271,9 @@ def load_memory(
     chosen = dict(settings.get("options") or {}) if options is None else dict(options)
     unknown = sorted(set(chosen) - allowed)
     if unknown:
-        raise ValueError(f"memory backend {name!r}: unknown option(s): {', '.join(unknown)}")
+        raise ValueError(
+            f"memory backend {name!r}: unknown option(s): {', '.join(unknown)}"
+        )
     require_resolved(chosen)
     try:
         return _BUILDERS[name](chosen)

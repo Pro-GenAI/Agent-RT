@@ -152,7 +152,11 @@ def translate_error(classes: Mapping[str, Any], exc: BaseException) -> BaseExcep
     if status is None:
         status = getattr(getattr(exc, "response", None), "status_code", None)
     cause = exc.__cause__
-    if status is None and isinstance(getattr(cause, "status_code", None), int):
+    if (
+        status is None
+        and cause is not None
+        and isinstance(getattr(cause, "status_code", None), int)
+    ):
         # Agent RT wraps an HTTP 429 in RateLimitExceededError; the SDK raises
         # RateLimitError with the response's status, headers, and body.
         return translate_error(classes, cause)

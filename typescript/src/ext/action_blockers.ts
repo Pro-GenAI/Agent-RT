@@ -16,11 +16,7 @@ export interface ActionBlockerResult {
 }
 
 export type ActionBlockerDecision =
-	| ActionBlockerResult
-	| boolean
-	| string
-	| null
-	| undefined;
+	ActionBlockerResult | boolean | string | null | undefined;
 
 export type ActionBlockerFunction = (
 	call: ActionBlockerCall,
@@ -147,7 +143,9 @@ export class RuleBasedActionBlocker implements ActionBlocker {
 			for (const rule of this.rules) {
 				if (
 					toolTokens.length === rule.tokens.length &&
-					toolTokens.every((token, index) => token === rule.tokens[index])
+					toolTokens.every(
+						(token, index) => token === rule.tokens[index],
+					)
 				) {
 					return rule.command;
 				}
@@ -282,7 +280,9 @@ export function makeDecisionActionBlocker(
 		);
 		const answer = answers.block;
 		if (!answer || typeof answer !== 'object' || Array.isArray(answer)) {
-			throw new Error('decision action blocker response must contain block');
+			throw new Error(
+				'decision action blocker response must contain block',
+			);
 		}
 		const score = answer.noul;
 		if (
@@ -326,7 +326,8 @@ export function makeAgentActionGuardActionBlocker(
 					typeof error === 'object' &&
 					error !== null &&
 					'code' in error &&
-					(error as { code?: unknown }).code === 'ERR_MODULE_NOT_FOUND'
+					(error as { code?: unknown }).code ===
+						'ERR_MODULE_NOT_FOUND'
 				) {
 					throw new Error(
 						"Agent Action Guard is optional. Install 'agent-action-guard' " +

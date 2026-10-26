@@ -115,6 +115,15 @@ base = await Toolbase.initialize(
 ```
 
 
+## Secure preset
+
+The core runtime leaves permissions, approvals, timeouts, and token caps off so trusted local scripts stay simple. For untrusted input or production, start from the preset instead:
+
+- `SECURE_RUN_LIMITS` (Python `AgentRunLimits`, TypeScript `AgentRunLimits` object): 16 turns, 64 tool calls, a 120 s timeout, and 100,000 total tokens. These are the API server's defaults.
+- `secure_tool_registry(permission_rules, approval_manager=None, **options)` / `secureToolRegistry(permissionRules, approvalManager?)`: a `ToolRegistry` whose permissions deny by default. Only `none`/`read` tools are allowed (tools that declare no `side_effect` count as `none`). Add allow rules for anything else; deny rules always win. Consequential and destructive tools still raise `ApprovalRequiredError` until approved.
+
+Model-backed tool-input screening is not part of the preset because it needs the optional `agent-action-guard` model. Turn it on with `enable_model_tool_input_guardrail=True` (Python, also accepted by `secure_tool_registry`) or the `ToolRegistry` constructor's `modelToolInputGuardrail: { enabled: true }` argument (TypeScript).
+
 ## Action blockers
 
 `ToolRegistry` accepts multiple deny-only action blockers in addition to transform-capable tool-input guardrails. Blockers run in order and the first rejection raises `ActionBlockedError` before input guardrails, argument validation, approval, or handler execution.
@@ -250,7 +259,7 @@ An interactive session opens with a banner of Artie, the Agent RT mascot, drawn 
 
 Run `agent-rt demo` (`uvx agent-rt demo` or `npx agent-rt demo`) to try Agent RT with no config or API key: a scripted mock model meets a prompt injection, tries `rm -rf ~`, and the built-in action blocker stops it before the tool runs. The demo totals tokens and prints the process's peak memory.
 
-The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. The `todo` tool (see [Task lists](#task-lists-todo-tool)) is on by default, with one list per session. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
+The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. File writes and exact-text replacements check that the target has not changed during a pending approval and abort rather than overwriting intervening edits. The `todo` tool (see [Task lists](#task-lists-todo-tool)) is on by default, with one list per session. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
 
 ### Reuse another agent CLI's setup
 

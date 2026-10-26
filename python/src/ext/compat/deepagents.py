@@ -35,7 +35,9 @@ GENERAL_PURPOSE_SUBAGENT = {
     ),
 }
 _UNSUPPORTED = ("backend", "interrupt_on", "skills", "memory", "permissions")
-_SUBAGENT_KEYS = frozenset({"name", "description", "system_prompt", "tools", "model", "middleware"})
+_SUBAGENT_KEYS = frozenset(
+    {"name", "description", "system_prompt", "tools", "model", "middleware"}
+)
 _MAX_READ_LINES = 2000
 
 
@@ -328,7 +330,10 @@ def create_deep_agent(
             )
         if not isinstance(spec.get("name"), str) or not spec["name"].strip():
             raise ValueError("deepagents subagents require a non-empty name")
-        if not isinstance(spec.get("description"), str) or not spec["description"].strip():
+        if (
+            not isinstance(spec.get("description"), str)
+            or not spec["description"].strip()
+        ):
             raise ValueError("deepagents subagents require a non-empty description")
         specs = [item for item in specs if item["name"] != spec["name"]] + [dict(spec)]
 
@@ -358,7 +363,7 @@ def create_deep_agent(
 
 
 def install_deepagents_compat(parent: Any) -> None:
-    module = types.ModuleType(f"{parent.__name__}.deepagents")
+    module: Any = types.ModuleType(f"{parent.__name__}.deepagents")
     exports = {
         "BASE_AGENT_PROMPT": BASE_AGENT_PROMPT,
         "SubAgent": dict,

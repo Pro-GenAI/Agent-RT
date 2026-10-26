@@ -451,15 +451,15 @@ async def Console(stream: Any, **_: Any) -> Any:
 
 def install_autogen_compat(parent: Any) -> None:
     root_name = f"{parent.__name__}.autogen_agentchat"
-    root = types.ModuleType(root_name)
+    root: Any = types.ModuleType(root_name)
     root.__path__ = ()
-    agents = types.ModuleType(f"{root_name}.agents")
-    teams = types.ModuleType(f"{root_name}.teams")
-    conditions = types.ModuleType(f"{root_name}.conditions")
-    messages = types.ModuleType(f"{root_name}.messages")
+    agents: Any = types.ModuleType(f"{root_name}.agents")
+    teams: Any = types.ModuleType(f"{root_name}.teams")
+    conditions: Any = types.ModuleType(f"{root_name}.conditions")
+    messages: Any = types.ModuleType(f"{root_name}.messages")
 
-    base = types.ModuleType(f"{root_name}.base")
-    ui = types.ModuleType(f"{root_name}.ui")
+    base: Any = types.ModuleType(f"{root_name}.base")
+    ui: Any = types.ModuleType(f"{root_name}.ui")
 
     agents.AssistantAgent = AssistantAgent
     agents.UserProxyAgent = UserProxyAgent
@@ -508,17 +508,17 @@ def install_autogen_compat(parent: Any) -> None:
     )
 
     model_name = f"{parent.__name__}.autogen_ext.models.openai"
-    ext = types.ModuleType(f"{parent.__name__}.autogen_ext")
+    ext: Any = types.ModuleType(f"{parent.__name__}.autogen_ext")
     ext.__path__ = ()
-    models = types.ModuleType(f"{parent.__name__}.autogen_ext.models")
+    models: Any = types.ModuleType(f"{parent.__name__}.autogen_ext.models")
     models.__path__ = ()
-    openai = types.ModuleType(model_name)
+    openai: Any = types.ModuleType(model_name)
     openai.OpenAIChatCompletionClient = OpenAIChatCompletionClient
     openai.__all__ = ("OpenAIChatCompletionClient",)
-    anthropic = types.ModuleType(f"{parent.__name__}.autogen_ext.models.anthropic")
+    anthropic: Any = types.ModuleType(f"{parent.__name__}.autogen_ext.models.anthropic")
     anthropic.AnthropicChatCompletionClient = AnthropicChatCompletionClient
     anthropic.__all__ = ("AnthropicChatCompletionClient",)
-    ollama = types.ModuleType(f"{parent.__name__}.autogen_ext.models.ollama")
+    ollama: Any = types.ModuleType(f"{parent.__name__}.autogen_ext.models.ollama")
     ollama.OllamaChatCompletionClient = OllamaChatCompletionClient
     ollama.__all__ = ("OllamaChatCompletionClient",)
     models.openai = openai

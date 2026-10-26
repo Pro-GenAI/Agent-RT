@@ -35,7 +35,10 @@ CLAUDE_MODEL_ALIASES = {
     "fable": "claude-fable-5-1",
 }
 DEFAULT_OPENAI_MODEL = "gpt-5.5"
-CODEX_LOCAL_PROVIDERS = {"ollama": "http://localhost:11434/v1", "lmstudio": "http://localhost:1234/v1"}
+CODEX_LOCAL_PROVIDERS = {
+    "ollama": "http://localhost:11434/v1",
+    "lmstudio": "http://localhost:1234/v1",
+}
 _TRUE = {"1", "true", "yes", "on"}
 
 
@@ -63,11 +66,15 @@ def _parser(prog: str) -> _Parser:
 def _parse(parser: _Parser, argv: Sequence[str]) -> argparse.Namespace:
     args, unknown = parser.parse_known_args(list(argv))
     if unknown:
-        raise ToolCLIError(f"{parser.prog}: unsupported option(s) for Agent RT: {' '.join(unknown)}")
+        raise ToolCLIError(
+            f"{parser.prog}: unsupported option(s) for Agent RT: {' '.join(unknown)}"
+        )
     return args
 
 
-def _config(provider: str, model: str, api_key: str | None, api_base: str | None) -> AgentRTConfig:
+def _config(
+    provider: str, model: str, api_key: str | None, api_base: str | None
+) -> AgentRTConfig:
     params: dict[str, Any] = {"model": f"{provider}/{model}"}
     if api_key:
         params["api_key"] = api_key
@@ -86,7 +93,11 @@ def _merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, An
     merged = dict(base)
     for key, value in override.items():
         current = merged.get(key)
-        merged[key] = _merge(current, value) if isinstance(current, Mapping) and isinstance(value, Mapping) else value
+        merged[key] = (
+            _merge(current, value)
+            if isinstance(current, Mapping) and isinstance(value, Mapping)
+            else value
+        )
     return merged
 
 
@@ -163,7 +174,9 @@ def _max_tokens_args(value: str | None, name: str) -> list[str]:
     return ["--max-output-tokens", value.strip()]
 
 
-def _common_args(prompt: str | None, session: str | None = None, resume: bool = False) -> list[str]:
+def _common_args(
+    prompt: str | None, session: str | None = None, resume: bool = False
+) -> list[str]:
     argv = ["-p", prompt] if prompt is not None else []
     if session:
         argv += ["--session", session] + (["--resume"] if resume else [])
@@ -173,11 +186,17 @@ def _common_args(prompt: str | None, session: str | None = None, resume: bool = 
 def _permission_note(tool: str, flags: Sequence[str]) -> list[str]:
     if not flags:
         return []
-    return [f"{tool}: ignoring {', '.join(flags)}; Agent RT keeps its own workspace approval prompts"]
+    return [
+        f"{tool}: ignoring {', '.join(flags)}; Agent RT keeps its own workspace approval prompts"
+    ]
 
 
 def _ignored_note(tool: str, names: Sequence[str]) -> list[str]:
-    return [f"{tool}: {', '.join(names)} not supported by Agent RT; ignored"] if names else []
+    return (
+        [f"{tool}: {', '.join(names)} not supported by Agent RT; ignored"]
+        if names
+        else []
+    )
 
 
 # ------------------------------------------------------------------ claude
@@ -187,11 +206,16 @@ def _claude_model(name: str, env: Mapping[str, str]) -> str:
     alias = re.sub(r"\[.*\]$", "", name.strip())  # e.g. "sonnet[1m]"
     alias = {"default": "sonnet", "opusplan": "opus"}.get(alias, alias)
     if alias in CLAUDE_MODEL_ALIASES:
-        return env.get(f"ANTHROPIC_DEFAULT_{alias.upper()}_MODEL") or CLAUDE_MODEL_ALIASES[alias]
+        return (
+            env.get(f"ANTHROPIC_DEFAULT_{alias.upper()}_MODEL")
+            or CLAUDE_MODEL_ALIASES[alias]
+        )
     return alias
 
 
-def _claude(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path) -> ToolInvocation:
+def _claude(
+    argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path
+) -> ToolInvocation:
     parser = _parser("claude")
     parser.add_argument("-p", "--print", action="store_true")
     parser.add_argument("--model")
@@ -207,17 +231,27 @@ def _claude(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Pa
     parser.add_argument("prompt", nargs="?")
     args = _parse(parser, argv)
     if args.prompt is not None and not args.print:
-        raise ToolCLIError("claude: an initial interactive prompt is not supported; use -p")
+        raise ToolCLIError(
+            "claude: an initial interactive prompt is not supported; use -p"
+        )
 
     # User settings may set `env` and `model`; project settings may only choose the model.
     config_dir = Path(environ.get("CLAUDE_CONFIG_DIR") or home / ".claude")
     user = _read_json(config_dir / "settings.json")
-    project = _merge(_read_json(cwd / ".claude" / "settings.json"), _read_json(cwd / ".claude" / "settings.local.json"))
+    project = _merge(
+        _read_json(cwd / ".claude" / "settings.json"),
+        _read_json(cwd / ".claude" / "settings.local.json"),
+    )
     env = {**{k: str(v) for k, v in (user.get("env") or {}).items()}, **environ}
 
-    if env.get("CLAUDE_CODE_USE_BEDROCK", "").lower() in _TRUE or env.get("CLAUDE_CODE_USE_VERTEX", "").lower() in _TRUE \
-            or env.get("CLAUDE_CODE_USE_FOUNDRY", "").lower() in _TRUE:
-        raise ToolCLIError("claude: Bedrock, Vertex, and Foundry are not supported; use ANTHROPIC_API_KEY")
+    if (
+        env.get("CLAUDE_CODE_USE_BEDROCK", "").lower() in _TRUE
+        or env.get("CLAUDE_CODE_USE_VERTEX", "").lower() in _TRUE
+        or env.get("CLAUDE_CODE_USE_FOUNDRY", "").lower() in _TRUE
+    ):
+        raise ToolCLIError(
+            "claude: Bedrock, Vertex, and Foundry are not supported; use ANTHROPIC_API_KEY"
+        )
     api_key = env.get("ANTHROPIC_API_KEY")
     if not api_key:
         if env.get("ANTHROPIC_AUTH_TOKEN"):
@@ -249,13 +283,22 @@ def _claude(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Pa
         from agent_rt_cli import DEFAULT_INSTRUCTIONS
 
         base = args.system_prompt or DEFAULT_INSTRUCTIONS
-        cli += ["--instructions", "\n\n".join(filter(None, [base, args.append_system_prompt]))]
+        cli += [
+            "--instructions",
+            "\n\n".join(filter(None, [base, args.append_system_prompt])),
+        ]
     if args.max_turns:
         cli += ["--max-turns", str(args.max_turns)]
-    cli += _max_tokens_args(env.get("CLAUDE_CODE_MAX_OUTPUT_TOKENS"), "CLAUDE_CODE_MAX_OUTPUT_TOKENS")
+    cli += _max_tokens_args(
+        env.get("CLAUDE_CODE_MAX_OUTPUT_TOKENS"), "CLAUDE_CODE_MAX_OUTPUT_TOKENS"
+    )
     flags = ["--dangerously-skip-permissions"] * args.dangerously_skip_permissions
     flags += ["--permission-mode"] * bool(args.permission_mode)
-    ignored = [name for name in ("ANTHROPIC_CUSTOM_HEADERS", "ANTHROPIC_BETAS") if env.get(name)]
+    ignored = [
+        name
+        for name in ("ANTHROPIC_CUSTOM_HEADERS", "ANTHROPIC_BETAS")
+        if env.get(name)
+    ]
     return ToolInvocation(
         _config("anthropic", model, api_key, env.get("ANTHROPIC_BASE_URL")),
         cli,
@@ -287,7 +330,9 @@ def _codex_override(config: dict[str, Any], assignment: str) -> None:
     target[leaf] = value
 
 
-def _codex(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path) -> ToolInvocation:
+def _codex(
+    argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path
+) -> ToolInvocation:
     one_shot = bool(argv) and argv[0] == "exec"
     parser = _parser("codex exec" if one_shot else "codex")
     parser.add_argument("-m", "--model")
@@ -299,13 +344,17 @@ def _codex(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Pat
     parser.add_argument("-s", "--sandbox")
     parser.add_argument("-a", "--ask-for-approval")
     parser.add_argument("--full-auto", action="store_true")
-    parser.add_argument("--dangerously-bypass-approvals-and-sandbox", action="store_true")
+    parser.add_argument(
+        "--dangerously-bypass-approvals-and-sandbox", action="store_true"
+    )
     parser.add_argument("--skip-git-repo-check", action="store_true")
     parser.add_argument("--ephemeral", action="store_true")
     parser.add_argument("prompt", nargs="?")
     args = _parse(parser, argv[1:] if one_shot else argv)
     if args.prompt is not None and not one_shot:
-        raise ToolCLIError("codex: an initial interactive prompt is not supported; use `codex exec`")
+        raise ToolCLIError(
+            "codex: an initial interactive prompt is not supported; use `codex exec`"
+        )
 
     # Project-local .codex/config.toml is not read: Codex only honors it for trusted projects.
     codex_home = Path(environ.get("CODEX_HOME") or home / ".codex")
@@ -313,24 +362,40 @@ def _codex(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Pat
     profile_name = args.profile or config.get("profile")
     if profile_name:
         profile_file = codex_home / f"{profile_name}.config.toml"
-        profile = _read_toml(profile_file) if profile_file.is_file() else (config.get("profiles") or {}).get(profile_name)
+        profile = (
+            _read_toml(profile_file)
+            if profile_file.is_file()
+            else (config.get("profiles") or {}).get(profile_name)
+        )
         if not isinstance(profile, dict):
-            raise ToolCLIError(f"codex: profile {profile_name!r} not found ({profile_file})")
+            raise ToolCLIError(
+                f"codex: profile {profile_name!r} not found ({profile_file})"
+            )
         config = _merge(config, profile)
     for assignment in args.config:
         _codex_override(config, assignment)
 
     model = args.model or config.get("model") or DEFAULT_OPENAI_MODEL
-    provider_id = (args.local_provider or config.get("oss_provider") or "ollama") if args.oss else (
-        config.get("model_provider") or "openai"
+    provider_id = (
+        (args.local_provider or config.get("oss_provider") or "ollama")
+        if args.oss
+        else (config.get("model_provider") or "openai")
     )
     notes: list[str] = []
 
     def openai_key() -> str:
         auth = _read_json(codex_home / "auth.json")
-        key = environ.get("CODEX_API_KEY") or environ.get("OPENAI_API_KEY") or auth.get("OPENAI_API_KEY")
+        key = (
+            environ.get("CODEX_API_KEY")
+            or environ.get("OPENAI_API_KEY")
+            or auth.get("OPENAI_API_KEY")
+        )
         if not key:
-            token = " (CODEX_ACCESS_TOKEN is a ChatGPT token)" if environ.get("CODEX_ACCESS_TOKEN") else ""
+            token = (
+                " (CODEX_ACCESS_TOKEN is a ChatGPT token)"
+                if environ.get("CODEX_ACCESS_TOKEN")
+                else ""
+            )
             raise ToolCLIError(
                 "codex: set CODEX_API_KEY or log in with `codex login --with-api-key`; "
                 f"ChatGPT sign-in tokens cannot be reused{token}"
@@ -345,19 +410,28 @@ def _codex(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Pat
     else:
         entry = (config.get("model_providers") or {}).get(provider_id)
         if not isinstance(entry, dict) or not entry.get("base_url"):
-            raise ToolCLIError(f"codex: model provider {provider_id!r} needs a base_url in config.toml")
+            raise ToolCLIError(
+                f"codex: model provider {provider_id!r} needs a base_url in config.toml"
+            )
         env_key = entry.get("env_key")
         if env_key:
             api_key = environ.get(env_key)
             if not api_key:
-                raise ToolCLIError(f"codex: model provider {provider_id!r} needs {env_key} to be set")
+                raise ToolCLIError(
+                    f"codex: model provider {provider_id!r} needs {env_key} to be set"
+                )
         elif entry.get("requires_openai_auth"):
             api_key = openai_key()
         else:
             api_key = entry.get("experimental_bearer_token")
         api_base = entry["base_url"]
         notes += _ignored_note(
-            "codex", [f"model_providers.{provider_id}.{k}" for k in ("http_headers", "env_http_headers", "query_params") if entry.get(k)]
+            "codex",
+            [
+                f"model_providers.{provider_id}.{k}"
+                for k in ("http_headers", "env_http_headers", "query_params")
+                if entry.get(k)
+            ],
         )
 
     cli = _common_args((args.prompt or "") if one_shot else None)
@@ -367,14 +441,19 @@ def _codex(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Pat
         name
         for name, on in (
             ("--full-auto", args.full_auto),
-            ("--dangerously-bypass-approvals-and-sandbox", args.dangerously_bypass_approvals_and_sandbox),
+            (
+                "--dangerously-bypass-approvals-and-sandbox",
+                args.dangerously_bypass_approvals_and_sandbox,
+            ),
             ("--sandbox", bool(args.sandbox)),
             ("--ask-for-approval", bool(args.ask_for_approval)),
         )
         if on
     ]
     return ToolInvocation(
-        _config("openai", model, api_key, api_base),  # Codex providers are OpenAI-compatible
+        _config(
+            "openai", model, api_key, api_base
+        ),  # Codex providers are OpenAI-compatible
         cli,
         cwd=(cwd / args.cd) if args.cd else None,
         notes=_permission_note("codex", flags) + notes,
@@ -396,11 +475,21 @@ def _substitute(value: Any, environ: Mapping[str, str], base: Path) -> Any:
     def read(match: re.Match[str]) -> str:
         path = Path(match.group(1)).expanduser()
         try:
-            return (path if path.is_absolute() else base / path).read_text(encoding="utf-8").strip()
+            return (
+                (path if path.is_absolute() else base / path)
+                .read_text(encoding="utf-8")
+                .strip()
+            )
         except OSError as exc:
-            raise ToolCLIError(f"opencode: unable to read {{file:{match.group(1)}}}: {exc}") from exc
+            raise ToolCLIError(
+                f"opencode: unable to read {{file:{match.group(1)}}}: {exc}"
+            ) from exc
 
-    value = re.sub(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}", lambda m: environ.get(m.group(1), ""), value)
+    value = re.sub(
+        r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}",
+        lambda m: environ.get(m.group(1), ""),
+        value,
+    )
     return re.sub(r"\{file:([^}]+)\}", read, value)
 
 
@@ -411,7 +500,9 @@ def _opencode_file(directory: Path, environ: Mapping[str, str]) -> dict[str, Any
     return {}
 
 
-def _opencode(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path) -> ToolInvocation:
+def _opencode(
+    argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path
+) -> ToolInvocation:
     one_shot = bool(argv) and argv[0] == "run"
     parser = _parser("opencode run" if one_shot else "opencode")
     parser.add_argument("-m", "--model")
@@ -422,7 +513,9 @@ def _opencode(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: 
     parser.add_argument("message", nargs="*")
     args = _parse(parser, argv[1:] if one_shot else argv)
     if args.message and not one_shot:
-        raise ToolCLIError("opencode: a project argument is not supported; use `opencode run`")
+        raise ToolCLIError(
+            "opencode: a project argument is not supported; use `opencode run`"
+        )
     workdir = (cwd / args.dir) if args.dir else cwd
 
     # Documented order: global < OPENCODE_CONFIG < project < OPENCODE_CONFIG_DIR < OPENCODE_CONFIG_CONTENT.
@@ -435,35 +528,58 @@ def _opencode(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: 
     if project.get("model"):
         config["model"] = project["model"]  # project files may only choose the model
     if environ.get("OPENCODE_CONFIG_DIR"):
-        config = _merge(config, _opencode_file(Path(environ["OPENCODE_CONFIG_DIR"]).expanduser(), environ))
+        config = _merge(
+            config,
+            _opencode_file(Path(environ["OPENCODE_CONFIG_DIR"]).expanduser(), environ),
+        )
     if environ.get("OPENCODE_CONFIG_CONTENT"):
-        inline = _parse_json(environ["OPENCODE_CONFIG_CONTENT"], "OPENCODE_CONFIG_CONTENT")
+        inline = _parse_json(
+            environ["OPENCODE_CONFIG_CONTENT"], "OPENCODE_CONFIG_CONTENT"
+        )
         config = _merge(config, _substitute(inline, environ, workdir))
 
     spec = args.model or config.get("model")
     if not spec or "/" not in spec:
-        raise ToolCLIError("opencode: choose a model as provider/model (--model or `model` in opencode.json)")
+        raise ToolCLIError(
+            "opencode: choose a model as provider/model (--model or `model` in opencode.json)"
+        )
     provider_id, _, model = spec.partition("/")
     entry = (config.get("provider") or {}).get(provider_id) or {}
     options = entry.get("options") or {}
     data_home = Path(environ.get("XDG_DATA_HOME") or home / ".local" / "share")
     auth = _read_json(data_home / "opencode" / "auth.json").get(provider_id) or {}
     if auth and auth.get("type") != "api":
-        raise ToolCLIError(f"opencode: {provider_id} uses an OAuth login, which cannot be reused; add an API key")
+        raise ToolCLIError(
+            f"opencode: {provider_id} uses an OAuth login, which cannot be reused; add an API key"
+        )
     npm = entry.get("npm", "")
     if provider_id == "anthropic" or npm == "@ai-sdk/anthropic":
         provider, env_name = "anthropic", "ANTHROPIC_API_KEY"
-    elif provider_id == "openai" or npm in {"@ai-sdk/openai", "@ai-sdk/openai-compatible"}:
+    elif provider_id == "openai" or npm in {
+        "@ai-sdk/openai",
+        "@ai-sdk/openai-compatible",
+    }:
         provider, env_name = "openai", "OPENAI_API_KEY"
     else:
-        raise ToolCLIError(f"opencode: provider {provider_id!r} is not OpenAI- or Anthropic-compatible")
+        raise ToolCLIError(
+            f"opencode: provider {provider_id!r} is not OpenAI- or Anthropic-compatible"
+        )
     api_key = options.get("apiKey") or auth.get("key") or environ.get(env_name)
     api_base = options.get("baseURL")
     if not api_key and not api_base:
-        raise ToolCLIError(f"opencode: no API key for {provider_id}; set {env_name} or run `opencode auth login`")
+        raise ToolCLIError(
+            f"opencode: no API key for {provider_id}; set {env_name} or run `opencode auth login`"
+        )
 
-    cli = _common_args(" ".join(args.message) if one_shot else None, args.session, resume=bool(args.session))
-    cli += _max_tokens_args(environ.get("OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX"), "OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX")
+    cli = _common_args(
+        " ".join(args.message) if one_shot else None,
+        args.session,
+        resume=bool(args.session),
+    )
+    cli += _max_tokens_args(
+        environ.get("OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX"),
+        "OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX",
+    )
     return ToolInvocation(
         _config(provider, model, api_key, api_base),
         cli,
@@ -475,7 +591,9 @@ def _opencode(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: 
 # ----------------------------------------------------------------- copilot
 
 
-def _copilot(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path) -> ToolInvocation:
+def _copilot(
+    argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: Path
+) -> ToolInvocation:
     parser = _parser("copilot")
     parser.add_argument("-p", "--prompt")
     parser.add_argument("--model")
@@ -495,10 +613,14 @@ def _copilot(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: P
         )
     kind = environ.get("COPILOT_PROVIDER_TYPE", "openai").lower()
     if kind not in {"openai", "anthropic"}:
-        raise ToolCLIError(f"copilot: COPILOT_PROVIDER_TYPE={kind!r} is not supported (openai or anthropic)")
+        raise ToolCLIError(
+            f"copilot: COPILOT_PROVIDER_TYPE={kind!r} is not supported (openai or anthropic)"
+        )
     bearer = environ.get("COPILOT_PROVIDER_BEARER_TOKEN")
     if bearer and kind == "anthropic":
-        raise ToolCLIError("copilot: COPILOT_PROVIDER_BEARER_TOKEN is not supported for anthropic; use COPILOT_PROVIDER_API_KEY")
+        raise ToolCLIError(
+            "copilot: COPILOT_PROVIDER_BEARER_TOKEN is not supported for anthropic; use COPILOT_PROVIDER_API_KEY"
+        )
     # The wire model is what the provider receives; it defaults to COPILOT_MODEL (or --model).
     model = (
         environ.get("COPILOT_PROVIDER_WIRE_MODEL")
@@ -507,23 +629,43 @@ def _copilot(argv: Sequence[str], environ: Mapping[str, str], home: Path, cwd: P
         or environ.get("COPILOT_PROVIDER_MODEL_ID")
     )
     if not model:
-        raise ToolCLIError("copilot: set COPILOT_MODEL, COPILOT_PROVIDER_MODEL_ID, or pass --model")
+        raise ToolCLIError(
+            "copilot: set COPILOT_MODEL, COPILOT_PROVIDER_MODEL_ID, or pass --model"
+        )
 
     cli = _common_args(args.prompt, args.resume, resume=bool(args.resume))
-    cli += _max_tokens_args(environ.get("COPILOT_PROVIDER_MAX_OUTPUT_TOKENS"), "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS")
-    flags = [n for n, on in (("--allow-all-tools", args.allow_all_tools), ("--allow-all", args.allow_all)) if on]
-    flags += ["COPILOT_ALLOW_ALL"] * (environ.get("COPILOT_ALLOW_ALL", "").lower() in _TRUE)
-    ignored = ["COPILOT_PROVIDER_WIRE_API=responses"] * (environ.get("COPILOT_PROVIDER_WIRE_API") == "responses")
+    cli += _max_tokens_args(
+        environ.get("COPILOT_PROVIDER_MAX_OUTPUT_TOKENS"),
+        "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS",
+    )
+    flags = [
+        n
+        for n, on in (
+            ("--allow-all-tools", args.allow_all_tools),
+            ("--allow-all", args.allow_all),
+        )
+        if on
+    ]
+    flags += ["COPILOT_ALLOW_ALL"] * (
+        environ.get("COPILOT_ALLOW_ALL", "").lower() in _TRUE
+    )
+    ignored = ["COPILOT_PROVIDER_WIRE_API=responses"] * (
+        environ.get("COPILOT_PROVIDER_WIRE_API") == "responses"
+    )
     return ToolInvocation(
         # OpenAI-compatible APIs send the API key as a bearer token, so either variable works there.
-        _config(kind, model, bearer or environ.get("COPILOT_PROVIDER_API_KEY"), base_url),
+        _config(
+            kind, model, bearer or environ.get("COPILOT_PROVIDER_API_KEY"), base_url
+        ),
         cli,
         cwd=(cwd / args.cd) if args.cd else None,
         notes=_permission_note("copilot", flags) + _ignored_note("copilot", ignored),
     )
 
 
-TOOLS: dict[str, Callable[[Sequence[str], Mapping[str, str], Path, Path], ToolInvocation]] = {
+TOOLS: dict[
+    str, Callable[[Sequence[str], Mapping[str, str], Path, Path], ToolInvocation]
+] = {
     "claude": _claude,
     "codex": _codex,
     "opencode": _opencode,
@@ -543,7 +685,9 @@ def translate_tool_cli(
     try:
         handler = TOOLS[tool]
     except KeyError:
-        raise ToolCLIError(f"unknown tool {tool!r}; supported: {', '.join(TOOLS)}") from None
+        raise ToolCLIError(
+            f"unknown tool {tool!r}; supported: {', '.join(TOOLS)}"
+        ) from None
     return handler(
         argv,
         os.environ if environ is None else environ,

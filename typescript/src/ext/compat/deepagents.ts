@@ -55,7 +55,12 @@ const UNSUPPORTED = [
 	'permissions',
 ] as const;
 const SUBAGENT_KEYS = new Set([
-	'name', 'description', 'systemPrompt', 'tools', 'model', 'middleware',
+	'name',
+	'description',
+	'systemPrompt',
+	'tools',
+	'model',
+	'middleware',
 ]);
 const MAX_READ_LINES = 2000;
 
@@ -470,13 +475,19 @@ export function createDeepAgent(params: CreateDeepAgentParams = {}): DeepAgent {
 				'deepagents compatibility supports declarative SubAgent objects only',
 			);
 		}
-		const unsupported = Object.keys(spec).filter((key) => !SUBAGENT_KEYS.has(key));
+		const unsupported = Object.keys(spec).filter(
+			(key) => !SUBAGENT_KEYS.has(key),
+		);
 		if (unsupported.length)
-			throw new Error(`deepagents compatibility does not support subagent options: ${unsupported.sort().join(', ')}`);
+			throw new Error(
+				`deepagents compatibility does not support subagent options: ${unsupported.sort().join(', ')}`,
+			);
 		if (typeof spec.name !== 'string' || !spec.name.trim())
 			throw new Error('deepagents subagents require a non-empty name');
 		if (typeof spec.description !== 'string' || !spec.description.trim())
-			throw new Error('deepagents subagents require a non-empty description');
+			throw new Error(
+				'deepagents subagents require a non-empty description',
+			);
 		specs = [...specs.filter((item) => item.name !== spec.name), spec];
 	}
 	const build = (spec: SubAgent): DeepAgent =>

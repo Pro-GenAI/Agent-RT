@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import math
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Mapping, Protocol, Sequence, runtime_checkable
+from typing import (
+    Any,
+    Protocol,
+    runtime_checkable,
+)
 
 
 @dataclass(frozen=True)
@@ -97,7 +103,9 @@ class EvaluationReport:
 
 
 class EvaluationRunner:
-    def __init__(self, executor: EvaluationExecutor, graders: Sequence[EvaluationGrader]) -> None:
+    def __init__(
+        self, executor: EvaluationExecutor, graders: Sequence[EvaluationGrader]
+    ) -> None:
         self.executor = executor
         self.graders = tuple(graders)
 
@@ -111,7 +119,9 @@ class EvaluationRunner:
                 else EvaluationSample(case=case, output=executed)
             )
             if sample.case.id != case.id:
-                raise ValueError("evaluation executor returned a sample for a different case")
+                raise ValueError(
+                    "evaluation executor returned a sample for a different case"
+                )
             grades = tuple([await grader.grade(sample) for grader in self.graders])
             results.append(EvaluationCaseResult(sample=sample, grades=grades))
         return EvaluationReport(tuple(results))
@@ -135,16 +145,21 @@ def _matches_type(value: Any, expected: str) -> bool:
     return True
 
 
-def validate_schema(value: Any, schema: Mapping[str, Any], path: str = "$") -> tuple[str, ...]:
+def validate_schema(
+    value: Any, schema: Mapping[str, Any], path: str = "$"
+) -> tuple[str, ...]:
     issues: list[str] = []
     expected = schema.get("type")
     if isinstance(expected, str) and not _matches_type(value, expected):
         return (f"{path}: expected {expected}",)
 
     enum_values = schema.get("enum")
-    if isinstance(enum_values, Sequence) and not isinstance(enum_values, (str, bytes)):
-        if value not in enum_values:
-            issues.append(f"{path}: value is not in enum")
+    if (
+        isinstance(enum_values, Sequence)
+        and not isinstance(enum_values, (str, bytes))
+        and value not in enum_values
+    ):
+        issues.append(f"{path}: value is not in enum")
 
     if isinstance(value, dict):
         required = schema.get("required", ())
@@ -157,11 +172,15 @@ def validate_schema(value: Any, schema: Mapping[str, Any], path: str = "$") -> t
         if isinstance(properties, Mapping):
             for key, child_schema in properties.items():
                 if key in value and isinstance(child_schema, Mapping):
-                    issues.extend(validate_schema(value[key], child_schema, f"{path}.{key}"))
+                    issues.extend(
+                        validate_schema(value[key], child_schema, f"{path}.{key}")
+                    )
             if schema.get("additionalProperties") is False:
                 for key in value:
                     if key not in properties:
-                        issues.append(f"{path}.{key}: additional property is not allowed")
+                        issues.append(
+                            f"{path}.{key}: additional property is not allowed"
+                        )
 
     if isinstance(value, list):
         item_schema = schema.get("items")
@@ -182,7 +201,11 @@ class ExactMatchGrader:
             self.name,
             1.0 if passed else 0.0,
             passed,
-            "output matched expected value" if passed else "output did not match expected value",
+            (
+                "output matched expected value"
+                if passed
+                else "output did not match expected value"
+            ),
         )
 
 
@@ -224,7 +247,9 @@ class ToolUseGrader:
         *,
         allow_extra: bool = False,
         require_order: bool = False,
-        argument_assertions: Mapping[str, Callable[[Mapping[str, Any]], bool]] | None = None,
+        argument_assertions: (
+            Mapping[str, Callable[[Mapping[str, Any]], bool]] | None
+        ) = None,
         name: str = "tool_use",
     ) -> None:
         self.expected_tools = tuple(expected_tools)
@@ -329,7 +354,7 @@ class LLMJudgeGrader:
             details = str(judged.get("details", ""))
         else:
             score = float(judged)
-        if score != score:  # NaN must fail, not clamp to a passing 1.0
+        if math.isnan(score):  # NaN must fail, not clamp to a passing 1.0
             score = 0.0
         score = max(0.0, min(1.0, score))
         return EvaluationGrade(self.name, score, score >= self.threshold, details)
@@ -395,7 +420,9 @@ class ProductionFeedbackRecord:
 
     def to_evaluation_case(self) -> EvaluationCase:
         if not self.reviewed:
-            raise ValueError("production feedback must be reviewed before evaluation conversion")
+            raise ValueError(
+                "production feedback must be reviewed before evaluation conversion"
+            )
         metadata = {
             **dict(self.metadata),
             "source": self.source,

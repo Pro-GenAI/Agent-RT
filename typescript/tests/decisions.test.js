@@ -562,3 +562,4 @@ test('model response failure classifier is wired into AgentLoop', async () => {
 });
 
 require('./toolbase.test.js');
+require('./toolbase_access_lists.test.js');

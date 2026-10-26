@@ -29,7 +29,9 @@ def _client(model, kwargs):
     api_key = kwargs.pop("api_" + "key", None)
     api_base = kwargs.pop("api_base", None) or kwargs.pop("base_url", None)
     route = kwargs.pop("custom_llm_provider", None)
-    kwargs.pop("drop_params", None)  # completion() applies it; embeddings have no allowlist
+    kwargs.pop(
+        "drop_params", None
+    )  # completion() applies it; embeddings have no allowlist
     # Agent RT providers make one attempt with no client deadline, so only
     # values that keep that behavior pass; others raise instead of being ignored.
     retries = kwargs.pop("num_retries", None)
@@ -93,7 +95,7 @@ def embedding(model, input=None, **kwargs):
 
 
 def install_litellm_compat(parent: Any) -> None:
-    module = types.ModuleType(f"{parent.__name__}.litellm")
+    module: Any = types.ModuleType(f"{parent.__name__}.litellm")
     errors = public_error_classes(OPENAI_ERRORS)
     exports = {
         "acompletion": acompletion,

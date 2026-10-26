@@ -23,7 +23,7 @@ class _PlainFormatter(string.Formatter):
         if isinstance(key, int):
             # A bad template, not a bad argument type: keep ValueError like
             # the attribute/index check above.
-            raise ValueError("positional template fields are not supported")  # noqa: TRY004
+            raise ValueError("positional template fields are not supported")
         return super().get_value(key, args, kwargs)
 
 

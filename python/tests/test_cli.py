@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import subprocess
@@ -22,6 +21,7 @@ from agent_rt import (
     ToolRegistry,
 )
 from agent_rt_cli import (
+    _CLI_SETTINGS,
     ARTIE,
     BUILTIN_MODEL_NAME,
     USER_INPUT_PROMPT,
@@ -35,7 +35,6 @@ from agent_rt_cli import (
     _require_cli_dependencies,
     _slash_command_matches,
     _startup_model,
-    _CLI_SETTINGS,
     async_main,
     build_parser,
     load_config_or_create,
@@ -96,8 +95,12 @@ class FakeProvider:
 
 
 class TestConfigFile:
-    async def test_missing_config_path_fails_before_provider_setup(self, tmp_path, capsys):
-        result = await async_main(["--config", str(tmp_path / "missing.yaml"), "-p", "hello"])
+    async def test_missing_config_path_fails_before_provider_setup(
+        self, tmp_path, capsys
+    ):
+        result = await async_main(
+            ["--config", str(tmp_path / "missing.yaml"), "-p", "hello"]
+        )
 
         assert result == 2
         assert "configuration error" in capsys.readouterr().err
@@ -175,7 +178,12 @@ class TestTranscriptStore:
         store.save("old", model="m", instructions="i", messages=(prompt,))
         os.utime(store.path_for("old"), (1, 1))
         store.save(
-            "new", model="m", instructions="i", messages=(), workspace="/ws", title="named"
+            "new",
+            model="m",
+            instructions="i",
+            messages=(),
+            workspace="/ws",
+            title="named",
         )
         (tmp_path / "broken.json").write_text("{", encoding="utf-8")
 
@@ -203,7 +211,9 @@ class TestSessionCommand:
         prompt = ModelMessage(
             role="user", content=(ContentPart(type="text", text="hello web"),)
         )
-        store.save("abc123", model="m", instructions="i", messages=(prompt,), workspace="/ws")
+        store.save(
+            "abc123", model="m", instructions="i", messages=(prompt,), workspace="/ws"
+        )
 
         assert session_main(["list", "-c", str(config)]) == 0
         line = capsys.readouterr().out.strip()
@@ -225,7 +235,11 @@ class TestSessionCommand:
         tools = WorkspaceCodeTools(tmp_path)
         store = TranscriptStore(tmp_path / "sessions")
         session = ChatSession(
-            SimpleNamespace(), model="m", session_id="s1", store=store, workspace_tools=tools
+            SimpleNamespace(),
+            model="m",
+            session_id="s1",
+            store=store,
+            workspace_tools=tools,
         )
         session.save()
         assert store.load("s1")["workspace"] == str(tmp_path.resolve())
@@ -356,6 +370,44 @@ class TestWorkspaceCodeTools:
             with pytest.raises(PermissionError, match="denied by user"):
                 await tools.write_file({"path": "new.py", "content": "x"})
             assert not (root / "new.py").exists()
+
+    async def test_approval_does_not_overwrite_another_editor(self, tmp_path):
+        target = tmp_path / "existing.txt"
+        target.write_text("original", encoding="utf-8")
+        tools = WorkspaceCodeTools(tmp_path)
+
+        async def concurrent_edit(_action, _arguments):
+            target.write_text("external change", encoding="utf-8")
+            return "approve"
+
+        tools.approval_callback = concurrent_edit
+        with pytest.raises(RuntimeError, match="file changed during approval"):
+            await tools.replace_in_file(
+                {
+                    "path": "existing.txt",
+                    "old_text": "original",
+                    "new_text": "agent edit",
+                }
+            )
+        assert target.read_text(encoding="utf-8") == "external change"
+
+        target.write_text("original", encoding="utf-8")
+        with pytest.raises(RuntimeError, match="file changed during approval"):
+            await tools.write_file({"path": "existing.txt", "content": "agent edit"})
+        assert target.read_text(encoding="utf-8") == "external change"
+
+    async def test_approval_does_not_overwrite_file_created_during_wait(self, tmp_path):
+        tools = WorkspaceCodeTools(tmp_path)
+        target = tmp_path / "new.txt"
+
+        async def concurrent_create(_action, _arguments):
+            target.write_text("external creation", encoding="utf-8")
+            return "approve"
+
+        tools.approval_callback = concurrent_create
+        with pytest.raises(RuntimeError, match="file changed during approval"):
+            await tools.write_file({"path": "new.txt", "content": "agent edit"})
+        assert target.read_text(encoding="utf-8") == "external creation"
 
     async def test_auto_approve_applies_to_remaining_writes_in_session(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -850,7 +902,7 @@ class TestTerminalChat:
 
         text = chat.console.export_text()
         assert "/.--------.\\   Artie\n" in text
-        assert '|| ^    ^ ||   Agent RT' in text
+        assert "|| ^    ^ ||   Agent RT" in text
         assert "model=model-a  session=s-1" in text
         assert all(len(art) == len(mask) for art, mask in ARTIE)
 
@@ -866,7 +918,12 @@ class TestTerminalChat:
         chat = object.__new__(TerminalChat)
         chat.session = SimpleNamespace(model="model-[a]", session_id="s-1")
         chat.console = Console(
-            file=io.StringIO(), record=True, color_system="truecolor", width=100
+            file=io.StringIO(),
+            record=True,
+            force_terminal=True,
+            no_color=False,
+            color_system="truecolor",
+            width=100,
         )
 
         chat.banner()
@@ -874,7 +931,6 @@ class TestTerminalChat:
         text = chat.console.export_text()
         assert "▀" in text and "|| ^" not in text
         assert "model=model-[a]  session=s-1" in text
-        assert "Guard | Checkpoints | Wall" in text
         assert "Guard | Checkpoints | Wall" in text
 
     def test_markdown_h1_renders_without_panel_border(self):
@@ -924,7 +980,9 @@ class TestTerminalChat:
         assert await _startup_model(provider, None) == "model-a"
         assert await _startup_model(provider, "explicit") == "explicit"
 
-    async def test_provider_model_ids_use_configured_model_names_without_a_network_call(self):
+    async def test_provider_model_ids_use_configured_model_names_without_a_network_call(
+        self,
+    ):
         provider = SimpleNamespace(client=None, model_names=("demo", "second"))
         assert await _provider_model_ids(provider) == ("demo", "second")
 

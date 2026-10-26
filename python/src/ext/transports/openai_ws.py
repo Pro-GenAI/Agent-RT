@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import AsyncGenerator, AsyncIterator, Mapping
 from contextlib import aclosing
-from typing import Any, AsyncIterator, Mapping
-
+from typing import Any
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,9 +17,9 @@ class OpenAIWebSocketUnavailableError(RuntimeError):
 def _responses_websocket_url(base_url: str) -> str:
     base = base_url.rstrip("/")
     if base.startswith("https://"):
-        return "wss://" + base[len("https://"):] + "/responses"
+        return "wss://" + base[len("https://") :] + "/responses"
     if base.startswith("http://"):
-        return "ws://" + base[len("http://"):] + "/responses"
+        return "ws://" + base[len("http://") :] + "/responses"
     raise ValueError("OpenAI base URL must use http or https")
 
 
@@ -108,7 +108,9 @@ def _input_content(message: Any) -> list[dict[str, Any]]:
                     }
                 )
         else:
-            raise ValueError(f"OpenAI Responses input does not support {part_type} content")
+            raise ValueError(
+                f"OpenAI Responses input does not support {part_type} content"
+            )
     return blocks
 
 
@@ -118,11 +120,13 @@ def responses_input_items(messages: Any) -> list[dict[str, Any]]:
         role = getattr(message, "role", "user")
         text = _message_text(message)
         if role == "tool":
-            items.append({
-                "type": "function_call_output",
-                "call_id": getattr(message, "tool_call_id", None) or "",
-                "output": text,
-            })
+            items.append(
+                {
+                    "type": "function_call_output",
+                    "call_id": getattr(message, "tool_call_id", None) or "",
+                    "output": text,
+                }
+            )
             continue
         if any(getattr(part, "type", None) in _MEDIA_TYPES for part in message.content):
             items.append(
@@ -131,15 +135,17 @@ def responses_input_items(messages: Any) -> list[dict[str, Any]]:
         elif text:
             items.append({"type": "message", "role": role, "content": text})
         for call in getattr(message, "tool_calls", ()) or ():
-            items.append({
-                "type": "function_call",
-                "call_id": getattr(call, "id", ""),
-                "name": getattr(call, "name", ""),
-                "arguments": json.dumps(
-                    dict(getattr(call, "arguments", {}) or {}),
-                    separators=(",", ":"),
-                ),
-            })
+            items.append(
+                {
+                    "type": "function_call",
+                    "call_id": getattr(call, "id", ""),
+                    "name": getattr(call, "name", ""),
+                    "arguments": json.dumps(
+                        dict(getattr(call, "arguments", {}) or {}),
+                        separators=(",", ":"),
+                    ),
+                }
+            )
     return items
 
 
@@ -289,7 +295,9 @@ class OpenAIResponsesWebSocketTransport:
             if self._reader_task is asyncio.current_task():
                 self._reader_task = None
             if failure is None:
-                failure = RuntimeError("OpenAI WebSocket closed before response.completed")
+                failure = RuntimeError(
+                    "OpenAI WebSocket closed before response.completed"
+                )
             for queue in tuple(self._streams.values()):
                 queue.put_nowait(failure)
 
@@ -319,11 +327,11 @@ class OpenAIResponsesWebSocketTransport:
         payload: Mapping[str, Any],
         *,
         include_stream_id: bool,
-    ) -> AsyncIterator[dict[str, Any]]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         connection = await self._connect()
         self._stream_counter += 1
         stream_id = f"agent-rt-{self._stream_counter}"
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[Any] = asyncio.Queue()
         self._streams[stream_id] = queue
         request = {"type": "response.create", **dict(payload)}
         if include_stream_id:
@@ -359,7 +367,11 @@ class OpenAIResponsesWebSocketTransport:
             self._streams.pop(stream_id, None)
             # Without stream ids, leftover events of an abandoned response would
             # be routed to the next request on this connection.
-            if not finished and not include_stream_id and self._connection is connection:
+            if (
+                not finished
+                and not include_stream_id
+                and self._connection is connection
+            ):
                 await asyncio.shield(self._drop_connection())
 
     async def events(
@@ -369,12 +381,11 @@ class OpenAIResponsesWebSocketTransport:
         """Send one response.create and yield matching events."""
 
         if self._stream_id_supported is False:
-            async with self._legacy_stream_lock:
-                async with aclosing(
-                    self._events_once(payload, include_stream_id=False)
-                ) as inner:
-                    async for event in inner:
-                        yield event
+            async with self._legacy_stream_lock, aclosing(
+                self._events_once(payload, include_stream_id=False)
+            ) as inner:
+                async for event in inner:
+                    yield event
             return
 
         try:
@@ -390,16 +401,22 @@ class OpenAIResponsesWebSocketTransport:
                 raise
             self._stream_id_supported = False
 
-        async with self._legacy_stream_lock:
-            async with aclosing(
-                self._events_once(payload, include_stream_id=False)
-            ) as inner:
-                async for event in inner:
-                    yield event
+        async with self._legacy_stream_lock, aclosing(
+            self._events_once(payload, include_stream_id=False)
+        ) as inner:
+            async for event in inner:
+                yield event
 
 
 async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[Any]:
-    from agent_rt import ContentPart, ModelMessage, ModelResponse, ModelStreamEvent, ModelUsage, _provider_tool_call
+    from agent_rt import (
+        ContentPart,
+        ModelMessage,
+        ModelResponse,
+        ModelStreamEvent,
+        ModelUsage,
+        _provider_tool_call,
+    )
 
     transport = provider._websocket_transport
     if transport is None:
@@ -420,7 +437,7 @@ async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[An
         and all(messages[index] is expected[index] for index in range(len(expected)))
     ):
         previous_response_id = provider._websocket_previous_response_id
-        messages = messages[len(expected):]
+        messages = messages[len(expected) :]
 
     # The continuation is only valid for one successful round trip. Clear it now
     # and re-arm it after a completed response, so a failure, cancellation or
@@ -461,7 +478,9 @@ async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[An
 
         if event_type == "response.function_call_arguments.delta":
             index = int(event.get("output_index", 0))
-            state = tool_state.setdefault(index, {"id": "", "name": "", "arguments": ""})
+            state = tool_state.setdefault(
+                index, {"id": "", "name": "", "arguments": ""}
+            )
             delta = event.get("delta")
             if isinstance(delta, str):
                 state["arguments"] += delta
@@ -487,7 +506,9 @@ async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[An
             if item.get("type") != "message":
                 continue
             for part in item.get("content") or []:
-                if part.get("type") == "output_text" and isinstance(part.get("text"), str):
+                if part.get("type") == "output_text" and isinstance(
+                    part.get("text"), str
+                ):
                     text_parts.append(part["text"])
 
     for index, item in enumerate(output):
@@ -515,7 +536,11 @@ async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[An
     response = ModelResponse(
         message=ModelMessage(
             role="assistant",
-            content=(ContentPart(type="text", text="".join(text_parts)),) if text_parts else (),
+            content=(
+                (ContentPart(type="text", text="".join(text_parts)),)
+                if text_parts
+                else ()
+            ),
             tool_calls=tool_calls,
         ),
         model=raw_response.get("model"),
@@ -523,9 +548,9 @@ async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[An
         finish_reason=(
             "tool_calls"
             if tool_calls
-            else "length"
-            if final_event.get("type") == "response.incomplete"
-            else "stop"
+            else (
+                "length" if final_event.get("type") == "response.incomplete" else "stop"
+            )
         ),
         raw=final_event,
     )
@@ -533,10 +558,11 @@ async def stream_model_response(provider: Any, request: Any) -> AsyncIterator[An
     response_id = raw_response.get("id")
     if isinstance(response_id, str) and response_id:
         provider._websocket_previous_response_id = response_id
-        provider._websocket_expected_prefix = tuple(request.messages) + (response.message,)
+        provider._websocket_expected_prefix = tuple(request.messages) + (
+            response.message,
+        )
     else:
         provider._websocket_previous_response_id = None
         provider._websocket_expected_prefix = ()
 
     yield ModelStreamEvent(type="completed", response=response, raw=final_event)
-

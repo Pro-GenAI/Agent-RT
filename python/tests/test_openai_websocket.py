@@ -239,7 +239,9 @@ class TestOpenAIResponsesWebSocket:
                                 {
                                     "type": "message",
                                     "role": "assistant",
-                                    "content": [{"type": "output_text", "text": "done"}],
+                                    "content": [
+                                        {"type": "output_text", "text": "done"}
+                                    ],
                                 }
                             ],
                         },

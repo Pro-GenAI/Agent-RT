@@ -19,8 +19,15 @@ export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 // JSON Schema and free-form values keep the caller's own keys.
 const RAW_KEYS = new Set(['parameters', 'schema', 'metadata']);
 const CHAT_OPTIONS = new Set([
-	'model', 'messages', 'temperature', 'max_tokens', 'max_completion_tokens',
-	'tools', 'response_format', 'reasoning_effort', 'stream',
+	'model',
+	'messages',
+	'temperature',
+	'max_tokens',
+	'max_completion_tokens',
+	'tools',
+	'response_format',
+	'reasoning_effort',
+	'stream',
 ]);
 
 function convertKeys(value: unknown, key: (name: string) => string): unknown {
@@ -85,28 +92,44 @@ export class OpenRouter {
 		const client = new OpenAI({ provider: this.provider });
 		const body = (request: JSONObject, wrapper: string) => {
 			if (wrapper in request) {
-				const extras = Object.keys(request).filter((name) => name !== wrapper);
+				const extras = Object.keys(request).filter(
+					(name) => name !== wrapper,
+				);
 				if (extras.length)
-					throw new Error(`OpenRouter request does not support wrapper options: ${extras.join(', ')}`);
+					throw new Error(
+						`OpenRouter request does not support wrapper options: ${extras.join(', ')}`,
+					);
 			}
 			const payload = request[wrapper] ?? request;
-			if (!payload || typeof payload !== 'object' || Array.isArray(payload))
-				throw new TypeError('OpenRouter request body must be an object');
+			if (
+				!payload ||
+				typeof payload !== 'object' ||
+				Array.isArray(payload)
+			)
+				throw new TypeError(
+					'OpenRouter request body must be an object',
+				);
 			return convertKeys(payload, snake) as JSONObject;
 		};
 		this.chat = {
 			send: async (request, options) => {
 				if (options !== undefined)
-					throw new Error('OpenRouter chat.send does not support per-call SDK options');
+					throw new Error(
+						'OpenRouter chat.send does not support per-call SDK options',
+					);
 				const params = body(
 					request,
 					'chatRequest' in request
 						? 'chatRequest'
 						: 'chatGenerationParams',
 				);
-				const unsupported = Object.keys(params).filter((name) => !CHAT_OPTIONS.has(name));
+				const unsupported = Object.keys(params).filter(
+					(name) => !CHAT_OPTIONS.has(name),
+				);
 				if (unsupported.length)
-					throw new Error(`OpenRouter chat.send cannot honor request options: ${unsupported.sort().join(', ')}`);
+					throw new Error(
+						`OpenRouter chat.send cannot honor request options: ${unsupported.sort().join(', ')}`,
+					);
 				const result = await client.chat.completions.create(
 					params as never,
 				);

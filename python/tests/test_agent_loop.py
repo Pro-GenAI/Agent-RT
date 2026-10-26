@@ -1,10 +1,8 @@
 import asyncio
-import os
-
-import agent_rt as agent_rt_core
 
 import pytest
 
+import agent_rt as agent_rt_core
 from agent_rt import (
     AgentCheckpoint,
     AgentConfig,
@@ -1154,7 +1152,11 @@ class TestAgentLoop:
             "AGENT_RT_EXECUTION_CPU_SECONDS",
         )
         previous = agent_rt_core._RUNTIME_SETTINGS
-        agent_rt_core._RUNTIME_SETTINGS = {names[0]: "0", names[1]: "4096", names[2]: "2.5"}
+        agent_rt_core._RUNTIME_SETTINGS = {
+            names[0]: "0",
+            names[1]: "4096",
+            names[2]: "2.5",
+        }
         seen_limits = []
         side_effects = []
         try:

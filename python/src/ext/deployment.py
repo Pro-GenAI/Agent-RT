@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Mapping, Protocol, Sequence
 import asyncio
 import copy
 import math
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from dataclasses import dataclass, field
+from typing import Any, Protocol
 
 
 @dataclass(frozen=True)
@@ -14,7 +15,13 @@ class DeploymentSpec:
     config: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.kind not in {"local", "container", "kubernetes", "serverless", "managed"}:
+        if self.kind not in {
+            "local",
+            "container",
+            "kubernetes",
+            "serverless",
+            "managed",
+        }:
             raise ValueError(f"unsupported deployment kind: {self.kind}")
         if not self.name.strip():
             raise ValueError("deployment name must not be empty")
@@ -96,13 +103,11 @@ class DistributedExecutor:
         self._workers[worker.worker_id] = worker
 
     async def execute(self, task: DistributedTask) -> DistributedTaskResult:
-        workers = [
-            worker
-            for worker in self._workers.values()
-            if worker.supports(task)
-        ]
+        workers = [worker for worker in self._workers.values() if worker.supports(task)]
         if task.affinity is not None:
-            workers = [worker for worker in workers if worker.worker_id == task.affinity]
+            workers = [
+                worker for worker in workers if worker.worker_id == task.affinity
+            ]
         if not workers:
             raise RuntimeError(f"no worker available for task kind {task.kind}")
         workers.sort(key=lambda worker: worker.worker_id)
@@ -110,7 +115,9 @@ class DistributedExecutor:
         self._next += 1
         return await worker.execute(task)
 
-    async def map(self, tasks: Sequence[DistributedTask]) -> tuple[DistributedTaskResult, ...]:
+    async def map(
+        self, tasks: Sequence[DistributedTask]
+    ) -> tuple[DistributedTaskResult, ...]:
         return tuple(await asyncio.gather(*(self.execute(task) for task in tasks)))
 
 
@@ -163,7 +170,9 @@ class TenantQuota:
                 if value < 0:
                     raise ValueError(f"{label} must be non-negative")
         if self.max_cost is not None:
-            if not isinstance(self.max_cost, (int, float)) or isinstance(self.max_cost, bool):
+            if not isinstance(self.max_cost, (int, float)) or isinstance(
+                self.max_cost, bool
+            ):
                 raise TypeError("max_cost must be numeric")
             if not math.isfinite(self.max_cost):
                 raise ValueError("max_cost must be finite")
@@ -229,19 +238,21 @@ class TenantQuotaManager:
             tool_calls=current.tool_calls + tool_calls,
             cost=current.cost + cost,
         )
-        checks = (
+        checks: tuple[tuple[str, float, float | None], ...] = (
             ("concurrency", proposed.concurrency, quota.max_concurrency),
             ("storage_bytes", proposed.storage_bytes, quota.max_storage_bytes),
             ("model_calls", proposed.model_calls, quota.max_model_calls),
             ("tool_calls", proposed.tool_calls, quota.max_tool_calls),
             ("cost", proposed.cost, quota.max_cost),
         )
-        for label, value, limit in checks:
-            if value < 0:
-                raise ValueError(f"tenant {tenant_id} usage {label} must not be negative")
-            if limit is not None and value > limit:
+        for label, amount, limit in checks:
+            if amount < 0:
+                raise ValueError(
+                    f"tenant {tenant_id} usage {label} must not be negative"
+                )
+            if limit is not None and amount > limit:
                 raise TenantQuotaExceeded(
-                    f"tenant {tenant_id} exceeded {label}: {value} > {limit}"
+                    f"tenant {tenant_id} exceeded {label}: {amount} > {limit}"
                 )
         self._usage[tenant_id] = proposed
         return copy.deepcopy(proposed)
@@ -255,7 +266,10 @@ class TenantQuotaManager:
     ) -> TenantUsage:
         if concurrency < 0 or storage_bytes < 0:
             raise ValueError("release amounts must be non-negative")
-        for label, value in (("concurrency", concurrency), ("storage_bytes", storage_bytes)):
+        for label, value in (
+            ("concurrency", concurrency),
+            ("storage_bytes", storage_bytes),
+        ):
             if not isinstance(value, int) or isinstance(value, bool):
                 raise TypeError(f"{label} delta must be an integer")
         # Releasing never checks quota limits: an operator lowering a limit
@@ -296,7 +310,9 @@ class PersistenceSchemaRegistry:
     def register(self, schema: PersistenceSchema) -> None:
         key = (schema.name, schema.version)
         if key in self._schemas:
-            raise ValueError(f"schema already registered: {schema.name}@{schema.version}")
+            raise ValueError(
+                f"schema already registered: {schema.name}@{schema.version}"
+            )
         self._schemas[key] = schema
 
     def get(self, name: str, version: int | None = None) -> PersistenceSchema:
@@ -323,7 +339,9 @@ class MigrationRegistry:
     def __init__(self) -> None:
         self._migrations: dict[tuple[str, int], MigrationFn] = {}
 
-    def register(self, schema_name: str, from_version: int, migration: MigrationFn) -> None:
+    def register(
+        self, schema_name: str, from_version: int, migration: MigrationFn
+    ) -> None:
         if not schema_name.strip():
             raise ValueError("schema_name must not be empty")
         if not isinstance(from_version, int) or isinstance(from_version, bool):
@@ -332,7 +350,9 @@ class MigrationRegistry:
             raise ValueError("from_version must be at least 1")
         key = (schema_name, from_version)
         if key in self._migrations:
-            raise ValueError(f"migration already registered: {schema_name}@{from_version}")
+            raise ValueError(
+                f"migration already registered: {schema_name}@{from_version}"
+            )
         self._migrations[key] = migration
 
     def migrate(

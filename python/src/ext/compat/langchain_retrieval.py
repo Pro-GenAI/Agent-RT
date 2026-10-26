@@ -58,7 +58,11 @@ class JSONLoader:
                 if self.content_key and isinstance(item, Mapping)
                 else item
             )
-            text = content if isinstance(content, str) else json.dumps(content, sort_keys=True)
+            text = (
+                content
+                if isinstance(content, str)
+                else json.dumps(content, sort_keys=True)
+            )
             documents.append(
                 Document(
                     page_content=text,
@@ -259,7 +263,9 @@ class AgentRTVectorStore:
     ) -> None:
         if not self.backend:
             raise TypeError("AgentRTVectorStore requires a concrete backend subclass")
-        self.embeddings = embedding or embedding_function or kwargs.pop("embeddings", None)
+        self.embeddings = (
+            embedding or embedding_function or kwargs.pop("embeddings", None)
+        )
         env = dict(os.environ if environment is None else environment)
         env["AGENT_RT_VECTOR_DB"] = self.backend
         resolved_collection = collection_name or index_name
@@ -284,7 +290,9 @@ class AgentRTVectorStore:
                 env[f"AGENT_RT_VECTOR_DB_OPTION_{key.upper()}"] = str(value)
         if kwargs:
             unknown = ", ".join(sorted(kwargs))
-            raise TypeError(f"unsupported vector store compatibility options: {unknown}")
+            raise TypeError(
+                f"unsupported vector store compatibility options: {unknown}"
+            )
         self.environment = env
         from ext.runtime.optional import EnvironmentVectorDBProvider
 
@@ -329,7 +337,9 @@ class AgentRTVectorStore:
             (
                 Document(
                     page_content=(
-                        item.content if isinstance(item.content, str) else str(item.content)
+                        item.content
+                        if isinstance(item.content, str)
+                        else str(item.content)
                     ),
                     id=item.id,
                     metadata={
@@ -696,7 +706,9 @@ class RetrievalChain:
 
 
 class MapReduceDocumentsChain:
-    def __init__(self, *, llm: Any, map_prompt: PromptTemplate, reduce_prompt: PromptTemplate) -> None:
+    def __init__(
+        self, *, llm: Any, map_prompt: PromptTemplate, reduce_prompt: PromptTemplate
+    ) -> None:
         self.llm = llm
         self.map_prompt = map_prompt
         self.reduce_prompt = reduce_prompt
@@ -706,9 +718,13 @@ class MapReduceDocumentsChain:
         mapped = []
         for document in documents:
             response = await self.llm.ainvoke(
-                self.map_prompt.format(**{**dict(inputs), "context": document.page_content})
+                self.map_prompt.format(
+                    **{**dict(inputs), "context": document.page_content}
+                )
             )
-            mapped.append(str(getattr(response, "text", getattr(response, "content", response))))
+            mapped.append(
+                str(getattr(response, "text", getattr(response, "content", response)))
+            )
         reduced = self.reduce_prompt.format(
             **{**dict(inputs), "context": "\n\n".join(mapped)}
         )
@@ -746,7 +762,9 @@ class RefineDocumentsChain:
                 }
             )
             response = await self.llm.ainvoke(rendered)
-            answer = str(getattr(response, "text", getattr(response, "content", response)))
+            answer = str(
+                getattr(response, "text", getattr(response, "content", response))
+            )
         return answer
 
 
