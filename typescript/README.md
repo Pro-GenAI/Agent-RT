@@ -19,6 +19,7 @@ Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero 
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI, Anthropic, Agent Action Guard, and sandbox integrations are optional peers.
 - **Production-ready.** Checkpoints, events, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
+- **Decision models.** Laya, other Jev-compatible models, or the OpenAI Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#action-blockers)).
 - **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
 ## Install
@@ -30,6 +31,8 @@ npm install agent-rt
 ```
 
 Provider SDKs are optional: add `openai` or `@anthropic-ai/sdk` only when you need them. For agent memory, add one of `mem0ai` (the default), `@getzep/zep-cloud`, `@letta-ai/letta-client`, or `supermemory` and call `loadMemory()` ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#memory-packages)). Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
+
+For per-session task lists, `new TodoList().register(registry)` gives a model one `todo` tool ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#task-lists-todo-tool)).
 
 ## Migrate in one line
 
@@ -49,6 +52,8 @@ npx agent-rt migrate
 ```
 
 It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall. Per-test comparison needs Vitest or Jest.
+
+Migrated? Add the opt-in [Runs on Agent RT badge](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md#runs-on-agent-rt-badge) to your README.
 
 ## Quick start
 

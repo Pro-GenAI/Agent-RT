@@ -513,6 +513,7 @@ print(len(snapshot.messages))</code></pre>
 
 <h2>12. Long-term, semantic, episodic, and procedural memory</h2>
 <p>Memory stores use provider-neutral read/write/update/delete/search contracts. <code>SemanticMemory</code> adds embedding-based ranking; <code>EpisodicMemory</code> records task actions and outcomes; <code>ProceduralMemory</code> stores reusable instructions, scripts, templates, and workflows. Write/retrieval policies can filter by relevance, sensitivity, confidence, duplication, scope, recency, and kind. Scoped/lifecycle wrappers enforce isolation, expiry, purge, compaction provenance, and schema migrations.</p>
+<p><code>load_memory()</code> / <code>loadMemory()</code> connect a dedicated memory package (mem0 by default; Zep, Letta, Supermemory, or memU in Python) as an <code>AgentConfig.memory</code> source and store finished conversations with <code>remember()</code>. See <a href="../guides/runtime-guide.html#agent-memory">Agent memory</a>.</p>
 <p><strong>Default:</strong> persistent memory is not silently enabled. Choose and inject the memory layer appropriate for your application.</p>
 
 <h2>13. Checkpoints, events, idempotency, and durable execution</h2>
@@ -522,6 +523,7 @@ print(len(snapshot.messages))</code></pre>
 <h2>14. Planning, verification, reflection, and multi-agent orchestration</h2>
 <p>Agent RT includes explicit plans, dependency-aware plan steps, acceptance criteria, progress tracking, versioned replanning, verification, reflection/repair, critic panels, specialist agents as tools, handoffs, isolated subagents, supervisor/worker patterns, teams, parallel fan-out, map-reduce, and speculative alternatives.</p>
 <p>Child work can receive a narrowed context, tool scope, capability grant, and budget so delegation does not automatically inherit every parent capability.</p>
+<p><code>TodoList</code> gives a model a task list through one <code>todo</code> tool (add, update, remove, clear, list; statuses <code>pending</code>, <code>in_progress</code>, <code>completed</code>). Each instance holds one session's tasks; the terminal CLI and web UI register it by default and save each session's list with its transcript.</p>
 
 <h2>15. Filesystems, workspaces, and artifacts</h2>
 <p>The filesystem layer is backend-neutral and supports list/read/write/delete/move/copy/glob/search. <code>WorkspaceFiles</code> adds safe text creation, exact replacements, and context-checked patching. Persistent workspace stores retain workspace identity across reopen/resume flows.</p>
@@ -583,7 +585,7 @@ results = await retrieval.search(
 <p>The project supports Chroma, Milvus, Pinecone, Qdrant, and Weaviate HTTP adapters and hosted Bedrock Knowledge Bases retrieval (optional AWS SDK), with YAML configuration, lazy initialization, and LangChain/LlamaIndex-compatible imports. See the <a href="../guides/vector-databases.html">vector database guide</a> for concrete setup.</p>
 
 <h2>19. Provider routing and Decision models</h2>
-<p>Model aliases, fallback chains, routing policies, cost/latency-aware selection, and provider-neutral metadata let applications select a generation model without rewriting the loop. Decision models—including Laya and other Jev-compatible models—can be used for bounded routing/selection tasks such as capability choice.</p>
+<p>Model aliases, fallback chains, routing policies, cost/latency-aware selection, and provider-neutral metadata let applications select a generation model without rewriting the loop. Decision models—including Laya and other Jev-compatible models—can be used for bounded routing/selection tasks such as capability choice. Every Decision helper also works with the OpenAI Decisions API through <code>decision_model: {provider: openai}</code> or <code>OpenAIDecisionProvider</code>.</p>
 
 <h2>20. MCP, connectors, and remote agents</h2>
 <p><code>MCPClient</code> negotiates capabilities before consuming remote tools, resources, and prompts. Authorized MCP access can combine authentication scopes, credential grants, deny-overrides policy rules, and per-kind filters. Protocol and connector registries separate protocol mechanics from service-specific operations. Remote-agent support covers discovery, capability negotiation, task state, artifacts, streaming events, cancellation, and callbacks.</p>
@@ -636,7 +638,7 @@ agent_span = traces.start(
 
 <h2>24. API server, CLI, IDE, and chat surfaces</h2>
 <p>The runtime can be exposed through a CLI, a stable application API, or an optional OpenAI/Anthropic-compatible server surface. Interface layers are adapters over the same runtime rather than separate execution engines, so tools, guardrails, routing, run limits, state, and policy remain consistent.</p>
-<p>IDE integration can pass current-file, selection, diagnostics, and diff context into workspace operations. Chat bridges preserve channel identity and thread state. Approval presentation provides standardized consequence/diff/allow-or-deny UI data.</p>
+<p>IDE integration can pass current-file, selection, diagnostics, and diff context into workspace operations. The terminal CLI and <code>agent-rt web</code> share saved sessions, so a session started in one resumes in the other. <code>agent-rt serve telegram,discord</code> (Python, beta) answers allowed users as a Telegram or Discord bot without workspace tools. Chat bridges preserve channel identity and thread state. Approval presentation provides standardized consequence/diff/allow-or-deny UI data.</p>
 
 <h2>25. Compatibility and migration</h2>
 <p>Compatibility modules support common LangChain and LlamaIndex integration patterns, while OpenAI- and Anthropic-compatible HTTP surfaces ease application migration. Use compatibility layers to keep surrounding application code familiar while moving policy, tools, limits, state, and execution control into Agent RT. Migration field testing is ongoing; 65+ third-party repositories currently pass their test suites both before and after migration.</p>

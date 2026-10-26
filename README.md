@@ -66,6 +66,8 @@ agent-rt claude -p "explain this stack trace"   # or: agent-rt codex exec "..." 
 
 Only API-key setups are reused; subscription sign-ins stay with the official clients ([details](docs/website/docs/guides/runtime-guide.html#reuse-another-agent-cli)).
 
+**🎬 No API key?** `uvx agent-rt demo` (or `npx agent-rt demo`) runs a scripted mock model through a prompt-injection attack and shows Guard stopping `rm -rf ~` before the tool runs. `agent-rt web --demo` replays it in a time-travel debugger where you can fork from any checkpoint.
+
 ➡️ [Installation](docs/website/docs/getting-started/installation.html) · [Quickstart](docs/website/docs/getting-started/quickstart.html)
 
 ## 🔄 Migrate by Changing One Import
@@ -84,6 +86,8 @@ The same prefix works for supported subsets of Anthropic, OpenRouter, LangChain,
 
 Or run `uvx agent-rt migrate` (Python) or `npx agent-rt migrate` (TypeScript/JavaScript) in your project. It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall. See [automatic migration](docs/MIGRATION.md#automatic-migration-agent-rt-migrate).
 
+Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-agent-rt.svg)](docs/MIGRATION.md#runs-on-agent-rt-badge) badge to your README.
+
 ![65+ third-party repositories pass their tests after migrating to Agent RT](docs/website/assets/share/migration.png)
 
 ## ✨ Why Agent RT?
@@ -93,7 +97,14 @@ Or run `uvx agent-rt migrate` (Python) or `npx agent-rt migrate` (TypeScript/Jav
 - 🔌 **Provider-neutral, two languages** — OpenAI, Anthropic, compatible endpoints, or custom providers, with aligned contracts in <img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Python and <img src="docs/website/assets/typescript.svg" alt="TypeScript" width="18" height="18"> TypeScript.
 - 🔄 **Migration-tested** — ongoing compatibility field testing has 65+ third-party repositories passing their test suites both before and after migration to Agent RT.
 
-**Decision models** (such as Laya and other Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text. `Toolbase` can combine local, deferred, and MCP tools, remove unsafe definitions with a Decision model, pass only the relevant subset to each turn, and keep `tool_search` available for safe fallback discovery; the same Decision layer also gates memory, reranks retrieval results with optional top-k selection, and classifies failures.
+**Decision models** (such as Laya and other Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text. `Toolbase` can combine local, deferred, and MCP tools, remove unsafe definitions with a Decision model, pass only the relevant subset to each turn, and keep `tool_search` available for safe fallback discovery; the same Decision layer also gates memory, reranks retrieval results with optional top-k selection, and classifies failures. Every Decision helper also works with the [OpenAI Decisions API](docs/Runtime-Guide.md#action-blockers) (`decision_model: {provider: openai}`).
+
+## 🧰 Also Included
+
+- 🧠 **Agent memory** — `AgentConfig.memory` mixes strings, objects, and stores from LangChain, LangGraph, LlamaIndex, AutoGen, OpenAI Agents, or mem0. `load_memory()` / `loadMemory()` connect mem0 (default), Zep, Letta, Supermemory, or memU (Python) and store finished conversations with `remember()` ([details](docs/Runtime-Guide.md#memory-packages)).
+- ✅ **Task lists** — `TodoList` gives a model one `todo` tool with a separate list per session; on by default in the CLI and web UI ([details](docs/Runtime-Guide.md#task-lists-todo-tool)).
+- 🖥️ **Terminal CLI and web UI** (Python) — `agent-rt` and `agent-rt web` share sessions, so a session started in one resumes in the other; edits need in-page or terminal approval ([details](docs/website/docs/guides/runtime-guide.html#web-ui)).
+- 💬 **Chat bots** (Python, beta) — `agent-rt serve telegram,discord` answers allowed users, with no workspace tools ([details](docs/Runtime-Guide.md#chat-bots-python-beta)).
 
 ## ⚖️ Quick Comparison
 
@@ -167,7 +178,7 @@ Arguments are validated against the schema, tools outside the grant never run, a
 | State & memory | [State, memory, checkpoints, and artifacts](docs/website/docs/concepts/state-memory.html) |
 | Production | [Sandboxing, observability, evaluation, and deployment](docs/website/docs/guides/production.html) |
 | Migration | [LangChain, LlamaIndex, OpenAI, and Anthropic migration](docs/website/docs/guides/migration.html) |
-| Runtime guide | [Providers, API server, CLI, sandboxes, skills, and migration entry points](docs/website/docs/guides/runtime-guide.html) |
+| Runtime guide | [Providers, memory packages, API server, CLI, web UI, chat bots, sandboxes, skills, and migration entry points](docs/website/docs/guides/runtime-guide.html) |
 | Features | [Features, defaults, and configuration](docs/website/docs/reference/features-defaults.html) |
 | Architecture | [Architecture and extension contracts](docs/website/docs/reference/architecture.html) |
 | Development | [Contributor setup and test workflows](docs/website/docs/reference/development.html) |
@@ -178,7 +189,7 @@ Arguments are validated against the schema, tools outside the grant never run, a
 
 [Python](python/README.md) · [TypeScript](typescript/README.md) · [Python examples](python/examples/README.md) · [TypeScript examples](typescript/examples/README.md)
 
-The inbound API server, terminal CLI, and AutoGen/CrewAI/LiteLLM migration shims are Python-only.
+The inbound API server, terminal CLI, web UI, chat bots, memU memory, and AutoGen/CrewAI/LiteLLM migration shims are Python-only.
 
 ## 📄 License
 
