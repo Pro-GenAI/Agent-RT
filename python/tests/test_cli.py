@@ -17,6 +17,7 @@ from agent_rt import (
     ModelResponse,
     ModelStreamEvent,
     ModelUsage,
+    TodoList,
     ToolCall,
     ToolRegistry,
 )
@@ -795,9 +796,14 @@ class TestChatSession:
                 store=store,
             )
             await session.send("hello", stream=False)
+            session.todos.apply({"action": "add", "content": "old task"})
             session.clear()
-            assert session.messages == ()
-            assert store.load("clear")["messages"] == ()
+            assert session.session_id != "clear"
+            assert (session.messages, session.todos.items) == ((), [])
+            fresh = store.load(session.session_id)
+            assert (fresh["messages"], fresh["todos"]) == ((), [])
+            # The previous conversation stays resumable under its old id.
+            assert len(store.load("clear")["messages"]) == 2
 
     async def test_compact_uses_model_and_persists_compacted_context(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1174,12 +1180,40 @@ class TestTerminalChat:
         assert await chat._command("/copy")
         assert events == ["[yellow]Nothing to copy yet.[/yellow]"]
 
+    async def test_todos_command_lists_the_session_tasks_literally(self):
+        events = []
+
+        class FakeConsole:
+            def print(self, message, **options):
+                events.append((message, options))
+
+        chat = object.__new__(TerminalChat)
+        chat.session = SimpleNamespace(todos=TodoList())
+        chat.console = FakeConsole()
+
+        assert await chat._command("/todos")
+        chat.session.todos.replace(
+            [
+                {"id": 1, "content": "plan [bold]", "status": "completed"},
+                {"id": 2, "content": "build", "status": "in_progress"},
+                {"id": 3, "content": "ship", "status": "pending"},
+            ]
+        )
+        assert await chat._command("/todos")
+        assert events == [
+            ("No todos in this session.", {}),
+            ("[x] 1. plan [bold]\n[~] 2. build\n[ ] 3. ship", {"markup": False}),
+        ]
+
     async def test_clear_command_clears_history_and_terminal(self):
         events = []
 
         class FakeSession:
-            def clear(self):
-                events.append("history")
+            session_id = "new-id"
+            workspace_tools = None
+
+            def clear(self, session_id):
+                events.append(("history", session_id))
 
         class FakeConsole:
             def clear(self):
@@ -1193,7 +1227,11 @@ class TestTerminalChat:
         chat.console = FakeConsole()
 
         assert await chat._command("/clear")
-        assert events == ["history", "screen", "Conversation cleared."]
+        assert events == [
+            "screen",
+            ("history", None),
+            "Started session [cyan]new-id[/cyan].",
+        ]
 
     async def test_compact_command_reports_compaction(self):
         events = []

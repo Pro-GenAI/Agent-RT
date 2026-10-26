@@ -13,6 +13,7 @@ from agent_rt import (
     ModelResponse,
     ModelStreamEvent,
     ModelUsage,
+    TodoList,
     ToolCall,
 )
 from agent_rt_cli import ChatSession, TranscriptStore, WorkspaceCodeTools
@@ -395,6 +396,7 @@ async def test_stream_queue_backpressures_a_fast_provider(tmp_path, monkeypatch)
 
     class FastSession:
         workspace_tools = None
+        todos = TodoList()
         messages = ()
         emitted = 0
 
@@ -425,6 +427,7 @@ async def test_closing_full_stream_cancels_producer(tmp_path, monkeypatch):
 
     class EndlessSession:
         workspace_tools = None
+        todos = TodoList()
         messages = ()
 
         async def send(self, text, *, stream, on_event):
@@ -472,6 +475,7 @@ async def test_run_admission_limits_active_and_queued_requests():
 async def test_long_event_is_split_into_bounded_chunks(tmp_path):
     class LargeSession:
         workspace_tools = None
+        todos = TodoList()
         messages = ()
 
         async def send(self, text, *, stream, on_event):
@@ -497,6 +501,7 @@ async def test_http_overload_returns_429_and_releases_run_slot(tmp_path):
 
     class SlowSession:
         workspace_tools = None
+        todos = TodoList()
         messages = ()
 
         async def send(self, text, *, stream, on_event):

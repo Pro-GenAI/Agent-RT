@@ -181,7 +181,7 @@ const sessionLock = (id, fn) => navigator.locks
 
 function newSession() {
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-  return { id, workspace: info.workspace, title: "", model: info.model, autoApprove: false, messages: [], updated: Date.now() };
+  return { id, workspace: info.workspace, title: "", model: info.model, autoApprove: false, todos: [], messages: [], updated: Date.now() };
 }
 function shown(messages) {
   return messages
@@ -439,13 +439,13 @@ async function run(text) {
     const latest = await store.get(session.id);
     stale = !!latest && latest.messages.length !== session.messages.length;
     if (!latest && session.messages.length) throw new Error("Session was deleted in another tab or the terminal.");
-    if (latest) { session.messages = latest.messages; session.autoApprove = latest.autoApprove; }
+    if (latest) { session.messages = latest.messages; session.autoApprove = latest.autoApprove; session.todos = latest.todos; }
     session.title = session.title || text.replace(/\s+/g, " ").slice(0, 60);
     session.updated = Date.now();
     await store.put(session);
     announce(session.id);
     await renderRail();
-    const res = await post("/api/chat", { text, model: session.model, messages: session.messages, auto_approve: session.autoApprove }, { signal });
+    const res = await post("/api/chat", { text, model: session.model, messages: session.messages, auto_approve: session.autoApprove, todos: session.todos || [] }, { signal });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
@@ -471,6 +471,7 @@ async function run(text) {
           if (ev.reason !== "completed") note("run ended: " + ev.reason, "note");
           session.messages = ev.messages;
           session.autoApprove = ev.auto_approve;
+          session.todos = ev.todos;
           session.updated = Date.now();
           // No Web Locks on older browsers: still avoid reviving a deleted record.
           if (await store.get(session.id)) {

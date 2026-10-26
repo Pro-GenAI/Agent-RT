@@ -14,6 +14,7 @@ from agent_rt import (
     AgentRunLimits,
     ModelMessage,
     ModelStreamEvent,
+    TodoList,
     configure_runtime,
     load_config,
     load_model,
@@ -175,6 +176,7 @@ class WebChat:
         model: str,
         history: Sequence[ModelMessage] = (),
         auto_approve: bool = False,
+        todos: Sequence[Mapping[str, Any]] = (),
     ):
         """Run one prompt, yielding NDJSON lines: deltas, tool calls, approvals, then done/error.
 
@@ -242,6 +244,7 @@ class WebChat:
             yield json.dumps({"type": "error", "message": str(exc)}) + "\n"
             return
         session.messages = tuple(history)
+        session.todos.replace(todos)
         if session.workspace_tools is not None:
             session.workspace_tools.auto_approve_writes = auto_approve
         task = asyncio.create_task(session.send(text, stream=True, on_event=on_event))
@@ -272,6 +275,7 @@ class WebChat:
                         "text": _message_text(final.message) if final else "",
                         "messages": [_serialize_message(m) for m in session.messages],
                         "auto_approve": bool(tools and tools.auto_approve_writes),
+                        "todos": session.todos.items,
                     },
                     default=str,
                 )
@@ -503,6 +507,12 @@ def create_web_app(
         # Sessions saved before workspaces were recorded show in every folder.
         return not workspace or Path(workspace).resolve() == chat.workspace.resolve()
 
+    def parse_todos(data: Mapping[str, Any]) -> list[dict[str, Any]]:
+        try:
+            return TodoList(data.get("todos", [])).items
+        except ValueError as exc:
+            raise HTTPException(400, f"invalid todos: {exc}") from exc
+
     def session_id(request: Request) -> str:
         value = request.path_params["id"]
         try:
@@ -539,6 +549,7 @@ def create_web_app(
                 "title": data["title"],
                 "model": data["model"] or chat.model,
                 "autoApprove": data["auto_approve"],
+                "todos": data["todos"],
                 "messages": [_serialize_message(m) for m in data["messages"]],
                 "updated": data["updated"],
             },
@@ -556,6 +567,7 @@ def create_web_app(
             messages = parse_history(data.get("messages", []))
         except (TypeError, ValueError) as exc:
             raise HTTPException(400, f"invalid messages: {exc}") from exc
+        todos = parse_todos(data)
         try:
             instructions = (await asyncio.to_thread(chat.store.load, name))[
                 "instructions"
@@ -571,6 +583,7 @@ def create_web_app(
                 workspace=str(chat.workspace),
                 title=title.strip()[:200],
                 auto_approve=data.get("autoApprove") is True,
+                todos=todos or None,
             )
         )
         return JSONResponse({"ok": True})
@@ -595,6 +608,7 @@ def create_web_app(
             history = parse_history(data.get("messages", []))
         except (TypeError, ValueError) as exc:
             raise HTTPException(400, f"invalid messages: {exc}") from exc
+        todos = parse_todos(data)
         if not await admission.acquire():
             raise HTTPException(429, "too many active or queued runs; retry shortly")
         return AdmittedStreamingResponse(
@@ -603,6 +617,7 @@ def create_web_app(
                 model=model,
                 history=history,
                 auto_approve=data.get("auto_approve") is True,
+                todos=todos,
             ),
             media_type="application/x-ndjson",
         )

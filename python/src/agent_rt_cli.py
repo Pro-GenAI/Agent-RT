@@ -29,6 +29,7 @@ from agent_rt import (
     ModelMessage,
     ModelSettings,
     ModelStreamEvent,
+    TodoList,
     ToolCall,
     ToolDefinition,
     ToolRegistry,
@@ -110,6 +111,7 @@ SLASH_COMMANDS = (
     "/clear",
     "/save",
     "/status",
+    "/todos",
     "/exit",
     "/quit",
 )
@@ -1187,6 +1189,7 @@ class TranscriptStore:
             "workspace": str(data.get("workspace") or ""),
             "title": str(data.get("title") or _session_title(raw_messages)),
             "auto_approve": data.get("auto_approve") is True,
+            "todos": data.get("todos") or [],
             "updated": int(path.stat().st_mtime * 1000),
             "messages": tuple(_deserialize_message(item) for item in raw_messages),
         }
@@ -1245,6 +1248,7 @@ class ChatSession:
         skills: SkillRegistry | None = None,
         compact_token_threshold: int | None = None,
         max_output_tokens: int | None = None,
+        todos: TodoList | None = None,
     ) -> None:
         if not model.strip():
             raise ValueError("model must not be empty")
@@ -1260,6 +1264,8 @@ class ChatSession:
         self.limits = limits
         self.workspace_tools = workspace_tools
         self.skills = skills or SkillRegistry()
+        # The todo tool holds this object, so switching sessions must reset or reload it in place.
+        self.todos = todos or TodoList()
         self.compact_token_threshold = (
             _compact_token_threshold()
             if compact_token_threshold is None
@@ -1283,10 +1289,14 @@ class ChatSession:
         if stored_model:
             self.model = stored_model
         self.instructions = data["instructions"]
+        self.todos.replace(data["todos"])
         self.messages = data["messages"]
 
-    def clear(self) -> None:
+    def clear(self, session_id: str | None = None) -> None:
+        """Start an empty conversation and todo list under a new id; the old transcript stays resumable."""
+        self.session_id = session_id or uuid.uuid4().hex[:12]
         self.messages = ()
+        self.todos.replace(())
         if self.autosave:
             self.save()
 
@@ -1347,6 +1357,7 @@ class ChatSession:
             messages=self.messages,
             # Lets the web client list this session under the folder it belongs to.
             workspace=str(self.workspace_tools.root) if self.workspace_tools else None,
+            todos=self.todos.items or None,
         )
 
     async def send(
@@ -1541,9 +1552,10 @@ class TerminalChat:
             "  /skills               list discovered global/project skills\n"
             "  /compact              compact conversation context with the model\n"
             "  /copy                 copy the last assistant Markdown source\n"
-            "  /clear                clear conversation history and screen\n"
+            "  /clear                clear the screen and start a new session (empty history and todos)\n"
             "  /save                 save the current session\n"
             "  /status               show session/model/message count\n"
+            "  /todos                show this session's todo list\n"
             "  /exit                 quit"
         )
 
@@ -1559,6 +1571,16 @@ class TerminalChat:
             lines.append(f"{skill.name}@{skill.version}{suffix}")
         self.console.print("\n".join(lines), markup=False)
 
+    def _todos(self) -> None:
+        items = self.session.todos.items
+        if not items:
+            self.console.print("No todos in this session.")
+            return
+        marks = {"pending": "[ ]", "in_progress": "[~]", "completed": "[x]"}
+        lines = [f"{marks[item['status']]} {item['id']}. {item['content']}" for item in items]
+        # Model-written text: print it literally, never as Rich markup.
+        self.console.print("\n".join(lines), markup=False)
+
     def _status(self) -> None:
         self.console.print(
             f"model={self.session.model} "
@@ -1569,14 +1591,9 @@ class TerminalChat:
         )
 
     def _new(self, name: str | None) -> None:
-        self.session.session_id = (
-            _safe_session_name(name) if name else uuid.uuid4().hex[:12]
-        )
-        self.session.messages = ()
+        self.session.clear(_safe_session_name(name) if name else None)
         if self.session.workspace_tools is not None:
             self.session.workspace_tools.auto_approve_writes = False
-        if self.session.autosave:
-            self.session.save()
         self.console.print(f"Started session [cyan]{self.session.session_id}[/cyan].")
 
     def _resume(self, name: str) -> None:
@@ -1666,6 +1683,8 @@ class TerminalChat:
             self.help()
         elif command == "/status":
             self._status()
+        elif command == "/todos":
+            self._todos()
         elif command == "/skills":
             self._skills()
         elif command == "/compact":
@@ -1688,9 +1707,8 @@ class TerminalChat:
                 else:
                     self.console.print("Copied last assistant Markdown.")
         elif command == "/clear":
-            self.session.clear()
             self.console.clear()
-            self.console.print("Conversation cleared.")
+            self._new(None)
         elif command == "/save":
             path = self.session.save()
             self.console.print(f"Saved to [dim]{path}[/dim].")
@@ -1923,6 +1941,8 @@ def build_workspace_session(
         if consequences := _skill_warning_consequences("agent-rt", skill_warnings):
             print(consequences, file=sys.stderr)
     _register_skill_tools(workspace_registry, skills)
+    todos = TodoList()
+    todos.register(workspace_registry)
     return ChatSession(
         AgentLoop(
             provider,
@@ -1932,6 +1952,7 @@ def build_workspace_session(
         model=model,
         workspace_tools=workspace_tools,
         skills=skills,
+        todos=todos,
         **session_options,
     )
 

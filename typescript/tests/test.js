@@ -8169,3 +8169,41 @@ test("agent memory merges multiple sources and custom objects", async () => {
   assert.deepEqual(facts[0].metadata, { memory_source: "facts" });
   assert.throws(() => new MemorySource("x", { limit: 0 }));
 });
+
+test("todo tool manages, clears, and isolates each session's list", async () => {
+  const { TodoList, ToolRegistry } = require("../dist/index.js");
+  const mine = new TodoList();
+  const theirs = new TodoList();
+  const registry = new ToolRegistry();
+  mine.register(registry);
+  const run = (args) => registry.execute({ id: "1", name: "todo", arguments: args });
+
+  await run({ action: "add", content: " plan " });
+  await run({ action: "add", content: "build", status: "in_progress" });
+  assert.deepEqual(await run({ action: "update", id: 1, status: "completed" }), {
+    todos: [
+      { id: 1, content: "plan", status: "completed" },
+      { id: 2, content: "build", status: "in_progress" },
+    ],
+  });
+  await run({ action: "remove", id: 1 });
+  assert.equal((await run({ action: "add", content: "ship" })).todos.at(-1).id, 3);
+  assert.deepEqual(theirs.items, []);
+  for (const bad of [
+    { action: "add" },
+    { action: "add", content: "x", status: "done" },
+    { action: "update", id: 9, status: "completed" },
+    { action: "update", id: 2 },
+    { action: "explode" },
+  ]) {
+    assert.throws(() => mine.apply(bad));
+  }
+  assert.equal(mine.items.length, 2);
+  assert.deepEqual(await run({ action: "clear" }), { todos: [] });
+
+  const stored = [{ id: 4, content: "earlier", status: "pending" }];
+  assert.deepEqual(new TodoList(stored).items, stored);
+  for (const bad of [null, [stored[0], stored[0]], [{ id: 1.5, content: "a", status: "pending" }]]) {
+    assert.throws(() => new TodoList(bad));
+  }
+});

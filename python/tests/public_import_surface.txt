@@ -375,6 +375,7 @@ TenantSessionMemory
 TenantWorkspaceStore
 TerminationReason
 TOOL_SEARCH_NAME
+TodoList
 TokenCountingModelProvider
 TokenLedger
 TokenUsageRecord

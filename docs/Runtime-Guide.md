@@ -176,6 +176,26 @@ The server includes bounded concurrency/queues, request and generation limits, a
 
 The TypeScript package provides the API-façade contracts but no ready-made HTTP server.
 
+## Task lists (todo tool)
+
+`TodoList` gives a model a task list through one `todo` tool. Its `action` is `add` (with `content`, optional `status`), `update` (`id` plus `content` and/or `status`), `remove` (`id`), `clear` (empties the whole list), or `list`; statuses are `pending`, `in_progress`, and `completed`, and every action returns the whole list. Bad calls (unknown ids, empty content, a full list of 100 tasks) come back to the model as tool errors and leave the list unchanged.
+
+Each `TodoList` holds exactly one session's tasks, and the tool it registers only sees that list, so create one per session to keep lists from leaking between sessions:
+
+```python
+todos = TodoList()
+todos.register(registry)          # adds the "todo" tool
+todos.replace(saved_items)        # restore a stored list; validated
+```
+
+```ts
+const todos = new TodoList();
+todos.register(registry);
+todos.replace(savedItems);
+```
+
+The terminal CLI and the web UI register the tool by default. Each session keeps its own list, saved in its transcript: `/new` and `/clear` start a new session (new id, empty history and list; the previous session stays resumable), `/resume` restores the session's list, `/todos` shows it, and the web UI sends each session's list with its prompts and saves it with the session.
+
 ## Toolbase, relevance selection, and tool search
 
 For large tool inventories, initialize a `Toolbase` rather than exposing every schema to every model turn. `Toolbase.initialize` / `Toolbase.initialize(...)` combines enabled local tools, materialized deferred tools, and tools discovered from configured MCP clients into one internal catalog. An optional safety filter is applied to that complete catalog first. The per-turn visibility selector then chooses the relevant subset, while `tool_search` remains available so the agent can discover a safe tool that was not initially selected.
@@ -228,7 +248,7 @@ agent-rt --max-output-tokens 4096 -p "summarize this diff"
 
 An interactive session opens with a banner of Artie, the Agent RT mascot, drawn from the logo in colored half-block pixels (a colored ASCII version on consoles without 256 colors or UTF-8), showing its name, the version and release codename, the model, the session id, and the flagship features (Guard, Checkpoints, Wall); `-p`/`--prompt` runs print no banner. Artie has moods: when Guard (an action blocker or guardrail) blocks a call, the session prints Artie raising a shield beside the reason instead of a plain error, `agent-rt demo` shows the same pose when it stops the injected `rm -rf ~`, and `agent-rt migrate` prints Artie celebrating when the rewrite is kept.
 
-The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
+The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. The `todo` tool (see [Task lists](#task-lists-todo-tool)) is on by default, with one list per session. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
 
 ### Reuse another agent CLI's setup
 
