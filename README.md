@@ -25,8 +25,6 @@ Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you i
 - ♻️ **Checkpoints** — resume a run with the turn, tool-call, and token budgets it had already used.
 - 🧱 **Wall** — the [migration wall](https://agent-rt-pro.github.io/): 65+ third-party repositories that pass their tests before and after migrating.
 
-Each release also gets a one-word codename; the current one is **Sprint**.
-
 ## 📈 By the Numbers
 
 - 🪙 **8–37× fewer input tokens** per prompt than Codex, Claude Code, opencode, and Copilot CLI

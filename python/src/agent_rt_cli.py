@@ -60,8 +60,6 @@ COMPACTION_INSTRUCTIONS = (
 )
 COMPACTION_REQUEST = "Compact the conversation above now. Return only the context that should be carried forward."
 DEFAULT_COMPACT_TOKEN_THRESHOLD = 32_000
-# One-word codename for the current release; rename it when the version is bumped (docs/DEVELOPMENT.md).
-RELEASE_NAME = "Sprint"
 
 # ASCII Artie for consoles without 256 colors or UTF-8 (the banner otherwise prints the
 # logo itself from ext/artie_art.py): speed lines, colored tool tiles, a
@@ -1517,9 +1515,7 @@ class TerminalChat:
 
         info = (
             Text("Artie", style="bold bright_cyan"),
-            Text.assemble(
-                ("Agent RT", "bold"), f" {_package_version()} ", (f'"{RELEASE_NAME}"', "dim")
-            ),
+            Text.assemble(("Agent RT", "bold"), f" {_package_version()}"),
             Text.assemble(
                 "model=", (str(self.session.model), "cyan"),
                 "  session=", (str(self.session.session_id), "cyan"),
