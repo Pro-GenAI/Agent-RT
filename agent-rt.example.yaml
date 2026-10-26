@@ -49,5 +49,8 @@ agent_rt_settings:
   # decision_model: {provider: openai, api_key: os.environ/OPENAI_API_KEY}  # OpenAI Decisions API
   # observability: {api_key: os.environ/TRACELOOP_API_KEY}
   # cli: {home: ~/.agent-rt, compact_token_limit: 60000}
+  # serve:  # agent-rt serve telegram,discord (beta); bots answer only allowed_users
+  #   telegram: {bot_token: os.environ/TELEGRAM_BOT_TOKEN, allowed_users: [123456789]}
+  #   discord: {bot_token: os.environ/DISCORD_BOT_TOKEN, allowed_users: ["123456789012345678"]}
   # memory: {backend: mem0, options: {user_id: alice}}  # pip install 'agent-rt[memory]'
   # memory: {backend: zep, options: {api_key: os.environ/ZEP_API_KEY, graph_id: alice, thread_id: chat-1}}

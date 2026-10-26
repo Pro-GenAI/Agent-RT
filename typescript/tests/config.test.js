@@ -135,6 +135,10 @@ test("unset model and server secrets fail only when used", async () => {
   );
   const served = await parse("agent_rt_settings:\n  server: {api_keys: [os.environ/NOPE]}\n", {});
   assert.throws(() => configServerOptions(served), /server\.api_keys\[0\].*NOPE/);
+  // serve bot tokens are deferred like server secrets; only known platforms and keys load.
+  await parse("agent_rt_settings:\n  serve: {telegram: {bot_token: os.environ/NOPE, allowed_users: [7]}}\n", {});
+  await assert.rejects(parse("agent_rt_settings:\n  serve: {slack: {bot_token: x}}\n", {}), /unknown key/);
+  await assert.rejects(parse("agent_rt_settings:\n  serve: {discord: {token: x}}\n", {}), /serve\.discord/);
 });
 
 test("a vector store name may equal its id", async () => {

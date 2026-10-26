@@ -291,6 +291,30 @@ The same server has a debugger page at `/debug` (linked from the sessions sideba
 
 Deleting a session coordinates with an active run using Web Locks when available, preventing the run from recreating a deleted transcript. Very long unfinished Markdown blocks render as plain text while streaming and receive full Markdown formatting when complete, avoiding repeated expensive parsing.
 
+## Chat bots (Python, beta)
+
+`agent-rt serve` (or `artie serve`) runs Agent RT as a Telegram and/or Discord bot. It is a beta feature and prints a note saying so at startup. Name the platforms as one comma-separated argument; the command fails when none is passed or a name is unknown:
+
+```bash
+agent-rt serve telegram,discord
+agent-rt serve telegram --config ./agent-rt.yaml --model gpt-5.5
+```
+
+Each platform reads `agent_rt_settings.serve.<platform>` from the YAML config:
+
+```yaml
+agent_rt_settings:
+  serve:
+    telegram: {bot_token: os.environ/TELEGRAM_BOT_TOKEN, allowed_users: [123456789]}
+    discord: {bot_token: os.environ/DISCORD_BOT_TOKEN, allowed_users: ["123456789012345678"]}
+```
+
+- The bot answers only the user ids in `allowed_users`. Anyone else gets a reply that includes their user id, so the owner can add it.
+- The bots have no workspace, file, or command tools, because anyone can message a public bot. Each chat (a Telegram chat or a Discord channel or DM) keeps its own conversation in memory until the process stops; send `/new` to start over.
+- Telegram uses long polling (`getUpdates`), so no public URL or webhook is needed; delete any webhook set on the bot first.
+- Discord connects to the Gateway and answers direct messages, plus server messages that mention the bot. It does not need the privileged Message Content intent. Replies never ping `@everyone`, roles, or users.
+- A rejected token, or a Discord gateway close that reconnecting cannot fix, stops the command with exit code 1. Network errors are logged and retried. Tokens are redacted from logs.
+
 ## Sandboxes
 
 `SandboxSession` runs commands through a fail-closed backend selected with `agent_rt_settings.sandbox.backend` (`native`, `docker`, `e2b`, `microsandbox`, `swe-rex`).

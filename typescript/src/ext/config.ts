@@ -24,7 +24,7 @@ export const SUPPORTED_VECTOR_STORE_PROVIDERS = [
 const PARAM_KEYS = ['agent_rt_params', 'litellm_params'] as const;
 // Unset references here fail only when that model, store or server is used.
 const DEFERRED_SECRET_PATH =
-	/^config\.(model_list|vector_store_registry)\[\d+\]\.(agent_rt_params|litellm_params)\.(api_key|api_base)$|^config\.agent_rt_settings\.server\.|^config\.agent_rt_settings\.memory\.options\./;
+	/^config\.(model_list|vector_store_registry)\[\d+\]\.(agent_rt_params|litellm_params)\.(api_key|api_base)$|^config\.agent_rt_settings\.server\.|^config\.agent_rt_settings\.memory\.options\.|^config\.agent_rt_settings\.serve\./;
 const MODEL_PARAM_FIELDS = new Set([
 	'model',
 	'api_key',
@@ -54,6 +54,7 @@ const SETTINGS_SECTIONS = new Set([
 	'observability',
 	'cli',
 	'memory',
+	'serve',
 ]);
 export const DEFAULT_MEMORY_BACKEND = 'mem0';
 /** `agent_rt_settings.memory` backends and their options (same as Python). */
@@ -145,6 +146,9 @@ const SERVER_FIELDS = new Set([
 	'max_queued_requests',
 ]);
 const CLI_FIELDS = new Set(['home', 'compact_token_limit']);
+/** `agent_rt_settings.serve` platforms (used by Python's `agent-rt serve`). */
+const SERVE_PLATFORMS = new Set(['telegram', 'discord']);
+const SERVE_FIELDS = new Set(['bot_token', 'allowed_users']);
 
 export class ConfigError extends Error {
 	constructor(message: string) {
@@ -650,6 +654,14 @@ function parseSettings(raw: unknown): Record<string, unknown> {
 			CLI_FIELDS,
 			'agent_rt_settings.cli',
 		);
+	}
+	if (settings['serve'] !== undefined) {
+		const serve = mapping(settings['serve'], 'agent_rt_settings.serve');
+		checkKeys(serve, SERVE_PLATFORMS, 'agent_rt_settings.serve');
+		for (const [platform, values] of Object.entries(serve)) {
+			const path = `agent_rt_settings.serve.${platform}`;
+			checkKeys(mapping(values, path), SERVE_FIELDS, path);
+		}
 	}
 	if (settings['memory'] !== undefined && settings['memory'] !== null) {
 		const memory = mapping(settings['memory'], 'agent_rt_settings.memory');

@@ -2374,6 +2374,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         from ext.demo import main as demo_main
 
         return demo_main(argv[1:])
+    if argv[:1] == ["serve"]:
+        from ext.serve import main as serve_main
+
+        return serve_main(argv[1:])
     try:
         return asyncio.run(async_main(argv))
     except KeyboardInterrupt:

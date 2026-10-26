@@ -30,6 +30,7 @@ _DEFERRED_SECRET_PATH = re.compile(
     r"(agent_rt_params|litellm_params)\.(api_key|api_base)$"
     r"|^config\.agent_rt_settings\.server\."
     r"|^config\.agent_rt_settings\.memory\.options\."
+    r"|^config\.agent_rt_settings\.serve\."
 )
 _MODEL_PARAM_FIELDS = {"model", "api_key", "api_base", "websocket"}
 _STORE_PARAM_FIELDS = {
@@ -55,6 +56,7 @@ _SETTINGS_SECTIONS = {
     "observability",
     "cli",
     "memory",
+    "serve",
 }
 _SECTION_ENVIRONMENT = {
     "execution_limits": {
@@ -113,6 +115,7 @@ _SECTION_ENVIRONMENT = {
         )
     },
 }
+_SERVE_PLATFORMS = ("telegram", "discord")
 _SERVER_FIELDS = {
     "api_keys",
     "default_agent",
@@ -526,6 +529,13 @@ def _parse_settings(raw: Any) -> dict[str, Any]:
     cli = settings.get("cli")
     if cli is not None:
         _check_keys(_mapping(cli, "agent_rt_settings.cli"), {"home", "compact_token_limit"}, "agent_rt_settings.cli")
+    serve = settings.get("serve")
+    if serve is not None:
+        serve = _mapping(serve, "agent_rt_settings.serve")
+        _check_keys(serve, set(_SERVE_PLATFORMS), "agent_rt_settings.serve")
+        for platform, values in serve.items():
+            path = f"agent_rt_settings.serve.{platform}"
+            _check_keys(_mapping(values, path), {"bot_token", "allowed_users"}, path)
     server = settings.get("server")
     if server is not None:
         _check_keys(_mapping(server, "agent_rt_settings.server"), _SERVER_FIELDS, "agent_rt_settings.server")
