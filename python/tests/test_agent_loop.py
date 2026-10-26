@@ -2,7 +2,6 @@ import asyncio
 
 import pytest
 
-import agent_rt as agent_rt_core
 from agent_rt import (
     AgentCheckpoint,
     AgentConfig,
@@ -43,6 +42,7 @@ from agent_rt import (
     openllmetry_config_from_env,
     validate_tool_arguments,
 )
+from ext.runtime import settings as runtime_settings_store
 
 
 class FakeProvider:
@@ -1151,8 +1151,8 @@ class TestAgentLoop:
             "AGENT_RT_EXECUTION_MEMORY_BYTES",
             "AGENT_RT_EXECUTION_CPU_SECONDS",
         )
-        previous = agent_rt_core._RUNTIME_SETTINGS
-        agent_rt_core._RUNTIME_SETTINGS = {
+        previous = runtime_settings_store._RUNTIME_SETTINGS
+        runtime_settings_store._RUNTIME_SETTINGS = {
             names[0]: "0",
             names[1]: "4096",
             names[2]: "2.5",
@@ -1215,7 +1215,7 @@ class TestAgentLoop:
             payload = provider.requests[1].messages[-1].content[0].data
             assert payload["error"]["type"] == "tool_timeout"
         finally:
-            agent_rt_core._RUNTIME_SETTINGS = previous
+            runtime_settings_store._RUNTIME_SETTINGS = previous
 
     async def test_zero_tool_timeout_prevents_handler_side_effect(self):
         registry = ToolRegistry()

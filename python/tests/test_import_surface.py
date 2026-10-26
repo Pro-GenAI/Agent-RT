@@ -34,6 +34,11 @@ import sys
 
 importlib.import_module("agent_rt")
 assert "ext.runtime.optional" not in sys.modules
+lazy_packages = tuple(
+    f"ext.runtime.{name}"
+    for name in ("interfaces", "protocols", "retrieval", "sandbox")
+)
+assert not [name for name in sys.modules if name.startswith(lazy_packages)]
 assert "openai" not in sys.modules
 assert "anthropic" not in sys.modules
 assert "agent_action_guard" not in sys.modules

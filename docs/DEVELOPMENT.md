@@ -188,7 +188,7 @@ The banner's pixel Artie is generated, not hand-drawn: `python/src/ext/artie_art
 
 ### Setup and tests
 
-TypeScript sources live in `typescript/src/` (core in `index.ts`; companion contracts, framework adapters, and transports under `src/ext/`, mirroring Python's `ext` package), tests in `typescript/tests/`, and evaluation/publishing utilities in `typescript/scripts/`. Node 20, 22, 24, and 26 are supported.
+TypeScript sources live in `typescript/src/` (core in `src/runtime/`, re-exported by the `index.ts` barrel, see [Runtime module layout](#runtime-module-layout); companion contracts, framework adapters, and transports under `src/ext/`, mirroring Python's `ext` package), tests in `typescript/tests/`, and evaluation/publishing utilities in `typescript/scripts/`. Node 20, 22, 24, and 26 are supported.
 
 Install reproducibly and run the runtime suite:
 
@@ -300,11 +300,42 @@ npm pack --dry-run
 
 `scripts/npm_publish.sh` runs `npm ci`, the regression suite, and a package preview before publishing.
 
+## Runtime module layout
+
+The runtime lives in themed modules with the **same folder and module names in both languages**: `python/src/ext/runtime/<folder>/<module>.py` and `typescript/src/runtime/<folder>/<module>.ts`. The public entrypoints only re-export them: `python/src/agent_rt.py` (re-exports the eager core; lazy names resolve through `__getattr__` from `ext/runtime/optional.py`) and `typescript/src/index.ts` (a barrel of `export ... from` lines). Import a runtime name from its module, never from the entrypoint, inside `ext/runtime/` or `src/runtime/`.
+
+| Module | Contents |
+| --- | --- |
+| `types` | JSON values, messages, content parts, tool calls, sessions, cancellation (Python: the lazy `asyncio` shim) |
+| `settings` | `runtime_settings` / `configure_runtime` |
+| `platform` | TypeScript only: Node module loading, optional peers, byte buffers |
+| `agent/` | `config`, `limits`, `loop`, `run_steps`, `tool_execution`, `plan_compiler`, `planning`, `reflection`, `delegation`, `teams` |
+| `authorization/` | `permissions`, `grants`, `approvals`, `identity`, `secrets`, `policy` |
+| `guardrails/` | `results`, `tool_guardrails`, `boundary`, `privacy`, `exfiltration` |
+| `tools/` | `definitions`, `capabilities`, `registry`, `todos`, `toolbase`, `validation`, `programs` |
+| `models/` | `interfaces`, `sdk`, `provider_settings`, `conversion`, `openai_payloads`, `openai_http`, `openai`, `anthropic_payloads`, `anthropic`, `configured`, `routing` |
+| `context/` | `items`, `assembler` |
+| `memory/` | `sources`, `sessions`, `long_term`, `semantic`, `lifecycle`, `policies` |
+| `checkpoints/` | `store`, `events` |
+| `resilience/` | `transactions`, `retry`, `rate_limits`, `budgets`, `idempotency` |
+| `tasks/` | `background`, `queue`, `scheduler` |
+| `workspace/` | `filesystem`, `stores`, `artifacts` |
+| `observability/` | `openllmetry`, `audit`, `metrics`, `tracing`, `usage`, `replay` |
+| `protocols/` | `mcp`, `mcp_access`, `adapters`, `remote` |
+| `retrieval/` | `registry`, `vector_db`, `vector_stores`, `file_search`, `web_search` |
+| `interfaces/` | `browser`, `realtime`, `surfaces` |
+| `sandbox/` | `policy`, `backends`, `native`, `docker`, `e2b`, `microsandbox`, `swe_rex`, `session` |
+
+Python keeps startup fast by loading only the eager core on `import agent_rt`. Modules re-exported by `ext/runtime/optional.py` (identity, secrets, policy, exfiltration, planning, reflection, delegation, teams, tracing, usage, replay, the memory stores other than `sources`, workspace stores/artifacts, and all of `protocols/`, `retrieval/`, `interfaces/`, and `sandbox/`) are lazy: core modules must not import them at module level, and new public lazy names go in `_LAZY_FEATURE_EXPORTS` in `agent_rt.py`. `tests/test_import_surface.py` guards this. Moved core symbols keep `__module__ == "agent_rt"` so pickles and introspection stay stable. Python module-level imports between runtime modules must stay acyclic; break a run-time-only cycle with a function-local import, as `configure_runtime` does.
+
+**Size rule:** every file in those folders, and both entrypoints, stays at or under 800 lines (aim for 200–600). `python3 scripts/check_module_size.py` enforces it in the CI `quality` job. The agent loop stays under it by keeping only the run orchestration in `agent/loop`: tool-call execution lives in `agent/tool_execution`, the other run steps (deadlines, model requests, token usage, pending approvals) in `agent/run_steps`, and plan compilation in `agent/plan_compiler`. The steps share one run-state object (`_RunState` / `RunState`), and values that change mid-run (Python: `deadline_hit`, `tool_policy`, `active_visible_tool_names`; TypeScript: `toolPolicy`, `activeVisibleToolNames`) are read and written there by the loop too. TypeScript step functions read `AgentLoop`'s private fields through the `AgentLoopInternals` `this` type, so the published `AgentLoop` declaration stays unchanged. When a module nears the cap, split it by theme inside the same folder, in both languages.
+
 ## Code conventions
 
 - Keep Python and TypeScript semantics aligned and add focused tests in both languages when adding a runtime contract (see "Contract evolution and migration" in `Architecture-and-Extensions.md`).
 - Provider payload builders may cache conversions only with strong references to the cached inputs.
 - Define each helper name once per module; in Python and JavaScript a later definition silently replaces an earlier one.
+- TypeScript formatting comes from `typescript/.prettierrc` (tabs, single quotes); keep it in the repository so `npm run format:check` gives the same result locally and in CI.
 - Keep deterministic gates offline: tests, security scans, and adversarial scans must not call a real LLM or external model API.
 - Keep documentation current: `README.md` for user-facing capabilities, `docs/` for durable architecture, and `docs/MIGRATION.md` when a compatibility surface changes.
 

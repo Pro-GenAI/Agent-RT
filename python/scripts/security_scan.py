@@ -266,7 +266,17 @@ def scan_agent_llm(audit: Audit) -> None:
     if not path.exists():
         audit.notes.append("Agent/LLM scan skipped: python/src/agent_rt.py is missing.")
         return
-    text = path.read_text(encoding="utf-8")
+    # The core is split across ext/runtime; scan it as one text and report
+    # the file that holds each match.
+    sources = [path, *sorted((SRC / "ext" / "runtime").rglob("*.py"))]
+    texts = {source: source.read_text(encoding="utf-8") for source in sources}
+    text = "\n".join(texts.values())
+
+    def locate(needle: str) -> tuple[Path, int]:
+        for source, source_text in texts.items():
+            if needle in source_text:
+                return source, line_of(source_text, needle)
+        return path, 1
 
     checks = [
         (
@@ -304,8 +314,7 @@ def scan_agent_llm(audit: Audit) -> None:
                 rule,
                 severity,
                 "agent-llm",
-                path,
-                line_of(text, needle),
+                *locate(needle),
                 message,
                 remediation,
                 "medium",
@@ -322,8 +331,7 @@ def scan_agent_llm(audit: Audit) -> None:
             "PY-LLM-005",
             "info",
             "agent-llm",
-            path,
-            line_of(text, "class AgentRunLimits:"),
+            *locate("class AgentRunLimits:"),
             "AgentRunLimits has no wall-clock timeout by default.",
             "Set a finite timeout for network-facing and multi-tenant execution.",
             "medium",
@@ -333,8 +341,7 @@ def scan_agent_llm(audit: Audit) -> None:
             "PY-LLM-006",
             "info",
             "agent-llm",
-            path,
-            line_of(text, "class AgentRunLimits:"),
+            *locate("class AgentRunLimits:"),
             "AgentRunLimits has no total-token budget by default.",
             "Set a finite token budget to constrain denial-of-wallet/resource exhaustion.",
             "medium",
@@ -352,7 +359,7 @@ def scan_agent_llm(audit: Audit) -> None:
     )
     audit.require(
         text,
-        "call.name not in active_visible_tool_names",
+        "call.name not in run.active_visible_tool_names",
         "PY-LLM-102",
         "critical",
         "agent-llm",
@@ -380,8 +387,7 @@ def scan_agent_llm(audit: Audit) -> None:
             "PY-LLM-104",
             "high",
             "agent-llm",
-            path,
-            line_of(text, "boundary_guardrail_policy"),
+            *locate("boundary_guardrail_policy"),
             "Default input/output boundary guardrails do not appear enabled.",
             "Keep bounded/sanitizing boundary guardrails enabled by default.",
             "high",

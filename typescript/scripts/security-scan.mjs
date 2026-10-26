@@ -243,7 +243,21 @@ function scanAgentLlm(audit) {
 		);
 		return;
 	}
-	const text = fs.readFileSync(filePath, 'utf8');
+	// The core is split across src/runtime; scan it as one text and report
+	// the file that holds each match.
+	const texts = new Map(
+		[filePath, ...walkFiles(path.join(SRC, 'runtime'), ['.ts'])].map(
+			(source) => [source, fs.readFileSync(source, 'utf8')],
+		),
+	);
+	const text = [...texts.values()].join('\n');
+	const locate = (needle) => {
+		for (const [source, sourceText] of texts) {
+			if (sourceText.includes(needle))
+				return [source, lineOf(sourceText, needle)];
+		}
+		return [filePath, 1];
+	};
 
 	const checks = [
 		{
@@ -288,8 +302,7 @@ function scanAgentLlm(audit) {
 				check.id,
 				check.severity,
 				'agent-llm',
-				filePath,
-				lineOf(text, check.needle),
+				...locate(check.needle),
 				check.message,
 				check.remediation,
 				'medium',
@@ -303,8 +316,7 @@ function scanAgentLlm(audit) {
 			'TS-LLM-005',
 			'info',
 			'agent-llm',
-			filePath,
-			lineOf(text, 'export interface AgentRunLimits'),
+			...locate('export interface AgentRunLimits'),
 			'AgentRunLimits has no wall-clock timeout by default.',
 			'Set a finite timeout for network-facing and multi-tenant execution.',
 			'medium',
@@ -315,8 +327,7 @@ function scanAgentLlm(audit) {
 			'TS-LLM-006',
 			'info',
 			'agent-llm',
-			filePath,
-			lineOf(text, 'export interface AgentRunLimits'),
+			...locate('export interface AgentRunLimits'),
 			'AgentRunLimits has no total-token budget by default.',
 			'Set a finite token budget to constrain denial-of-wallet/resource exhaustion.',
 			'medium',

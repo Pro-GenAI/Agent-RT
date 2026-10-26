@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 
-import agent_rt
 from agent_rt import (
     AgentConfig,
     AgentLoop,
@@ -36,6 +35,7 @@ from agent_rt import (
 )
 from agent_rt_api import AgentRTAPIServer, build_from_config
 from ext.config import config_search_paths, discover_config_path, parse_config
+from ext.runtime import settings as runtime_settings_store
 
 CONFIG = textwrap.dedent("""
     model_list:
@@ -229,7 +229,7 @@ class TestParsing:
             configure_runtime(parse())
             assert runtime_settings()["AGENT_RT_EXECUTION_TIMEOUT_SECONDS"] == "7"
         finally:
-            agent_rt._RUNTIME_SETTINGS = previous
+            runtime_settings_store._RUNTIME_SETTINGS = previous
 
 
 def text_response(text: str) -> ModelResponse:
@@ -548,7 +548,9 @@ class TestApiFileSearch:
 
     def test_build_from_config_creates_agent_per_model(self, monkeypatch):
         # build_from_config calls configure_runtime; restore the global afterwards.
-        monkeypatch.setattr(agent_rt, "_RUNTIME_SETTINGS", runtime_settings())
+        monkeypatch.setattr(
+            runtime_settings_store, "_RUNTIME_SETTINGS", runtime_settings()
+        )
         built = build_from_config(
             parse(), provider_factory=lambda _d: RecordingProvider("x")
         )

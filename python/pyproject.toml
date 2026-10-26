@@ -125,6 +125,9 @@ artie = "agent_rt_cli:main"
 extend-ignore = ["PLC0414", "BLE001", "TRY004", "B008"]
 
 [tool.ruff.lint.per-file-ignores]
+# The public entrypoint and the lazy facade only re-export ext.runtime modules.
+"src/agent_rt.py" = ["F401"]
+"src/ext/runtime/optional.py" = ["F401"]
 # Test fixtures: blocking git setup in async tests and throwaway class attrs.
 "tests/**" = ["ASYNC221", "RUF012"]
 

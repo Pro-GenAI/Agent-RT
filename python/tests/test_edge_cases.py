@@ -7,7 +7,6 @@ from dataclasses import replace
 
 import pytest
 
-import agent_rt as agent_rt_core
 from agent_rt import (
     PII_MORPHER_DISABLE_ENV,
     ActionBlockedError,
@@ -227,6 +226,7 @@ from agent_rt import (
     sandbox_backend_from_env,
     sandbox_shell_tool,
 )
+from ext.runtime import settings as runtime_settings_store
 
 
 def msg(role, text="", tool_calls=()):
@@ -4504,8 +4504,8 @@ class TestToolContract:
             "AGENT_RT_EXECUTION_MEMORY_BYTES",
             "AGENT_RT_EXECUTION_CPU_SECONDS",
         )
-        previous = agent_rt_core._RUNTIME_SETTINGS
-        agent_rt_core._RUNTIME_SETTINGS = {
+        previous = runtime_settings_store._RUNTIME_SETTINGS
+        runtime_settings_store._RUNTIME_SETTINGS = {
             names[0]: "3.5",
             names[1]: "8192",
             names[2]: "1.25",
@@ -4524,7 +4524,7 @@ class TestToolContract:
             assert session.limits.memory_bytes == 16384
             assert session.limits.cpu_seconds == 1.25
         finally:
-            agent_rt_core._RUNTIME_SETTINGS = previous
+            runtime_settings_store._RUNTIME_SETTINGS = previous
 
     def test_sandbox_command_is_cancelled_with_owning_task(self):
         async def scenario():
