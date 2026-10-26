@@ -99,7 +99,7 @@ client.chat.completions.create(
 | `web_search` | `tool` (`tavily`, `brave`, `serper`), `api_key`, `timeout_seconds` |
 | `decision_model` | `provider` (`jev`, the default, or `openai` for the OpenAI Decisions API), `base_url`, `model`, `timeout_seconds`, `api_key`. With `provider: openai`, `base_url` defaults to `https://api.openai.com/v1` and `model` to `gpt-6-luna`; `api_key` is required. |
 | `observability` | `api_key`, `base_url`, `headers`, `trace_content`, `telemetry_enabled`, `enrich_tokens`, `app_name` (OpenLLMetry/Traceloop) |
-| `cli` | `home` (sessions and skills root, default `~/.agent-rt`), `compact_token_limit` (`agent-rt web` uses `compact_token_limit` and `home` for skills; its sessions live in the browser) |
+| `cli` | `home` (sessions and skills root, default `~/.agent-rt`), `compact_token_limit` (`agent-rt web` uses both too: its sessions share `home`/sessions with the terminal CLI) |
 
 Lists are written as YAML lists; `headers` is a mapping. Unknown sections and keys fail at load time. `configure_runtime(config)` / `configureRuntime(config)` applies these settings to the runtime's implicit defaults (and starts OpenLLMetry when configured); the CLI and `agent_rt_api.build_from_config` call it for you. Settings that are passed explicitly to a constructor always win.
 

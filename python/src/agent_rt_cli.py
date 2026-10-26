@@ -14,6 +14,7 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -843,6 +844,20 @@ def _safe_session_name(value: str) -> str:
     return cleaned[:120]
 
 
+def _session_title(raw_messages: Any) -> str:
+    """The first user prompt, as the web client titles a new session."""
+    for item in raw_messages if isinstance(raw_messages, list) else ():
+        if isinstance(item, Mapping) and item.get("role") == "user":
+            parts = item.get("content") or ()
+            text = "".join(
+                str(part.get("text") or "")
+                for part in parts
+                if isinstance(part, Mapping) and part.get("type") == "text"
+            )
+            return " ".join(text.split())[:60]
+    return ""
+
+
 def _agent_rt_home() -> Path:
     configured = _CLI_SETTINGS.get("home")
     return Path(configured or Path.home() / ".agent-rt").expanduser()
@@ -1132,7 +1147,9 @@ class TranscriptStore:
         model: str,
         instructions: str,
         messages: Sequence[ModelMessage],
+        **metadata: Any,
     ) -> Path:
+        """``metadata`` (workspace, title, auto_approve) is optional; unset (None) keys are dropped."""
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         path = self.path_for(session_id)
         payload = {
@@ -1140,6 +1157,7 @@ class TranscriptStore:
             "session_id": session_id,
             "model": model,
             "instructions": instructions,
+            **{key: value for key, value in metadata.items() if value is not None},
             "messages": [_serialize_message(message) for message in messages],
         }
         temporary = path.with_suffix(".tmp")
@@ -1164,6 +1182,10 @@ class TranscriptStore:
             "session_id": str(data.get("session_id") or session_id),
             "model": str(data.get("model") or ""),
             "instructions": str(data.get("instructions") or DEFAULT_INSTRUCTIONS),
+            "workspace": str(data.get("workspace") or ""),
+            "title": str(data.get("title") or _session_title(raw_messages)),
+            "auto_approve": data.get("auto_approve") is True,
+            "updated": int(path.stat().st_mtime * 1000),
             "messages": tuple(_deserialize_message(item) for item in raw_messages),
         }
 
@@ -1178,6 +1200,27 @@ class TranscriptStore:
         if not self.root.exists():
             return ()
         return tuple(sorted(path.stem for path in self.root.glob("*.json")))
+
+    def summaries(self) -> list[dict[str, Any]]:
+        """List fields of every readable session, newest first; ``id`` is the file name to load."""
+        # shortcut: parses every whole transcript, fine for hundreds; add an index file if lists get slow.
+        found = []
+        for name in self.list():
+            try:
+                data = self.load(name)
+            except (OSError, ValueError, TypeError, KeyError):
+                continue  # a corrupt or half-written file must not hide the other sessions
+            found.append(
+                {
+                    "id": name,
+                    "title": data["title"],
+                    "workspace": data["workspace"],
+                    "model": data["model"],
+                    "messages": len(data["messages"]),
+                    "updated": data["updated"],
+                }
+            )
+        return sorted(found, key=lambda item: item["updated"], reverse=True)
 
 
 StreamListener = Callable[[ModelStreamEvent], Any]
@@ -1300,6 +1343,8 @@ class ChatSession:
             model=self.model,
             instructions=self.instructions,
             messages=self.messages,
+            # Lets the web client list this session under the folder it belongs to.
+            workspace=str(self.workspace_tools.root) if self.workspace_tools else None,
         )
 
     async def send(
@@ -1948,6 +1993,7 @@ def build_parser() -> argparse.ArgumentParser:
             "agent-rt opencode run PROMPT | agent-rt copilot -p PROMPT. "
             "Move a project's framework imports to Agent RT, verified by its tests: agent-rt migrate [PATH]. "
             "Chat in your browser (needs agent-rt[web]): agent-rt web. "
+            "Manage the sessions both clients share: agent-rt session list | delete ID. "
             "Offline tour on a mock model: agent-rt demo [--web]"
         ),
     )
@@ -2235,8 +2281,62 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
     return await terminal.run()
 
 
+def session_main(argv: Sequence[str]) -> int:
+    """``agent-rt session list|delete``: the store the terminal and web clients share."""
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
+        "-c", "--config", type=Path, help="path to the YAML config file (for cli.home)"
+    )
+    parser = argparse.ArgumentParser(
+        prog="agent-rt session",
+        description="List or delete sessions saved by agent-rt and agent-rt web.",
+        parents=[common],
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("list", parents=[common], help="list saved sessions, newest first")
+    delete = commands.add_parser("delete", parents=[common], help="delete a saved session")
+    delete.add_argument("session_id")
+    args = parser.parse_args(argv)
+    try:
+        config = load_config(args.config)
+    except ConfigNotFoundError:
+        if args.config is not None:  # a path the user typed must exist
+            print(f"agent-rt session: config not found: {args.config}", file=sys.stderr)
+            return 2
+        config = AgentRTConfig()
+    except Exception as exc:  # noqa: BLE001 - report any config error as one line
+        print(f"agent-rt session: configuration error: {exc}", file=sys.stderr)
+        return 2
+    _CLI_SETTINGS.clear()
+    _CLI_SETTINGS.update(config.settings.get("cli") or {})
+    store = TranscriptStore()
+    if args.command == "list":
+        sessions = store.summaries()
+        if not sessions:
+            print("No saved sessions.")
+        for item in sessions:
+            updated = datetime.fromtimestamp(item["updated"] / 1000, timezone.utc).astimezone()
+            print(
+                f"{item['id']}\t{updated:%Y-%m-%d %H:%M}\t{item['messages']} messages\t"
+                f"{item['title'] or 'untitled'}\t{item['workspace']}"
+            )
+        return 0
+    try:
+        deleted = store.delete(args.session_id)
+    except (OSError, ValueError) as exc:
+        print(f"agent-rt session: {exc}", file=sys.stderr)
+        return 2
+    if not deleted:
+        print(f"agent-rt session: session not found: {args.session_id}", file=sys.stderr)
+        return 1
+    print(f"Deleted session {args.session_id}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["session"]:
+        return session_main(argv[1:])
     if argv[:1] == ["migrate"]:
         from ext.migrate import main as migrate_main
 
@@ -2265,6 +2365,7 @@ __all__ = (
     "build_workspace_session",
     "load_config_or_create",
     "main",
+    "session_main",
 )
 
 

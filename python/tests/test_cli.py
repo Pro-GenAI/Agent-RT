@@ -38,6 +38,7 @@ from agent_rt_cli import (
     async_main,
     build_parser,
     load_config_or_create,
+    session_main,
     with_builtin_models,
 )
 from ext.config import ConfigNotFoundError
@@ -164,6 +165,69 @@ class TestTranscriptStore:
             )
             assert store.delete("one")
             assert not store.delete("one")
+
+    def test_summaries_title_newest_first_and_skip_corrupt_files(self, tmp_path):
+        store = TranscriptStore(tmp_path)
+        prompt = ModelMessage(
+            role="user", content=(ContentPart(type="text", text="fix  the\nbug"),)
+        )
+        store.save("old", model="m", instructions="i", messages=(prompt,))
+        os.utime(store.path_for("old"), (1, 1))
+        store.save(
+            "new", model="m", instructions="i", messages=(), workspace="/ws", title="named"
+        )
+        (tmp_path / "broken.json").write_text("{", encoding="utf-8")
+
+        summaries = store.summaries()
+
+        assert [(s["id"], s["title"], s["workspace"]) for s in summaries] == [
+            ("new", "named", "/ws"),
+            ("old", "fix the bug", ""),
+        ]
+        assert summaries[1]["messages"] == 1
+
+
+class TestSessionCommand:
+    def write_config(self, tmp_path):
+        config = tmp_path / "agent-rt.yaml"
+        config.write_text(
+            f"agent_rt_settings:\n  cli:\n    home: {tmp_path / 'home'}\n",
+            encoding="utf-8",
+        )
+        return config
+
+    def test_list_and_delete_share_the_configured_store(self, tmp_path, capsys):
+        config = self.write_config(tmp_path)
+        store = TranscriptStore(tmp_path / "home" / "sessions")
+        prompt = ModelMessage(
+            role="user", content=(ContentPart(type="text", text="hello web"),)
+        )
+        store.save("abc123", model="m", instructions="i", messages=(prompt,), workspace="/ws")
+
+        assert session_main(["list", "-c", str(config)]) == 0
+        line = capsys.readouterr().out.strip()
+        assert line.startswith("abc123\t") and "1 messages\thello web\t/ws" in line
+
+        assert session_main(["delete", "abc123", "-c", str(config)]) == 0
+        assert "Deleted session abc123" in capsys.readouterr().out
+        assert store.list() == ()
+        assert session_main(["delete", "abc123", "-c", str(config)]) == 1
+        assert "session not found" in capsys.readouterr().err
+        assert session_main(["list", "-c", str(config)]) == 0
+        assert capsys.readouterr().out.strip() == "No saved sessions."
+
+    def test_missing_explicit_config_is_an_error(self, tmp_path, capsys):
+        assert session_main(["list", "-c", str(tmp_path / "nope.yaml")]) == 2
+        assert "config not found" in capsys.readouterr().err
+
+    def test_chat_session_save_records_its_workspace(self, tmp_path):
+        tools = WorkspaceCodeTools(tmp_path)
+        store = TranscriptStore(tmp_path / "sessions")
+        session = ChatSession(
+            SimpleNamespace(), model="m", session_id="s1", store=store, workspace_tools=tools
+        )
+        session.save()
+        assert store.load("s1")["workspace"] == str(tmp_path.resolve())
 
 
 class TestWorkspaceCodeTools:

@@ -20,7 +20,7 @@ from agent_rt import (
     ModelUsage,
     ToolCall,
 )
-from agent_rt_cli import ChatSession, WorkspaceCodeTools
+from agent_rt_cli import ChatSession, TranscriptStore, WorkspaceCodeTools
 from agent_rt_web import WebChat, create_web_app
 
 TARGET = os.environ.get("AGENT_RT_BROWSER", "")
@@ -115,7 +115,11 @@ def server(tmp_path):
         )
 
     chat = WebChat(
-        make_session, model="demo-model", models=("demo-large",), workspace=workspace
+        make_session,
+        model="demo-model",
+        models=("demo-large",),
+        workspace=workspace,
+        store=TranscriptStore(tmp_path / "sessions"),
     )
     instance = uvicorn.Server(
         uvicorn.Config(
@@ -313,46 +317,27 @@ def test_incremental_markdown_matches_a_full_render(browser, server):
     context.close()
 
 
-def test_sessions_saved_before_the_title_index_still_list(browser, server):
+def test_terminal_sessions_list_open_and_web_sessions_reach_the_store(browser, server):
     url, workspace = server
+    store = TranscriptStore(workspace.parent / "sessions")
+    prompt = ModelMessage(
+        role="user", content=(ContentPart(type="text", text="asked in the terminal"),)
+    )
+    store.save(
+        "cli1",
+        model="demo-model",
+        instructions="i",
+        messages=(prompt,),
+        workspace=str(workspace),
+    )
     context = browser.new_context()
     page = context.new_page()
-    # Same origin, but the app does not open its database here.
-    page.goto(url.split("?")[0] + "missing")
-    page.evaluate(
-        """(ws) => new Promise((resolve, reject) => {
-          const req = indexedDB.open("agent-rt", 1);
-          req.onupgradeneeded = () => req.result.createObjectStore("sessions", { keyPath: "id" });
-          req.onsuccess = () => {
-            const t = req.result.transaction("sessions", "readwrite");
-            t.objectStore("sessions").put({ id: "old1", workspace: ws, title: "old session",
-              model: "demo-model", autoApprove: false, messages: [], updated: 1 });
-            t.oncomplete = () => { req.result.close(); resolve(); };
-          };
-          req.onerror = () => reject(req.error);
-        })""",
-        str(workspace),
-    )
     page.goto(url)
-    expect(page.locator("#sessions .open", has_text="old session")).to_have_count(1)
-    context.close()
-
-
-def test_unavailable_indexeddb_warns_sessions_are_temporary(browser, server):
-    url, _ = server
-    context = browser.new_context()
-    page = context.new_page()
-    page.add_init_script(
-        "Object.defineProperty(window, 'indexedDB', { value: undefined });"
-    )
-    page.goto(url)
-    page.wait_for_selector(".empty")
-    expect(page.locator("#storage-warning")).to_be_visible()
+    page.click("#sessions .open:has-text('asked in the terminal')")
+    expect(page.locator(".turn.user", has_text="asked in the terminal")).to_be_visible()
     send(page, "explain")
     wait_idle(page)
-    page.reload()
-    page.wait_for_selector(".empty")
-    expect(page.locator("#storage-warning")).to_be_visible()
+    assert len(store.load("cli1")["messages"]) > 1
     context.close()
 
 
@@ -417,19 +402,20 @@ def test_stop_cancels_the_run_and_its_pending_edit(browser, server):
 
 
 def test_link_to_another_workspaces_session_opens_a_new_one(browser, server):
-    url, _ = server
+    url, workspace = server
+    secret = ModelMessage(
+        role="user", content=(ContentPart(type="text", text="secret plan"),)
+    )
+    TranscriptStore(workspace.parent / "sessions").save(
+        "elsewhere1",
+        model="demo-model",
+        instructions="i",
+        messages=(secret,),
+        workspace="/some/other/folder",
+    )
     context = browser.new_context()
     page = context.new_page()
-    page.goto(url)
-    page.wait_for_selector(".empty")
-    page.evaluate(
-        """() => store.put({ id: "elsewhere1", workspace: "/some/other/folder", title: "other",
-          model: "demo-model", autoApprove: false,
-          messages: [{ role: "user", content: [{ type: "text", text: "secret plan" }] }],
-          updated: 1 })"""
-    )
     page.goto(url + "#elsewhere1")
-    page.reload()
     page.wait_for_selector(".empty")
     expect(page.get_by_text("secret plan")).to_have_count(0)
     context.close()

@@ -20,7 +20,9 @@ from agent_rt import (
 )
 from agent_rt_cli import (
     _CLI_SETTINGS,
+    DEFAULT_INSTRUCTIONS,
     ChatSession,
+    TranscriptStore,
     _deserialize_message,
     _discover_cli_skills,
     _skill_warning_consequences,
@@ -28,6 +30,7 @@ from agent_rt_cli import (
     _package_version,
     _positive_int,
     _provider_model_ids,
+    _safe_session_name,
     _serialize_message,
     _startup_model,
     build_workspace_session,
@@ -106,7 +109,8 @@ def parse_history(value: Any) -> tuple[ModelMessage, ...]:
 
 
 class WebChat:
-    """Stateless chat backend: the browser stores sessions and sends the history with each prompt."""
+    """Stateless chat backend: the page keeps sessions in the store the terminal client shares
+    (``~/.agent-rt/sessions``) and sends the history with each prompt."""
 
     def __init__(
         self,
@@ -116,8 +120,10 @@ class WebChat:
         models: Sequence[str],
         workspace: Path,
         discover: Callable[[], Awaitable[Sequence[str]]] | None = None,
+        store: TranscriptStore | None = None,
     ) -> None:
         self.make_session = make_session
+        self.store = store or TranscriptStore()
         self.model = model
         self.models = tuple(dict.fromkeys((model, *models)))
         self.discover = discover
@@ -493,6 +499,82 @@ def create_web_app(
     async def info(request: Request) -> Any:
         return JSONResponse(chat.info())
 
+    def ours(workspace: str) -> bool:
+        # Sessions saved before workspaces were recorded show in every folder.
+        return not workspace or Path(workspace).resolve() == chat.workspace.resolve()
+
+    def session_id(request: Request) -> str:
+        value = request.path_params["id"]
+        try:
+            if _safe_session_name(value) == value:
+                return value
+        except ValueError:
+            pass
+        raise HTTPException(400, "invalid session id")
+
+    async def sessions(request: Request) -> Any:
+        found = await asyncio.to_thread(chat.store.summaries)
+        return JSONResponse(
+            {"sessions": [item for item in found if ours(item["workspace"])]}
+        )
+
+    async def session(request: Request) -> Any:
+        name = session_id(request)
+        try:
+            data = await asyncio.to_thread(chat.store.load, name)
+        except FileNotFoundError:
+            data = None
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(500, f"unreadable session: {exc}") from exc
+        # Another folder's history is not shown here: its tools and files belong there.
+        if data is None or not ours(data["workspace"]):
+            raise HTTPException(404, "session not found")
+        if request.method == "DELETE":
+            await asyncio.to_thread(chat.store.delete, name)
+            return JSONResponse({"ok": True})
+        return JSONResponse(
+            {
+                "id": name,
+                "workspace": data["workspace"] or str(chat.workspace),
+                "title": data["title"],
+                "model": data["model"] or chat.model,
+                "autoApprove": data["auto_approve"],
+                "messages": [_serialize_message(m) for m in data["messages"]],
+                "updated": data["updated"],
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+
+    async def save_session(request: Request) -> Any:
+        name = session_id(request)
+        data = await body(request)
+        model = text_field(data, "model")
+        title = data.get("title", "")
+        if not isinstance(title, str):
+            raise HTTPException(400, "title must be a string")
+        try:
+            messages = parse_history(data.get("messages", []))
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(400, f"invalid messages: {exc}") from exc
+        try:
+            instructions = (await asyncio.to_thread(chat.store.load, name))[
+                "instructions"
+            ]
+        except (OSError, ValueError, TypeError):
+            instructions = DEFAULT_INSTRUCTIONS  # new, or unreadable and now replaced
+        await asyncio.to_thread(
+            lambda: chat.store.save(
+                name,
+                model=model,
+                instructions=instructions,
+                messages=messages,
+                workspace=str(chat.workspace),
+                title=title.strip()[:200],
+                auto_approve=data.get("autoApprove") is True,
+            )
+        )
+        return JSONResponse({"ok": True})
+
     async def models(request: Request) -> Any:
         return JSONResponse({"models": list(await chat.all_models())})
 
@@ -538,6 +620,9 @@ def create_web_app(
             Route("/api/info", info),
             Route("/api/models", models),
             Route("/api/approval", approval, methods=["POST"]),
+            Route("/api/sessions", sessions),
+            Route("/api/sessions/{id}", session, methods=["GET", "DELETE"]),
+            Route("/api/sessions/{id}/save", save_session, methods=["POST"]),
             Route("/api/chat", send, methods=["POST"]),
         ],
         middleware=[

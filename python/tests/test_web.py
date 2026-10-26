@@ -94,7 +94,11 @@ def make_chat(tmp_path):
         )
 
     chat = WebChat(
-        make_session, model="test-model", models=("other-model",), workspace=workspace
+        make_session,
+        model="test-model",
+        models=("other-model",),
+        workspace=workspace,
+        store=TranscriptStore(tmp_path / "sessions"),
     )
     return chat, workspace, provider
 
@@ -230,6 +234,69 @@ def signed_in_client(chat):
     assert client.get(f"/?token={chat.token}").status_code == 200
     client.headers["x-agent-rt"] = "1"
     return client
+
+
+def test_sessions_are_shared_with_the_cli_store_per_workspace(tmp_path):
+    chat, workspace, _ = make_chat(tmp_path)
+    client = signed_in_client(chat)
+    store = chat.store
+    prompt = [{"role": "user", "content": [{"type": "text", "text": "from the web"}]}]
+
+    assert client.get("/api/sessions").json() == {"sessions": []}
+    saved = client.post(
+        "/api/sessions/web1/save",
+        json={
+            "model": "test-model",
+            "title": "web title",
+            "autoApprove": True,
+            "messages": prompt,
+            "workspace": "/ignored",
+        },
+    )
+    assert saved.status_code == 200
+    # The terminal client sees it, under this server's workspace.
+    loaded = store.load("web1")
+    assert (loaded["title"], loaded["workspace"]) == ("web title", str(workspace))
+    assert loaded["messages"][0].content[0].text == "from the web"
+
+    # A terminal session (custom instructions) shows in the page and keeps its instructions.
+    cli = ModelMessage(
+        role="user", content=(ContentPart(type="text", text="from cli"),)
+    )
+    store.save(
+        "cli1",
+        model="m",
+        instructions="custom",
+        messages=(cli,),
+        workspace=str(workspace),
+    )
+    store.save("legacy", model="m", instructions="i", messages=())
+    store.save(
+        "other", model="m", instructions="i", messages=(), workspace=str(tmp_path)
+    )
+    ids = {item["id"] for item in client.get("/api/sessions").json()["sessions"]}
+    assert ids == {"web1", "cli1", "legacy"}
+    opened = client.get("/api/sessions/cli1").json()
+    assert (opened["title"], opened["autoApprove"]) == ("from cli", False)
+    assert opened["messages"][0]["content"][0]["text"] == "from cli"
+    client.post("/api/sessions/cli1/save", json={"model": "m", "messages": prompt})
+    assert store.load("cli1")["instructions"] == "custom"
+
+    # Another folder's session is neither readable nor deletable here.
+    assert client.get("/api/sessions/other").status_code == 404
+    assert client.delete("/api/sessions/other").status_code == 404
+    assert client.get("/api/sessions/a%20b").status_code == 400
+    system = [{"role": "system", "content": [{"type": "text", "text": "x"}]}]
+    assert (
+        client.post(
+            "/api/sessions/x/save", json={"model": "m", "messages": system}
+        ).status_code
+        == 400
+    )
+
+    assert client.delete("/api/sessions/web1").status_code == 200
+    assert store.list() == ("cli1", "legacy", "other")
+    assert client.get("/api/sessions/web1").status_code == 404
 
 
 def test_launch_link_trades_token_for_cookie_and_api_needs_it(tmp_path):
