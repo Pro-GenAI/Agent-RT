@@ -98,6 +98,8 @@ const SECTION_ENVIRONMENT: Readonly<
 		base_url: 'AGENT_RT_JEV_BASE_URL',
 		model: 'AGENT_RT_JEV_MODEL',
 		timeout_seconds: 'AGENT_RT_JEV_TIMEOUT_SECONDS',
+		provider: 'AGENT_RT_DECISION_PROVIDER',
+		api_key: 'AGENT_RT_' + 'DECISION_' + 'API_KEY',
 	},
 	observability: {
 		api_key: 'TRACELOOP_' + 'API_KEY',

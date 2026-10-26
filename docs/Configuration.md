@@ -97,7 +97,7 @@ client.chat.completions.create(
 | `execution_limits` | `timeout_seconds`, `memory_bytes`, `cpu_seconds` (defaults for every tool call and sandbox session) |
 | `sandbox` | `backend`, `workspace_root`, `native_root`, `docker_image`, `docker_binary`, `docker_user`, `docker_read_only`, `e2b_template`, `microsandbox_image`, `swerex_url`, `swerex_api_key`, `uid`, `gid`, `network_mode`, `network_max_transfer_bytes`, `network_max_bytes_per_second`, `allowed_domains`, `blocked_domains`, `allow_http`, `allow_ip`, `allow_proxy`, `allow_websocket`, `setpriv_binary`, `prlimit_binary` |
 | `web_search` | `tool` (`tavily`, `brave`, `serper`), `api_key`, `timeout_seconds` |
-| `decision_model` | `base_url`, `model`, `timeout_seconds` (Jev-compatible Decision model host) |
+| `decision_model` | `provider` (`jev`, the default, or `openai` for the OpenAI Decisions API), `base_url`, `model`, `timeout_seconds`, `api_key`. With `provider: openai`, `base_url` defaults to `https://api.openai.com/v1` and `model` to `gpt-6-luna`; `api_key` is required. |
 | `observability` | `api_key`, `base_url`, `headers`, `trace_content`, `telemetry_enabled`, `enrich_tokens`, `app_name` (OpenLLMetry/Traceloop) |
 | `cli` | `home` (sessions and skills root, default `~/.agent-rt`), `compact_token_limit` (`agent-rt web` uses `compact_token_limit` and `home` for skills; its sessions live in the browser) |
 

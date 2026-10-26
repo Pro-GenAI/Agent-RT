@@ -60,6 +60,10 @@ class DecisionProvider(Protocol):
 JEV_BASE_URL_ENV = "AGENT_RT_JEV_BASE_URL"
 JEV_MODEL_ENV = "AGENT_RT_JEV_MODEL"
 JEV_TIMEOUT_SECONDS_ENV = "AGENT_RT_JEV_TIMEOUT_SECONDS"
+DECISION_PROVIDER_ENV = "AGENT_RT_DECISION_PROVIDER"
+DECISION_API_KEY_ENV = "AGENT_RT_DECISION_API_KEY"  # pragma: allowlist secret
+DEFAULT_OPENAI_DECISIONS_BASE_URL = "https://api.openai.com/v1"
+DEFAULT_OPENAI_DECISIONS_MODEL = "gpt-6-luna"
 DEFAULT_JEV_BASE_URL = "http://127.0.0.1:8000"
 DEFAULT_JEV_TIMEOUT_SECONDS = 10.0
 
@@ -111,7 +115,7 @@ class JevDecisionProvider:
             if resolved_model is not None and resolved_model.strip()
             else None
         )
-        self.api_key = api_key
+        self.api_key = api_key if api_key is not None else env.get(DECISION_API_KEY_ENV)
         self.timeout_seconds = resolved_timeout
 
     @classmethod
@@ -122,33 +126,159 @@ class JevDecisionProvider:
     ) -> JevDecisionProvider:
         return cls(environ=environ)
 
-    def decide(self, state: Any, questions: DecisionQuestions) -> DecisionAnswers:
-        if not questions:
-            return {}
+    def _post(self, url: str, body: Mapping[str, Any]) -> Any:
         headers = {"content-type": "application/json"}
         if self.api_key:
             headers["authorization"] = f"Bearer {self.api_key}"
-        body: dict[str, Any] = {
-            "state": state,
-            "questions": dict(questions),
-        }
-        if self.model is not None:
-            body["model"] = self.model
         request = Request(
-            f"{self.base_url}/v1/systemone",
+            url,
             data=json.dumps(body).encode("utf-8"),
             headers=headers,
             method="POST",
         )
         # base_url is parsed above and restricted to http/https before urlopen.
         with urlopen(request, timeout=self.timeout_seconds) as response:  # nosec B310
-            payload = json.loads(response.read().decode("utf-8"))
+            return json.loads(response.read().decode("utf-8"))
+
+    def decide(self, state: Any, questions: DecisionQuestions) -> DecisionAnswers:
+        if not questions:
+            return {}
+        body: dict[str, Any] = {
+            "state": state,
+            "questions": dict(questions),
+        }
+        if self.model is not None:
+            body["model"] = self.model
+        payload = self._post(f"{self.base_url}/v1/systemone", body)
         answers = payload.get("answers")
         if not isinstance(answers, Mapping):
             raise ValueError(
                 "decision provider response must contain an answers object"
             )
         return answers
+
+
+class OpenAIDecisionProvider(JevDecisionProvider):
+    """Serve Jev-style ``noul``/``choice`` questions from OpenAI's POST /v1/decisions."""
+
+    def __init__(
+        self,
+        base_url: str | None = None,
+        *,
+        model: str | None = None,
+        api_key: str | None = None,
+        timeout_seconds: float | None = None,
+        environ: Mapping[str, str] | None = None,
+    ) -> None:
+        env = runtime_settings() if environ is None else environ
+        super().__init__(
+            base_url
+            or env.get(JEV_BASE_URL_ENV)
+            or DEFAULT_OPENAI_DECISIONS_BASE_URL,
+            model=model or env.get(JEV_MODEL_ENV) or DEFAULT_OPENAI_DECISIONS_MODEL,
+            api_key=api_key,
+            timeout_seconds=timeout_seconds,
+            environ=env,
+        )
+        if not self.api_key:
+            raise ValueError("OpenAI Decisions API requires an api_key")
+
+    def decide(self, state: Any, questions: DecisionQuestions) -> DecisionAnswers:
+        if not questions:
+            return {}
+        # Accept both OpenAI-style (".../v1") and Jev-style (host root) base URLs.
+        root = self.base_url.removesuffix("/v1")
+        payload = self._post(
+            f"{root}/v1/decisions",
+            {
+                "model": self.model,
+                "input": _openai_decision_input(state),
+                "questions": [
+                    _openai_decision_question(name, question)
+                    for name, question in questions.items()
+                ],
+            },
+        )
+        answers = payload.get("answers") if isinstance(payload, Mapping) else None
+        if not isinstance(answers, list):
+            raise ValueError("OpenAI Decisions response must contain an answers array")
+        converted = dict(_jev_decision_answer(answer) for answer in answers)
+        missing = set(questions) - set(converted)
+        if missing:
+            raise ValueError(
+                f"OpenAI Decisions response is missing answers for {sorted(missing)}"
+            )
+        return converted
+
+
+def _openai_decision_input(state: Any) -> Any:
+    if isinstance(state, str):
+        return state
+    if isinstance(state, (Mapping, list, tuple)):
+        # input_json keeps untrusted state as data rather than message structure.
+        return [
+            {"role": "user", "content": [{"type": "input_json", "data": state}]}
+        ]
+    return json.dumps(state)
+
+
+def _openai_decision_question(name: str, question: DecisionQuestion) -> dict[str, Any]:
+    kind = question.get("type")
+    instructions = question.get("instructions", "")
+    if kind == "noul":
+        return {"type": "predicate", "name": name, "instructions": instructions}
+    if kind == "choice":
+        criteria = question.get("criteria")
+        if not isinstance(criteria, Mapping) or not criteria:
+            raise ValueError(f"choice question {name!r} needs non-empty criteria")
+        return {
+            "type": "choice",
+            "name": name,
+            "instructions": instructions,
+            "choices": [
+                {"value": value, "description": str(description)}
+                for value, description in criteria.items()
+            ],
+        }
+    raise ValueError(f"OpenAI Decisions API does not support question type {kind!r}")
+
+
+def _jev_decision_answer(answer: Any) -> tuple[str, dict[str, Any]]:
+    if not isinstance(answer, Mapping) or not isinstance(answer.get("name"), str):
+        raise ValueError("OpenAI Decisions answer must be an object with a name")
+    name = answer["name"]
+    kind = answer.get("type")
+    if kind == "predicate":
+        return name, {"noul": answer.get("probability")}
+    if kind == "choice":
+        probabilities = answer.get("probabilities") or []
+        if not isinstance(probabilities, list):
+            raise ValueError("choice probabilities must be an array")
+        return name, {
+            "choice": answer.get("choice"),
+            "probabilities": {
+                item["value"]: item["probability"]
+                for item in probabilities
+                if isinstance(item, Mapping) and isinstance(item.get("value"), str)
+            },
+        }
+    if kind == "refusal":
+        raise ValueError(f"Decision model refused to answer {name!r}")
+    raise ValueError(f"unsupported OpenAI Decisions answer type {kind!r}")
+
+
+def default_decision_provider(
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> JevDecisionProvider:
+    """Build the Decision provider selected by ``agent_rt_settings.decision_model.provider``."""
+    env = runtime_settings() if environ is None else environ
+    provider = (env.get(DECISION_PROVIDER_ENV) or "jev").strip().lower()
+    if provider == "openai":
+        return OpenAIDecisionProvider(environ=env)
+    if provider == "jev":
+        return JevDecisionProvider(environ=env)
+    raise ValueError(f"unsupported decision_model provider {provider!r}")
 
 
 def _with_async_twin(function: Any) -> Any:
@@ -999,6 +1129,10 @@ __all__ = [
     "JEV_BASE_URL_ENV",
     "JEV_MODEL_ENV",
     "JEV_TIMEOUT_SECONDS_ENV",
+    "DECISION_API_KEY_ENV",
+    "DECISION_PROVIDER_ENV",
+    "DEFAULT_OPENAI_DECISIONS_BASE_URL",
+    "DEFAULT_OPENAI_DECISIONS_MODEL",
     "DecisionAnswers",
     "DecisionFilteredRetrievalProvider",
     "DecisionMemoryGuard",
@@ -1009,6 +1143,8 @@ __all__ = [
     "DecisionRetrievalReranker",
     "JevDecisionProvider",
     "MemorySafetyAssessment",
+    "OpenAIDecisionProvider",
+    "default_decision_provider",
     "filter_context_items",
     "make_decision_registration_guard",
     "make_decision_tool_output_guardrail",

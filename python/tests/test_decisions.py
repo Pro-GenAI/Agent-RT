@@ -32,6 +32,8 @@ from ext.decisions import (
     DecisionMemoryWritePolicy,
     DecisionRetrievalReranker,
     JevDecisionProvider,
+    OpenAIDecisionProvider,
+    default_decision_provider,
     filter_context_items,
     make_decision_registration_guard,
     make_decision_tool_output_guardrail,
@@ -157,6 +159,119 @@ class TestJevDecisionProvider:
             JevDecisionProvider("ftp://jev.example.test")
         with pytest.raises(ValueError, match="must not contain embedded credentials"):
             JevDecisionProvider("https://user:pass@jev.example.test")
+
+
+class TestOpenAIDecisionProvider:
+    def test_translates_jev_questions_to_decisions_api_and_back(self, monkeypatch):
+        captured = {}
+
+        class Response(_FakeHTTPResponse):
+            def read(self):
+                return json.dumps(
+                    {
+                        "answers": [
+                            {"type": "predicate", "name": "ok", "probability": 0.2},
+                            {
+                                "type": "choice",
+                                "name": "tool",
+                                "choice": "search",
+                                "probabilities": [
+                                    {"value": "search", "probability": 0.7},
+                                    {"value": "shell", "probability": 0.3},
+                                ],
+                                "confidence": 0.7,
+                            },
+                        ]
+                    }
+                ).encode()
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["auth"] = request.get_header("Authorization")
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return Response()
+
+        monkeypatch.setattr(agent_rt_decisions, "urlopen", fake_urlopen)
+        provider = default_decision_provider(
+            environ={
+                "AGENT_RT_DECISION_PROVIDER": "openai",
+                "AGENT_RT_DECISION_API_KEY": "sk-test",  # pragma: allowlist secret
+            }
+        )
+        assert isinstance(provider, OpenAIDecisionProvider)
+        answers = provider.decide(
+            {"text": "hello"},
+            {
+                "ok": {"type": "noul", "instructions": "Is this okay?"},
+                "tool": {
+                    "type": "choice",
+                    "instructions": "Which tool?",
+                    "criteria": {"search": "web search", "shell": "run commands"},
+                },
+            },
+        )
+
+        assert captured["url"] == "https://api.openai.com/v1/decisions"
+        assert captured["auth"] == "Bearer sk-test"
+        assert captured["body"] == {
+            "model": "gpt-6-luna",
+            "input": [
+                {
+                    "role": "user",
+                    "content": [{"type": "input_json", "data": {"text": "hello"}}],
+                }
+            ],
+            "questions": [
+                {"type": "predicate", "name": "ok", "instructions": "Is this okay?"},
+                {
+                    "type": "choice",
+                    "name": "tool",
+                    "instructions": "Which tool?",
+                    "choices": [
+                        {"value": "search", "description": "web search"},
+                        {"value": "shell", "description": "run commands"},
+                    ],
+                },
+            ],
+        }
+        assert answers == {
+            "ok": {"noul": 0.2},
+            "tool": {"choice": "search", "probabilities": {"search": 0.7, "shell": 0.3}},
+        }
+
+    def test_jev_style_base_url_and_failures(self, monkeypatch):
+        replies = []
+
+        class Response(_FakeHTTPResponse):
+            def read(self):
+                return json.dumps({"answers": replies.pop(0)}).encode()
+
+        urls = []
+
+        def fake_urlopen(request, timeout):
+            urls.append(request.full_url)
+            return Response()
+
+        monkeypatch.setattr(agent_rt_decisions, "urlopen", fake_urlopen)
+        provider = OpenAIDecisionProvider(
+            "https://gateway.example.test", api_key="k", environ={}
+        )
+        question = {"ok": {"type": "noul", "instructions": "?"}}
+        replies.append([{"type": "refusal", "name": "ok"}])
+        with pytest.raises(ValueError, match="refused"):
+            provider.decide("text", question)
+        replies.append([])
+        with pytest.raises(ValueError, match="missing answers"):
+            provider.decide("text", question)
+        assert urls == ["https://gateway.example.test/v1/decisions"] * 2
+
+        with pytest.raises(ValueError, match="does not support question type"):
+            provider.decide("text", {"x": {"type": "score"}})
+        with pytest.raises(ValueError, match="requires an api_key"):
+            OpenAIDecisionProvider(environ={})
+        with pytest.raises(ValueError, match="unsupported decision_model provider"):
+            default_decision_provider(environ={"AGENT_RT_DECISION_PROVIDER": "x"})
+        assert type(default_decision_provider(environ={})) is JevDecisionProvider
 
 
 class TestDecisionIntegration:

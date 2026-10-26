@@ -46,5 +46,6 @@ agent_rt_settings:
   # sandbox: {backend: docker, docker_image: python:3.12-slim, network_mode: none}
   # web_search: {tool: tavily, api_key: os.environ/TAVILY_API_KEY}
   # decision_model: {base_url: https://jev.example.com, model: laya}
+  # decision_model: {provider: openai, api_key: os.environ/OPENAI_API_KEY}  # OpenAI Decisions API
   # observability: {api_key: os.environ/TRACELOOP_API_KEY}
   # cli: {home: ~/.agent-rt, compact_token_limit: 60000}

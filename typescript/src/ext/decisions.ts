@@ -48,11 +48,16 @@ export const JEV_BASE_URL_ENV = 'AGENT_RT_JEV_BASE_URL';
 export const JEV_MODEL_ENV = 'AGENT_RT_JEV_MODEL';
 export const JEV_TIMEOUT_SECONDS_ENV = 'AGENT_RT_JEV_TIMEOUT_SECONDS';
 export const DEFAULT_JEV_BASE_URL = 'http://127.0.0.1:8000';
+export const DECISION_PROVIDER_ENV = 'AGENT_RT_DECISION_PROVIDER';
+export const DECISION_API_KEY_ENV = 'AGENT_RT_' + 'DECISION_' + 'API_KEY';
+export const DEFAULT_OPENAI_DECISIONS_BASE_URL = 'https://api.openai.com/v1';
+export const DEFAULT_OPENAI_DECISIONS_MODEL = 'gpt-6-luna';
 
 export class JevDecisionProvider implements DecisionProvider {
 	readonly baseUrl: string;
 	readonly model?: string;
 	readonly timeoutMs: number;
+	protected readonly apiKey?: string;
 
 	constructor(
 		readonly options: {
@@ -101,34 +106,27 @@ export class JevDecisionProvider implements DecisionProvider {
 		this.baseUrl = normalizedBaseUrl.replace(/\/$/, '');
 		this.model = model?.trim() || undefined;
 		this.timeoutMs = timeoutMs;
+		this.apiKey = options.apiKey ?? env[DECISION_API_KEY_ENV];
 	}
 
-	async decide(
-		state: unknown,
-		questions: DecisionQuestions,
-	): Promise<DecisionAnswers> {
-		if (Object.keys(questions).length === 0) return {};
+	protected async post(
+		url: string,
+		body: unknown,
+	): Promise<Record<string, unknown>> {
 		const controller = new AbortController();
 		const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 		try {
-			const response = await (this.options.fetchImpl ?? fetch)(
-				this.baseUrl + '/v1/systemone',
-				{
-					method: 'POST',
-					headers: {
-						'content-type': 'application/json',
-						...(this.options.apiKey
-							? { authorization: 'Bearer ' + this.options.apiKey }
-							: {}),
-					},
-					body: JSON.stringify({
-						state,
-						questions,
-						...(this.model ? { model: this.model } : {}),
-					}),
-					signal: controller.signal,
+			const response = await (this.options.fetchImpl ?? fetch)(url, {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json',
+					...(this.apiKey
+						? { authorization: 'Bearer ' + this.apiKey }
+						: {}),
 				},
-			);
+				body: JSON.stringify(body),
+				signal: controller.signal,
+			});
 			if (!response.ok) {
 				throw new Error(
 					'decision provider request failed: ' +
@@ -137,22 +135,187 @@ export class JevDecisionProvider implements DecisionProvider {
 						response.statusText,
 				);
 			}
-			const payload = (await response.json()) as Record<string, unknown>;
-			const answers = payload.answers;
-			if (
-				!answers ||
-				typeof answers !== 'object' ||
-				Array.isArray(answers)
-			) {
-				throw new Error(
-					'decision provider response must contain an answers object',
-				);
-			}
-			return answers as DecisionAnswers;
+			return (await response.json()) as Record<string, unknown>;
 		} finally {
 			clearTimeout(timer);
 		}
 	}
+
+	async decide(
+		state: unknown,
+		questions: DecisionQuestions,
+	): Promise<DecisionAnswers> {
+		if (Object.keys(questions).length === 0) return {};
+		const payload = await this.post(this.baseUrl + '/v1/systemone', {
+			state,
+			questions,
+			...(this.model ? { model: this.model } : {}),
+		});
+		const answers = payload.answers;
+		if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+			throw new Error(
+				'decision provider response must contain an answers object',
+			);
+		}
+		return answers as DecisionAnswers;
+	}
+}
+
+/** Serve Jev-style `noul`/`choice` questions from OpenAI's POST /v1/decisions. */
+export class OpenAIDecisionProvider extends JevDecisionProvider {
+	constructor(
+		options: ConstructorParameters<typeof JevDecisionProvider>[0] = {},
+	) {
+		const env = options.environ ?? runtimeSettings();
+		super({
+			...options,
+			environ: env,
+			baseUrl:
+				options.baseUrl ||
+				env[JEV_BASE_URL_ENV] ||
+				DEFAULT_OPENAI_DECISIONS_BASE_URL,
+			model:
+				options.model ||
+				env[JEV_MODEL_ENV] ||
+				DEFAULT_OPENAI_DECISIONS_MODEL,
+		});
+		if (!this.apiKey) {
+			throw new Error('OpenAI Decisions API requires an apiKey');
+		}
+	}
+
+	override async decide(
+		state: unknown,
+		questions: DecisionQuestions,
+	): Promise<DecisionAnswers> {
+		if (Object.keys(questions).length === 0) return {};
+		// Accept both OpenAI-style (".../v1") and Jev-style (host root) base URLs.
+		const root = this.baseUrl.replace(/\/v1$/, '');
+		const payload = await this.post(root + '/v1/decisions', {
+			model: this.model,
+			input: openAIDecisionInput(state),
+			questions: Object.entries(questions).map(([name, question]) =>
+				openAIDecisionQuestion(name, question),
+			),
+		});
+		if (!Array.isArray(payload?.answers)) {
+			throw new Error(
+				'OpenAI Decisions response must contain an answers array',
+			);
+		}
+		const converted: DecisionAnswers = Object.fromEntries(
+			payload.answers.map(jevDecisionAnswer),
+		);
+		const missing = Object.keys(questions).filter(
+			(name) => !(name in converted),
+		);
+		if (missing.length > 0) {
+			throw new Error(
+				'OpenAI Decisions response is missing answers for ' +
+					missing.join(', '),
+			);
+		}
+		return converted;
+	}
+}
+
+function openAIDecisionInput(state: unknown): unknown {
+	if (typeof state === 'string') return state;
+	if (state !== null && typeof state === 'object') {
+		// input_json keeps untrusted state as data rather than message structure.
+		return [
+			{ role: 'user', content: [{ type: 'input_json', data: state }] },
+		];
+	}
+	return JSON.stringify(state ?? null);
+}
+
+function openAIDecisionQuestion(
+	name: string,
+	question: DecisionQuestion,
+): Record<string, unknown> {
+	const instructions = question.instructions ?? '';
+	if (question.type === 'noul') {
+		return { type: 'predicate', name, instructions };
+	}
+	if (question.type === 'choice') {
+		const criteria = question.criteria;
+		if (
+			!criteria ||
+			typeof criteria !== 'object' ||
+			Array.isArray(criteria) ||
+			Object.keys(criteria).length === 0
+		) {
+			throw new Error(
+				'choice question ' + name + ' needs non-empty criteria',
+			);
+		}
+		return {
+			type: 'choice',
+			name,
+			instructions,
+			choices: Object.entries(criteria).map(([value, description]) => ({
+				value,
+				description: String(description),
+			})),
+		};
+	}
+	throw new Error(
+		'OpenAI Decisions API does not support question type ' +
+			String(question.type),
+	);
+}
+
+function jevDecisionAnswer(answer: unknown): [string, DecisionAnswer] {
+	const item = answer as Record<string, unknown> | null;
+	if (!item || typeof item !== 'object' || typeof item.name !== 'string') {
+		throw new Error(
+			'OpenAI Decisions answer must be an object with a name',
+		);
+	}
+	if (item.type === 'predicate') {
+		return [item.name, { noul: item.probability }];
+	}
+	if (item.type === 'choice') {
+		const probabilities = item.probabilities ?? [];
+		if (!Array.isArray(probabilities)) {
+			throw new Error('choice probabilities must be an array');
+		}
+		return [
+			item.name,
+			{
+				choice: item.choice,
+				probabilities: Object.fromEntries(
+					probabilities
+						.filter(
+							(entry) =>
+								entry &&
+								typeof entry === 'object' &&
+								typeof entry.value === 'string',
+						)
+						.map((entry) => [entry.value, entry.probability]),
+				),
+			},
+		];
+	}
+	if (item.type === 'refusal') {
+		throw new Error('Decision model refused to answer ' + item.name);
+	}
+	throw new Error(
+		'unsupported OpenAI Decisions answer type ' + String(item.type),
+	);
+}
+
+/** Build the Decision provider selected by `agent_rt_settings.decision_model.provider`. */
+export function defaultDecisionProvider(
+	options: { environ?: Record<string, string | undefined> } = {},
+): JevDecisionProvider {
+	const env = options.environ ?? runtimeSettings();
+	const provider = (env[DECISION_PROVIDER_ENV] || 'jev').trim().toLowerCase();
+	if (provider === 'openai')
+		return new OpenAIDecisionProvider({ environ: env });
+	if (provider === 'jev') return new JevDecisionProvider({ environ: env });
+	throw new Error('unsupported decision_model provider ' + provider);
 }
 
 function noul(answer: DecisionAnswer): number {

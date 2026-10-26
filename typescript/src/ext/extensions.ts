@@ -2,7 +2,7 @@ import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 
 import {
-	JevDecisionProvider,
+	defaultDecisionProvider,
 	makeDecisionRegistrationGuard,
 	type DecisionProvider,
 } from './decisions.js';
@@ -345,7 +345,7 @@ export class SkillRegistry {
 	): Promise<SkillPackage> {
 		const skill = loadSkillPackage(skillPath, options.version);
 		const decisionGuard = makeDecisionRegistrationGuard(
-			options.decisionProvider ?? new JevDecisionProvider(),
+			options.decisionProvider ?? defaultDecisionProvider(),
 		);
 		return this.installChecked(
 			skill,

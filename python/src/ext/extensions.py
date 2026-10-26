@@ -228,11 +228,11 @@ class SkillRegistry:
     ) -> SkillPackage:
         skill = load_skill_package(path, version=version)
         from ext.decisions import (
-            JevDecisionProvider,
+            default_decision_provider,
             make_decision_registration_guard,
         )
 
-        provider = decision_provider or JevDecisionProvider.from_env()
+        provider = decision_provider or default_decision_provider()
         decision_guard = make_decision_registration_guard(provider)
         self.install(skill, activate=activate, registration_guard=decision_guard)
         return skill

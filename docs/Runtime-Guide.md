@@ -65,7 +65,9 @@ registry = ToolRegistry(
 )
 ```
 
-A custom Python blocker may be a callable or an object exposing `check`; it can return `False`/`None` to allow, `True` or a reason string to block, or an `ActionBlockerResult`. TypeScript exposes the corresponding `RuleBasedActionBlocker`, `makeAgentActionGuardActionBlocker`, and `makeDecisionActionBlocker` APIs; `registry.actionBlockers` is the configured ordered list. The Decision-model adapter accepts a provider with `decide`, including Laya/Jev-compatible providers, and evaluates a typed `noul` score against the configured threshold.
+A custom Python blocker may be a callable or an object exposing `check`; it can return `False`/`None` to allow, `True` or a reason string to block, or an `ActionBlockerResult`. TypeScript exposes the corresponding `RuleBasedActionBlocker`, `makeAgentActionGuardActionBlocker`, and `makeDecisionActionBlocker` APIs; `registry.actionBlockers` is the configured ordered list. The Decision-model adapter accepts a provider with `decide`, including Laya/Jev-compatible providers and `OpenAIDecisionProvider`, and evaluates a typed `noul` score against the configured threshold.
+
+Every Decision helper also works with the OpenAI Decisions API. Set `decision_model: {provider: openai, api_key: os.environ/OPENAI_API_KEY}` in `agent-rt.yaml`, or construct `OpenAIDecisionProvider(api_key=...)` / `new OpenAIDecisionProvider({ apiKey })` directly. The adapter sends `noul` questions as `predicate` and `choice` questions (with their `criteria`) as `choice` to `POST /v1/decisions`, passes non-string state as an `input_json` part, and maps the answers back to the same shape a Jev host returns. A refused or missing answer raises, so guards fail closed.
 
 ## API server (Python)
 

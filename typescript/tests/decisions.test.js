@@ -12,6 +12,8 @@ const {
 	DecisionMemoryGuard,
 	DecisionMemoryWriteGate,
 	JevDecisionProvider,
+	OpenAIDecisionProvider,
+	defaultDecisionProvider,
 	filterContextItems,
 	makeDecisionRegistrationGuard,
 	makeDecisionToolOutputGuardrail,
@@ -55,6 +57,110 @@ test('JevDecisionProvider uses hosted endpoint/model environment', async () => {
 	assert.equal(capturedBody.model, 'hosted-laya');
 	assert.deepEqual(capturedBody.state, { text: 'hello' });
 	assert.equal(answers.ok.noul, 0.9);
+});
+
+test('OpenAIDecisionProvider translates Jev questions to the Decisions API', async () => {
+	let captured;
+	const reply = (answers) =>
+		new Response(JSON.stringify({ answers }), {
+			status: 200,
+			headers: { 'content-type': 'application/json' },
+		});
+	const replies = [
+		[
+			{ type: 'predicate', name: 'ok', probability: 0.2 },
+			{
+				type: 'choice',
+				name: 'tool',
+				choice: 'search',
+				probabilities: [
+					{ value: 'search', probability: 0.7 },
+					{ value: 'shell', probability: 0.3 },
+				],
+				confidence: 0.7,
+			},
+		],
+		[{ type: 'refusal', name: 'ok' }],
+		[],
+	];
+	const provider = new OpenAIDecisionProvider({
+		environ: { AGENT_RT_DECISION_API_KEY: 'sk-test' },
+		fetchImpl: async (url, init) => {
+			captured = { url, init, body: JSON.parse(init.body) };
+			return reply(replies.shift());
+		},
+	});
+	const answers = await provider.decide(
+		{ text: 'hello' },
+		{
+			ok: { type: 'noul', instructions: 'Is this okay?' },
+			tool: {
+				type: 'choice',
+				instructions: 'Which tool?',
+				criteria: { search: 'web search', shell: 'run commands' },
+			},
+		},
+	);
+	assert.equal(captured.url, 'https://api.openai.com/v1/decisions');
+	assert.equal(captured.init.headers.authorization, 'Bearer sk-test');
+	assert.deepEqual(captured.body, {
+		model: 'gpt-6-luna',
+		input: [
+			{
+				role: 'user',
+				content: [{ type: 'input_json', data: { text: 'hello' } }],
+			},
+		],
+		questions: [
+			{ type: 'predicate', name: 'ok', instructions: 'Is this okay?' },
+			{
+				type: 'choice',
+				name: 'tool',
+				instructions: 'Which tool?',
+				choices: [
+					{ value: 'search', description: 'web search' },
+					{ value: 'shell', description: 'run commands' },
+				],
+			},
+		],
+	});
+	assert.deepEqual(answers, {
+		ok: { noul: 0.2 },
+		tool: { choice: 'search', probabilities: { search: 0.7, shell: 0.3 } },
+	});
+
+	const question = { ok: { type: 'noul', instructions: '?' } };
+	await assert.rejects(provider.decide('text', question), /refused/);
+	await assert.rejects(provider.decide('text', question), /missing answers/);
+	await assert.rejects(
+		provider.decide('text', { x: { type: 'score' } }),
+		/does not support question type/,
+	);
+	assert.throws(
+		() => new OpenAIDecisionProvider({ environ: {} }),
+		/requires an apiKey/,
+	);
+});
+
+test('defaultDecisionProvider follows decision_model.provider', () => {
+	const openai = defaultDecisionProvider({
+		environ: {
+			AGENT_RT_DECISION_PROVIDER: 'openai',
+			AGENT_RT_DECISION_API_KEY: 'k',
+			AGENT_RT_JEV_BASE_URL: 'https://gateway.example.test',
+		},
+	});
+	assert.ok(openai instanceof OpenAIDecisionProvider);
+	assert.equal(openai.baseUrl, 'https://gateway.example.test');
+	assert.equal(
+		defaultDecisionProvider({ environ: {} }).constructor,
+		JevDecisionProvider,
+	);
+	assert.throws(
+		() =>
+			defaultDecisionProvider({ environ: { AGENT_RT_DECISION_PROVIDER: 'x' } }),
+		/unsupported decision_model provider/,
+	);
 });
 
 test('JevDecisionProvider explicit options override environment', () => {
