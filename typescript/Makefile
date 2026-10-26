@@ -40,7 +40,7 @@ install-dev: install
 test:
 	$(NPM) test
 
-# The web UI (agent-rt-web) and its browser tests exist only in the Python package.
+# The web UI (agent-rt web) and its browser tests exist only in the Python package.
 # Plain echo with no quotes or shell operators, so it reads the same under sh and cmd.exe.
 test-browsers:
 	@echo ERROR: browser tests are Python-only because the web UI is. Run make test-browsers in the python folder instead. >&2

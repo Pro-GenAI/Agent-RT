@@ -363,9 +363,9 @@ def make_agent_action_guard_action_blocker(
                 if exc.name != "agent_action_guard":
                     raise
                 raise RuntimeError(
-                    "Agent Action Guard is optional. Install "
-                    "'agent-rt[guardrails]' to use the Agent Action Guard "
-                    "action blocker."
+                    "Agent Action Guard is not installed. Reinstall "
+                    "'agent-rt' (it is a core dependency) to use the "
+                    "Agent Action Guard action blocker."
                 ) from exc
             classifier = is_action_harmful
 

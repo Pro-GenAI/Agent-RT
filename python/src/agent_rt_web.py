@@ -20,7 +20,6 @@ from agent_rt import (
     load_config,
     load_model,
 )
-from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
 from agent_rt_cli import (
     _CLI_SETTINGS,
     ChatSession,
@@ -34,8 +33,10 @@ from agent_rt_cli import (
     _startup_model,
     build_workspace_session,
 )
+from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
 
 PAGE_PATH = Path(__file__).resolve().parent / "ext" / "web_ui.html"
+DEBUG_PAGE_PATH = PAGE_PATH.with_name("debug_ui.html")
 # Any custom header forces a CORS preflight, which this server never approves, so other
 # origins on this computer cannot post to the API even though browsers send them the cookie.
 API_HEADER = "x-agent-rt"
@@ -48,6 +49,8 @@ DEFAULT_MAX_CONCURRENT_RUNS = 4
 DEFAULT_MAX_QUEUED_RUNS = 4
 DEFAULT_QUEUE_TIMEOUT_SECONDS = 15.0
 LOOPBACK_HOSTS = ("127.0.0.1", "localhost")
+MAX_FORK_TOOL_OUTPUT = 2000
+MAX_FORK_BUDGET = 100_000
 
 # Builds a fresh session for one request: (model, approval callback) -> ChatSession.
 SessionFactory = Callable[[str, Callable[[str, Mapping[str, Any]], Any]], ChatSession]
@@ -356,7 +359,9 @@ def create_web_app(
     max_concurrent_runs: int = DEFAULT_MAX_CONCURRENT_RUNS,
     max_queued_runs: int = DEFAULT_MAX_QUEUED_RUNS,
     queue_timeout_seconds: float = DEFAULT_QUEUE_TIMEOUT_SECONDS,
+    demo: bool = False,
 ) -> Any:
+    """``demo`` serves the time-travel debugger at ``/`` (it is always at ``/debug``)."""
     _require_web_dependencies()
     from starlette.applications import Starlette
     from starlette.datastructures import Headers, MutableHeaders
@@ -373,6 +378,8 @@ def create_web_app(
     )
     from starlette.routing import Route
 
+    from ext.demo import Timeline
+
     admission = RunAdmission(
         max_concurrent_runs, max_queued_runs, queue_timeout_seconds
     )
@@ -384,8 +391,12 @@ def create_web_app(
             finally:
                 await admission.release()
 
+    timeline = Timeline()
     nonce = secrets.token_urlsafe(16)
     page = PAGE_PATH.read_text(encoding="utf-8").replace("__AGENT_RT_NONCE__", nonce)
+    debug_page = DEBUG_PAGE_PATH.read_text(encoding="utf-8").replace(
+        "__AGENT_RT_NONCE__", nonce
+    )
     # Cookies ignore ports, so each launch gets its own name and two servers never clobber.
     cookie = "agent_rt_" + secrets.token_hex(4)
     headers = {
@@ -451,11 +462,50 @@ def create_web_app(
             response = RedirectResponse("/", status_code=303)
             response.set_cookie(cookie, chat.token, httponly=True, samesite="strict")
             return response
+        return serve(request, debug_page if demo else page)
+
+    def serve(request: Request, html: str) -> Any:
         if not signed_in(request.scope):
             return PlainTextResponse(
-                "Open the link agent-rt-web printed in your terminal.", status_code=403
+                "Open the link agent-rt web printed in your terminal.", status_code=403
             )
-        return HTMLResponse(page, headers={"Cache-Control": "no-store"})
+        return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+    async def debug(request: Request) -> Any:
+        return serve(request, debug_page)
+
+    async def debug_state(request: Request) -> Any:
+        return JSONResponse(await timeline.ensure_started())
+
+    async def debug_reset(request: Request) -> Any:
+        return JSONResponse(await timeline.reset())
+
+    async def debug_fork(request: Request) -> Any:
+        data = await body(request)
+        node = text_field(data, "node")
+        output = data.get("tool_output")
+        budget = data.get("budget")
+        if output is not None and (
+            not isinstance(output, str) or len(output) > MAX_FORK_TOOL_OUTPUT
+        ):
+            raise HTTPException(
+                400,
+                f"tool_output must be a string of at most {MAX_FORK_TOOL_OUTPUT} characters",
+            )
+        if budget is not None and (
+            type(budget) is not int or not 1 <= budget <= MAX_FORK_BUDGET
+        ):
+            raise HTTPException(
+                400, f"budget must be an integer from 1 to {MAX_FORK_BUDGET}"
+            )
+        try:
+            return JSONResponse(
+                await timeline.fork(node, tool_output=output, budget=budget)
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except OverflowError as exc:
+            raise HTTPException(409, str(exc)) from exc
 
     async def info(request: Request) -> Any:
         return JSONResponse(chat.info())
@@ -498,6 +548,10 @@ def create_web_app(
     return Starlette(
         routes=[
             Route("/", index),
+            Route("/debug", debug),
+            Route("/api/debug", debug_state),
+            Route("/api/debug/fork", debug_fork, methods=["POST"]),
+            Route("/api/debug/reset", debug_reset, methods=["POST"]),
             Route("/api/info", info),
             Route("/api/models", models),
             Route("/api/approval", approval, methods=["POST"]),
@@ -514,7 +568,7 @@ def create_web_app(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="agent-rt-web",
+        prog="agent-rt web",
         description="Agent RT chat in your browser, served only on this computer.",
     )
     parser.add_argument("-m", "--model", help="provider model name")
@@ -529,6 +583,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--no-open", action="store_true", help="do not open a browser tab"
+    )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="open the time-travel debugger on the offline mock model (no config or API key)",
     )
     parser.add_argument("--max-turns", type=_positive_int, default=16)
     parser.add_argument(
@@ -546,7 +605,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-output-tokens", type=_positive_int)
     parser.add_argument("--timeout", type=float, help="per-prompt timeout in seconds")
     parser.add_argument(
-        "--version", action="version", version=f"agent-rt-web {_package_version()}"
+        "--version", action="version", version=f"agent-rt web {_package_version()}"
     )
     return parser
 
@@ -564,10 +623,12 @@ def _non_negative_int(value: str) -> int:
 async def async_main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        uvicorn = _require_web_dependencies()
+        _require_web_dependencies()
     except RuntimeError as exc:
-        print(f"agent-rt-web: {exc}", file=sys.stderr)
+        print(f"agent-rt web: {exc}", file=sys.stderr)
         return 2
+    if args.demo:
+        return await _serve(args, _demo_chat(), demo=True)
     try:
         config, builtin = web_config(args.config)
         configure_runtime(config)
@@ -589,12 +650,12 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
             model = await _startup_model(provider, args.model)
             models = await _provider_model_ids(provider)
     except Exception as exc:  # noqa: BLE001 - configuration can fail in providers
-        print(f"agent-rt-web: configuration error: {exc}", file=sys.stderr)
+        print(f"agent-rt web: configuration error: {exc}", file=sys.stderr)
         return 2
     workspace = Path.cwd()
     skills, skill_warnings = _discover_cli_skills(workspace)
     for warning in skill_warnings:
-        print(f"agent-rt-web: skill warning: {warning}", file=sys.stderr)
+        print(f"agent-rt web: skill warning: {warning}", file=sys.stderr)
 
     def make_session(
         session_model: str, approve: Callable[[str, Mapping[str, Any]], Any]
@@ -622,6 +683,20 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         # Built-in models were already discovered at startup.
         discover=None if builtin else getattr(provider, "discover_models", None),
     )
+    return await _serve(args, chat)
+
+
+def _demo_chat() -> WebChat:
+    def make_session(model: str, approve: Any) -> ChatSession:
+        raise RuntimeError(
+            "chat is off in --demo mode; restart agent-rt web without --demo to chat"
+        )
+
+    return WebChat(make_session, model="mock", models=(), workspace=Path.cwd())
+
+
+async def _serve(args: argparse.Namespace, chat: WebChat, *, demo: bool = False) -> int:
+    uvicorn = _require_web_dependencies()
     url = f"http://127.0.0.1:{args.port}/?token={chat.token}"
     server = uvicorn.Server(
         uvicorn.Config(
@@ -629,6 +704,7 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
                 chat,
                 max_concurrent_runs=args.max_concurrent_runs,
                 max_queued_runs=args.max_queued_runs,
+                demo=demo,
             ),
             host="127.0.0.1",
             port=args.port,
@@ -637,7 +713,8 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
     )
     # Flushed: the link is the only way in, even when stdout is a pipe or a log file.
     print(
-        f"Agent RT web UI: {url}\n(workspace: {workspace}; Ctrl+C to stop)", flush=True
+        f"Agent RT web UI: {url}\n(workspace: {chat.workspace}; Ctrl+C to stop)",
+        flush=True,
     )
 
     async def open_browser() -> None:

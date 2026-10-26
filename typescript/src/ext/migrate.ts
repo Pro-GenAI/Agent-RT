@@ -497,6 +497,7 @@ function wallLink(project: string, plan: Rewrite): string | null {
 }
 
 const USAGE = `usage: npx agent-rt migrate [PATH]
+       npx agent-rt demo   (offline tour on a mock model)
 
 Rewrite LangChain, LlamaIndex, OpenAI, Anthropic and OpenAI Agents imports to Agent RT.
 Runs \`npm test\` before and after, and restores every file unless no test fails
@@ -605,4 +606,19 @@ export function main(
 	}
 }
 
-if (require.main === module) process.exitCode = main(process.argv.slice(2));
+if (require.main === module) {
+	const argv = process.argv.slice(2);
+	if (argv[0] === 'demo') {
+		// Loaded lazily so `migrate` never pays for the runtime import.
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		const demo: typeof import('./demo.js') = require('./demo.js');
+		if (argv.length > 1) {
+			console.log(demo.USAGE);
+			process.exitCode = ['-h', '--help'].includes(argv[1]) ? 0 : 2;
+		} else
+			demo.run().catch((error: unknown) => {
+				console.error(error);
+				process.exitCode = 1;
+			});
+	} else process.exitCode = main(argv);
+}

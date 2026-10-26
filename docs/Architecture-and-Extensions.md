@@ -15,7 +15,7 @@ The core Python runtime is `agent_rt.py`; the core TypeScript runtime is `index.
 - Benchmarks, conformance checks, and health checks: Python `ext/operations.py`; TypeScript `operations.ts`.
 - OpenAI- and Anthropic-compatible inbound API hosting: Python `agent_rt_api.py`, installed with the optional `agent-rt[api]` extra.
 - End-user terminal chat: Python `agent_rt_cli.py`, with Rich/prompt-toolkit installed through the optional `agent-rt[cli]` extra.
-- End-user browser chat: Python `agent_rt_web.py` (`agent-rt-web`), served by plain Starlette/Uvicorn (not FastAPI, to start faster and use less memory) through the optional `agent-rt[web]` extra.
+- End-user browser chat: Python `agent_rt_web.py` (`agent-rt web`), served by plain Starlette/Uvicorn (not FastAPI, to start faster and use less memory) through the optional `agent-rt[web]` extra.
 - Registration safety scanner: Python `ext/registration_safety.py`; TypeScript `registration_safety.ts`.
 - Framework compatibility adapters (LangChain, LlamaIndex, OpenAI Agents, AutoGen, CrewAI, OpenAI SDK, Anthropic SDK): Python `ext/compat/`; TypeScript `langchain.ts`, `llamaindex.ts`, `openai_agents.ts`, `openai.ts`, and `anthropic.ts`. See `MIGRATION.md`.
 

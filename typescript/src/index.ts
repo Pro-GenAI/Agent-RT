@@ -3213,9 +3213,9 @@ export function makeAgentActionGuardToolInputGuardrail(
 						'ERR_MODULE_NOT_FOUND'
 				) {
 					throw new Error(
-						"Agent Action Guard is optional. Install 'agent-action-guard' " +
-							"alongside 'agent-rt' to use the default model-backed " +
-							'tool input guardrail.',
+						"Agent Action Guard is not installed. Reinstall 'agent-rt' " +
+							'(it is a core dependency) to use the default ' +
+							'model-backed tool input guardrail.',
 					);
 				}
 				throw error;

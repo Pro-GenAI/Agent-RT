@@ -42,6 +42,8 @@ aside { position: relative; background: var(--rail); border-right: 1px solid var
 .brand span { color: var(--muted); font-weight: 400; }
 .new { margin: 0 14px 12px; padding: 9px 12px; border: 1px dashed var(--line-2); background: none; border-radius: 6px; text-align: left; font-family: var(--mono); font-size: 13px; }
 .new:hover { border-color: var(--acid); color: var(--acid); }
+.debug-link { padding: 8px 18px; font: 12px var(--mono); color: var(--muted); }
+.debug-link:hover { color: var(--acid); }
 .label { padding: 6px 18px; font: 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
 #sessions { list-style: none; margin: 0; padding: 0 8px 12px; overflow-y: auto; flex: 1; }
 #sessions li { display: flex; align-items: center; border-radius: 6px; }
@@ -137,6 +139,7 @@ textarea { flex: 1; resize: none; border: 0; background: none; outline: none; ma
   <div class="label">sessions</div>
   <ul id="sessions"></ul>
   <div class="storage-warning" id="storage-warning" role="status" aria-live="polite" hidden></div>
+  <a class="debug-link" href="/debug">time-travel debugger (demo)</a>
   <div class="ws" id="ws"></div>
   <div id="resize" role="separator" aria-orientation="vertical" aria-label="Resize sessions panel" aria-valuemin="180" aria-valuemax="480" aria-valuenow="260" tabindex="0"></div>
 </aside>

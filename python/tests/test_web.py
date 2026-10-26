@@ -478,7 +478,7 @@ def test_bad_web_run_limits_are_rejected(args):
 def test_version_is_the_installed_package(capsys):
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--version"])
-    expected = "agent-rt-web " + importlib.metadata.version("agent-rt")
+    expected = "agent-rt web " + importlib.metadata.version("agent-rt")
     assert capsys.readouterr().out.strip() == expected
 
 
@@ -537,3 +537,49 @@ def test_web_config_works_without_a_file_or_with_a_blank_one(tmp_path, monkeypat
 
     with pytest.raises(ConfigNotFoundError):
         web_config(tmp_path / "typo.yaml")
+
+
+def test_debugger_forks_resume_the_runtime_from_a_checkpoint(tmp_path):
+    client = signed_in_client(make_chat(tmp_path)[0])
+    assert "time-travel debugger" in client.get("/debug").text
+    nodes = client.get("/api/debug").json()["nodes"]
+    assert [n["status"] for n in nodes] == ["start", "turn", "blocked"]
+    assert nodes[2]["events"][0]["name"] == "run_shell"
+
+    # Rewriting the injected tool result lets the resumed run finish without the attack.
+    clean = client.post(
+        "/api/debug/fork",
+        json={"node": "0.1", "tool_output": "30C, sunny.", "budget": 400},
+    ).json()["nodes"]
+    branch = [n for n in clean if n["branch"] == 1]
+    assert branch[0]["parent"] == "0.1"
+    assert branch[-1]["status"] == "completed"
+    assert branch[-1]["events"] == [
+        {"kind": "answer", "text": "Chennai right now: 30C, sunny."}
+    ]
+
+    tight = client.post("/api/debug/fork", json={"node": "0.0", "budget": 20}).json()
+    assert tight["nodes"][-1]["status"] == "budget_exhausted"
+    assert not any(e.get("ran") for e in tight["nodes"][-1]["events"])
+
+    for bad in (
+        {"node": "0.2"},  # blocked: nothing to resume
+        {"node": "0.0", "tool_output": "x"},  # no tool result to rewrite
+        {"node": "0.1", "budget": True},
+        {"node": "0.1", "tool_output": "x" * 2001},
+    ):
+        assert client.post("/api/debug/fork", json=bad).status_code == 400
+    assert [n["id"] for n in client.post("/api/debug/reset").json()["nodes"]] == [
+        "0.0",
+        "0.1",
+        "0.2",
+    ]
+
+
+def test_debugger_api_needs_the_launch_cookie(tmp_path):
+    TestClient = pytest.importorskip("starlette.testclient").TestClient
+    stranger = TestClient(
+        create_web_app(make_chat(tmp_path)[0]), base_url="http://127.0.0.1"
+    )
+    assert stranger.get("/debug").status_code == 403
+    assert stranger.post("/api/debug/fork", json={"node": "0.1"}).status_code == 403

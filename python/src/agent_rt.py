@@ -863,9 +863,9 @@ def make_agent_action_guard_tool_input_guardrail(
                 if exc.name != "agent_action_guard":
                     raise
                 raise RuntimeError(
-                    "Agent Action Guard is optional. Install "
-                    "'agent-rt[guardrails]' to use the default "
-                    "model-backed tool input guardrail."
+                    "Agent Action Guard is not installed. Reinstall "
+                    "'agent-rt' (it is a core dependency) to use the "
+                    "default model-backed tool input guardrail."
                 ) from exc
             classifier = is_action_harmful
 

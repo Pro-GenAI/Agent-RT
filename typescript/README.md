@@ -27,7 +27,7 @@ Node 20, 22, 24, or 26. Runs on Linux, Windows, macOS (Intel and Apple M-series)
 npm install agent-rt
 ```
 
-Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-guard` only when you need them. Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
+Provider SDKs are optional: add `openai` or `@anthropic-ai/sdk` only when you need them. Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.
 
 ## Migrate in one line
 
@@ -37,6 +37,8 @@ Provider SDKs are optional: add `openai`, `@anthropic-ai/sdk`, or `agent-action-
 ```
 
 Prefix a supported import with `agent-rt/`, for example `import { ChatOpenAI } from "agent-rt/@langchain/openai"`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
+
+Try it with no API key: `npx agent-rt demo` runs a scripted mock model through a prompt-injection attack, shows the built-in action blocker stopping `rm -rf ~` before the tool runs, totals tokens, and prints this process's peak RAM next to a competitor's published benchmark figure.
 
 Or let Agent RT rewrite every supported import for you (after `npm install agent-rt`):
 

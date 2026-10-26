@@ -1872,7 +1872,9 @@ def build_parser() -> argparse.ArgumentParser:
             "Reuse another agent CLI's commands, models and API-key credentials: "
             "agent-rt claude -p PROMPT | agent-rt codex exec PROMPT | "
             "agent-rt opencode run PROMPT | agent-rt copilot -p PROMPT. "
-            "Move a project's framework imports to Agent RT, verified by its tests: agent-rt migrate [PATH]"
+            "Move a project's framework imports to Agent RT, verified by its tests: agent-rt migrate [PATH]. "
+            "Chat in your browser (needs agent-rt[web]): agent-rt web. "
+            "Offline tour on a mock model: agent-rt demo [--web]"
         ),
     )
     parser.add_argument(
@@ -2094,6 +2096,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         from ext.migrate import main as migrate_main
 
         return migrate_main(argv[1:])
+    if argv[:1] == ["web"]:
+        from agent_rt_web import main as web_main
+
+        return web_main(argv[1:])
+    if argv[:1] == ["demo"]:
+        from ext.demo import main as demo_main
+
+        return demo_main(argv[1:])
     try:
         return asyncio.run(async_main(argv))
     except KeyboardInterrupt:

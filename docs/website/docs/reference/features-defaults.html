@@ -403,12 +403,9 @@ registry = ToolRegistry(
     ),
 )</code></pre>
 <h3>Agent Action Guard: the default model-backed tool-input model</h3>
-<p>Agent Action Guard protects <em>tool calls</em>, not raw user messages. The integration is optional because it adds a model dependency. When model-backed tool-input screening is enabled, <code>DEFAULT_TOOL_INPUT_GUARDRAIL_MODEL</code> is <code>agent-action-guard</code>. Screening happens before argument validation and before the tool handler can cause side effects.</p>
+<p>Agent Action Guard protects <em>tool calls</em>, not raw user messages. The package is installed with Agent RT by default. When model-backed tool-input screening is enabled, <code>DEFAULT_TOOL_INPUT_GUARDRAIL_MODEL</code> is <code>agent-action-guard</code>. Screening happens before argument validation and before the tool handler can cause side effects.</p>
 <pre><code class="language-python"># Python
 registry = ToolRegistry(enable_model_tool_input_guardrail=True)
-
-# Install the optional integration:
-# pip install 'agent-rt[guardrails]'
 
 # Tests/private deployments can inject a classifier instead of downloading
 # the default model:

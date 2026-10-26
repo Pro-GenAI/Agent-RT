@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent RT Debugger</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<style nonce="__AGENT_RT_NONCE__">
+:root {
+  --bg: #07080c; --rail: #0c0f15; --panel: #10141c; --line: #1d2330; --line-2: #2a3242;
+  --text: #eef0f3; --muted: #8b93a1; --acid: #c8ff4d; --mint: #5ef1c4; --amber: #ffc76a;
+  --red: #ff6b7a; --code: #0a0d13; --on-acid: #0b0d06;
+  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --sans: Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f1ea; --rail: #e9e6dc; --panel: #fbfaf6; --line: #d9d5c8; --line-2: #c4bfae;
+    --text: #15181d; --muted: #5d6470; --acid: #4f7a00; --mint: #0b8a68; --amber: #9a5b00;
+    --red: #b3263a; --code: #ece9df; --on-acid: #fbfaf6;
+    color-scheme: light;
+  }
+}
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+.mono, code { font-family: var(--mono); }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 18px; }
+header h1 { margin: 0; font: 600 18px var(--mono); letter-spacing: .02em; }
+header h1 span { color: var(--muted); font-weight: 400; }
+header p { margin: 0; flex: 1 1 320px; color: var(--muted); font: 12px var(--mono); }
+.btn { background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 6px 12px; font: 13px var(--mono); }
+.btn:hover { border-color: var(--acid); color: var(--acid); }
+.btn.primary { background: var(--acid); color: var(--on-acid); border-color: var(--acid); }
+.btn.primary:hover { color: var(--on-acid); filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.tile .k { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.tile .v { font: 600 24px var(--mono); margin-top: 2px; }
+.tile .v small { font-size: 13px; color: var(--muted); font-weight: 400; }
+.tile.bad .v { color: var(--red); }
+.meter { height: 6px; background: var(--line); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--acid); transition: width .25s; }
+.meter.warn i { background: var(--amber); }
+.meter.over i { background: var(--red); }
+section > h2 { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 8px; }
+.timeline { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin-bottom: 18px; }
+.axis, .row { display: grid; grid-template-columns: 210px repeat(var(--cols), 74px); align-items: center; min-height: 40px; }
+.axis { min-height: 0; font: 11px var(--mono); color: var(--muted); }
+.row + .row { border-top: 1px dashed var(--line); }
+.row .name { font: 12px var(--mono); color: var(--muted); padding-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .name b { color: var(--text); font-weight: 500; }
+.node { justify-self: start; display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid transparent; border-radius: 14px; padding: 3px 9px 3px 5px; font: 12px var(--mono); }
+.node::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--line-2); border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line-2); }
+.node:hover { border-color: var(--line-2); }
+.node[aria-pressed="true"] { border-color: var(--acid); background: var(--bg); }
+.node.turn::before { background: var(--mint); box-shadow: 0 0 0 1px var(--mint); }
+.node.completed::before { background: var(--acid); box-shadow: 0 0 0 1px var(--acid); }
+.node.fork::before, .node.start::before { background: var(--panel); box-shadow: 0 0 0 1px var(--muted); }
+.node.blocked::before, .node.budget_exhausted::before { background: var(--red); box-shadow: 0 0 0 1px var(--red); }
+.node.blocked { color: var(--red); }
+.grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.card h3 { margin: 0 0 4px; font: 600 14px var(--mono); }
+.card .sub { color: var(--muted); font: 12px var(--mono); margin-bottom: 12px; }
+.events, .transcript { list-style: none; margin: 0 0 14px; padding: 0; }
+.events li, .transcript li { font: 13px/1.5 var(--mono); padding: 7px 10px; border-left: 2px solid var(--line-2); background: var(--code); border-radius: 0 6px 6px 0; margin-bottom: 6px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.events li.call { border-color: var(--mint); }
+.events li.result { border-color: var(--line-2); color: var(--muted); }
+.events li.answer { border-color: var(--acid); }
+.events li.blocked { border-color: var(--red); color: var(--red); }
+.events li .tag, .transcript li .tag { display: inline-block; min-width: 72px; color: var(--muted); }
+.events li.blocked .tag { color: var(--red); font-weight: 600; }
+.empty { color: var(--muted); font: 13px var(--mono); }
+label { display: block; font: 12px var(--mono); color: var(--muted); margin: 0 0 6px; }
+textarea, input[type="number"] { width: 100%; background: var(--code); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 10px; font: 13px var(--mono); }
+textarea { min-height: 96px; resize: vertical; }
+.field { margin-bottom: 12px; }
+.check { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.hint { color: var(--muted); font: 12px/1.5 var(--mono); margin: 0 0 12px; }
+.error { color: var(--red); font: 12px var(--mono); min-height: 1.5em; margin-top: 8px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 820px) {
+  .wrap { padding: 16px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .axis, .row { grid-template-columns: 130px repeat(var(--cols), 66px); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>agent-rt <span>time-travel debugger</span></h1>
+    <p>Scripted mock model, offline. Every node is a real <code>AgentCheckpoint</code>; forking resumes the runtime from it.</p>
+    <button class="btn" id="replay" type="button">▶ replay branch</button>
+    <button class="btn" id="reset" type="button">reset</button>
+  </header>
+
+  <div class="stats" aria-label="Selected checkpoint">
+    <div class="tile"><div class="k">token budget</div><div class="v" id="tokens">–</div><div class="meter" id="meter"><i></i></div></div>
+    <div class="tile"><div class="k">tool calls run</div><div class="v" id="calls">–</div></div>
+    <div class="tile" id="blocked-tile"><div class="k">blocked actions</div><div class="v" id="blocked">–</div></div>
+    <div class="tile"><div class="k">checkpoints</div><div class="v" id="count">–</div></div>
+  </div>
+
+  <section>
+    <h2>timeline <span class="mono">(← → step · ↑ ↓ branch)</span></h2>
+    <div class="timeline" id="timeline" role="group" aria-label="Checkpoint timeline"></div>
+  </section>
+
+  <div class="grid">
+    <div class="card">
+      <h3 id="title">loading…</h3>
+      <div class="sub" id="sub"></div>
+      <section><h2>this step</h2><ul class="events" id="events"></ul></section>
+      <section><h2>transcript at this checkpoint</h2><ul class="transcript" id="transcript"></ul></section>
+    </div>
+    <div class="card">
+      <h3>fork from here</h3>
+      <p class="hint" id="fork-hint"></p>
+      <form id="fork">
+        <div class="field" id="output-field">
+          <label class="check"><input type="checkbox" id="edit"> rewrite the latest tool result</label>
+          <textarea id="output" aria-label="Tool result for the fork" maxlength="2000" disabled></textarea>
+        </div>
+        <div class="field">
+          <label for="budget">token budget (blank = unlimited)</label>
+          <input type="number" id="budget" min="1" max="100000" step="1">
+        </div>
+        <button class="btn primary" id="go" type="submit">fork &amp; resume</button>
+        <div class="error" id="error" role="alert"></div>
+      </form>
+    </div>
+  </div>
+  <div class="sr" id="live" aria-live="polite"></div>
+</div>
+<script nonce="__AGENT_RT_NONCE__">
+"use strict";
+const $ = (id) => document.getElementById(id);
+let state = { nodes: [] };
+let selected = null;
+let replaying = null;
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+async function api(path, body) {
+  const options = { headers: { "content-type": "application/json", "x-agent-rt": "1" } };
+  if (body !== undefined) Object.assign(options, { method: "POST", body: JSON.stringify(body) });
+  const res = await fetch(path, options);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `request failed (${res.status})`);
+  return data;
+}
+
+const byId = (id) => state.nodes.find((n) => n.id === id);
+const branchNodes = (branch) => state.nodes.filter((n) => n.branch === branch);
+const args = (a) => JSON.stringify(a);
+
+function lineage(node) {
+  // Root-to-leaf path that ends at the last node of the selected node's branch.
+  const leaf = branchNodes(node.branch).at(-1);
+  const path = [];
+  for (let n = leaf; n; n = n.parent ? byId(n.parent) : null) path.unshift(n);
+  return path;
+}
+
+function branchLabel(branch) {
+  const first = branchNodes(branch)[0];
+  if (!first.parent) return [`branch ${branch}`, ` · ${first.note}`];
+  return [`branch ${branch}`, ` · fork of ${first.parent} · ${first.note}`];
+}
+
+function renderTimeline() {
+  const box = $("timeline");
+  const cols = Math.max(...state.nodes.map((n) => n.turn)) + 1;
+  box.style.setProperty("--cols", cols);
+  box.replaceChildren();
+  const axis = el("div", "axis");
+  axis.append(el("span", "", ""));
+  for (let t = 0; t < cols; t++) axis.append(el("span", "", t ? `turn ${t}` : "start"));
+  box.append(axis);
+  const branches = [...new Set(state.nodes.map((n) => n.branch))];
+  for (const branch of branches) {
+    const row = el("div", "row");
+    const name = el("div", "name");
+    const [bold, rest] = branchLabel(branch);
+    name.append(el("b", "", bold), rest);
+    name.title = bold + rest;
+    row.append(name);
+    for (const node of branchNodes(branch)) {
+      const button = el("button", `node ${node.status}`, node.id);
+      button.type = "button";
+      button.dataset.id = node.id;
+      button.style.gridColumn = String(node.turn + 2);
+      button.setAttribute("aria-pressed", String(node.id === selected));
+      button.setAttribute("aria-label", `checkpoint ${node.id}, ${node.status}, turn ${node.turn}`);
+      button.addEventListener("click", () => select(node.id, true));
+      row.append(button);
+    }
+    box.append(row);
+  }
+}
+
+function event(e) {
+  const li = el("li", e.kind);
+  const tags = { call: "call", result: "result", answer: "answer", blocked: "BLOCKED" };
+  li.append(el("span", "tag", tags[e.kind]));
+  if (e.kind === "call") li.append(`${e.name}(${args(e.arguments)})` + (e.ran ? "" : "\nnot run: the run stopped before this tool executed"));
+  else if (e.kind === "blocked") li.append(`${e.name}(${args(e.arguments)})\n${e.reason}\nThe tool never ran.`);
+  else li.append(e.text);
+  return li;
+}
+
+function renderDetail(node) {
+  const budget = node.budget;
+  $("tokens").replaceChildren(String(node.tokens), el("small", "", budget ? ` / ${budget}` : " / unlimited"));
+  const meter = $("meter");
+  const ratio = budget ? node.tokens / budget : 0;
+  meter.querySelector("i").style.width = `${Math.min(100, ratio * 100)}%`;
+  meter.className = "meter" + (ratio >= 1 ? " over" : ratio >= 0.8 ? " warn" : "");
+  $("calls").textContent = String(node.tool_calls);
+  const blocked = state.nodes.filter((n) => n.status === "blocked").length;
+  $("blocked").replaceChildren(String(blocked), el("small", "", " all branches"));
+  $("blocked-tile").classList.toggle("bad", blocked > 0);
+  $("count").textContent = String(state.nodes.length);
+
+  $("title").textContent = `checkpoint ${node.id} · ${node.status.replace("_", " ")}`;
+  $("sub").textContent = `branch ${node.branch} · turn ${node.turn}` + (node.parent ? ` · parent ${node.parent}` : "") + (node.note && node.status !== "blocked" ? ` · ${node.note}` : "");
+  const events = $("events");
+  events.replaceChildren(...node.events.map(event));
+  if (!node.events.length) events.append(el("li", "", node.status === "fork" ? "Forked state, before the next turn runs." : "Before the first model call."));
+  $("transcript").replaceChildren(...node.messages.map((m) => {
+    const li = el("li");
+    li.append(el("span", "tag", m.role), m.text || m.calls.map((c) => `${c.name}(${args(c.arguments)})`).join("\n"));
+    return li;
+  }));
+
+  const forkable = node.forkable;
+  $("go").disabled = !forkable;
+  $("go").textContent = `fork ${node.id} & resume`;
+  $("fork-hint").textContent = forkable
+    ? "Resumes the runtime from this checkpoint on a new branch. Try removing the injected SYSTEM line, or a budget of 20."
+    : node.status === "blocked"
+      ? "Nothing to resume: the run stopped here. Fork the checkpoint before it instead."
+      : "This run finished; fork an earlier checkpoint.";
+  const hasOutput = forkable && node.tool_output !== null;
+  $("output-field").hidden = !hasOutput;
+  $("edit").checked = false;
+  $("output").disabled = true;
+  $("output").value = hasOutput ? node.tool_output : "";
+  $("budget").value = budget ?? "";
+  $("error").textContent = "";
+}
+
+function select(id, user) {
+  if (user) stopReplay();
+  const node = byId(id);
+  if (!node) return;
+  selected = id;
+  for (const b of document.querySelectorAll(".node")) b.setAttribute("aria-pressed", String(b.dataset.id === id));
+  renderDetail(node);
+  $("live").textContent = `checkpoint ${id}, ${node.status}`;
+}
+
+function stopReplay() {
+  if (replaying) clearInterval(replaying);
+  replaying = null;
+  $("replay").textContent = "▶ replay branch";
+}
+
+function replay() {
+  if (replaying) return stopReplay();
+  const path = lineage(byId(selected));
+  let i = 0;
+  select(path[0].id);
+  $("replay").textContent = "■ stop";
+  replaying = setInterval(() => {
+    i += 1;
+    if (i >= path.length) return stopReplay();
+    select(path[i].id);
+  }, 900);
+}
+
+function load(data, focus) {
+  state = data;
+  renderTimeline();
+  select(focus && byId(focus) ? focus : state.nodes.at(-1).id);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!selected || e.target.closest("textarea, input")) return;
+  const node = byId(selected);
+  const row = branchNodes(node.branch);
+  const at = row.indexOf(node);
+  const branches = [...new Set(state.nodes.map((n) => n.branch))];
+  const b = branches.indexOf(node.branch);
+  let next = null;
+  if (e.key === "ArrowRight") next = row[at + 1];
+  else if (e.key === "ArrowLeft") next = row[at - 1];
+  else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    const other = branchNodes(branches[b + (e.key === "ArrowDown" ? 1 : -1)] ?? -1);
+    next = other.find((n) => n.turn >= node.turn) ?? other.at(-1);
+  }
+  if (!next) return;
+  e.preventDefault();
+  select(next.id, true);
+  document.querySelector(`.node[data-id="${next.id}"]`)?.focus();
+});
+
+$("edit").addEventListener("change", () => { $("output").disabled = !$("edit").checked; });
+$("replay").addEventListener("click", replay);
+$("reset").addEventListener("click", async () => {
+  stopReplay();
+  try { load(await api("/api/debug/reset", {})); } catch (err) { $("error").textContent = err.message; }
+});
+$("fork").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  stopReplay();
+  const raw = $("budget").value.trim();
+  const body = { node: selected, budget: raw ? Number(raw) : null };
+  if ($("edit").checked && !$("output-field").hidden) body.tool_output = $("output").value;
+  $("go").disabled = true;
+  try {
+    const before = state.nodes.length;
+    const data = await api("/api/debug/fork", body);
+    load(data, data.nodes[before]?.id);
+    replay();
+  } catch (err) {
+    $("error").textContent = err.message;
+    $("go").disabled = false;
+  }
+});
+
+api("/api/debug").then((data) => load(data)).catch((err) => { $("title").textContent = err.message; });
+</script>
+</body>
+</html>

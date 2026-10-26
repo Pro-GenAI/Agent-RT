@@ -17,7 +17,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 - **Provider-neutral.** OpenAI-compatible endpoints, OpenAI, Anthropic, or your own `ModelProvider`.
 - **Safe by construction.** Tool validation, permissions, composable action blockers, approvals, deterministic PII morphing, guardrails, budgets, and deadlines are runtime primitives.
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
-- **Small core.** OpenAI support is included; Anthropic, guardrails, API serving, CLI, and sandboxes are opt-in extras.
+- **Small core.** OpenAI support is included; Anthropic, API serving, CLI, and sandboxes are opt-in extras.
 - **Production-ready.** Checkpoints, event streams, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
 - **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LiteLLM, LangChain, Deep Agents, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
@@ -27,7 +27,7 @@ Python 3.10–3.14. Runs on Linux, Windows, macOS (Intel and Apple M-series), an
 
 ```bash
 pip install agent-rt
-pip install 'agent-rt[all]'   # or pick extras: anthropic, observability, api, cli, guardrails
+pip install 'agent-rt[all]'   # or pick extras: anthropic, observability, api, cli
 ```
 
 Works with the `openai` (1.31+, including 2.x and 3.x) and `anthropic` (0.29+, including 1.x) SDK versions your project already pins — any release since mid-2024.
@@ -51,6 +51,8 @@ Only API-key setups are reused; subscription sign-ins stay with the official cli
 ```
 
 Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_openai import ChatOpenAI`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
+
+Try it with no API key: `uvx agent-rt demo` runs a scripted mock model through a prompt-injection attack, shows the built-in action blocker stopping `rm -rf ~` before the tool runs, totals tokens, and prints this process's peak RAM next to a competitor's published benchmark figure.
 
 Or let Agent RT rewrite every supported import for you (install `agent-rt` and `pytest` in the project environment first):
 
@@ -120,7 +122,7 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/pyt
 
 - **API server** (`agent-rt[api]`): OpenAI-compatible Chat Completions/Responses and Anthropic-compatible Messages endpoints.
 - **Terminal CLI** (`agent-rt[cli]`): `agent-rt -p "explain this stack trace"` or `agent-rt --config ./agent-rt.yaml -p "..."`. Reuse an existing agent CLI's models and API keys with `agent-rt claude -p "..."`, `agent-rt codex exec "..."`, `agent-rt opencode run "..."`, or `agent-rt copilot -p "..."` ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#reuse-another-agent-cli)).
-- **Web UI** (`agent-rt[web]`): run `agent-rt-web` in a project folder to chat in your browser, with sessions saved in the browser and in-page approval for file edits ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#web-ui)).
+- **Web UI** (`agent-rt[web]`): run `agent-rt web` in a project folder to chat in your browser, with sessions saved in the browser and in-page approval for file edits, plus a time-travel debugger (`agent-rt web --demo`: token budget, tool calls, blocked actions, and fork-from-checkpoint on the offline demo) ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#web-ui)).
 
 ## Learn more
 

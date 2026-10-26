@@ -68,7 +68,6 @@ Add explicit extras:
 - `agent-rt[openai]` — OpenAI SDK support, including startup validation and explicit SDK transport.
 - `agent-rt[anthropic]` — Anthropic SDK support.
 - `agent-rt[providers]` — both provider SDKs.
-- `agent-rt[guardrails]` — Agent Action Guard and its existing HarmActionsEval/ONNX requirements.
 - `agent-rt[api]` — FastAPI and Uvicorn for hosting the optional OpenAI-compatible inbound API; these server dependencies remain outside the minimal runtime install.
 - `agent-rt[cli]` — prompt-toolkit and Rich for the optional interactive terminal client; terminal UI dependencies remain outside the minimal runtime install.
 - `agent-rt[all]` — all optional Python integrations, including the API server and terminal client.
@@ -83,7 +82,6 @@ This keeps one npm package and the existing root export surface. Consumers insta
 
 - `npm install agent-rt openai`
 - `npm install agent-rt @anthropic-ai/sdk`
-- `npm install agent-rt agent-action-guard`
 - `npm install agent-rt @traceloop/node-server-sdk`
 
 No new package or subpath is required for this first split because the integration code is already lazily imported and the root module does not eagerly evaluate those SDKs.

@@ -96,7 +96,7 @@ DEPS_PYTHON=3.13 ./scripts/test-deps-matrix.sh                    # other interp
 
 Each profile (`mid-2024`, `late-2024`, `mid-2025`, `late-2025`, `mid-2026`, `latest`) installs the `dev` extra into a disposable virtual environment with that profile's pins applied as `uv pip install --override`, runs the full suite, deletes the environment, and ends with a per-profile PASS/FAIL summary; `uv.lock` and the `make test` environment are untouched. Keep the first profile at the `pyproject.toml` floors and the last at the newest releases, and widen the declared ranges when a new major SDK release passes. `tests/test_sdk_versions.py` drives the installed real SDKs against a loopback wire-format double, so SDK-specific breakage (for example request fields an older SDK rejects, or APIs it lacks) shows up offline. Old `openai` (<1.55.3) and `anthropic` (<0.40) releases need `httpx<0.28`, which their applications already pin.
 
-Run the `agent-rt-web` page in real browsers:
+Run the `agent-rt web` page in real browsers:
 
 ```bash
 make test-browsers
@@ -319,7 +319,7 @@ CircleCI configuration lives in `.circleci/config.yml` and intentionally uses th
 The CircleCI workflow runs:
 
 - Python regression tests across Python 3.10-3.14.
-- `make test-browsers`: the `agent-rt-web` page in every browser the macOS runner can run (Playwright Chromium, Firefox, and WebKit, plus any preinstalled Chrome or Edge), with the downloaded browsers cached in `~/agent-rt-browsers`. This is the only CI that runs the browser tests; GitHub cross-platform CI does not.
+- `make test-browsers`: the `agent-rt web` page in every browser the macOS runner can run (Playwright Chromium, Firefox, and WebKit, plus any preinstalled Chrome or Edge), with the downloaded browsers cached in `~/agent-rt-browsers`. This is the only CI that runs the browser tests; GitHub cross-platform CI does not.
 - Python built-in static security scanning, deterministic offline adversarial scanning, the website CSP check (`scripts/check_website_csp.py`) and its regression tests (`scripts/test_check_website_csp.py`), the homepage migration-wall freshness check (`scripts/render_migration_wall.py --check`), and the third-party developer security gate.
 - TypeScript regression tests across Node 20, 22, 24, and 26.
 - TypeScript type/lint/dead-code checks plus the deterministic security gate.
