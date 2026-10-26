@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w0yyRF6WWC+UrkjViN7MKnBuBDjwcrJA2viZJejzQzQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-eYeTD/uq4sObuocnq+YEkDntnnF53ZCGppLB7OG2s+0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Agent RT — Lightweight AI Agent Runtime for Python &amp; TypeScript</title>
   <meta name="description" content="Agent RT is a lightweight AI agent runtime for Python and TypeScript with tools, streaming, memory, policy, sandboxing, orchestration, and observability.">
@@ -110,8 +110,7 @@
       var root = document.documentElement, pref = null;
       root.classList.add("js");
       try { pref = localStorage.getItem("agent-rt-motion"); } catch (error) {}
-      var reduce = pref ? pref === "reduce" : !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
-      root.setAttribute("data-motion", reduce ? "reduce" : "full");
+      root.setAttribute("data-motion", pref === "reduce" ? "reduce" : "full");
     })();
   </script>
   <link rel="stylesheet" href="./styles.css">

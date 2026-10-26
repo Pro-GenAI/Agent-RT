@@ -23,8 +23,8 @@
   const toast = document.getElementById("copy-toast");
 
   /* ---------------------------------------------------------------
-     Motion toggle: animations follow the OS reduced-motion setting; the visitor's
-     choice is remembered for this browser only.
+     Motion toggle: animations are on by default (even with OS reduced motion); the
+     visitor's choice is remembered for this browser only.
      --------------------------------------------------------------- */
   document.querySelectorAll("[data-motion-toggle]").forEach((button) => {
     button.setAttribute("aria-pressed", String(!reducedMotion));
