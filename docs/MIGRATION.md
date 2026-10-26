@@ -21,6 +21,18 @@ Per-test comparison reads pytest's JUnit report, Vitest's JUnit report, or Jest'
 
 Both commands print a before-and-after card: tests passed, test-suite time, peak memory of the test process (Python only), and the size of the directly imported upstream packages compared with `agent-rt` (dependency trees are not counted). The project environment must already contain `agent-rt` (and `pytest` for Python). For a repository whose `origin` is on GitHub, a successful run prints a pre-filled GitHub issue link to add it to the [migration wall](https://agent-rt-pro.github.io/); nothing is sent automatically.
 
+### "Runs on Agent RT" badge
+
+Maintainers whose repository runs on Agent RT can add this badge to their README:
+
+[![Runs on Agent RT](https://agent-rt-pro.github.io/assets/badge/runs-on-agent-rt.svg)](https://agent-rt-pro.github.io/#migration)
+
+```markdown
+[![Runs on Agent RT](https://agent-rt-pro.github.io/assets/badge/runs-on-agent-rt.svg)](https://agent-rt-pro.github.io/#migration)
+```
+
+The badge is opt-in: the Agent RT project never opens pull requests or issues asking repositories (including those on the migration wall) to add it.
+
 Minimum environment for the snippets below:
 
 - OpenAI: set `OPENAI_API_KEY` to use the default `https://api.openai.com/v1` endpoint, or set `OPENAI_BASE_URL` for an OpenAI-compatible endpoint (a key is then optional if that endpoint does not require one). `OPENAI_MODEL` supplies the default model.
