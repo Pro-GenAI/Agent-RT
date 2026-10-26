@@ -184,7 +184,7 @@ cd python
 
 Each release has a one-word codename (`RELEASE_NAME` in `python/src/agent_rt_cli.py`, shown in the CLI banner and the root README's "Meet Artie" section). When you bump the version, pick a new short, punchy word that suits a running robot (for example Sprint, Dash, Bolt) and is not reused, and update both places.
 
-The banner's pixel Artie is generated, not hand-drawn: `python/src/ext/artie_art.py` comes from `docs/assets/logo-mark.png` (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with `uv run --with pillow python3 scripts/render_artie_art.py`; `--check` reports a stale module without rewriting it.
+The banner's pixel Artie is generated, not hand-drawn: `python/src/ext/artie_art.py` comes from `docs/assets/logo-mark.png` (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with `uv run --with pillow python3 scripts/render_artie_art.py`; `--check` reports a stale module without rewriting it. Artie's mood poses (shield, celebrate) are hand-drawn ASCII in `python/src/ext/artie_moods.py` and `typescript/src/ext/artie.ts`; keep the two identical.
 
 ## TypeScript
 

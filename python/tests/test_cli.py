@@ -1125,6 +1125,24 @@ class TestTerminalChat:
         assert ("print", "rendered:hello") in events
         assert chat._last_response_markdown == "hello"
 
+    async def test_guard_block_shows_shield_pose(self):
+        from rich.console import Console
+
+        class FakeSession:
+            async def send(self, text, *, stream, on_event=None):
+                raise GuardrailViolationError("rm -rf is blocked")
+
+        chat = object.__new__(TerminalChat)
+        chat.session = FakeSession()
+        chat.console = Console(record=True, no_color=True, width=100)
+        chat.stream = False
+
+        await chat._send("clean up")
+
+        text = chat.console.export_text()
+        assert "|| >    < ||==|==||==|  Guard blocked it: rm -rf is blocked" in text
+        assert "error:" not in text
+
     async def test_copy_command_copies_unrendered_last_markdown(self):
         events = []
         copied = []

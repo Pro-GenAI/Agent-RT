@@ -23,6 +23,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from ext.artie_moods import pose
+
 PYTHON_IMPORT_ROOTS = {
     "LangChain": (
         "langchain",
@@ -571,6 +573,7 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
             print(f"  - {problem}", file=out)
         print("\nLast test output:\n" + after.output[-4000:], file=out)
         return 1
+    print(pose("celebrate", "Migration passed! Your tests agree."), file=out)
     for path in sorted(plan.migrated):
         print(f"  changed {path.relative_to(project).as_posix()}", file=out)
     link = wall_link(project, plan)

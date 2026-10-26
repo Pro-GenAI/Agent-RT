@@ -30,6 +30,7 @@ from agent_rt import (
     checkpoint_from_result,
     make_rule_based_action_blocker,
 )
+from ext.artie_moods import pose
 
 # Max peak RSS of LlamaIndex + OpenAI + Anthropic add-ons; keep in step with comparison/README.md.
 COMPETITOR = ("LlamaIndex", 101.9)
@@ -175,7 +176,7 @@ async def run(out: Out = print) -> dict[str, Any]:
             out(f"agent > {result.final_response.message.content[0].text}")
     except GuardrailViolationError as exc:
         # The runtime fails closed: a blocked call ends the run before its tool executes.
-        out(f"guard > BLOCKED before execution: {exc}")
+        out(pose("shield", f"guard > BLOCKED before execution: {exc}"))
 
     tokens = ledger.total().total_tokens
     out(

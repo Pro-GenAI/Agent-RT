@@ -13,6 +13,7 @@ import {
 	type ToolCall,
 	type ToolSideEffect,
 } from '../index.js';
+import { pose } from './artie.js';
 
 // Max observed RSS of LlamaIndex.TS + OpenAI + Anthropic add-ons; keep in step with comparison/README.md.
 const COMPETITOR: [string, number] = ['LlamaIndex.TS', 192.8];
@@ -157,7 +158,12 @@ export async function run(
 	} catch (error) {
 		if (!(error instanceof GuardrailViolationError)) throw error;
 		// The runtime fails closed: a blocked call ends the run before its tool executes.
-		out(`guard > BLOCKED before execution: ${error.message}`);
+		out(
+			pose(
+				'shield',
+				`guard > BLOCKED before execution: ${error.message}`,
+			),
+		);
 	}
 
 	const total = ledger.total();

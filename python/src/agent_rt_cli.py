@@ -25,6 +25,7 @@ from agent_rt import (
     AgentRunLimits,
     AgentRunResult,
     ContentPart,
+    GuardrailViolationError,
     ModelMessage,
     ModelSettings,
     ModelStreamEvent,
@@ -35,6 +36,7 @@ from agent_rt import (
     load_config,
     load_model,
 )
+from ext.artie_moods import pose
 from ext.cli_tools import TOOLS, ToolCLIError, translate_tool_cli
 from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
 from ext.extensions import SkillPackage, SkillRegistry
@@ -1787,6 +1789,12 @@ class TerminalChat:
         except KeyboardInterrupt:
             stop_status()
             self.console.print("\n[yellow]Interrupted.[/yellow]")
+        except GuardrailViolationError as exc:
+            stop_status()
+            self.console.print(
+                pose("shield", f"Guard blocked it: {exc}"),
+                style="bold spring_green3", markup=False, highlight=False,
+            )
         except Exception as exc:
             stop_status()
             self.console.print(f"[red]error:[/red] {exc}")

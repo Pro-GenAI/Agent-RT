@@ -10,6 +10,7 @@ test("demo blocks the injected command offline", async () => {
   assert.deepStrictEqual(summary.ran, ["get_weather"]);
   assert.ok(summary.tokens > 0);
   assert.ok(lines.some((line) => line.includes("BLOCKED before execution")));
+  assert.ok(lines.some((line) => line.includes("|| >    < ||")));
 });
 
 test("demo rejects extra arguments", () => {

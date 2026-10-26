@@ -19,7 +19,7 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 
 ## 🤖 Meet Artie
 
-Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you in the terminal when `agent-rt` starts. `artie` is a command alias: `artie migrate`, `artie demo`, and every other `agent-rt` command and option work the same. Its three flagship features have names:
+Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you in the terminal when `agent-rt` starts. `artie` is a command alias: `artie migrate`, `artie demo`, and every other `agent-rt` command and option work the same. Artie has moods: it raises a shield when Guard blocks a tool call and celebrates when a migration passes. Its three flagship features have names:
 
 - 🛡️ **Guard** — action blockers, including [Agent Action Guard](docs/Runtime-Guide.md#action-blockers), stop a harmful tool call before it runs.
 - ♻️ **Checkpoints** — resume a run with the turn, tool-call, and token budgets it had already used.

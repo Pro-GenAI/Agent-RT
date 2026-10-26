@@ -47,6 +47,7 @@ def test_migrate_keeps_rewrite_when_old_failure_is_unchanged(tmp_path: Path):
     code, output = _migrate(tmp_path)
     assert code == 0, output
     assert "MIGRATED" in output and "1/2 passed -> 1/2 passed" in output
+    assert "Migration passed!" in output
     assert test_file.read_text().startswith("import agent_rt.openai as openai\n")
 
 

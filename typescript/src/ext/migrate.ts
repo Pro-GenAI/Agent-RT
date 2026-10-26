@@ -26,6 +26,7 @@ import {
 	resolve,
 	sep,
 } from 'node:path';
+import { pose } from './artie.js';
 
 // Kept in step with TS_SPECIFIER_RULES in scripts/migration_test/migration_test.py.
 export const TS_SPECIFIER_RULES: Record<string, Array<[string, string]>> = {
@@ -593,6 +594,7 @@ export function main(
 			log(`\nLast test output:\n${after.output.slice(-4000)}`);
 			return 1;
 		}
+		log(pose('celebrate', 'Migration passed! Your tests agree.'));
 		for (const path of [...plan.migrated.keys()].sort())
 			log(`  changed ${relative(project, path).split(sep).join('/')}`);
 		const link = wallLink(project, plan);

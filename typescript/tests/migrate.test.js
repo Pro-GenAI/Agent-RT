@@ -89,6 +89,7 @@ test("migrate keeps a rewrite whose tests pass before and after", (t) => {
   const lines = [];
   assert.equal(main(["migrate", root], (line) => lines.push(line)), 0, lines.join("\n"));
   assert.match(lines.join("\n"), /MIGRATED/);
+  assert.match(lines.join("\n"), /Migration passed!/);
   assert.match(fs.readFileSync(file, "utf8"), /require\("agent-rt\/openai"\)/);
 });
 

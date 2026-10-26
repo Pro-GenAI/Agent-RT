@@ -10,6 +10,7 @@ def test_demo_blocks_injected_command_offline():
     assert summary["ran"] == ["get_weather"]
     assert summary["tokens"] > 0
     assert any("BLOCKED before execution" in line for line in lines)
+    assert any("|| >    < ||" in line for line in lines)
 
 
 def test_demo_rejects_arguments(capsys):
