@@ -36,7 +36,7 @@ async function main() {
 
   const result = await new AgentLoop(provider, undefined, registry).run(
     agent,
-    [message("user", "What is the weather in Chennai?")],
+    [message("user", "What is the weather in New York?")],
   );
 
   console.log(responseText(result.finalResponse));

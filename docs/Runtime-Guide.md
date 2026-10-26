@@ -134,7 +134,7 @@ The short unkeyed fingerprint is for deterministic lookup, not a cryptographic p
 
 ## Terminal CLI (Python)
 
-Install `agent-rt[cli]` to add the `agent-rt` command:
+Install `agent-rt[cli]` to add the `agent-rt` command. `artie` is an alias for it with the same subcommands and options (`artie -p "..."`, `artie migrate`, `artie web`); with `uvx`, run it as `uvx --from agent-rt artie`:
 
 ```bash
 agent-rt
@@ -144,6 +144,8 @@ agent-rt --session refactor --prompt "plan the migration"
 agent-rt --session refactor --resume
 agent-rt --max-output-tokens 4096 -p "summarize this diff"
 ```
+
+An interactive session opens with a banner of Artie, the Agent RT mascot, drawn from the logo in colored half-block pixels (a colored ASCII version on consoles without 256 colors or UTF-8), showing its name, the version and release codename, the model, the session id, and the flagship features (Guard, Checkpoints, Wall); `-p`/`--prompt` runs print no banner.
 
 The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
 

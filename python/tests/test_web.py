@@ -555,7 +555,7 @@ def test_debugger_forks_resume_the_runtime_from_a_checkpoint(tmp_path):
     assert branch[0]["parent"] == "0.1"
     assert branch[-1]["status"] == "completed"
     assert branch[-1]["events"] == [
-        {"kind": "answer", "text": "Chennai right now: 30C, sunny."}
+        {"kind": "answer", "text": "New York right now: 30C, sunny."}
     ]
 
     tight = client.post("/api/debug/fork", json={"node": "0.0", "budget": 20}).json()

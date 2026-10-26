@@ -21,6 +21,8 @@ from agent_rt import (
     ToolRegistry,
 )
 from agent_rt_cli import (
+    ARTIE,
+    BUILTIN_MODEL_NAME,
     USER_INPUT_PROMPT,
     ChatSession,
     TerminalChat,
@@ -35,7 +37,8 @@ from agent_rt_cli import (
     _CLI_SETTINGS,
     async_main,
     build_parser,
-    load_config_or_offer,
+    load_config_or_create,
+    with_builtin_models,
 )
 from ext.config import ConfigNotFoundError
 
@@ -97,19 +100,19 @@ class TestConfigFile:
         assert result == 2
         assert "configuration error" in capsys.readouterr().err
 
-    async def test_no_default_config_reports_searched_locations(
+    async def test_no_default_config_creates_one_and_lists_openai_models(
         self, tmp_path, monkeypatch, capsys
     ):
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setenv("HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
+        monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
         result = await async_main(["-p", "hello"])
 
         assert result == 2
         err = capsys.readouterr().err
-        assert "no config file found" in err
-        assert "agent-rt.yaml" in err
+        assert "created" in err and (tmp_path / "home/.agent-rt/config.yaml").is_file()
+        assert "listing OpenAI models failed" in err
 
     async def test_invalid_config_is_reported(self, tmp_path, capsys):
         config = tmp_path / "bad.yaml"
@@ -766,6 +769,44 @@ class TestChatSession:
 
 
 class TestTerminalChat:
+    def test_banner_shows_mascot_and_session(self):
+        from rich.console import Console
+
+        chat = object.__new__(TerminalChat)
+        chat.session = SimpleNamespace(model="model-a", session_id="s-1")
+        chat.console = Console(record=True, no_color=True, width=100)
+
+        chat.banner()
+
+        text = chat.console.export_text()
+        assert "/.--------.\\   Artie\n" in text
+        assert '|| ^    ^ ||   Agent RT' in text
+        assert "model=model-a  session=s-1" in text
+        assert all(len(art) == len(mask) for art, mask in ARTIE)
+
+    def test_banner_prints_logo_pixels_on_color_terminals(self):
+        import io
+
+        from rich.console import Console
+
+        from ext.artie_art import PALETTE, PIXELS
+
+        assert len(PIXELS) % 2 == 0 and len({len(row) for row in PIXELS}) == 1
+        assert set("".join(PIXELS)) <= set(PALETTE) | {"."}
+        chat = object.__new__(TerminalChat)
+        chat.session = SimpleNamespace(model="model-[a]", session_id="s-1")
+        chat.console = Console(
+            file=io.StringIO(), record=True, color_system="truecolor", width=100
+        )
+
+        chat.banner()
+
+        text = chat.console.export_text()
+        assert "▀" in text and "|| ^" not in text
+        assert "model=model-[a]  session=s-1" in text
+        assert "Guard | Checkpoints | Wall" in text
+        assert "Guard | Checkpoints | Wall" in text
+
     def test_markdown_h1_renders_without_panel_border(self):
         dependencies = _require_cli_dependencies()
         Console = dependencies[6]
@@ -1140,39 +1181,37 @@ class TestStarterConfig:
         monkeypatch.setattr(Path, "home", lambda: home)
         return home, work
 
-    def tty(self, monkeypatch, answer):
-        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-        monkeypatch.setattr("builtins.input", lambda _prompt: answer)
-
-    def test_without_a_terminal_the_missing_config_error_stays(self, folders):
-        with pytest.raises(ConfigNotFoundError):
-            load_config_or_offer(None, "agent-rt")
-
-    @pytest.mark.parametrize(
-        ("answer", "where"),
-        [("", ("home", ".agent-rt/config.yaml")), ("2", ("work", "agent-rt.yaml"))],
-    )
-    def test_creates_an_owner_only_starter_config_where_chosen(
-        self, folders, monkeypatch, answer, where
-    ):
-        self.tty(monkeypatch, answer)
-        config = load_config_or_offer(None, "agent-rt")
-        home, work = folders
-        path = (home if where[0] == "home" else work) / where[1]
-        assert config.model_names == ("gpt-5.5",)
-        assert path.is_file()
+    def test_creates_an_owner_only_starter_config_without_models(self, folders):
+        home, _ = folders
+        config = load_config_or_create(None, "agent-rt")
+        path = home / ".agent-rt" / "config.yaml"
+        assert config.models == () and path.is_file()
         if os.name == "posix":
             assert path.stat().st_mode & 0o777 == 0o600
+        # The empty model_list falls back to the built-in /v1/models discovery.
+        assert with_builtin_models(config)[1] is True
+        # A second run loads the same file instead of overwriting it.
+        path.write_text(path.read_text() + "# mine\n", encoding="utf-8")
+        load_config_or_create(None, "agent-rt")
+        assert path.read_text().endswith("# mine\n")
 
-    def test_cancel_creates_nothing(self, folders, monkeypatch):
-        self.tty(monkeypatch, "3")
+    def test_explicit_missing_path_is_never_replaced(self, folders):
         with pytest.raises(ConfigNotFoundError):
-            load_config_or_offer(None, "agent-rt")
+            load_config_or_create(Path("missing.yaml"), "agent-rt")
         home, work = folders
         assert not any(home.rglob("*.yaml")) and not any(work.rglob("*.yaml"))
 
-    def test_explicit_missing_path_is_never_replaced(self, folders, monkeypatch):
-        self.tty(monkeypatch, "1")
-        with pytest.raises(ConfigNotFoundError):
-            load_config_or_offer(Path("missing.yaml"), "agent-rt")
+    async def test_builtin_model_list_comes_from_discovery(self):
+        class Provider:
+            model_names = (BUILTIN_MODEL_NAME,)
+            discovery_errors = ["openai: down"]
+
+            def __init__(self, models):
+                self.models = models
+
+            async def discover_models(self):
+                return self.models
+
+        assert await _provider_model_ids(Provider(("a", "b"))) == ("a", "b")
+        with pytest.raises(RuntimeError, match="openai: down"):
+            await _provider_model_ids(Provider(()))

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-rt"
-version = "0.0.4"
+version = "0.1.0"
 description = "Lightweight utilities for building AI agent harnesses"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
@@ -20,6 +20,7 @@ dependencies = [
 ]
 license = "MIT"
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -106,6 +107,7 @@ dev = [
 
 [project.scripts]
 agent-rt = "agent_rt_cli:main"
+artie = "agent_rt_cli:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

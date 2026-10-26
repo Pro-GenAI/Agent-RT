@@ -11,8 +11,9 @@ import shutil
 import subprocess
 import sys
 import uuid
-from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from dataclasses import dataclass, field
+from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +35,7 @@ from agent_rt import (
     load_model,
 )
 from ext.cli_tools import TOOLS, ToolCLIError, translate_tool_cli
-from ext.config import ConfigNotFoundError
+from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
 from ext.extensions import SkillPackage, SkillRegistry
 
 DEFAULT_INSTRUCTIONS = (
@@ -55,6 +56,39 @@ COMPACTION_INSTRUCTIONS = (
 )
 COMPACTION_REQUEST = "Compact the conversation above now. Return only the context that should be carried forward."
 DEFAULT_COMPACT_TOKEN_THRESHOLD = 32_000
+# One-word codename for the current release; rename it when the version is bumped (docs/DEVELOPMENT.md).
+RELEASE_NAME = "Sprint"
+
+# ASCII Artie for consoles without 256 colors or UTF-8 (the banner otherwise prints the
+# logo itself from ext/artie_art.py): speed lines, colored tool tiles, a
+# helmet with a dark visor and smiling eyes. ASCII only so legacy Windows consoles render
+# it; each mask letter styles the character above it (see ARTIE_STYLES).
+ARTIE = (
+    ("                       O  ", "                       B  "),
+    ("   ---  =  --  .------/-. ", "   ccc GGG dd   HHHHHHAHH "),
+    ("  ---------   /.--------.\\", "  ddddddddd   HRRRRRRRRRRH"),
+    (" ----  *  --- || ^    ^ ||", " cccc PPP ccc HRVEVVVVEVRH"),
+    ("   ---------- |'--------'|", "   bbbbbbbbbb HRRRRRRRRRRH"),
+    ("  ---  #  ---  '-.____.-' ", "  ccc OOO ddd  HHHHHHHHHH "),
+    (" -----  +  --    _/|__|\\_o", " ddddd KKK cc    AAHHHHAAH"),
+    ("   ----           /  \\_   ", "   bbbb           AAAAA   "),
+)
+ARTIE_STYLES = {
+    "B": "bold bright_cyan",
+    # No color: the terminal's own foreground keeps the helmet visible on light and dark themes.
+    "H": "bold",
+    "R": "bold dodger_blue1 on grey15",
+    "V": "on grey15",
+    "E": "bold bright_cyan on grey15",
+    "A": "bold dodger_blue1",
+    "c": "bright_cyan",
+    "d": "deep_sky_blue1",
+    "b": "dodger_blue1",
+    "G": "bold black on spring_green3",
+    "P": "bold black on medium_purple1",
+    "O": "bold black on dark_orange",
+    "K": "bold black on deep_pink2",
+}
 
 USER_INPUT_PROMPT = [
     ("bold fg:#00afff", "you"),
@@ -888,6 +922,22 @@ def _discover_cli_skills(
     return registry, tuple(warnings)
 
 
+def _skill_warning_consequences(prefix: str, warnings: Sequence[str]) -> str:
+    """Explain what skill warnings mean; empty when there are none."""
+
+    if not warnings:
+        return ""
+    return (
+        f"{prefix}: consequences: each skill named above was skipped and is not "
+        "available to the agent (its instructions and resources are not loaded). "
+        "Limits are 256 resource files and 16 MiB per skill, enforced at load "
+        "so oversized skills are never read into memory. Nothing else is "
+        "affected; repository security scans cover only python/src, tests and "
+        "scripts, so skills under .claude/ cannot fail them. Trim the skill or "
+        "move it out of the workspace to load it."
+    )
+
+
 def _register_skill_tools(tool_registry: ToolRegistry, skills: SkillRegistry) -> None:
     if not skills.active():
         return
@@ -1405,10 +1455,30 @@ class TerminalChat:
                 self._resume_response_status()
 
     def banner(self) -> None:
-        self.console.print(
-            f"[bold]Agent RT[/bold]  model=[cyan]{self.session.model}[/cyan]  "
-            f"session=[cyan]{self.session.session_id}[/cyan]"
+        from rich.text import Text
+
+        info = (
+            Text("Artie", style="bold bright_cyan"),
+            Text.assemble(
+                ("Agent RT", "bold"), f" {_package_version()} ", (f'"{RELEASE_NAME}"', "dim")
+            ),
+            Text.assemble(
+                "model=", (str(self.session.model), "cyan"),
+                "  session=", (str(self.session.session_id), "cyan"),
+            ),
+            Text.assemble(
+                ("Guard", "bold spring_green3"), (" | ", "dim"),
+                ("Checkpoints", "bold dark_orange"), (" | ", "dim"),
+                ("Wall", "bold deep_pink2"),
+            ),
         )
+        lines = _artie_pixel_lines(self.console) or _artie_ascii_lines()
+        first = (len(lines) - len(info) + 1) // 2
+        for index, line in enumerate(lines):
+            if first <= index < first + len(info):
+                line.append("   ")
+                line.append_text(info[index - first])
+            self.console.print(line, highlight=False)
         self.console.print(
             "Type [bold]/help[/bold] for commands. Ctrl-D or /exit quits."
         )
@@ -1720,8 +1790,10 @@ def _model_ids_from_payload(payload: Any) -> tuple[str, ...]:
 
 
 async def _provider_model_ids(provider: Any) -> tuple[str, ...]:
-    # A YAML-configured provider already knows its model_list names; no network call needed.
     configured = getattr(provider, "model_names", None)
+    if configured == (BUILTIN_MODEL_NAME,):
+        return await discover_builtin_models(provider)
+    # A YAML-configured provider already knows its model_list names; no network call needed.
     if isinstance(configured, tuple) and configured:
         return configured
     client = getattr(provider, "client", None)
@@ -1795,6 +1867,8 @@ def build_workspace_session(
         skills, skill_warnings = _discover_cli_skills(workspace)
         for warning in skill_warnings:
             print(f"agent-rt: skill warning: {warning}", file=sys.stderr)
+        if consequences := _skill_warning_consequences("agent-rt", skill_warnings):
+            print(consequences, file=sys.stderr)
     _register_skill_tools(workspace_registry, skills)
     return ChatSession(
         AgentLoop(
@@ -1944,48 +2018,115 @@ def build_parser() -> argparse.ArgumentParser:
 
 STARTER_CONFIG = """\
 # Agent RT starter config. Full reference: https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md
-# Secrets are read with `os.environ/NAME`; set OPENAI_API_KEY (or switch to the Anthropic entry below).
-model_list:
-  - model_name: gpt-5.5
-    agent_rt_params:
-      model: openai/gpt-5.5
-      api_key: os.environ/OPENAI_API_KEY
-  # - model_name: claude-sonnet-5
-  #   agent_rt_params:
-  #     model: anthropic/claude-sonnet-5
-  #     api_key: os.environ/ANTHROPIC_API_KEY
+# With no model_list, Agent RT offers every model that OPENAI_API_KEY's /v1/models lists
+# (OPENAI_BASE_URL picks another OpenAI-compatible endpoint). Add a model_list to pin models;
+# secrets are read with `os.environ/NAME`.
+# model_list:
+#   - model_name: gpt-5.5
+#     agent_rt_params:
+#       model: openai/gpt-5.5
+#       api_key: os.environ/OPENAI_API_KEY
+#   - model_name: claude-sonnet-5
+#     agent_rt_params:
+#       model: anthropic/claude-sonnet-5
+#       api_key: os.environ/ANTHROPIC_API_KEY
 # agent_rt_settings:
 #   default_model: gpt-5.5   # selected at startup; otherwise the first model above
 """
 
+# Used when there is no config file, or it has no model_list: OpenAI with OPENAI_API_KEY (and
+# OPENAI_BASE_URL when set, as the OpenAI SDK does), offering whatever its /v1/models lists.
+# BUILTIN_MODEL_NAME is only a routing name, never shown.
+BUILTIN_MODEL_NAME = "openai"
+BUILTIN_MODELS = f"""\
+model_list:
+  - model_name: {BUILTIN_MODEL_NAME}
+    agent_rt_params:
+      model: openai/default
+      api_key: os.environ/OPENAI_API_KEY
+"""
 
-def load_config_or_offer(explicit: Path | None, prog: str) -> Any:
-    """Load the config; when none exists and a person is at the terminal, offer to create one."""
+
+def with_builtin_models(config: AgentRTConfig) -> tuple[AgentRTConfig, bool]:
+    """Return ``config``, or a copy using the built-in models when it has none (then True)."""
+    if config.models:
+        return config, False
+    text = BUILTIN_MODELS
+    if os.environ.get("OPENAI_BASE_URL", "").strip():
+        # Only when set: an unset os.environ/ reference is a missing secret and would fail.
+        text += "      api_base: os.environ/OPENAI_BASE_URL\n"
+    return replace(config, models=parse_config(text).models), True
+
+
+async def discover_builtin_models(provider: Any) -> tuple[str, ...]:
+    """List the built-in models' /v1/models ids, failing with what to do about it."""
+    models = await provider.discover_models()
+    if not models:
+        why = "; ".join(provider.discovery_errors) or "it returned none"
+        raise RuntimeError(
+            f"no model_list in agent-rt.yaml, and listing OpenAI models failed ({why}); "
+            "set OPENAI_API_KEY (and OPENAI_BASE_URL for another endpoint) "
+            "or add a model_list (see docs/Configuration.md)"
+        )
+    return models
+
+
+def load_config_or_create(explicit: Path | None, prog: str) -> AgentRTConfig:
+    """Load the config; when none exists, create the starter config in the home folder."""
     try:
         return load_config(explicit)
     except ConfigNotFoundError:
-        if explicit is not None or not (sys.stdin.isatty() and sys.stdout.isatty()):
+        if explicit is not None:  # a path the user typed must exist
             raise
-    choices = (
-        Path.home() / ".agent-rt" / "config.yaml",
-        Path.cwd() / "agent-rt.yaml",
-    )
-    print(
-        f"{prog}: no config file found. Create a starter config?\n"
-        f"  1) {choices[0]}  (home folder: used everywhere)\n"
-        f"  2) {choices[1]}  (current folder only)\n"
-        "  3) cancel"
-    )
-    answer = input("Choose [1]: ").strip() or "1"
-    if answer not in {"1", "2"}:
-        raise ConfigNotFoundError("no config file created")
-    path = choices[int(answer) - 1]
+    path = Path.home() / ".agent-rt" / "config.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     # Owner-only, and never overwrite: the file will hold key references (or keys) later.
-    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as file:
-        file.write(STARTER_CONFIG)
-    print(f"{prog}: created {path}; edit it to choose your models and keys.")
+    with suppress(FileExistsError):
+        with os.fdopen(
+            os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w"
+        ) as file:
+            file.write(STARTER_CONFIG)
+        print(f"{prog}: created {path}; edit it to pin models or keys.", file=sys.stderr)
     return load_config(path)
+
+
+def _artie_pixel_lines(console: Any) -> list[Any] | None:
+    """The logo robot as colored half blocks, or None where they would not render."""
+    from rich.text import Text
+
+    encoding = (console.encoding or "").lower().replace("-", "")
+    if (
+        console.no_color
+        or console.color_system not in {"truecolor", "256"}
+        or not encoding.startswith("utf")
+    ):
+        return None
+    from ext.artie_art import PALETTE, PIXELS
+
+    lines = []
+    for top, bottom in zip(PIXELS[::2], PIXELS[1::2]):
+        line = Text(no_wrap=True, overflow="crop")
+        for upper, lower in zip(top, bottom):
+            if upper == ".":
+                line.append("▄" if lower != "." else " ", PALETTE.get(lower, ""))
+            elif lower == ".":
+                line.append("▀", PALETTE[upper])
+            else:
+                line.append("▀", f"{PALETTE[upper]} on {PALETTE[lower]}")
+        lines.append(line)
+    return lines
+
+
+def _artie_ascii_lines() -> list[Any]:
+    from rich.text import Text
+
+    lines = []
+    for art, mask in ARTIE:
+        line = Text(no_wrap=True, overflow="crop")
+        for char, key in zip(art, mask):
+            line.append(char, ARTIE_STYLES.get(key, ""))
+        lines.append(line)
+    return lines
 
 
 def _package_version() -> str:
@@ -2019,8 +2160,9 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         config = (
             invocation.config
             if invocation
-            else load_config_or_offer(args.config, "agent-rt")
+            else load_config_or_create(args.config, "agent-rt")
         )
+        config, builtin = with_builtin_models(config)
         configure_runtime(config)
         _CLI_SETTINGS.clear()
         _CLI_SETTINGS.update(config.settings.get("cli") or {})
@@ -2030,7 +2172,10 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
-        model = await _startup_model(provider, args.model)
+        if builtin and not (args.model or "").strip():
+            model = (await discover_builtin_models(provider))[0]
+        else:
+            model = await _startup_model(provider, args.model)
     except Exception as exc:
         print(f"agent-rt: unable to load models: {exc}", file=sys.stderr)
         return 2
@@ -2118,7 +2263,7 @@ __all__ = (
     "async_main",
     "build_parser",
     "build_workspace_session",
-    "load_config_or_offer",
+    "load_config_or_create",
     "main",
 )
 

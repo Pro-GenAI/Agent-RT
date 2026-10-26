@@ -17,6 +17,16 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 <!-- [![PyPI Downloads](https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=Downloads)](https://pepy.tech/projects/agent-rt) -->
 <!-- [![PyPI Downloads](https://img.shields.io/pepy/dt/agent-rt?style=for-the-badge&label=Downloads)](https://pepy.tech/projects/agent-rt) -->
 
+## 🤖 Meet Artie
+
+Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you in the terminal when `agent-rt` starts. `artie` is a command alias: `artie migrate`, `artie demo`, and every other `agent-rt` command and option work the same. Its three flagship features have names:
+
+- 🛡️ **Guard** — action blockers, including [Agent Action Guard](docs/Runtime-Guide.md#action-blockers), stop a harmful tool call before it runs.
+- ♻️ **Checkpoints** — resume a run with the turn, tool-call, and token budgets it had already used.
+- 🧱 **Wall** — the [migration wall](https://agent-rt-pro.github.io/): 65+ third-party repositories that pass their tests before and after migrating.
+
+Each release also gets a one-word codename; the current one is **Sprint**.
+
 ## 📈 By the Numbers
 
 - 🪙 **8–37× fewer input tokens** per prompt than Codex, Claude Code, opencode, and Copilot CLI

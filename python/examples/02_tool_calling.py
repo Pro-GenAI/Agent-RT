@@ -40,7 +40,7 @@ async def main() -> None:
 
     result = await AgentLoop(provider, tool_registry=registry).run(
         agent,
-        [user_message("What is the weather in Chennai?")],
+        [user_message("What is the weather in New York?")],
     )
 
     print(response_text(result.final_response))

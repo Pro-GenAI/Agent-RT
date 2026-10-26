@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -36,11 +36,13 @@ harmactionseval = [
 
 [[package]]
 name = "agent-rt"
-version = "0.0.4"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
     { name = "httpcore", extra = ["asyncio"] },
     { name = "httpx" },
+    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "openai" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -49,12 +51,10 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
-    { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
     { name = "anthropic" },
     { name = "e2b" },
     { name = "fastapi" },
     { name = "microsandbox", marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
-    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "openai" },
     { name = "prompt-toolkit" },
     { name = "rich" },
@@ -74,13 +74,10 @@ bedrock = [
     { name = "boto3" },
 ]
 cli = [
-    { name = "agent-action-guard", extra = ["harmactionseval"] },
-    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "prompt-toolkit" },
     { name = "rich" },
 ]
 dev = [
-    { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
     { name = "agentsec-ai" },
     { name = "anthropic" },
     { name = "bandit", extra = ["toml"] },
@@ -95,7 +92,6 @@ dev = [
     { name = "microsandbox", marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
     { name = "modelscan", marker = "python_full_version < '3.13'" },
     { name = "mypy" },
-    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "openai" },
     { name = "picklescan", marker = "python_full_version >= '3.11'" },
     { name = "pip-audit" },
@@ -112,10 +108,6 @@ dev = [
     { name = "traceloop-sdk" },
     { name = "twine" },
     { name = "uvicorn", extra = ["standard"] },
-]
-guardrails = [
-    { name = "agent-action-guard", extra = ["harmactionseval"] },
-    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
 ]
 observability = [
     { name = "traceloop-sdk" },
@@ -137,19 +129,13 @@ sandbox-swe-rex = [
     { name = "swe-rex" },
 ]
 web = [
-    { name = "agent-action-guard", extra = ["harmactionseval"] },
-    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "starlette" },
     { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "(platform_machine == 'arm64' and extra == 'all') or (sys_platform != 'darwin' and extra == 'all')", specifier = ">=1.2.1,<2" },
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "(platform_machine == 'arm64' and extra == 'dev') or (sys_platform != 'darwin' and extra == 'dev')", specifier = ">=1.2.1,<2" },
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "extra == 'cli'", specifier = ">=1.2.1,<2" },
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "extra == 'guardrails'", specifier = ">=1.2.1,<2" },
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "extra == 'web'", specifier = ">=1.2.1,<2" },
+    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'", specifier = ">=1.2.1,<2" },
     { name = "agentsec-ai", marker = "extra == 'dev'", specifier = ">=0.5,<1" },
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.29,<2" },
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.29,<2" },
@@ -176,11 +162,7 @@ requires-dist = [
     { name = "microsandbox", marker = "extra == 'sandbox-microsandbox'", specifier = ">=0.7.4,<0.8" },
     { name = "modelscan", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=0.8.8,<1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.18,<2" },
-    { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'all'", specifier = "<1.24" },
-    { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'cli'", specifier = "<1.24" },
-    { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'dev'", specifier = "<1.24" },
-    { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'guardrails'", specifier = "<1.24" },
-    { name = "onnxruntime", marker = "python_full_version < '3.11' and extra == 'web'", specifier = "<1.24" },
+    { name = "onnxruntime", marker = "python_full_version < '3.11'", specifier = "<1.24" },
     { name = "openai", specifier = ">=1.31,<4" },
     { name = "openai", marker = "extra == 'all'", specifier = ">=1.31,<4" },
     { name = "openai", marker = "extra == 'dev'", specifier = ">=1.31,<4" },
@@ -218,7 +200,7 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'dev'", specifier = ">=0.30,<1" },
     { name = "websockets", specifier = ">=13,<18" },
 ]
-provides-extras = ["openai", "anthropic", "bedrock", "providers", "observability", "guardrails", "sandbox-e2b", "sandbox-microsandbox", "sandbox-swe-rex", "api", "cli", "web", "all", "dev"]
+provides-extras = ["openai", "anthropic", "bedrock", "providers", "observability", "sandbox-e2b", "sandbox-microsandbox", "sandbox-swe-rex", "api", "cli", "web", "all", "dev"]
 
 [[package]]
 name = "agentsec-ai"
@@ -1474,7 +1456,6 @@ version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1b/ab/522a2ab67f27971a9d48ca666d4fca85ef7d5282d142e31fd087e27b1bbe/hf_xet-1.6.0.tar.gz", hash = "sha256:2e58454a340b3556dfa4972d5451aff4fba8dd42a236600ba1a1d2b1514f0fef", size = 920527, upload-time = "2026-08-03T22:33:13.243Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/41/62/3c062f593bd92ef4e77a0ef39541e3d82a0a1d3947c8a777a02a13a27828/hf_xet-1.6.0-cp314-cp314t-macosx_10_12_x86_64.whl", hash = "sha256:70cbb9c896901600128cb9b6f06e132954fbede1db30f31f7c6c63f84cb7c31d", size = 4074584, upload-time = "2026-08-03T22:32:47.364Z" },
     { url = "https://files.pythonhosted.org/packages/bb/1e/c0ad437dd267a8e435bef594acf781bbc3874ff0b6435b4962d03ecf7cc4/hf_xet-1.6.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:23379c2f9ec8696d952b16414a2bae72cad86a52df869b050698ba60f538c675", size = 3867381, upload-time = "2026-08-03T22:32:49.049Z" },
     { url = "https://files.pythonhosted.org/packages/d5/ee/7c0d7b6ab336167531b1c30af2af003f054af4c749becbd7209ae33a77c3/hf_xet-1.6.0-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:f2f7278c05c22fd60cb436cda1269649b3e81db65ecdc8496e5e164aa4143e7b", size = 4453982, upload-time = "2026-08-03T22:32:50.568Z" },
     { url = "https://files.pythonhosted.org/packages/63/06/ad8eab1c9525246650cbaa821caa3cdbaca734ab1a5b8c91bea09cbd8d69/hf_xet-1.6.0-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:948f15d3a9545cfe5932f6bd8b440f6ae630aee108f14b7bd6c561f7c2dcc522", size = 4249445, upload-time = "2026-08-03T22:32:52.391Z" },
@@ -1482,7 +1463,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/67/57/0b88af1f194ab6c9c650547d9cc06bfeaab836ae4dcdb331676bfb8be95a/hf_xet-1.6.0-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:35cec30d75c6f9eb9c16a77cef68e85a103b72e24d4b473714ec9ff06428bab9", size = 4664712, upload-time = "2026-08-03T22:32:55.547Z" },
     { url = "https://files.pythonhosted.org/packages/53/a0/26b717a9d1840e8abf48dcec64b5ed8fbe472671d38ad28d30e147132b33/hf_xet-1.6.0-cp314-cp314t-win_amd64.whl", hash = "sha256:5789835d7c6bc9436962853192082374297fb72d7eff7e7762ec25ceb7e25338", size = 4025906, upload-time = "2026-08-03T22:32:57.391Z" },
     { url = "https://files.pythonhosted.org/packages/49/f6/4a9966633c6fef83af997e2cff68ec1963676d412bdfd096df2a93b8e185/hf_xet-1.6.0-cp314-cp314t-win_arm64.whl", hash = "sha256:75765820ce4700db3750c94acc8fe27c5fae4c9ec000a0dbac3ca082acf97765", size = 3849221, upload-time = "2026-08-03T22:32:59.123Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/50/7afa2c9c787405864fc47a0d1bbc02c62e9101947ed43c1f43899fc7d91d/hf_xet-1.6.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:633dc0cd71d32da58ab8c03ad38e2fac452c15c2b0a2866ebf6ededfe0a5061d", size = 4071729, upload-time = "2026-08-03T22:33:00.721Z" },
     { url = "https://files.pythonhosted.org/packages/4b/69/55b8dcf636142ae660fec1869fcac14c4da2e8412e14d6eee1523be77e9f/hf_xet-1.6.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:f0906082d9932ae0c0057fa194041c22b4e2cdb46b2592ef3b91f020d62a081a", size = 3876287, upload-time = "2026-08-03T22:33:02.251Z" },
     { url = "https://files.pythonhosted.org/packages/67/4e/a28359bf1c1ecf11eba22123168c138698f7cb576ac678f5a2e16cd5da08/hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:d62671bb130879cef0ee4c9ebe47a14af6c66ec53e6d84dc15936e5ffdfac82f", size = 4464663, upload-time = "2026-08-03T22:33:03.802Z" },
     { url = "https://files.pythonhosted.org/packages/9a/69/1f0cbc2fb22ae6082d094f743d1b8945a3f36f6089cb95f42b7ee348cda7/hf_xet-1.6.0-cp38-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:0e6e21fa3cdfcdcd76748564bf593870a5e013f47d97cf10aed63aa222cff5b7", size = 4262538, upload-time = "2026-08-03T22:33:05.287Z" },
@@ -4898,7 +4878,6 @@ dependencies = [
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/18/1e/bc6587c5ab643b2e17776cace9070a2ae73549c86bffac9934a600bf3c31/tokenizers-0.23.2.tar.gz", hash = "sha256:7f0f085686b9de0d0079e6f874ae053600db64c5d13049e0bbc0119926d25aac", size = 385745, upload-time = "2026-09-03T08:55:42.89Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/ed/8a443528baa6fac8dfe8c3b75b038c63ac92bb539bcabe311e227c718173/tokenizers-0.23.2-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:85a9a357a3764aecc904ee76bdaf8cf1ad8e5a67a1b929a487c4a39b49ed0e90", size = 3148852, upload-time = "2026-09-03T08:55:30.874Z" },
     { url = "https://files.pythonhosted.org/packages/67/49/22da045a91732384d3a3771816bf188dc5a1f702c32e635afa7c679c0bef/tokenizers-0.23.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:986670e43691469dcee610ea0f846f91a8f84e91fc6f7a48d4c064414c0ec2bf", size = 3101593, upload-time = "2026-09-03T08:55:28.587Z" },
     { url = "https://files.pythonhosted.org/packages/2e/4d/8f569ed49372a3ed8e57099bd515055fd48d7c95912c4307cda6973c2168/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a37039b5dfc4af84eb3ef0a92f4307e28936c8f9adccba2629d36f652e9bf7a2", size = 3516830, upload-time = "2026-09-03T08:55:14.741Z" },
     { url = "https://files.pythonhosted.org/packages/2a/de/e2f14c8919d5bf51874051d00d6c7b7e0e8bde6c6a2dbeddda7f642896ff/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:7b7e37ba198f24150f523e1242e83c4970de4a525480586be5dcc24d9add32c5", size = 3407975, upload-time = "2026-09-03T08:55:16.842Z" },

@@ -1,14 +1,12 @@
 import argparse
 import asyncio
 import json
-import os
 import secrets
 import sys
 import uuid
 import webbrowser
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import suppress
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +23,7 @@ from agent_rt_cli import (
     ChatSession,
     _deserialize_message,
     _discover_cli_skills,
+    _skill_warning_consequences,
     _message_text,
     _package_version,
     _positive_int,
@@ -32,8 +31,10 @@ from agent_rt_cli import (
     _serialize_message,
     _startup_model,
     build_workspace_session,
+    discover_builtin_models,
+    with_builtin_models,
 )
-from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
+from ext.config import AgentRTConfig, ConfigNotFoundError
 
 PAGE_PATH = Path(__file__).resolve().parent / "ext" / "web_ui.html"
 DEBUG_PAGE_PATH = PAGE_PATH.with_name("debug_ui.html")
@@ -56,18 +57,6 @@ MAX_FORK_BUDGET = 100_000
 SessionFactory = Callable[[str, Callable[[str, Mapping[str, Any]], Any]], ChatSession]
 
 
-# Used when there is no config file, or it has no model_list: OpenAI with OPENAI_API_KEY (and
-# OPENAI_BASE_URL when set, as the OpenAI SDK does), offering whatever its /v1/models lists.
-# "openai" is only a routing name, never shown.
-BUILTIN_MODELS = """\
-model_list:
-  - model_name: openai
-    agent_rt_params:
-      model: openai/default
-      api_key: os.environ/OPENAI_API_KEY
-"""
-
-
 def web_config(path: Path | None) -> tuple[AgentRTConfig, bool]:
     """Load the config (none, or a blank one, is fine); True when built-in models were used."""
     try:
@@ -76,13 +65,7 @@ def web_config(path: Path | None) -> tuple[AgentRTConfig, bool]:
         if path is not None:  # a path the user typed must exist
             raise
         config = AgentRTConfig()
-    if config.models:
-        return config, False
-    text = BUILTIN_MODELS
-    if os.environ.get("OPENAI_BASE_URL", "").strip():
-        # Only when set: an unset os.environ/ reference is a missing secret and would fail.
-        text += "      api_base: os.environ/OPENAI_BASE_URL\n"
-    return replace(config, models=parse_config(text).models), True
+    return with_builtin_models(config)
 
 
 def _require_web_dependencies() -> Any:
@@ -637,14 +620,7 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         provider = load_model(config)
         if builtin:
             # No configured models to start from, so this is the one startup network call.
-            models = await provider.discover_models()
-            if not models:
-                why = "; ".join(provider.discovery_errors) or "it returned none"
-                raise RuntimeError(
-                    f"no model_list in agent-rt.yaml, and listing OpenAI models failed ({why}); "
-                    "set OPENAI_API_KEY (and OPENAI_BASE_URL for another endpoint) "
-                    "or add a model_list (see docs/Configuration.md)"
-                )
+            models = await discover_builtin_models(provider)
             model = (args.model or "").strip() or models[0]
         else:
             model = await _startup_model(provider, args.model)
@@ -656,6 +632,8 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
     skills, skill_warnings = _discover_cli_skills(workspace)
     for warning in skill_warnings:
         print(f"agent-rt web: skill warning: {warning}", file=sys.stderr)
+    if consequences := _skill_warning_consequences("agent-rt web", skill_warnings):
+        print(consequences, file=sys.stderr)
 
     def make_session(
         session_model: str, approve: Callable[[str, Mapping[str, Any]], Any]

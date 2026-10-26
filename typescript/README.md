@@ -6,6 +6,8 @@
 
 🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT)
 
+Meet **Artie**, the running robot, and its flagship features: **Guard** (blocks harmful tool calls before they run), **Checkpoints** (resume with budgets intact), and the migration **Wall** (65+ repositories passing their tests after migrating).
+
 [![66x smaller npm install than LangChain.js](https://raw.githubusercontent.com/Pro-GenAI/Agent-RT/main/docs/website/assets/share/install.png)](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
 
 Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero provider SDKs, then add tools, approvals, memory, sandboxing, retrieval, and multi-agent orchestration as needed.
