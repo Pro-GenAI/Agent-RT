@@ -350,6 +350,7 @@ class TestConfiguredModelProvider:
         assert provider.settings.default_model == "claude-sonnet-5"
 
     def test_default_factory_builds_real_providers_lazily(self):
+        pytest.importorskip("anthropic")
         provider = load_model(parse())
         assert isinstance(provider, ConfiguredModelProvider)
         first = provider._provider(provider.config.models[0])

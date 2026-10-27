@@ -341,9 +341,9 @@ Python keeps startup fast by loading only the eager core on `import agent_rt`. M
 
 ## Cross-platform CI
 
-Cross-platform CI lives in `.github/workflows/cross-platform.yml`. It runs on pull requests, pushes to `main`, and as a reusable prerequisite of PyPI publication. Both runtimes are tested on Linux x86-64 and arm64, Windows, and macOS (Intel and Apple Silicon); the arm64/Linux jobs cover the Raspberry Pi instruction-set architecture. The dedicated Raspberry Pi CPU/memory-limited checks run in CircleCI.
+Cross-platform CI lives in `.github/workflows/cross-platform.yml`. It runs on pull requests and pushes to `main`. Both runtimes are tested on Linux x86-64 and arm64, Windows, and macOS (Intel and Apple Silicon); the arm64/Linux jobs cover the Raspberry Pi instruction-set architecture. The dedicated Raspberry Pi CPU/memory-limited checks run in CircleCI.
 
-The PyPI workflow triggers when a GitHub release is **published** and invokes cross-platform CI for the release tag before building and uploading the package. Publishing is blocked when any of those checks fail. The release matrix covers Python 3.13 and Node 22; the full language-version and SDK-dependency matrices are separate jobs.
+The PyPI workflow triggers when a GitHub release is **published** and builds and uploads the package for the release tag; it does not depend on cross-platform CI.
 
 ## CircleCI on Apple Silicon macOS
 
