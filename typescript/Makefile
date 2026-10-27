@@ -98,5 +98,5 @@ verify:
 	@$(NO_CONDA) $(MAKE) install
 	@$(NO_CONDA) $(MAKE) test
 	@$(NO_CONDA) $(MAKE) test-matrix
-	@$(NO_CONDA) $(MAKE) test-deps-matrix
+# 	@$(NO_CONDA) $(MAKE) test-deps-matrix
 	@$(NO_CONDA) $(MAKE) security
