@@ -975,7 +975,7 @@ class TestToolContract:
             is True
         )
 
-    def test_decision_model_action_blocker_supports_laya_style_provider(self):
+    def test_decision_model_action_blocker_supports_jev_style_provider(self):
         class Provider:
             def __init__(self):
                 self.calls = []

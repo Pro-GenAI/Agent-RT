@@ -72,7 +72,7 @@ Add explicit extras:
 - `agent-rt[cli]` — prompt-toolkit and Rich for the optional interactive terminal client; terminal UI dependencies remain outside the minimal runtime install.
 - `agent-rt[all]` — all optional Python integrations, including the API server and terminal client.
 
-Provider-neutral contracts, request/response types, compatible OpenAI transport, custom provider implementations, classifier-injected guardrails, and Jev-compatible System-1 decision clients remain available in the core install. Laya model weights and ONNX runtimes are not direct Agent RT dependencies; `AGENT_RT_JEV_BASE_URL` may target a local or hosted Jev-compatible `/v1/systemone` service, while `AGENT_RT_JEV_MODEL` selects the model served by that endpoint.
+Provider-neutral contracts, request/response types, compatible OpenAI transport, custom provider implementations, classifier-injected guardrails, and Jev-compatible System-1 decision clients remain available in the core install. Decision model weights and ONNX runtimes are not direct Agent RT dependencies; `AGENT_RT_JEV_BASE_URL` may target a local or hosted Jev-compatible `/v1/systemone` service, while `AGENT_RT_JEV_MODEL` selects the model served by that endpoint.
 
 ### TypeScript
 

@@ -105,12 +105,12 @@ class TestJevDecisionProvider:
         provider = JevDecisionProvider.from_env(
             environ={
                 "AGENT_RT_JEV_BASE_URL": "https://jev.example.test/root/",
-                "AGENT_RT_JEV_MODEL": "hosted-laya",
+                "AGENT_RT_JEV_MODEL": "hosted-decision-model",
                 "AGENT_RT_JEV_TIMEOUT_SECONDS": "2.5",
             }
         )
         assert provider.base_url == "https://jev.example.test/root"
-        assert provider.model == "hosted-laya"
+        assert provider.model == "hosted-decision-model"
         assert provider.timeout_seconds == 2.5
 
         captured = {}
@@ -128,7 +128,7 @@ class TestJevDecisionProvider:
         )
 
         assert captured["url"] == "https://jev.example.test/root/v1/systemone"
-        assert captured["body"]["model"] == "hosted-laya"
+        assert captured["body"]["model"] == "hosted-decision-model"
         assert captured["body"]["state"] == {"text": "hello"}
         assert captured["timeout"] == 2.5
         assert answers["ok"]["noul"] == 0.9

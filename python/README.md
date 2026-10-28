@@ -21,7 +21,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI support is included; Anthropic, API serving, CLI, and sandboxes are opt-in extras.
 - **Production-ready.** Checkpoints, event streams, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Decision models.** Laya, other Jev-compatible models, or the OpenAI Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#action-blockers)).
+- **Decision models.** Jev-compatible models, or the OpenAI-compatible Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#action-blockers)).
 - **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LiteLLM, LangChain, Deep Agents, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
 ## Install

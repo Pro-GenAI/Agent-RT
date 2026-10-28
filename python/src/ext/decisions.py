@@ -69,7 +69,7 @@ DEFAULT_JEV_TIMEOUT_SECONDS = 10.0
 
 
 class JevDecisionProvider:
-    """Synchronous client for Laya/Jev-compatible POST /v1/systemone endpoints."""
+    """Synchronous client for Jev-compatible POST /v1/systemone endpoints."""
 
     def __init__(
         self,

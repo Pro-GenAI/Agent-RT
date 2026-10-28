@@ -392,7 +392,7 @@ loop = AgentLoop(provider, boundary_guardrail_policy=policy)
 loop = AgentLoop(provider, boundary_guardrail_policy=None)</code></pre>
 
 <h3>Composable action blockers</h3>
-<p><code>ToolRegistry</code> can run multiple deny-only action blockers before tool-input guardrails, validation, approvals, and handler execution. The first rejection raises <code>ActionBlockedError</code>. Built-ins include <code>RuleBasedActionBlocker</code>, Agent Action Guard adapters, and Decision-model adapters for Laya/Jev-compatible providers; custom functions/callables and objects exposing <code>check</code> are also supported.</p>
+<p><code>ToolRegistry</code> can run multiple deny-only action blockers before tool-input guardrails, validation, approvals, and handler execution. The first rejection raises <code>ActionBlockedError</code>. Built-ins include <code>RuleBasedActionBlocker</code>, Agent Action Guard adapters, and Decision-model adapters for Jev-compatible providers; custom functions/callables and objects exposing <code>check</code> are also supported.</p>
 <p>The default rule set blocks <code>sudo</code>, <code>rm -rf</code>, <code>git add</code>, <code>git commit</code>, <code>git push</code>, <code>git reset --hard</code>, <code>git merge</code>, and <code>git rebase</code>. Rules are configurable and match command prefixes at shell-command segment boundaries rather than arbitrary substrings.</p>
 <pre><code class="language-python">from agent_rt import RuleBasedActionBlocker, ToolRegistry
 
@@ -585,7 +585,7 @@ results = await retrieval.search(
 <p>The project supports Chroma, Milvus, Pinecone, Qdrant, and Weaviate HTTP adapters and hosted Bedrock Knowledge Bases retrieval (optional AWS SDK), with YAML configuration, lazy initialization, and LangChain/LlamaIndex-compatible imports. See the <a href="../guides/vector-databases.html">vector database guide</a> for concrete setup.</p>
 
 <h2>19. Provider routing and Decision models</h2>
-<p>Model aliases, fallback chains, routing policies, cost/latency-aware selection, and provider-neutral metadata let applications select a generation model without rewriting the loop. Decision models—including Laya and other Jev-compatible models—can be used for bounded routing/selection tasks such as capability choice. Every Decision helper also works with the OpenAI Decisions API through <code>decision_model: {provider: openai}</code> or <code>OpenAIDecisionProvider</code>.</p>
+<p>Model aliases, fallback chains, routing policies, cost/latency-aware selection, and provider-neutral metadata let applications select a generation model without rewriting the loop. Decision models—including Jev-compatible models, which you can self-host with the open-source <a href="https://github.com/ollaya-dev/ollaya" rel="noopener">Ollaya</a> server—can be used for bounded routing/selection tasks such as capability choice. Every Decision helper also works with the OpenAI-compatible Decisions API through <code>decision_model: {provider: openai}</code> or <code>OpenAIDecisionProvider</code>.</p>
 
 <h2>20. MCP, connectors, and remote agents</h2>
 <p><code>MCPClient</code> negotiates capabilities before consuming remote tools, resources, and prompts. Authorized MCP access can combine authentication scopes, credential grants, deny-overrides policy rules, and per-kind filters. Protocol and connector registries separate protocol mechanics from service-specific operations. Remote-agent support covers discovery, capability negotiation, task state, artifacts, streaming events, cancellation, and callbacks.</p>

@@ -27,7 +27,7 @@ test('JevDecisionProvider uses hosted endpoint/model environment', async () => {
 	const provider = new JevDecisionProvider({
 		environ: {
 			AGENT_RT_JEV_BASE_URL: 'https://jev.example.test/root/',
-			AGENT_RT_JEV_MODEL: 'hosted-laya',
+			AGENT_RT_JEV_MODEL: 'hosted-decision-model',
 			AGENT_RT_JEV_TIMEOUT_SECONDS: '2.5',
 		},
 		fetchImpl: async (url, init) => {
@@ -51,10 +51,10 @@ test('JevDecisionProvider uses hosted endpoint/model environment', async () => {
 	);
 
 	assert.equal(provider.baseUrl, 'https://jev.example.test/root');
-	assert.equal(provider.model, 'hosted-laya');
+	assert.equal(provider.model, 'hosted-decision-model');
 	assert.equal(provider.timeoutMs, 2500);
 	assert.equal(capturedUrl, 'https://jev.example.test/root/v1/systemone');
-	assert.equal(capturedBody.model, 'hosted-laya');
+	assert.equal(capturedBody.model, 'hosted-decision-model');
 	assert.deepEqual(capturedBody.state, { text: 'hello' });
 	assert.equal(answers.ok.noul, 0.9);
 });

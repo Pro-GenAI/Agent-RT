@@ -19,7 +19,7 @@ Fully typed, with a native `fetch` OpenAI-compatible transport. Start with zero 
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI, Anthropic, Agent Action Guard, and sandbox integrations are optional peers.
 - **Production-ready.** Checkpoints, events, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Decision models.** Laya, other Jev-compatible models, or the OpenAI Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#action-blockers)).
+- **Decision models.** Jev-compatible models, or the OpenAI-compatible Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#action-blockers)).
 - **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
 ## Install

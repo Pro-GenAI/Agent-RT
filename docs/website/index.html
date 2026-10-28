@@ -521,7 +521,7 @@
           <span class="section-index reveal"><i>03</i> Decision models</span>
           <h2 id="decision-title" class="section-title reveal">A second model that decides.<br><span>It never writes the reply.</span></h2>
           <p class="reveal">
-            Decision models such as Laya, or the OpenAI Decisions API, answer typed choice and score questions with calibrated outputs instead of generating text. Agent RT uses them as optional gates that feed deterministic runtime policy. They never replace that policy.
+            Decision models served over a Jev-compatible API, or the OpenAI-compatible Decisions API, answer typed choice and score questions with calibrated outputs instead of generating text. Agent RT uses them as optional gates that feed deterministic runtime policy. They never replace that policy. Prefer to self-host? Run an open-source Jev-compatible endpoint with <a href="https://github.com/ollaya-dev/ollaya" rel="noopener">Ollaya</a> and point <code>decision_model.base_url</code> at it.
           </p>
           <ul class="cli-points reveal">
             <li><b>Tool safety screening.</b> Unsafe tool definitions are removed before the model ever sees them, and stay out of <code>tool_search</code> too.</li>

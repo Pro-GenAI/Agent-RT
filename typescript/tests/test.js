@@ -3609,7 +3609,7 @@ test("rule action blocker matches configured defaults and tool names", () => {
   );
 });
 
-test("decision-model action blocker supports Laya-style provider", async () => {
+test("decision-model action blocker supports Jev-style provider", async () => {
   const calls = [];
   const provider = {
     async decide(state, questions) {
