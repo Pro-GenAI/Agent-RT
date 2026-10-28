@@ -1,0 +1,132 @@
+/** Approve or deny agent actions from a chat message or phone notification. */
+import { type ApprovalManager, type ApprovalRequest } from './approvals.js';
+
+/** Chat transport: (notification text, short reply code). */
+export type ChatSender = (text: string, code: string) => void | Promise<void>;
+
+const VERBS = new Map<string, string>([
+	['write', 'edit'],
+	['edit', 'edit'],
+	['update', 'edit'],
+	['patch', 'edit'],
+	['modify', 'edit'],
+	['delete', 'delete'],
+	['remove', 'delete'],
+	['rm', 'delete'],
+	['run', 'run'],
+	['exec', 'run'],
+	['execute', 'run'],
+	['send', 'send'],
+	['create', 'create'],
+]);
+const FILE_KEYS = ['path', 'file', 'filename', 'file_path'];
+const TARGET_KEYS = [...FILE_KEYS, 'url', 'command', 'name', 'to'];
+const YES = new Set(['approve', 'approved', 'allow', 'yes', 'y', 'ok']);
+const NO = new Set(['deny', 'denied', 'reject', 'no', 'n']);
+
+/** One-line phone-friendly prompt, e.g. `Agent wants to edit README, approve?`. */
+export function describeRequest(request: ApprovalRequest): string {
+	const words = request.call.name
+		.toLowerCase()
+		.split(/[_\-.\s]+/)
+		.filter(Boolean);
+	const verb =
+		words.map((w) => VERBS.get(w)).find(Boolean) ?? words.join(' ');
+	const args = request.call.arguments;
+	const key = TARGET_KEYS.find((k) => args[k]);
+	let target = key ? String(args[key]) : '';
+	if (key && FILE_KEYS.includes(key)) {
+		const name =
+			target
+				.replace(/[\\/]+$/, '')
+				.split(/[\\/]/)
+				.pop() ?? '';
+		target = name.replace(/\.[^.]*$/, '') || name;
+	}
+	// Arguments come from the model: one line only, so they cannot fake extra text.
+	target = target
+		// eslint-disable-next-line no-control-regex
+		.replace(/[\x00-\x1f\x7f]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	if (target.length > 60) target = target.slice(0, 57) + '...';
+	return `Agent wants to ${[verb, target].filter(Boolean).join(' ')}, approve?`;
+}
+
+/**
+ * Pushes approval requests to a chat channel and resolves them from replies.
+ * Every request that needs a human is sent once with a short reply code;
+ * `handleReply` turns "approve"/"deny" (plus the code when several are
+ * waiting) into a `once` grant bound to the exact call arguments. Whoever can
+ * post replies can approve, so the chat transport must only accept messages
+ * from the approving human.
+ */
+export class ChatApprovals {
+	readonly pending = new Map<string, ApprovalRequest>();
+	private nextCode = 1;
+
+	constructor(
+		readonly manager: ApprovalManager,
+		readonly send: ChatSender,
+	) {
+		manager.notifier = (request) => this.notify(request);
+	}
+
+	notify(request: ApprovalRequest): void {
+		// Resumed runs re-check the same call; send it once.
+		for (const waiting of this.pending.values()) {
+			if (waiting.id === request.id) return;
+		}
+		const code = String(this.nextCode++);
+		this.pending.set(code, request);
+		// A dead channel must not turn a pause into a crash.
+		Promise.resolve()
+			.then(() => this.send(describeRequest(request), code))
+			.catch((error: unknown) =>
+				console.warn('approval notification failed', error),
+			);
+	}
+
+	/** Resolves a reply; returns the confirmation to send back to the chat. */
+	handleReply(text: string, actorId = 'chat'): string {
+		const parts = text.trim().toLowerCase().split(/\s+/);
+		const word = parts[0] ?? '';
+		if (!YES.has(word) && !NO.has(word))
+			return "Reply 'approve' or 'deny'.";
+		let code: string;
+		if (parts.length > 1) code = parts[1].replace(/^#/, '');
+		else if (this.pending.size === 1) code = [...this.pending.keys()][0];
+		else
+			return "Several approvals are waiting: reply 'approve <code>' or 'deny <code>'.";
+		const request = this.pending.get(code);
+		if (!request) return 'No such pending approval.';
+		this.pending.delete(code);
+		const allow = YES.has(word);
+		this.manager.resolve(request, allow ? 'allow' : 'deny', { actorId });
+		const summary = describeRequest(request).replace(/, approve\?$/, '');
+		return (allow ? 'Approved: ' : 'Denied: ') + summary;
+	}
+}
+
+/** Phone push through ntfy (https://ntfy.sh); the topic name acts as a secret. */
+export function ntfySender(
+	topic: string,
+	options: { server?: string; token?: string } = {},
+): ChatSender {
+	const server = (options.server ?? 'https://ntfy.sh').replace(/\/+$/, '');
+	const url = `${server}/${encodeURIComponent(topic)}`;
+	return async (text, code) => {
+		const headers: Record<string, string> = {
+			Title: 'Agent approval',
+			Priority: 'high',
+		};
+		if (options.token) headers.Authorization = `Bearer ${options.token}`;
+		const response = await fetch(url, {
+			method: 'POST',
+			headers,
+			body: `${text}\nReply: approve ${code} / deny ${code}`,
+			signal: AbortSignal.timeout(10_000),
+		});
+		if (!response.ok) throw new Error(`ntfy responded ${response.status}`);
+	};
+}

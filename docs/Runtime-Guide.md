@@ -124,6 +124,8 @@ The core runtime leaves permissions, approvals, timeouts, and token caps off so 
 
 Model-backed tool-input screening is not part of the preset because it needs the optional `agent-action-guard` model. Turn it on with `enable_model_tool_input_guardrail=True` (Python, also accepted by `secure_tool_registry`) or the `ToolRegistry` constructor's `modelToolInputGuardrail: { enabled: true }` argument (TypeScript).
 
+Approvals over chat: `ChatApprovals(manager, send)` / `new ChatApprovals(manager, send)` pushes every request that needs a human to a chat channel as a one-line prompt such as "Agent wants to edit README, approve?" with a short reply code (sent once per request, even when a paused run is resumed). `handle_reply("approve")` / `handleReply('deny 2')` turns the reply into a `once` grant bound to the exact arguments; the code is only needed when several approvals wait. `send(text, code)` is any transport; `ntfy_sender(topic)` / `ntfySender(topic)` delivers a phone push through ntfy without blocking the agent loop. Wire your bot's incoming-message webhook to `handle_reply` and accept messages only from the approving human, since anyone who can reply can approve. Model-supplied arguments are flattened to one line in the prompt so they cannot fake extra text; a failing channel is logged and the run stays paused. Not a YAML setting: construct it in code.
+
 ## Action blockers
 
 `ToolRegistry` accepts multiple deny-only action blockers in addition to transform-capable tool-input guardrails. Blockers run in order and the first rejection raises `ActionBlockedError` before input guardrails, argument validation, approval, or handler execution.

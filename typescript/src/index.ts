@@ -171,6 +171,10 @@ export {
 	InMemoryApprovalStore,
 	ApprovalManager,
 } from './runtime/authorization/approvals.js';
+export {
+	ChatApprovals,
+	ntfySender,
+} from './runtime/authorization/chat_approvals.js';
 
 export {
 	type DryRunResult,

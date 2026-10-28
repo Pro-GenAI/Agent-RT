@@ -142,7 +142,9 @@ class ApprovalManager:
             "destructive",
         ),
         audit_trail: AuditTrail | None = None,
+        notifier: Callable[[ApprovalRequest], None] | None = None,
     ) -> None:
+        self.notifier = notifier
         self.store = store or InMemoryApprovalStore()
         self.required_side_effects = frozenset(required_side_effects)
         self.audit_trail = audit_trail
@@ -181,6 +183,8 @@ class ApprovalManager:
             reason=f"human approval required for {definition.side_effect} tool: {call.name}",
             session_id=session_id,
         )
+        if self.notifier is not None:
+            self.notifier(request)
         raise ApprovalRequiredError(request)
 
     def resolve(

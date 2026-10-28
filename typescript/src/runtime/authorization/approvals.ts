@@ -121,6 +121,8 @@ export class InMemoryApprovalStore {
 export class ApprovalManager {
 	readonly store: ApprovalStore;
 	readonly requiredSideEffects: Set<ToolSideEffect>;
+	/** Called with every request that needs a human, just before the run pauses. */
+	notifier?: (request: ApprovalRequest) => void;
 
 	constructor(
 		store: ApprovalStore = new InMemoryApprovalStore(),
@@ -159,7 +161,7 @@ export class ApprovalManager {
 				'approval denied for tool: ' + call.name,
 			);
 		}
-		throw new ApprovalRequiredError({
+		const request: ApprovalRequest = {
 			id: 'approval:' + (sessionId ?? 'global') + ':' + call.id,
 			call,
 			sideEffect: definition.sideEffect ?? 'none',
@@ -169,7 +171,9 @@ export class ApprovalManager {
 				' tool: ' +
 				call.name,
 			sessionId,
-		});
+		};
+		this.notifier?.(request);
+		throw new ApprovalRequiredError(request);
 	}
 
 	resolve(

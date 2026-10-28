@@ -75,6 +75,7 @@ from ext.runtime.authorization.approvals import (
     ApprovalStore,
     InMemoryApprovalStore,
 )
+from ext.runtime.authorization.chat_approvals import ChatApprovals, ntfy_sender
 from ext.runtime.authorization.grants import CapabilityGrant, TenantContext
 from ext.runtime.authorization.permissions import (
     PermissionDecision,
