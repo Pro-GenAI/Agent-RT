@@ -158,14 +158,16 @@ test("OpenAI Agents compat reports an invalid config instead of falling back", a
   const dir = tempDir();
   fs.mkdirSync(path.join(dir, ".agent-rt"));
   fs.writeFileSync(path.join(dir, ".agent-rt", "config.yaml"), "surprise: 1\n");
-  const previous = { cwd: process.cwd(), home: process.env.HOME };
+  const previous = { cwd: process.cwd(), home: process.env.HOME, profile: process.env.USERPROFILE };
   process.chdir(dir);
-  process.env.HOME = dir;
+  process.env.HOME = process.env.USERPROFILE = dir; // os.homedir() reads USERPROFILE on Windows
   try {
     await assert.rejects(run(new Agent({ name: "a" }), "hi"), /unknown key/);
   } finally {
     process.chdir(previous.cwd);
     process.env.HOME = previous.home;
+    if (previous.profile === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = previous.profile;
   }
 });
 
@@ -179,7 +181,7 @@ test("OpenAI Agents compat falls back to SDK env for a model the config does not
   );
   const previous = { cwd: process.cwd(), env: { ...process.env } };
   process.chdir(dir);
-  process.env.HOME = dir;
+  process.env.HOME = process.env.USERPROFILE = dir;
   // Closed loopback port: reaching it proves the SDK-env provider was chosen.
   process.env.OPENAI_BASE_URL = "http://127.0.0.1:9/v1";
   process.env.OPENAI_API_KEY = "sk-test";
