@@ -1,7 +1,7 @@
 """Real-browser checks for the web UI. Run through `make test-browsers`, which picks the browser.
 
 Skipped in the normal suite: they need Playwright and AGENT_RT_BROWSER (`chromium`, `firefox`,
-or `webkit`).
+or `webkit`). AGENT_RT_CHROMIUM_PATH runs `chromium` against your own executable.
 """
 
 import asyncio
@@ -140,7 +140,8 @@ def server(tmp_path):
 @pytest.fixture(scope="module")
 def browser():
     with sync_api.sync_playwright() as playwright:
-        launched = getattr(playwright, TARGET).launch()
+        path = os.environ.get("AGENT_RT_CHROMIUM_PATH") if TARGET == "chromium" else None
+        launched = getattr(playwright, TARGET).launch(executable_path=path or None)
         yield launched
         launched.close()
 

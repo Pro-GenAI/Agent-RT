@@ -4,6 +4,8 @@ Playwright's Chromium, Firefox and WebKit (Safari's engine) are downloaded into 
 folder (PLAYWRIGHT_BROWSERS_PATH), never installed system-wide. Branded Chrome and Edge are
 Chromium-based, so Chromium covers them.
 Ends with a per-browser PASS/FAIL/SKIP summary; exits non-zero if any browser failed.
+`--engine chromium` tests only Chromium (`make test-chromium`); AGENT_RT_CHROMIUM_PATH points
+it at your own Chromium/Chrome executable instead of downloading Playwright's.
 """
 
 import argparse
@@ -25,6 +27,7 @@ VC_RUNTIME_NOTE = (
     "needs the Microsoft Visual C++ Redistributable (x64), which only an administrator can "
     "install: https://aka.ms/vs/17/release/vc_redist.x64.exe"
 )
+CHROMIUM_PATH = os.environ.get("AGENT_RT_CHROMIUM_PATH") or None
 SAFARI_NOTE = {
     "Darwin": "Playwright cannot drive Safari itself (safaridriver needs `sudo safaridriver --enable`); "
     "webkit covers its engine",
@@ -108,7 +111,8 @@ def probe(engine: str) -> str | None:
 
     try:
         with sync_playwright() as playwright:
-            getattr(playwright, engine).launch().close()
+            path = CHROMIUM_PATH if engine == "chromium" else None
+            getattr(playwright, engine).launch(executable_path=path).close()
     except Error as exc:
         return str(exc)
     return None
@@ -121,6 +125,12 @@ def main() -> int:
         type=Path,
         default=Path(tempfile.gettempdir()) / "agent-rt-browsers",
         help="where Playwright browsers are downloaded (default: <temp>/agent-rt-browsers)",
+    )
+    parser.add_argument(
+        "--engine",
+        choices=ENGINES,
+        action="append",
+        help="test only this engine (repeatable; default: all)",
     )
     parser.add_argument("pytest_args", nargs="*", help="extra pytest arguments")
     args = parser.parse_args()
@@ -140,7 +150,11 @@ def main() -> int:
 
     results: list[tuple[str, str, str]] = []
     targets: list[str] = []
-    for engine in ENGINES:
+    for engine in args.engine or ENGINES:
+        if engine == "chromium" and CHROMIUM_PATH:
+            print(f"Using Chromium at {CHROMIUM_PATH} (skipping download)")
+            targets.append(engine)
+            continue
         print(f"Installing {engine} …", flush=True)
         error = install(engine, dict(os.environ))
         if error:
@@ -188,9 +202,10 @@ def main() -> int:
             check=False,
         )
         results.append((target, "PASS" if completed.returncode == 0 else "FAIL", ""))
-    results.append(
-        ("safari", "SKIP", SAFARI_NOTE.get(system, "not available on this OS"))
-    )
+    if not args.engine:
+        results.append(
+            ("safari", "SKIP", SAFARI_NOTE.get(system, "not available on this OS"))
+        )
 
     order = {name: index for index, name in enumerate(ENGINES)}
     results.sort(key=lambda row: order.get(row[0], len(order)))

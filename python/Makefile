@@ -3,7 +3,7 @@
 UV ?= uv
 RUN := $(UV) run --extra dev
 
-.PHONY: help install install-dev test test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check verify require-bash
+.PHONY: help install install-dev test test-chromium test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check verify require-bash
 
 # GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
 require-bash:
@@ -19,6 +19,7 @@ help:
 		'  make install           Install locked development dependencies' \
 		'  make install-dev       Alias for make install' \
 		'  make test              Run the regression test suite' \
+		'  make test-chromium     Run web UI tests in Chromium (AGENT_RT_CHROMIUM_PATH=/path uses your own)' \
 		'  make test-browsers     Run web UI tests in every browser this OS can run' \
 		'  make test-matrix       Run tests across all supported Python versions' \
 		'  make test-deps-matrix  Run tests across supported dependency versions (mid-2024+)' \
@@ -31,7 +32,7 @@ help:
 		'  make security-attacks  Run offline adversarial runtime attacks' \
 		'  make security          Run the full security/vulnerability gate' \
 		'  make vuln              Alias for make security' \
-		'  make verify            Run install + test + test-matrix + test-deps-matrix + test-browsers + security, stopping at the first failure' \
+		'  make verify            Run install + test + test-chromium + test-matrix + test-deps-matrix + security, stopping at the first failure' \
 		'  make check             Run quality + tests + full security gate'
 
 install:
@@ -48,6 +49,9 @@ test:
 PLAYWRIGHT_VERSION ?= 1.64.0
 test-browsers:
 	$(RUN) --with "playwright==$(PLAYWRIGHT_VERSION)" python scripts/test_browsers.py $(BROWSER_ARGS)
+
+test-chromium:
+	$(RUN) --with "playwright==$(PLAYWRIGHT_VERSION)" python scripts/test_browsers.py --engine chromium $(BROWSER_ARGS)
 
 test-matrix: require-bash
 	bash ./scripts/test-matrix.sh
@@ -97,7 +101,7 @@ endif
 verify:
 	@$(NO_CONDA) $(MAKE) install
 	@$(NO_CONDA) $(MAKE) test
+	@$(NO_CONDA) $(MAKE) test-chromium
 	@$(NO_CONDA) $(MAKE) test-matrix
 # 	@$(NO_CONDA) $(MAKE) test-deps-matrix
-	@$(NO_CONDA) $(MAKE) test-browsers
 	@$(NO_CONDA) $(MAKE) security

@@ -73,7 +73,7 @@ harmactionseval = [
 
 [[package]]
 name = "agent-rt"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },

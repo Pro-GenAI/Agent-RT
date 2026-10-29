@@ -56,6 +56,7 @@ make check
 | --- | --- |
 | `make install` | Install locked development dependencies (`uv sync --extra dev --locked`). |
 | `make test` | Run the regression suite in parallel. |
+| `make test-chromium` | Run the web UI tests in Chromium only (downloaded automatically; `AGENT_RT_CHROMIUM_PATH=/path/to/chrome` uses your own executable instead). |
 | `make test-browsers` | Run the web UI tests in every browser this OS can run (see below). |
 | `make test-matrix` | Run the suite across all supported Python versions. |
 | `make test-deps-matrix` | Run the suite across supported dependency versions (`openai`, `anthropic`, `httpx`, `websockets`, ... released since mid-2024). |
@@ -66,7 +67,7 @@ make check
 | `make security-attacks` | Offline adversarial runtime scan. |
 | `make security` | Both gates plus the third-party developer security scan; runs all checks and prints a final PASS/FAIL summary (failures appear in red on color terminals). |
 | `make check` | `quality` + `test` + `security`. |
-| `make verify` | Runs outside conda (its variables and PATH entries are dropped). `install`, `test`, `test-matrix`, `test-deps-matrix`, `security` (plus `test-browsers` in `python/`), stopping at the first failure. |
+| `make verify` | Runs outside conda (its variables and PATH entries are dropped). `install`, `test`, `test-matrix`, `test-deps-matrix`, `security` (in `python/`: `install`, `test`, `test-chromium`, `test-matrix`, `security`), stopping at the first failure. |
 | `make verify` (repository root) | Runs `make python-verify` then `make ts-verify` (each runs `make verify` in its folder), stopping at the first failure. |
 
 To run a single test file or test: `uv run --extra dev pytest tests/test_agent_loop.py -k name`.

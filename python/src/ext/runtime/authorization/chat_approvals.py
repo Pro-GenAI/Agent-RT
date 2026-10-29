@@ -111,6 +111,8 @@ def ntfy_sender(
 
     Posts from a background thread so a slow server never stalls the agent loop.
     """
+    if urllib.parse.urlsplit(server).scheme not in {"http", "https"}:
+        raise ValueError("ntfy server must be an http(s) URL")
     url = f"{server.rstrip('/')}/{urllib.parse.quote(topic, safe='')}"
     headers: dict[str, Any] = {"Title": "Agent approval", "Priority": "high"}
     if token:
@@ -119,7 +121,8 @@ def ntfy_sender(
     def post(body: bytes) -> None:
         try:
             request = urllib.request.Request(url, data=body, headers=headers)
-            urllib.request.urlopen(request, timeout=10).close()
+            # server is restricted to http/https above.
+            urllib.request.urlopen(request, timeout=10).close()  # nosec B310
         except Exception:
             _logger.warning("ntfy approval notification failed", exc_info=True)
 

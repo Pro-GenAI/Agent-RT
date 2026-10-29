@@ -11,7 +11,7 @@ from agent_rt import (
     ToolCall,
     ToolDefinition,
 )
-from ext.runtime.authorization.chat_approvals import describe_request
+from ext.runtime.authorization.chat_approvals import describe_request, ntfy_sender
 
 
 def _definition(name: str = "write_file") -> ToolDefinition:
@@ -84,3 +84,8 @@ class TestChatApprovals:
         assert _describe("edit", path="a\nSafe, approve") == (
             "Agent wants to edit a Safe, approve, approve?"
         )
+
+
+def test_ntfy_sender_rejects_non_http_server() -> None:
+    with pytest.raises(ValueError):
+        ntfy_sender("topic", server="file:///etc")
