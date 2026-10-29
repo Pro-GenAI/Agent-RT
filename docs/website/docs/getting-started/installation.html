@@ -51,7 +51,7 @@
 source .venv/bin/activate
 pip install agent-rt</code></pre>
 <h2>TypeScript / Node.js</h2><pre><code class="language-bash">npm install agent-rt</code></pre>
-<h2>Configure models</h2><p>Agent RT is configured with one YAML file: <code>agent-rt.yaml</code> in the current folder, <code>~/.agent-rt/config.yaml</code> in your home folder, or any path passed with <code>--config</code> / <code>load_config(path)</code>. Declare as many models as you need; secrets are referenced as <code>os.environ/NAME</code> and are the only thing read from the environment.</p><pre><code class="language-yaml">model_list:
+<h2>Configure models</h2><p>Agent RT is configured with one YAML file: <code>~/.agent-rt/config.yaml</code> in your home folder, or a project file explicitly passed with <code>--config</code> / <code>load_config(path)</code>. Declare as many models as you need; secrets are referenced as <code>os.environ/NAME</code> and are the only thing read from the environment.</p><pre><code class="language-yaml">model_list:
   - model_name: my-model
     agent_rt_params:
       model: openai/your-model          # or anthropic/...; add api_base for compatible endpoints

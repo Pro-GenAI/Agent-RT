@@ -140,7 +140,9 @@ def server(tmp_path):
 @pytest.fixture(scope="module")
 def browser():
     with sync_api.sync_playwright() as playwright:
-        path = os.environ.get("AGENT_RT_CHROMIUM_PATH") if TARGET == "chromium" else None
+        path = (
+            os.environ.get("AGENT_RT_CHROMIUM_PATH") if TARGET == "chromium" else None
+        )
         launched = getattr(playwright, TARGET).launch(executable_path=path or None)
         yield launched
         launched.close()

@@ -43,9 +43,36 @@ class MCPServerSpec:
     cwd: str | None = None
     url: str | None = None
     headers: Mapping[str, str] = field(default_factory=dict)
+    environment_references: tuple[str, ...] = ()
 
     def describe(self) -> str:
-        return self.url or " ".join((self.command or "", *self.args)).strip()
+        # JSON keeps controls, bidi characters, argument boundaries and names visible.
+        return json.dumps(
+            (
+                {"name": self.name, "url": self.url}
+                if self.url
+                else {
+                    "name": self.name,
+                    "argv": [self.command, *self.args],
+                    "cwd": self.cwd,
+                }
+            ),
+            ensure_ascii=True,
+        )
+
+    def approval_description(self) -> str:
+        return (
+            self.describe()
+            + " "
+            + json.dumps(
+                {
+                    "env": sorted(self.env),
+                    "headers": sorted(self.headers),
+                    "environment_references": self.environment_references,
+                },
+                ensure_ascii=True,
+            )
+        )
 
 
 _ENV_REFERENCE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
@@ -76,6 +103,47 @@ def _claude_spec(
 ) -> MCPServerSpec:
     if not isinstance(entry, Mapping):
         raise ValueError("server entry must be an object")
+    # These settings can replace the displayed executable or inject startup code.
+    # Apply this to all repository specs, including previously approved names.
+    if source.name == ".mcp.json":
+        forbidden = [
+            key
+            for key in _strings(entry.get("env"))
+            if key.upper()
+            in {
+                "PATH",
+                "PATHEXT",
+                "NODE_OPTIONS",
+                "NODE_PATH",
+                "RUBYOPT",
+                "RUBYLIB",
+                "BASH_ENV",
+                "ENV",
+                "ZDOTDIR",
+                "COMSPEC",
+            }
+            or key.upper().startswith(("LD_", "DYLD_", "PYTHON", "PERL5"))
+        ]
+        if forbidden:
+            raise ValueError(
+                "project MCP env cannot override executable or runtime loading: "
+                + json.dumps(sorted(forbidden), ensure_ascii=True)
+            )
+    references = tuple(
+        sorted(
+            {
+                match.group(1)
+                for value in (
+                    entry.get("command", ""),
+                    entry.get("url", ""),
+                    *(entry.get("args") or ()),
+                    *_strings(entry.get("env")).values(),
+                    *_strings(entry.get("headers")).values(),
+                )
+                for match in _ENV_REFERENCE.finditer(str(value))
+            }
+        )
+    )
     kind = entry.get("type") or ("http" if entry.get("url") else "stdio")
     if kind == "stdio" and entry.get("command"):
         return MCPServerSpec(
@@ -85,6 +153,7 @@ def _claude_spec(
             command=_expand(entry["command"], environ),
             args=tuple(_expand(arg, environ) for arg in entry.get("args") or ()),
             env={k: _expand(v, environ) for k, v in _strings(entry.get("env")).items()},
+            environment_references=references,
         )
     if kind == "http" and entry.get("url"):
         return MCPServerSpec(
@@ -96,6 +165,7 @@ def _claude_spec(
                 k: _expand(v, environ)
                 for k, v in _strings(entry.get("headers")).items()
             },
+            environment_references=references,
         )
     raise ValueError(f"unsupported server type {kind!r} (stdio and http are supported)")
 
@@ -533,10 +603,12 @@ def register_mcp_tools(
                     name=name,
                     description=str(tool.get("description") or "").strip()
                     or f"MCP tool {remote} from server {connection.spec.name}",
-                    input_schema=dict(schema)
-                    if isinstance(schema, Mapping)
-                    and schema.get("type") in (None, "object")
-                    else {"type": "object"},
+                    input_schema=(
+                        dict(schema)
+                        if isinstance(schema, Mapping)
+                        and schema.get("type") in (None, "object")
+                        else {"type": "object"}
+                    ),
                     side_effect="consequential",
                     error_behavior="return_error",
                     metadata={"mcp_server": connection.spec.name, "mcp_tool": remote},

@@ -3,5 +3,6 @@ TODO*
 temp/
 temp*/
 .env
+.agents/
 .claude/
 skills-lock.json

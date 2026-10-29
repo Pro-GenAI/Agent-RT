@@ -524,15 +524,22 @@ def is_python_env_bin(entry: str) -> bool:
 
 
 def sanitized_env() -> dict[str, str]:
-    """Return an environment with likely credentials removed."""
-    blocked = re.compile(
-        r"(API[_-]?KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|PRIVATE[_-]?KEY)",
-        re.IGNORECASE,
-    )
+    """Build an untrusted subprocess environment from portable process settings."""
+    allowed = {
+        "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TERM", "COLORTERM",
+        "TZ", "SHELL", "TMPDIR", "TMP", "TEMP", "SYSTEMROOT", "WINDIR", "COMSPEC",
+        "PATHEXT", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "PROGRAMFILES",
+        "PROGRAMFILES(X86)", "PROGRAMDATA", "NUMBER_OF_PROCESSORS",
+        "PROCESSOR_ARCHITECTURE", "OS", "HOMEDRIVE", "HOMEPATH",
+        "LC_ALL", "LC_COLLATE", "LC_CTYPE", "LC_MESSAGES", "LC_MONETARY", "LC_NUMERIC",
+        "LC_TIME", "LC_ADDRESS", "LC_IDENTIFICATION", "LC_MEASUREMENT", "LC_NAME",
+        "LC_PAPER", "LC_TELEPHONE",
+    }
     env = {
-        key: value
-        for key, value in os.environ.items()
-        if not blocked.search(key) and not INTERPRETER_ENV.match(key)
+        key: value for key, value in os.environ.items()
+        if key.upper() in allowed
+        and not INTERPRETER_ENV.match(key)
+        and not re.search(r"[a-z][a-z0-9+.-]*://[^/\s]*@", value, re.I)
     }
     # The runner itself usually executes inside `uv run` (its own .venv) and
     # often inside an activated conda env. Left on PATH, those interpreters

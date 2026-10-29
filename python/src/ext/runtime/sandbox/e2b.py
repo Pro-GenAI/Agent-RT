@@ -9,7 +9,11 @@ from collections.abc import Mapping
 from typing import Any
 
 from ext.runtime.sandbox.backends import SandboxCommand, SandboxCommandResult
-from ext.runtime.sandbox.policy import SandboxNetworkPolicy, SandboxResourceLimits
+from ext.runtime.sandbox.policy import (
+    SandboxNetworkPolicy,
+    SandboxResourceLimits,
+    _requires_advanced_network_enforcement,
+)
 from ext.runtime.types import asyncio
 from ext.runtime.workspace.filesystem import WorkspaceFiles
 
@@ -82,6 +86,7 @@ class E2BSandboxBackend:
             or network_policy.allowed_domains
             or network_policy.blocked_domains
             or network_policy.proxy_url
+            or _requires_advanced_network_enforcement(network_policy)
         ):
             raise RuntimeError(
                 "E2B backend requires unrestricted network policy; "

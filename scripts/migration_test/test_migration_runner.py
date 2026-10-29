@@ -14,6 +14,27 @@ from pathlib import Path
 import migration_test as mt
 
 
+class CredentialEnvironmentTests(unittest.TestCase):
+    def test_only_process_settings_reach_untrusted_repositories(self):
+        from unittest.mock import patch
+
+        credentials = {name: "dummy" for name in (
+            "OPENAI_KEY", "ANTHROPIC_KEY", "GH_PAT", "CUSTOM_PAT", "NPM_CONFIG__AUTH",
+            "DATABASE_URL", "PGPASSWD", "SSH_AUTH_SOCK", "GPG_AGENT_INFO",
+            "AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN", "UNKNOWN_VENDOR_CREDENTIAL", "LC_SECRET",
+        )}
+        environment = {**credentials, "PATH": "/usr/bin", "HOME": "/dummy",
+                       "LANG": "en_US.UTF-8", "LC_ALL": "C", "SYSTEMROOT": "C:\\Windows",
+                       "TERM": "https://dummy:password@example.invalid"}
+        with patch.dict(mt.os.environ, environment, clear=True):
+            result = mt.sanitized_env()
+        self.assertTrue(set(credentials).isdisjoint(result))
+        self.assertNotIn("TERM", result)
+        for name in ("PATH", "HOME", "LANG", "LC_ALL", "SYSTEMROOT"):
+            self.assertEqual(result[name], environment[name])
+        self.assertEqual(result["CI"], "1")
+
+
 def write(root: Path, relative: str, text: str = "") -> Path:
     path = root / relative
     path.parent.mkdir(parents=True, exist_ok=True)

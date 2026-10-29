@@ -659,7 +659,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-c",
         "--config",
         type=Path,
-        help="path to the YAML config file (default: agent-rt.yaml, then ~/.agent-rt/config.yaml)",
+        help="path to the YAML config file (default: ~/.agent-rt/config.yaml; project files require --config)",
     )
     parser.add_argument(
         "--port", type=int, default=8765, help="local port (default: 8765)"
@@ -798,14 +798,27 @@ async def _serve(args: argparse.Namespace, chat: WebChat, *, demo: bool = False)
     async def open_browser() -> None:
         while not server.started:
             await asyncio.sleep(0.02)
-        await asyncio.to_thread(
-            webbrowser.open, f"http://127.0.0.1:{args.port}/?token={chat.launch_code}"
-        )
+        from ext.browser_launch import open_private_browser
+
+        try:
+            await open_private_browser(
+                f"http://127.0.0.1:{args.port}/?token={chat.launch_code}",
+                webbrowser.open,
+            )
+        except OSError:
+            print(
+                "Browser launch failed; open the printed link manually.",
+                file=sys.stderr,
+            )
 
     opener = None if args.no_open else asyncio.create_task(open_browser())
-    await server.serve()
-    if opener:
-        opener.cancel()
+    try:
+        await server.serve()
+    finally:
+        if opener:
+            opener.cancel()
+            with suppress(asyncio.CancelledError):
+                await opener
     return 0
 
 

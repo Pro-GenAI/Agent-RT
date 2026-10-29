@@ -627,7 +627,9 @@ export class OpenAI {
 								this.provider,
 								request,
 								{
-									sandboxSession: this.sandboxSession,
+									sandboxSession: expanded.hasHostedCode
+										? this.sandboxSession
+										: undefined,
 									mcpBindings: expanded.mcpBindings,
 									fileSearchBindings:
 										expanded.fileSearchBindings,
@@ -644,7 +646,7 @@ export class OpenAI {
 							expanded.mcpBindings?.size ||
 							expanded.fileSearchBindings?.size ||
 							expanded.webSearchBindings?.size ||
-							this.sandboxSession;
+							expanded.hasHostedCode;
 						return chatStream(
 							localTools
 								? ({
@@ -714,7 +716,9 @@ export class OpenAI {
 					this.provider,
 					request,
 					{
-						sandboxSession: this.sandboxSession,
+						sandboxSession: expanded.hasHostedCode
+							? this.sandboxSession
+							: undefined,
 						mcpBindings: expanded.mcpBindings,
 						fileSearchBindings: expanded.fileSearchBindings,
 						webSearchBindings: expanded.webSearchBindings,

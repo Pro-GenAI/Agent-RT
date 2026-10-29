@@ -58,7 +58,7 @@ def _normalized_tokens(value: str, *, case_sensitive: bool) -> tuple[str, ...]:
 def _command_segments(value: str) -> tuple[str, ...]:
     return tuple(
         segment.strip()
-        for segment in re.split(r"(?:&&|\|\||[;|\n])", value)
+        for segment in re.split(r"[&;|\n(){}`]", value)
         if segment.strip()
     )
 
@@ -82,12 +82,8 @@ def _argument_values(
         return tuple(values)
     if selected and isinstance(value, str):
         return (value,)
-    if (
-        selected
-        and isinstance(value, (list, tuple))
-        and all(isinstance(item, str) for item in value)
-    ):
-        return (" ".join(value),)
+    if selected and isinstance(value, (list, tuple)):
+        return (" ".join(str(item) for item in value),)
     return ()
 
 

@@ -8,10 +8,11 @@ scanners against a benign pickle fixture.
 
 from __future__ import annotations
 
+# The subprocess module is used only for argv-based local developer tools.
 import json
 import pickle
 import shutil
-import subprocess  # nosec B404 - argv-only local developer-tool execution
+import subprocess  # nosec B404
 import sys
 import tempfile
 from pathlib import Path
@@ -54,7 +55,8 @@ def _run(
     capture: bool = True,
 ) -> subprocess.CompletedProcess[str]:
     print(f"[RUN ] {label}")
-    completed = subprocess.run(  # nosec B603 - argv is fixed/local developer tooling
+    # The caller supplies fixed arguments for local developer tooling.
+    completed = subprocess.run(  # nosec B603
         argv,
         cwd=ROOT,
         text=True,

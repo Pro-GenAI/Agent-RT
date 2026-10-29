@@ -150,6 +150,13 @@ class _ModelExecutionQueue:
 async def _read_json_object(
     request: Any, max_request_body_bytes: int
 ) -> dict[str, Any]:
+    if (
+        request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        != "application/json"
+    ):
+        raise _RequestBodyError(
+            "Content-Type must be application/json.", status_code=415
+        )
     content_length = request.headers.get("content-length")
     if content_length is not None:
         try:
@@ -1026,6 +1033,7 @@ def create_app(
     max_queued_requests: int = DEFAULT_MAX_QUEUED_REQUESTS,
     queue_wait_timeout_seconds: float = DEFAULT_QUEUE_WAIT_TIMEOUT_SECONDS,
     allowed_websocket_origins: Collection[str] = (),
+    allowed_hosts: Collection[str] = (),
     enable_docs: bool = False,
     config: Any = None,
     retrieval: Any = None,
@@ -1055,6 +1063,15 @@ def create_app(
         openapi_url="/openapi.json" if enable_docs else None,
     )
     app.state.agent_rt_server = server
+
+    from ext.api_security import APIBrowserGuard
+
+    app.add_middleware(
+        APIBrowserGuard,
+        authenticated=bool(server.api_keys),
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_websocket_origins,
+    )
 
     @app.exception_handler(APIQueueOverloadedError)
     async def queue_overloaded(
@@ -1877,6 +1894,7 @@ def serve(
     max_queued_requests: int = DEFAULT_MAX_QUEUED_REQUESTS,
     queue_wait_timeout_seconds: float = DEFAULT_QUEUE_WAIT_TIMEOUT_SECONDS,
     allowed_websocket_origins: Collection[str] = (),
+    allowed_hosts: Collection[str] = (),
     enable_docs: bool = False,
     config: Any = None,
     retrieval: Any = None,
@@ -1917,6 +1935,10 @@ def serve(
         max_queued_requests=max_queued_requests,
         queue_wait_timeout_seconds=queue_wait_timeout_seconds,
         allowed_websocket_origins=allowed_websocket_origins,
+        allowed_hosts=(
+            # Wildcard bind addresses must not become accepted Host headers.
+            (*allowed_hosts, host) if host not in {"0.0.0.0", "::"} else allowed_hosts  # nosec B104
+        ),
         enable_docs=enable_docs,
         config=config,
         retrieval=retrieval,

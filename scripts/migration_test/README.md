@@ -8,7 +8,7 @@ For each CSV row, the runner clones the repository, records the tested commit, c
 
 The status columns use values such as `PASS`, `FAIL`, `MATCHED_FAILURES`, `SKIPPED`, `SETUP_FAILED`, `FILTERED_HEAVY`, and `NO_TESTS`. A repository whose tests already fail is still migrated: the after status is `MATCHED_FAILURES` when every test that fails afterwards failed before in the same test at the same line, and `FAIL` otherwise. Detailed result fields contain compact JSON with diagnostic information and migration metadata.
 
-Run this tooling only inside a disposable sandbox or VM. Tested repositories are untrusted, and dependency installation/test commands execute third-party code. The runner reduces credential exposure, but that is not a substitute for OS/container isolation or an explicit network policy.
+Run this tooling only inside a disposable sandbox or VM. Tested repositories are untrusted, and dependency installation/test commands execute third-party code. The runner inherits only allowlisted portable process settings and adds its own CI, cache and dummy-provider settings; inherited credentials and authentication-agent sockets are excluded. It reduces credential exposure, but that is not a substitute for OS/container isolation or an explicit network policy.
 
 ## Usage
 

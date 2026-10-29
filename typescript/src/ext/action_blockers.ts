@@ -81,12 +81,8 @@ function argumentValues(
 		return values;
 	}
 	if (selected && typeof value === 'string') return [value];
-	if (
-		selected &&
-		Array.isArray(value) &&
-		value.every((item) => typeof item === 'string')
-	) {
-		return [(value as string[]).join(' ')];
+	if (selected && Array.isArray(value)) {
+		return [value.map(String).join(' ')];
 	}
 	return [];
 }
@@ -156,7 +152,7 @@ export class RuleBasedActionBlocker implements ActionBlocker {
 			call.arguments,
 			this.argumentNames,
 		)) {
-			for (const segment of candidate.split(/(?:&&|\|\||;|\||\n)/)) {
+			for (const segment of candidate.split(/[&;|\n(){}`]/)) {
 				const tokens = normalizedTokens(segment, caseSensitive);
 				while (tokens.length && isEnvironmentAssignment(tokens[0])) {
 					tokens.shift();

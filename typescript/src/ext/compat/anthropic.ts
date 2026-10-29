@@ -536,7 +536,7 @@ export class Anthropic {
 			const localTools =
 				expanded.mcpBindings?.size ||
 				expanded.webSearchBindings?.size ||
-				this.sandboxSession;
+				expanded.hasHostedCode;
 			if (localTools || typeof streaming.stream !== 'function')
 				return createShape(rest);
 			let completed: ModelResponse | undefined;
@@ -607,7 +607,9 @@ export class Anthropic {
 				this.provider,
 				request,
 				{
-					sandboxSession: this.sandboxSession,
+					sandboxSession: expanded.hasHostedCode
+						? this.sandboxSession
+						: undefined,
 					mcpBindings: expanded.mcpBindings,
 					webSearchBindings: expanded.webSearchBindings,
 					maxRounds: this.maxCodeToolRounds,

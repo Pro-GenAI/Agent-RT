@@ -1,5 +1,6 @@
 import asyncio
 import json
+from functools import partial
 
 import pytest
 
@@ -172,7 +173,7 @@ class TestAgentRTAPIHTTP:
             from fastapi.testclient import TestClient
         except ModuleNotFoundError:
             pytest.skip("agent-rt[api] dependencies are not installed")
-        cls.TestClient = TestClient
+        cls.TestClient = staticmethod(partial(TestClient, base_url="http://127.0.0.1"))
 
     def setup_method(self):
         loop, agents = make_server()
@@ -304,14 +305,14 @@ class TestAgentRTAPIHTTP:
         with pytest.raises(
             WebSocketDisconnect
         ) as origin_error, client.websocket_connect(
-            "/v1/responses",
+            "ws://127.0.0.1/v1/responses",
             headers={"origin": "https://blocked.example"},
         ):
             pass
         assert origin_error.value.code == 4403
 
         with client.websocket_connect(
-            "/v1/responses",
+            "ws://127.0.0.1/v1/responses",
             headers={"origin": "https://allowed.example"},
         ) as websocket:
             websocket.send_json(
@@ -523,7 +524,7 @@ class TestAgentRTAPIHTTP:
         assert "configured Agent RT runtime" in unsupported.json()["error"]["message"]
 
     def test_responses_websocket(self):
-        with self.client.websocket_connect("/v1/responses") as websocket:
+        with self.client.websocket_connect("ws://127.0.0.1/v1/responses") as websocket:
             websocket.send_json(
                 {
                     "type": "response.create",

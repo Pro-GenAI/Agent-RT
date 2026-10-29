@@ -4,53 +4,29 @@ import { type ApprovalManager, type ApprovalRequest } from './approvals.js';
 /** Chat transport: (notification text, short reply code). */
 export type ChatSender = (text: string, code: string) => void | Promise<void>;
 
-const VERBS = new Map<string, string>([
-	['write', 'edit'],
-	['edit', 'edit'],
-	['update', 'edit'],
-	['patch', 'edit'],
-	['modify', 'edit'],
-	['delete', 'delete'],
-	['remove', 'delete'],
-	['rm', 'delete'],
-	['run', 'run'],
-	['exec', 'run'],
-	['execute', 'run'],
-	['send', 'send'],
-	['create', 'create'],
-]);
-const FILE_KEYS = ['path', 'file', 'filename', 'file_path'];
-const TARGET_KEYS = [...FILE_KEYS, 'url', 'command', 'name', 'to'];
 const YES = new Set(['approve', 'approved', 'allow', 'yes', 'y', 'ok']);
 const NO = new Set(['deny', 'denied', 'reject', 'no', 'n']);
 
-/** One-line phone-friendly prompt, e.g. `Agent wants to edit README, approve?`. */
+/** Render every authorized argument; never approve a lossy preview. */
 export function describeRequest(request: ApprovalRequest): string {
-	const words = request.call.name
-		.toLowerCase()
-		.split(/[_\-.\s]+/)
-		.filter(Boolean);
-	const verb =
-		words.map((w) => VERBS.get(w)).find(Boolean) ?? words.join(' ');
-	const args = request.call.arguments;
-	const key = TARGET_KEYS.find((k) => args[k]);
-	let target = key ? String(args[key]) : '';
-	if (key && FILE_KEYS.includes(key)) {
-		const name =
-			target
-				.replace(/[\\/]+$/, '')
-				.split(/[\\/]/)
-				.pop() ?? '';
-		target = name.replace(/\.[^.]*$/, '') || name;
-	}
-	// Arguments come from the model: one line only, so they cannot fake extra text.
-	target = target
-		// eslint-disable-next-line no-control-regex
-		.replace(/[\x00-\x1f\x7f]/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim();
-	if (target.length > 60) target = target.slice(0, 57) + '...';
-	return `Agent wants to ${[verb, target].filter(Boolean).join(' ')}, approve?`;
+	const ordered = (value: unknown): unknown => {
+		if (Array.isArray(value)) return value.map(ordered);
+		if (value && typeof value === 'object')
+			return Object.fromEntries(
+				Object.entries(value)
+					.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+					.map(([key, nested]) => [key, ordered(nested)]),
+			);
+		return value;
+	};
+	const payload = JSON.stringify(
+		ordered({ tool: request.call.name, arguments: request.call.arguments }),
+	).replace(
+		/[\u007f-\uffff]/g,
+		(character) =>
+			'\\u' + character.charCodeAt(0).toString(16).padStart(4, '0'),
+	);
+	return `Agent requests ${payload}, approve?`;
 }
 
 /**

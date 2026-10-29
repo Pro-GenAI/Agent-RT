@@ -69,7 +69,7 @@ Migrated? Add the opt-in [Runs on Agent RT badge](https://github.com/Pro-GenAI/A
 
 ## Quick start
 
-Configure models and vector stores in `agent-rt.yaml` (current folder) or `~/.agent-rt/config.yaml`, or pass any path with `--config` / `load_config(path)`. Secrets are referenced as `os.environ/NAME`; nothing else is read from the environment. Bedrock Knowledge Bases uses the optional `agent-rt[bedrock]` extra and AWS IAM credentials. See [Configuration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
+Configure models and vector stores in `~/.agent-rt/config.yaml`, or explicitly select a project file with `--config ./agent-rt.yaml` / `load_config("./agent-rt.yaml")`. Secrets are referenced as `os.environ/NAME`; nothing else is read from the environment. Bedrock Knowledge Bases uses the optional `agent-rt[bedrock]` extra and AWS IAM credentials. See [Configuration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
 
 ```yaml
 model_list:
@@ -95,7 +95,7 @@ from agent_rt import (
 
 async def main() -> None:
     # validate=False skips the startup model-list check, so no extra network call.
-    config = load_config()  # agent-rt.yaml, ~/.agent-rt/config.yaml, or an explicit path
+    config = load_config()  # ~/.agent-rt/config.yaml; project files require load_config("./agent-rt.yaml")
     provider = load_model(config)
     agent = AgentConfig(
         name="assistant",

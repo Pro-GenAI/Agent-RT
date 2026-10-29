@@ -6,9 +6,12 @@ import shutil
 import subprocess
 import sys
 import textwrap
+from functools import partial
 
 import pytest
-from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient as _TestClient
+
+TestClient = partial(_TestClient, base_url="http://127.0.0.1")
 
 import agent_rt
 from agent_rt import (

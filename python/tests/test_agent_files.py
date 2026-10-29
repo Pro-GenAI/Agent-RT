@@ -10,7 +10,6 @@ import pytest
 
 from agent_rt import ToolRegistry
 from agent_rt_cli import _discover_cli_skills
-from tests.test_cli import BenignSkillDecisionProvider
 from ext.mcp_servers import (
     HTTPMCPTransport,
     MCPServerSpec,
@@ -19,6 +18,7 @@ from ext.mcp_servers import (
     register_mcp_tools,
 )
 from ext.project_instructions import MAX_INSTRUCTION_BYTES, load_project_instructions
+from tests.test_cli import BenignSkillDecisionProvider
 
 FAKE_SERVER = r"""
 import json, sys

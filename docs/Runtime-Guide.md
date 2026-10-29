@@ -4,7 +4,7 @@ Detailed usage notes for features that the package READMEs only mention briefly.
 
 ## Providers
 
-`load_model(load_config())` (Python) / `loadModel(await loadConfig())` (TypeScript) builds a provider from the `model_list` of a YAML config file (`agent-rt.yaml` in the current folder, `~/.agent-rt/config.yaml`, or an explicit path). It supports several models, ordered fallbacks for repeated `model_name`s, and several vector stores; see [Configuration](Configuration.md). The process environment is only used to resolve `os.environ/NAME` secret references.
+`load_model(load_config())` (Python) / `loadModel(await loadConfig())` (TypeScript) builds a provider from the `model_list` of a YAML config file (`~/.agent-rt/config.yaml`, or an explicit path such as `load_config("./agent-rt.yaml")`). It supports several models, ordered fallbacks for repeated `model_name`s, and several vector stores; see [Configuration](Configuration.md). The process environment is only used to resolve `os.environ/NAME` secret references.
 
 The OpenAI provider uses the native OpenAI-compatible transport by default and supports HTTP/SSE plus Responses WebSocket operation where available. The Anthropic provider uses the optional official Anthropic SDK. Reasoning/thinking controls are normalized into the provider-neutral `ReasoningConfig`, and each provider translates them into vendor-specific request fields.
 
@@ -124,7 +124,7 @@ The core runtime leaves permissions, approvals, timeouts, and token caps off so 
 
 Model-backed tool-input screening is not part of the preset because it needs the optional `agent-action-guard` model. Turn it on with `enable_model_tool_input_guardrail=True` (Python, also accepted by `secure_tool_registry`) or the `ToolRegistry` constructor's `modelToolInputGuardrail: { enabled: true }` argument (TypeScript).
 
-Approvals over chat: `ChatApprovals(manager, send)` / `new ChatApprovals(manager, send)` pushes every request that needs a human to a chat channel as a one-line prompt such as "Agent wants to edit README, approve?" with a short reply code (sent once per request, even when a paused run is resumed). `handle_reply("approve")` / `handleReply('deny 2')` turns the reply into a `once` grant bound to the exact arguments; the code is only needed when several approvals wait. `send(text, code)` is any transport; `ntfy_sender(topic)` / `ntfySender(topic)` delivers a phone push through ntfy without blocking the agent loop. Wire your bot's incoming-message webhook to `handle_reply` and accept messages only from the approving human, since anyone who can reply can approve. Model-supplied arguments are flattened to one line in the prompt so they cannot fake extra text; a failing channel is logged and the run stays paused. Not a YAML setting: construct it in code.
+Approvals over chat: `ChatApprovals(manager, send)` / `new ChatApprovals(manager, send)` pushes every request that needs a human to a chat channel as a complete escaped JSON description of the tool and all arguments with a short reply code (sent once per request, even when a paused run is resumed). `handle_reply("approve")` / `handleReply('deny 2')` turns the reply into a `once` grant bound to the exact arguments; the code is only needed when several approvals wait. `send(text, code)` is any transport; `ntfy_sender(topic)` / `ntfySender(topic)` delivers a phone push through ntfy without blocking the agent loop. Wire your bot's incoming-message webhook to `handle_reply` and accept messages only from the approving human, since anyone who can reply can approve. Tool names, full paths and every argument value are rendered without truncation; control and formatting characters appear as visible JSON escapes; a failing channel is logged and the run stays paused. Not a YAML setting: construct it in code.
 
 ## Action blockers
 
@@ -261,7 +261,7 @@ An interactive session opens with a banner of Artie, the Agent RT mascot, drawn 
 
 Run `agent-rt demo` (`uvx agent-rt demo` or `npx agent-rt demo`) to try Agent RT with no config or API key: a scripted mock model meets a prompt injection, tries `rm -rf ~`, and the built-in action blocker stops it before the tool runs. The demo totals tokens and prints the process's peak memory.
 
-The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `agent-rt.yaml` in the current folder, then `~/.agent-rt/config.yaml`); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. File writes and exact-text replacements check that the target has not changed during a pending approval and abort rather than overwriting intervening edits. The `todo` tool (see [Task lists](#task-lists-todo-tool)) is on by default, with one list per session. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
+The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `~/.agent-rt/config.yaml`; project files require an explicit path); see [Configuration](Configuration.md). Workspace writes require approval; Git integration is inspection-only. File writes and exact-text replacements check that the target has not changed during a pending approval and abort rather than overwriting intervening edits. The `todo` tool (see [Task lists](#task-lists-todo-tool)) is on by default, with one list per session. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
 
 ### Project instructions, skills, and MCP servers
 
@@ -295,7 +295,7 @@ Only API-key credentials are reused. Subscription and OAuth sign-ins (Claude.ai,
 
 ## Web UI (Python)
 
-Install `agent-rt[web]` to add the `agent-rt web` command. It serves a browser chat for the current folder on `http://127.0.0.1:8765/` prints a reusable launch link (`/?token=…`), and opens a tab with a single-use code instead, because a browser's command line is visible to other users on the computer:
+Install `agent-rt[web]` to add the `agent-rt web` command. It serves a browser chat for the current folder on `http://127.0.0.1:8765/` prints a reusable launch link (`/?token=…`), and opens a private redirect file carrying a single-use code. The file is owner-only inside a private directory and is deleted at shutdown; the browser command line contains only its file path:
 
 ```bash
 agent-rt web
@@ -383,3 +383,13 @@ TypeScript also keeps the historical aliases `agent-rt/langchain`, `agent-rt/lla
 ## Vector databases
 
 Built-in HTTP vector adapters cover Chroma, Milvus, Pinecone, Qdrant, and Weaviate; FAISS and pgvector plug in through custom registry factories. See [Features and defaults](website/docs/reference/features-defaults.html) for the full list.
+
+
+Security boundaries for these integrations:
+
+- The compatible API rejects foreign HTTP Origins and non-JSON request bodies. Without API keys it also checks Host against loopback names or explicit `allowed_hosts`; use `allowed_websocket_origins` to allow a trusted browser origin for HTTP and WebSocket requests. Bind hosts passed to `serve` are allowed explicitly, except wildcard bind addresses.
+- Project MCP startup shows JSON-escaped argument lists, environment/header names, and `${VAR}` source names without printing expanded credentials. Project `PATH`, loader variables and runtime startup hooks are refused, including for previously approved server names.
+- Hosted shell/code tools in compat clients run only when that specific hosted tool is offered by the request. Supplying a sandbox alone grants no execution permission.
+- Guard prefix rules inspect mixed-type argument lists and shell list/group/substitution boundaries. These rules are defense in depth; wrapper commands and path-qualified executables require permissions, approvals and sandbox policy too.
+- Python E2B refuses unsupported network restrictions before creating a sandbox, including HTTP/WebSocket/IP restrictions and bandwidth/transfer caps. Unrestricted E2B execution requires `mode="unrestricted"` and all three `allow_http`, `allow_websocket`, and `allow_ip_addresses` flags enabled, without network caps.
+- Tenant-bound `ScopedMemoryStore` keeps storage IDs in a tenant namespace and returns the original caller IDs. Existing raw records must be copied through the tenant-bound view before switching a persisted store; they are not silently adopted into the namespace. Base-store access remains trusted administrative access.

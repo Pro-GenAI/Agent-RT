@@ -81,7 +81,7 @@ test("explicit config path wins and must exist", () => {
   assert.throws(() => discoverConfigPath(path.join(dir, "nope.yaml")), /not found/);
 });
 
-test("current folder config beats the home folder", () => {
+test("project config requires explicit selection", () => {
   const cwd = tempDir();
   const home = tempDir();
   fs.mkdirSync(path.join(home, ".agent-rt"));
@@ -90,7 +90,8 @@ test("current folder config beats the home folder", () => {
   assert.equal(discoverConfigPath(undefined, { cwd, home }), homeFile);
   const local = path.join(cwd, "agent-rt.yaml");
   fs.writeFileSync(local, "{}");
-  assert.equal(discoverConfigPath(undefined, { cwd, home }), local);
+  assert.equal(discoverConfigPath(undefined, { cwd, home }), homeFile);
+  assert.equal(discoverConfigPath(local, { cwd, home }), local);
 });
 
 test("missing default config lists the searched locations", () => {
@@ -155,7 +156,8 @@ test("YAML 1.1 scalars parse like PyYAML", async () => {
 test("OpenAI Agents compat reports an invalid config instead of falling back", async () => {
   const { Agent, run } = require("../dist/ext/compat/openai_agents.js");
   const dir = tempDir();
-  fs.writeFileSync(path.join(dir, "agent-rt.yaml"), "surprise: 1\n");
+  fs.mkdirSync(path.join(dir, ".agent-rt"));
+  fs.writeFileSync(path.join(dir, ".agent-rt", "config.yaml"), "surprise: 1\n");
   const previous = { cwd: process.cwd(), home: process.env.HOME };
   process.chdir(dir);
   process.env.HOME = dir;
@@ -170,8 +172,9 @@ test("OpenAI Agents compat reports an invalid config instead of falling back", a
 test("OpenAI Agents compat falls back to SDK env for a model the config does not declare", async () => {
   const { Agent, run } = require("../dist/ext/compat/openai_agents.js");
   const dir = tempDir();
+  fs.mkdirSync(path.join(dir, ".agent-rt"));
   fs.writeFileSync(
-    path.join(dir, "agent-rt.yaml"),
+    path.join(dir, ".agent-rt", "config.yaml"),
     "model_list:\n  - model_name: only-this\n    agent_rt_params: {model: openai/x, api_key: k}\n",
   );
   const previous = { cwd: process.cwd(), env: { ...process.env } };

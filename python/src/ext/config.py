@@ -171,12 +171,9 @@ def config_search_paths(
     cwd: Path | None = None,
     home: Path | None = None,
 ) -> tuple[Path, ...]:
-    """Default locations, in priority order: current folder, then home folder."""
-    base = Path.cwd() if cwd is None else Path(cwd)
+    """Trusted user locations only; project files require an explicit path."""
     user = Path.home() if home is None else Path(home)
-    paths: list[Path] = [base / name for name in CONFIG_FILE_NAMES]
-    paths += [base / ".agent-rt" / "config.yaml", base / ".agent-rt" / "config.yml"]
-    paths += [user / ".agent-rt" / "config.yaml", user / ".agent-rt" / "config.yml"]
+    paths = [user / ".agent-rt" / "config.yaml", user / ".agent-rt" / "config.yml"]
     paths += [
         user / ".config" / "agent-rt" / "config.yaml",
         user / ".config" / "agent-rt" / "config.yml",
@@ -626,7 +623,7 @@ def load_config(
     cwd: Path | None = None,
     home: Path | None = None,
 ) -> AgentRTConfig:
-    """Load ``path`` or the first default config file (current folder, then home)."""
+    """Load an explicit path or the first trusted user config file."""
     resolved = discover_config_path(path, cwd=cwd, home=home)
     try:
         if resolved.stat().st_size > MAX_CONFIG_BYTES:

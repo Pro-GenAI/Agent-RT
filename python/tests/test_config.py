@@ -97,7 +97,7 @@ class TestDiscovery:
         with pytest.raises(ConfigError, match="not found"):
             discover_config_path(tmp_path / "nope.yaml")
 
-    def test_current_folder_beats_home_folder(self, tmp_path):
+    def test_project_config_requires_explicit_selection(self, tmp_path):
         cwd = tmp_path / "work"
         home = tmp_path / "home"
         (home / ".agent-rt").mkdir(parents=True)
@@ -108,7 +108,8 @@ class TestDiscovery:
 
         local = cwd / "agent-rt.yaml"
         local.write_text("{}", encoding="utf-8")
-        assert discover_config_path(cwd=cwd, home=home) == local
+        assert discover_config_path(cwd=cwd, home=home) == home_file
+        assert discover_config_path(local, cwd=cwd, home=home) == local
 
     def test_missing_default_lists_searched_locations(self, tmp_path):
         with pytest.raises(ConfigNotFoundError) as error:
@@ -563,7 +564,10 @@ class TestApiFileSearch:
 async def test_openai_agents_compat_reports_an_invalid_config(tmp_path, monkeypatch):
     from agent_rt.agents import Agent, Runner
 
-    (tmp_path / "agent-rt.yaml").write_text("surprise: 1\n", encoding="utf-8")
+    (tmp_path / ".agent-rt").mkdir()
+    (tmp_path / ".agent-rt" / "config.yaml").write_text(
+        "surprise: 1\n", encoding="utf-8"
+    )
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
     with pytest.raises(ConfigError, match="unknown key"):
@@ -577,7 +581,8 @@ async def test_openai_agents_compat_falls_back_for_an_unconfigured_model(
 
     import ext.compat.base as compat_base
 
-    (tmp_path / "agent-rt.yaml").write_text(
+    (tmp_path / ".agent-rt").mkdir()
+    (tmp_path / ".agent-rt" / "config.yaml").write_text(
         "model_list:\n  - model_name: only-this\n    agent_rt_params: {model: openai/x, api_key: k}\n",
         encoding="utf-8",
     )

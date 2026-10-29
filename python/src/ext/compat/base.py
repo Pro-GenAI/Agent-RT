@@ -850,7 +850,10 @@ async def _complete_with_local_code_tools(
             call
             for call in calls
             if (
-                _is_local_code_call(call)
+                (
+                    _is_local_code_call(call)
+                    and call.name in {t.name for t in request.tools}
+                )
                 or call.name in mcp_bindings
                 or call.name in retrieval_bindings
             )
@@ -1914,7 +1917,11 @@ class _AsyncOpenAICompletions:
                 return _openai_chat_local_stream(
                     self._client.provider,
                     request,
-                    self._client.sandbox_session,
+                    (
+                        self._client.sandbox_session
+                        if local_kinds.intersection({"code", "shell"})
+                        else None
+                    ),
                     self._client.max_code_tool_rounds,
                     mcp_bindings,
                     retrieval_bindings,
@@ -2329,7 +2336,11 @@ class _AsyncOpenAIResponses:
                 return _openai_responses_local_stream(
                     self._client.provider,
                     request,
-                    self._client.sandbox_session,
+                    (
+                        self._client.sandbox_session
+                        if local_kinds.intersection({"code", "shell"})
+                        else None
+                    ),
                     self._client.max_code_tool_rounds,
                     mcp_bindings,
                     retrieval_bindings,
@@ -3452,7 +3463,11 @@ class _AsyncAnthropicMessages:
                 return _anthropic_local_event_stream(
                     self._client.provider,
                     request,
-                    self._client.sandbox_session,
+                    (
+                        self._client.sandbox_session
+                        if local_kinds.intersection({"code", "shell"})
+                        else None
+                    ),
                     self._client.max_code_tool_rounds,
                     mcp_bindings,
                     retrieval_bindings,

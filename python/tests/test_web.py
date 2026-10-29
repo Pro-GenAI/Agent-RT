@@ -604,7 +604,8 @@ def test_web_config_works_without_a_file_or_with_a_blank_one(tmp_path, monkeypat
         "model_list:\n  - model_name: mine\n    agent_rt_params: {model: openai/x}\n",
         encoding="utf-8",
     )
-    config, builtin = web_config(None)
+    assert web_config(None)[1] is True  # project configs are never implicitly trusted
+    config, builtin = web_config(blank)
     assert not builtin and config.model_names == ("mine",)
 
     with pytest.raises(ConfigNotFoundError):

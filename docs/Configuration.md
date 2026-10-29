@@ -9,8 +9,9 @@ A complete annotated example is [`agent-rt.example.yaml`](../agent-rt.example.ya
 | Order | Location |
 | --- | --- |
 | 1 | An explicit path: `agent-rt --config PATH`, `load_config(path)` (Python), `loadConfig(path)` (TypeScript) |
-| 2 | `./agent-rt.yaml`, then `./.agent-rt/config.yaml` (current folder) |
-| 3 | `~/.agent-rt/config.yaml`, then `~/.config/agent-rt/config.yaml` (home folder) |
+| 2 | `~/.agent-rt/config.yaml`, then `~/.config/agent-rt/config.yaml` (home folder) |
+
+Project files such as `./agent-rt.yaml` are loaded only when explicitly selected (`--config ./agent-rt.yaml`, `load_config("./agent-rt.yaml")`, or `loadConfig("./agent-rt.yaml")`). Opening an untrusted repository therefore cannot silently redirect providers or resolve its secret references. Selecting an explicit file trusts its endpoints, secret references, and runtime settings.
 
 `.yml` is accepted wherever `.yaml` is. The first file found wins; files are never merged. An explicit path that does not exist is an error, and when nothing is found the error lists every location that was checked. The `agent-rt` command, run without `--config`, instead creates an owner-only starter config at `~/.agent-rt/config.yaml` (its `model_list` is commented out); the library keeps the error. Neither `agent-rt` nor `agent-rt web` needs a `model_list`: with no config, or one without `model_list` (even a blank file), they use OpenAI with `os.environ/OPENAI_API_KEY` (plus `os.environ/OPENAI_BASE_URL` when that variable is set, as the OpenAI SDK does) and offers the models its `/v1/models` lists, starting with the first (or `--model`). A bare `./config.yaml` is deliberately not searched (too easy to pick up another tool's file); pass it with `--config config.yaml`.
 

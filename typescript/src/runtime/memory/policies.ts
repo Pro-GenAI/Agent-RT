@@ -169,55 +169,77 @@ export class MemoryRetrievalPolicy {
 }
 
 export class ScopedMemoryStore implements LongTermMemoryStore {
+	private readonly prefix: string;
 	constructor(
 		readonly store: LongTermMemoryStore,
 		readonly scope: MemoryScope,
-	) {}
+	) {
+		this.prefix =
+			scope.tenant !== undefined
+				? JSON.stringify(['memory', scope.tenant]) + '::'
+				: '';
+	}
 
 	private assertScope(scope: MemoryScope): void {
-		if (!scopeContains(this.scope, scope)) {
+		if (!scopeContains(this.scope, scope))
 			throw new Error('memory scope is outside the bound scope');
-		}
+	}
+
+	private key(id: string): string {
+		return this.prefix + id;
+	}
+
+	private visible(
+		record: MemoryRecord | undefined,
+	): MemoryRecord | undefined {
+		if (
+			!record ||
+			!scopeContains(this.scope, record.scope ?? {}) ||
+			!record.id.startsWith(this.prefix)
+		)
+			return undefined;
+		return { ...record, id: record.id.slice(this.prefix.length) };
 	}
 
 	read(memoryId: string): MemoryRecord | undefined {
-		const record = this.store.read(memoryId);
-		if (!record || !scopeContains(this.scope, record.scope ?? {})) {
-			return undefined;
-		}
-		return record;
+		return this.visible(this.store.read(this.key(memoryId)));
 	}
 
 	write(record: MemoryRecord): MemoryRecord {
 		this.assertScope(record.scope ?? {});
-		return this.store.write(record);
+		return {
+			...this.store.write({ ...record, id: this.key(record.id) }),
+			id: record.id,
+		};
 	}
 
 	update(memoryId: string, record: MemoryRecord): MemoryRecord {
-		const existing = this.store.read(memoryId);
-		if (!existing || !scopeContains(this.scope, existing.scope ?? {})) {
+		if (!this.read(memoryId))
 			throw new Error('memory not found: ' + memoryId);
-		}
 		this.assertScope(record.scope ?? {});
-		return this.store.update(memoryId, record);
+		return {
+			...this.store.update(this.key(memoryId), {
+				...record,
+				id: this.key(record.id),
+			}),
+			id: record.id,
+		};
 	}
 
 	delete(memoryId: string): boolean {
-		const existing = this.store.read(memoryId);
-		if (!existing || !scopeContains(this.scope, existing.scope ?? {})) {
-			return false;
-		}
-		return this.store.delete(memoryId);
+		if (!this.read(memoryId)) return false;
+		return this.store.delete(this.key(memoryId));
 	}
 
 	search(query: MemorySearchQuery): MemorySearchResult[] {
 		const effectiveScope = query.scope ?? this.scope;
-		if (!scopeContains(this.scope, effectiveScope)) {
+		if (!scopeContains(this.scope, effectiveScope))
 			throw new Error('memory query scope is outside the bound scope');
-		}
-		return this.store.search({
-			...query,
-			scope: effectiveScope,
-		});
+		return this.store
+			.search({ ...query, scope: effectiveScope })
+			.flatMap((result) => {
+				const record = this.visible(result.record);
+				return record ? [{ ...result, record }] : [];
+			});
 	}
 }

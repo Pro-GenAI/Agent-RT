@@ -153,10 +153,10 @@ async def test_openai_sdk_file_search_over_http_and_sse():
     )
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
+        base_url="http://127.0.0.1",
     ) as http_client:
         sdk = AsyncOpenAI(
-            base_url="http://test/v1", api_key="offline", http_client=http_client
+            base_url="http://127.0.0.1/v1", api_key="offline", http_client=http_client
         )
         request = {
             "model": "claude-sonnet-5",

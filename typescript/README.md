@@ -66,7 +66,7 @@ import {
   type ModelMessage,
 } from "agent-rt";
 
-// agent-rt.yaml in the current folder, ~/.agent-rt/config.yaml, or loadConfig("path.yaml")
+// ~/.agent-rt/config.yaml by default; project files require loadConfig("./agent-rt.yaml")
 const provider = await loadModel(await loadConfig());
 
 const agent: AgentConfig = {

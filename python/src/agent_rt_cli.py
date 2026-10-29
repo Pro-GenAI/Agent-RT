@@ -1704,7 +1704,7 @@ class TerminalChat:
             return
         lines = []
         for connection in self.session.mcp_connections:
-            lines.append(f"{connection.spec.name} ({connection.spec.describe()})")
+            lines.append(connection.spec.describe())
             lines.extend(f"  {tool.get('name')}" for tool in connection.tools)
         self.console.print("\n".join(lines), markup=False)
 
@@ -2174,7 +2174,7 @@ async def _start_mcp_servers(
     warnings = list(discovery.warnings)
     specs = list(discovery.servers)
     if discovery.pending:
-        names = ", ".join(spec.name for spec in discovery.pending)
+        names = json.dumps([spec.name for spec in discovery.pending], ensure_ascii=True)
         approved = False
         if sys.stdin.isatty():
             print(
@@ -2182,7 +2182,7 @@ async def _start_mcp_servers(
                 file=sys.stderr,
             )
             for spec in discovery.pending:
-                print(f"  {spec.name}: {spec.describe()}", file=sys.stderr)
+                print(f"  {spec.approval_description()}", file=sys.stderr)
             print("Start them? [y/N] > ", end="", file=sys.stderr, flush=True)
             answer = (await asyncio.to_thread(sys.stdin.readline)).strip().lower()
             approved = answer in {"y", "yes"}
@@ -2251,8 +2251,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=Path,
         help=(
-            "path to the YAML config file (default: agent-rt.yaml in the current "
-            "folder, then ~/.agent-rt/config.yaml)"
+            "path to the YAML config file (default: ~/.agent-rt/config.yaml; "
+            "project files require --config)"
         ),
     )
     parser.add_argument(

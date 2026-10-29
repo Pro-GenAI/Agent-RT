@@ -105,8 +105,9 @@ class DockerSandboxBackend:
             argv += [
                 "--read-only",
                 "--tmpfs",
-                "/tmp",
-            ]  # nosec B108 - container-internal tmpfs mount, not a host temp path
+                # This is a container-internal tmpfs mount, not a host temp path.
+                "/tmp",  # nosec B108
+            ]
         if network_policy.mode == "none":
             argv += ["--network", "none"]
         if limits.memory_bytes is not None:

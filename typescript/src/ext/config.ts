@@ -302,17 +302,14 @@ function isMapping(value: unknown): value is Mapping {
 export function configSearchPaths(
 	options: { cwd?: string; home?: string } = {},
 ): string[] {
-	const base = options.cwd ?? processCwd();
+	// Project files require an explicit path; discovery must not trust a clone.
 	const user = options.home ?? homeDirectory();
-	const paths = CONFIG_FILE_NAMES.map((name) => joinPath(base, name));
-	paths.push(
-		joinPath(base, '.agent-rt', 'config.yaml'),
-		joinPath(base, '.agent-rt', 'config.yml'),
+	const paths = [
 		joinPath(user, '.agent-rt', 'config.yaml'),
 		joinPath(user, '.agent-rt', 'config.yml'),
 		joinPath(user, '.config', 'agent-rt', 'config.yaml'),
 		joinPath(user, '.config', 'agent-rt', 'config.yml'),
-	);
+	];
 	return paths;
 }
 
@@ -321,15 +318,6 @@ function joinPath(...parts: string[]): string {
 		join(...segments: string[]): string;
 	};
 	return path.join(...parts);
-}
-
-function processCwd(): string {
-	const runtime = globalThis as unknown as {
-		process?: { cwd?: () => string };
-	};
-	if (!runtime.process?.cwd)
-		throw new ConfigError('no working directory available');
-	return runtime.process.cwd();
 }
 
 function homeDirectory(): string {

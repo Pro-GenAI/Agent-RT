@@ -159,7 +159,7 @@ registry.register(
 )
 
 loop = AgentLoop(
-    load_model(load_config()),  # models from agent-rt.yaml: OpenAI, Anthropic, or compatible endpoints
+    load_model(load_config()),  # models from ~/.agent-rt/config.yaml; select project YAML with load_config(path)
     tool_registry=registry,
     capability_grant=CapabilityGrant(tools=("get_weather",)),
     execution_budget=ExecutionBudget(ExecutionBudgetLimits(max_model_calls=5)),

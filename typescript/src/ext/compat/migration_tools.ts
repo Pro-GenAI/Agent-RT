@@ -752,8 +752,11 @@ export async function completeWithMigrationTools(
 		const calls = response.message.toolCalls ?? [];
 		const local = calls.filter(
 			(call) =>
-				call.name === CODE_TOOL_NAME ||
-				call.name === SHELL_TOOL_NAME ||
+				((call.name === CODE_TOOL_NAME ||
+					call.name === SHELL_TOOL_NAME) &&
+					(request.tools ?? []).some(
+						(tool) => tool.name === call.name,
+					)) ||
 				mcpBindings.has(call.name) ||
 				fileSearchBindings.has(call.name) ||
 				webSearchBindings.has(call.name),

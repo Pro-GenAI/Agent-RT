@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
-import re
 import threading
 import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from itertools import count
-from typing import Any
+from typing import Any, Literal
 
 from ext.runtime.authorization.approvals import ApprovalManager, ApprovalRequest
 
@@ -18,41 +18,19 @@ _logger = logging.getLogger(__name__)
 # Chat transport: (notification text, short reply code) -> None.
 ChatSender = Callable[[str, str], None]
 
-_VERBS = {
-    "write": "edit",
-    "edit": "edit",
-    "update": "edit",
-    "patch": "edit",
-    "modify": "edit",
-    "delete": "delete",
-    "remove": "delete",
-    "rm": "delete",
-    "run": "run",
-    "exec": "run",
-    "execute": "run",
-    "send": "send",
-    "create": "create",
-}
-_FILE_KEYS = ("path", "file", "filename", "file_path")
-_TARGET_KEYS = (*_FILE_KEYS, "url", "command", "name", "to")
 _YES = {"approve", "approved", "allow", "yes", "y", "ok"}
 _NO = {"deny", "denied", "reject", "no", "n"}
 
 
 def describe_request(request: ApprovalRequest) -> str:
-    """One-line phone-friendly prompt, e.g. ``Agent wants to edit README, approve?``."""
-    words = [w for w in re.split(r"[_\-.\s]+", request.call.name.lower()) if w]
-    verb = next((_VERBS[w] for w in words if w in _VERBS), " ".join(words))
-    key = next((k for k in _TARGET_KEYS if request.call.arguments.get(k)), None)
-    target = str(request.call.arguments[key]) if key else ""
-    if key in _FILE_KEYS:
-        name = re.split(r"[\\/]", target.rstrip("\\/"))[-1]
-        target = name.rsplit(".", 1)[0] or name
-    # Arguments come from the model: one line only, so they cannot fake extra text.
-    target = " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", target).split())
-    if len(target) > 60:
-        target = target[:57] + "..."
-    return f"Agent wants to {' '.join(filter(None, (verb, target)))}, approve?"
+    """Render the complete authorized call without lossy summaries or truncation."""
+    payload = json.dumps(
+        {"tool": request.call.name, "arguments": dict(request.call.arguments)},
+        sort_keys=True,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    )
+    return f"Agent requests {payload}, approve?"
 
 
 class ChatApprovals:
@@ -98,7 +76,7 @@ class ChatApprovals:
         request = self.pending.pop(code, None)
         if request is None:
             return "No such pending approval."
-        decision = "allow" if word in _YES else "deny"
+        decision: Literal["allow", "deny"] = "allow" if word in _YES else "deny"
         self.manager.resolve(request, decision, actor_id=actor_id)
         summary = describe_request(request).removesuffix(", approve?")
         return ("Approved: " if decision == "allow" else "Denied: ") + summary
