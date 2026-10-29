@@ -13,7 +13,7 @@ The current core install declares:
 - `httpcore[asyncio]>=1,<2`
 - `openai>=1,<3`
 - `anthropic>=0.40,<1`
-- `agent-action-guard[harmactionseval]>=1.2.1,<2`
+- `agent-action-guard[harmactionseval]==1.2.2`
 - `onnxruntime<1.24` on Python < 3.11
 
 The provider SDKs and Agent Action Guard are already imported lazily at the feature call sites. The default OpenAI-compatible provider transport uses the core `httpcore[asyncio]` dependency and does not require the OpenAI SDK. Provider startup validation and explicit SDK transport do require the matching SDK. The model-backed tool-input guardrail requires `agent-action-guard`; callers that inject a classifier do not.

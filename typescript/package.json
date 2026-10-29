@@ -233,7 +233,7 @@
 		"typescript-eslint": "^8.71.0"
 	},
 	"dependencies": {
-		"agent-action-guard": "^1.2.1",
+		"agent-action-guard": "1.2.2",
 		"ws": "^8.22.0",
 		"yaml": "^2.8.0"
 	},

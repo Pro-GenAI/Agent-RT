@@ -114,7 +114,7 @@ def _harmactions_benchmark(
     except ImportError as exc:
         raise RuntimeError(
             "HarmActionsEval dependencies are unavailable; install "
-            '"agent-action-guard[harmactionseval]>=1.2.1,<2".'
+            '"agent-action-guard[harmactionseval]==1.2.2".'
         ) from exc
 
     harmactionseval.load_cache(cache_path)

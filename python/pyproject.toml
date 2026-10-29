@@ -15,7 +15,7 @@ dependencies = [
     "requests>=2,<3",
     "httpx>=0.27,<1",
     "PyYAML>=6,<7",
-    "agent-action-guard[harmactionseval]>=1.2.1,<2; sys_platform != 'darwin' or platform_machine == 'arm64'",
+    "agent-action-guard[harmactionseval]==1.2.2; sys_platform != 'darwin' or platform_machine == 'arm64'",
     "onnxruntime<1.24; python_version < '3.11'",
 ]
 license = "MIT"
