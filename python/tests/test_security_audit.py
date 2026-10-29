@@ -7,7 +7,8 @@ import stat
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
-from urllib.parse import unquote, urlsplit
+from urllib.parse import urlsplit
+from urllib.request import url2pathname
 
 import pytest
 from starlette.testclient import TestClient
@@ -104,7 +105,7 @@ async def test_browser_auto_open_keeps_credentials_out_of_argv_and_cleans_up():
 
     def opener(uri):
         assert credential not in uri
-        path = Path(unquote(urlsplit(uri).path))
+        path = Path(url2pathname(urlsplit(uri).path))
         paths.append(path)
         assert credential in path.read_text()
         if os.name != "nt":

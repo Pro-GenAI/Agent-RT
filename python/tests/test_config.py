@@ -570,6 +570,7 @@ async def test_openai_agents_compat_reports_an_invalid_config(tmp_path, monkeypa
     )
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     with pytest.raises(ConfigError, match="unknown key"):
         await Runner.run(Agent(name="a"), "hi")
 
@@ -588,6 +589,7 @@ async def test_openai_agents_compat_falls_back_for_an_unconfigured_model(
     )
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     vendor = RecordingProvider("vendor env")
     monkeypatch.setattr(compat_base, "_openai_provider", lambda **_kwargs: vendor)
     result = await Runner.run(Agent(name="a", model="gpt-4o-mini"), "hi")
