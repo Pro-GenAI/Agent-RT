@@ -10,14 +10,21 @@ from check_website_csp import check
 
 SCRIPT = "document.documentElement.classList.add('js')"
 DIGEST = "sha256-" + base64.b64encode(hashlib.sha256(SCRIPT.encode()).digest()).decode()
+BASE_POLICY = (
+    "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+    "font-src 'self'; connect-src 'self'; object-src 'none'; "
+    "base-uri 'none'; form-action 'none'; "
+)
 
 
 class WebsiteCspTests(unittest.TestCase):
-    def check_html(self, markup: str = "", *, policy: str | None = None) -> list[str]:
+    def check_html(
+        self, markup: str = "", *, policy: str | None = None, base_policy: str = BASE_POLICY,
+    ) -> list[str]:
         if policy is None:
             policy = f"script-src 'self' '{DIGEST}'"
         html = f"""<!doctype html><html><head>
-<meta http-equiv='Content-Security-Policy' content="{policy}">
+<meta http-equiv='Content-Security-Policy' content="{base_policy}{policy}">
 <script>{SCRIPT}</script>
 <script type='application/ld+json'>{{"@context":"https://schema.org"}}</script>
 {markup}
@@ -73,8 +80,50 @@ class WebsiteCspTests(unittest.TestCase):
         self.assertIn("inline script not allowed", problems[0])
 
     def test_stale_script_hash_is_still_rejected(self) -> None:
-        problems = self.check_html(policy=f"script-src 'self' '{DIGEST}' 'sha256-stale'")
-        self.assertEqual(["stale CSP hash 'sha256-stale'"], problems)
+        problems = self.check_html(policy=f"script-src 'self' '{DIGEST}' 'sha256-{'A' * 43}='")
+        self.assertEqual([f"stale CSP hash 'sha256-{'A' * 43}='"], problems)
+
+    def test_remote_font_and_connection_policies_are_rejected(self) -> None:
+        for directive, source in (
+            ("font-src", "https://fonts.gstatic.com"),
+            ("connect-src", "https://analytics.example.org"),
+            ("default-src", "*"),
+            ("form-action", "'self'"),
+        ):
+            with self.subTest(directive=directive):
+                # The first directive wins in browsers; appending a safe duplicate
+                # must not hide an unsafe policy from the checker.
+                problems = self.check_html(base_policy=f"{directive} {source}; {BASE_POLICY}")
+                self.assertTrue(any(f"CSP {directive} must" in p for p in problems), problems)
+                self.assertIn(f"duplicate CSP directive {directive}", problems)
+
+    def test_missing_restrictions_and_misplaced_hash_are_rejected(self) -> None:
+        problems = self.check_html(base_policy="")
+        for directive in ("default-src", "font-src", "connect-src", "form-action"):
+            self.assertTrue(any(f"CSP {directive} must" in p for p in problems), problems)
+        problems = self.check_html(
+            policy=f"script-src 'self'; style-src-elem 'self' '{DIGEST}'",
+        )
+        self.assertTrue(any("inline script not allowed" in p for p in problems), problems)
+
+    def test_remote_scripts_and_override_directives_are_rejected(self) -> None:
+        for extra in ("https://cdn.example.org", "'unsafe-inline'", "'unsafe-eval'", "*"):
+            with self.subTest(extra=extra):
+                problems = self.check_html(policy=f"script-src 'self' '{DIGEST}' {extra}")
+                self.assertIn(
+                    "CSP script-src must allow only 'self' and sha256 hashes", problems,
+                )
+        problems = self.check_html(
+            policy=f"script-src 'self' '{DIGEST}'; script-src-elem https://tracker.example.org",
+        )
+        self.assertIn("unreviewed CSP directive script-src-elem", problems)
+
+    def test_metadata_rel_cannot_hide_a_loaded_stylesheet(self) -> None:
+        problems = self.check_html(
+            '<link rel="alternate stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">',
+        )
+        self.assertEqual(1, len(problems), problems)
+        self.assertIn("third-party asset", problems[0])
 
     def test_missing_policy_is_still_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

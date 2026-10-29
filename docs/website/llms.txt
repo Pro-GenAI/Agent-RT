@@ -15,7 +15,7 @@
 - [Tools and policy](https://agent-rt-pro.github.io/docs/concepts/tools-policy.html)
 - [State and memory](https://agent-rt-pro.github.io/docs/concepts/state-memory.html)
 - [Migration guide](https://agent-rt-pro.github.io/docs/guides/migration.html)
-- [Production guide](https://agent-rt-pro.github.io/docs/guides/production.html)
+- [Production guide](https://agent-rt-pro.github.io/docs/guides/production.html), including the privacy and product-launch checklist for apps built with Agent RT.
 - [Vector databases](https://agent-rt-pro.github.io/docs/guides/vector-databases.html)
 - [Runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html)
 - [Features and defaults](https://agent-rt-pro.github.io/docs/reference/features-defaults.html)

@@ -1,4 +1,4 @@
-"""Validate website CSP inline-script hashes and reject third-party loaded assets.
+"""Validate the website privacy CSP, inline-script hashes, and loaded assets.
 
 Usage: python3 scripts/check_website_csp.py  (stdlib only; exits 1 on problems)
 """
@@ -15,6 +15,18 @@ SITE = Path(__file__).resolve().parent.parent / "docs" / "website"
 SITE_ORIGIN = "https://agent-rt-pro.github.io"
 # Search-console verification stub, not a real page.
 SKIP = {"googlefbfc85f4cce24779.html"}
+
+# Keep these explicit: hashes alone do not prevent a policy from allowing trackers.
+REQUIRED_SOURCES = {
+    "default-src": {"'self'"},
+    "style-src": {"'self'", "'unsafe-inline'"},
+    "img-src": {"'self'", "data:"},
+    "font-src": {"'self'"},
+    "connect-src": {"'self'"},
+    "object-src": {"'none'"},
+    "base-uri": {"'none'"},
+    "form-action": {"'none'"},
+}
 
 # Attributes that can trigger resource requests rather than just navigation.
 ASSET_ATTRIBUTES = {
@@ -63,7 +75,8 @@ class WebsitePageParser(HTMLParser):
         if tag == "script" and "src" not in attributes and attributes.get("type", "").lower() != "application/ld+json":
             self._script_parts = []
 
-        if tag == "link" and set(attributes.get("rel", "").lower().split()) & {"canonical", "alternate"}:
+        relations = set(attributes.get("rel", "").lower().split())
+        if tag == "link" and relations and relations <= {"canonical", "alternate"}:
             return  # Metadata links are not loaded resources.
 
         for name in ASSET_ATTRIBUTES.get(tag, ()):
@@ -104,7 +117,31 @@ def check(page: Path) -> list[str]:
     problems = list(parser.third_party_assets)
     if len(parser.policies) != 1:
         problems.append("expected exactly one Content-Security-Policy meta tag")
-    allowed = set(re.findall(r"'(sha256-[^']+)'", parser.policies[0]))
+    directives: dict[str, set[str]] = {}
+    for declaration in parser.policies[0].split(";"):
+        parts = declaration.split()
+        if not parts:
+            continue
+        name, *sources = parts
+        name = name.lower()
+        if name in directives:
+            problems.append(f"duplicate CSP directive {name}")
+        else:
+            directives[name] = set(sources)
+    for name, sources in REQUIRED_SOURCES.items():
+        if directives.get(name) != sources:
+            problems.append(f"CSP {name} must be {' '.join(sorted(sources))}")
+    # New directives need explicit review: script-src-elem, for example, can
+    # override script-src and silently re-enable third-party script loading.
+    for name in sorted(directives.keys() - REQUIRED_SOURCES.keys() - {"script-src"}):
+        problems.append(f"unreviewed CSP directive {name}")
+    script_sources = directives.get("script-src", set())
+    allowed = {
+        source[1:-1] for source in script_sources
+        if re.fullmatch(r"'sha256-[A-Za-z0-9+/]{43}='", source)
+    }
+    if script_sources != {"'self'"} | {f"'{digest}'" for digest in allowed}:
+        problems.append("CSP script-src must allow only 'self' and sha256 hashes")
     required = set()
     for body in parser.inline_scripts:
         digest = "sha256-" + base64.b64encode(hashlib.sha256(body.encode()).digest()).decode()

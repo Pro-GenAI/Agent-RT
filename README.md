@@ -176,7 +176,7 @@ Arguments are validated against the schema, tools outside the grant never run, a
 | Runtime model | [How Agent RT executes agents](docs/website/docs/concepts/runtime.html) |
 | Tools & safety | [Tools, policy, permissions, approvals, and guardrails](docs/website/docs/concepts/tools-policy.html) |
 | State & memory | [State, memory, checkpoints, and artifacts](docs/website/docs/concepts/state-memory.html) |
-| Production | [Sandboxing, observability, evaluation, and deployment](docs/website/docs/guides/production.html) |
+| Production | [Sandboxing, observability, evaluation, and deployment](docs/website/docs/guides/production.html) · [Deployment privacy checklist](docs/Deployment-Privacy.md) |
 | Migration | [LangChain, LlamaIndex, OpenAI, and Anthropic migration](docs/website/docs/guides/migration.html) |
 | Runtime guide | [Providers, memory packages, API server, CLI, web UI, chat bots, sandboxes, skills, and migration entry points](docs/website/docs/guides/runtime-guide.html) |
 | Features | [Features, defaults, and configuration](docs/website/docs/reference/features-defaults.html) |

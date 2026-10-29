@@ -6,6 +6,7 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;background:var(--bg)}
+.content [id]{scroll-margin-top:calc(var(--header) + 24px)}
 body{margin:0;min-height:100vh;background:
   radial-gradient(900px 620px at 8% -10%,rgba(var(--accent-rgb),.09),transparent 65%),
   radial-gradient(850px 620px at 100% 8%,rgba(var(--accent-2-rgb),.075),transparent 65%),
