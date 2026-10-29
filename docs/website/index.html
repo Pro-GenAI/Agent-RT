@@ -1066,10 +1066,217 @@
           </p>
         </div>
 
+        <div class="benchmark-comparison reveal">
+          <div class="comparison-heading">
+            <div>
+              <span class="comparison-kicker">AGENT CLI COMPARISON</span>
+              <h3>Same one-line prompt. Seven agent CLIs.</h3>
+            </div>
+            <div class="comparison-legend" aria-label="Comparison legend">
+              <span><i class="legend-agent"></i>Agent RT</span>
+              <span><i class="legend-alt"></i>Alternative</span>
+              <em>lower is better</em>
+            </div>
+          </div>
+
+          <div class="comparison-panels">
+            <article class="comparison-panel" aria-labelledby="cli-time-title">
+              <header>
+                <div>
+                  <span>TERMINAL CLIs</span>
+                  <strong id="cli-time-title">Time per prompt</strong>
+                </div>
+                <small>30 runs · 2026-10-29</small>
+              </header>
+
+              <div class="comparison-metric">
+                <div class="comparison-metric-title">
+                  <h4>Median one-shot time</h4>
+                  <span>sequential, cold start</span>
+                </div>
+                <div class="comparison-row is-agent">
+                  <span class="comparison-name">Agent RT</span>
+                  <span class="comparison-track"><i style="--w:11.6%"></i></span>
+                  <strong>185 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Codex</span>
+                  <span class="comparison-track"><i style="--w:17.7%"></i></span>
+                  <strong>283 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Claude Code</span>
+                  <span class="comparison-track"><i style="--w:17.2%"></i></span>
+                  <strong>275 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">opencode</span>
+                  <span class="comparison-track"><i style="--w:42.8%"></i></span>
+                  <strong>683 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Copilot CLI</span>
+                  <span class="comparison-track"><i style="--w:100.0%"></i></span>
+                  <strong>1,595 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Pi</span>
+                  <span class="comparison-track"><i style="--w:19.6%"></i></span>
+                  <strong>312 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">OpenHuman</span>
+                  <span class="comparison-track"><i style="--w:30.8%"></i></span>
+                  <strong>492 ms</strong>
+                </div>
+              </div>
+
+              <div class="comparison-metric">
+                <div class="comparison-metric-title">
+                  <h4>Eight copies at once</h4>
+                  <span>batch wall time</span>
+                </div>
+                <div class="comparison-row is-agent">
+                  <span class="comparison-name">Agent RT</span>
+                  <span class="comparison-track"><i style="--w:12.1%"></i></span>
+                  <strong>338 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Codex</span>
+                  <span class="comparison-track"><i style="--w:11.4%"></i></span>
+                  <strong>318 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Claude Code</span>
+                  <span class="comparison-track"><i style="--w:39.5%"></i></span>
+                  <strong>1,105 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">opencode</span>
+                  <span class="comparison-track"><i style="--w:78.3%"></i></span>
+                  <strong>2,188 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Copilot CLI</span>
+                  <span class="comparison-track"><i style="--w:100.0%"></i></span>
+                  <strong>2,796 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Pi</span>
+                  <span class="comparison-track"><i style="--w:20.1%"></i></span>
+                  <strong>561 ms</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">OpenHuman</span>
+                  <span class="comparison-track"><i style="--w:24.6%"></i></span>
+                  <strong>688 ms</strong>
+                </div>
+              </div>
+            </article>
+            <article class="comparison-panel" aria-labelledby="cli-footprint-title">
+              <header>
+                <div>
+                  <span>TERMINAL CLIs</span>
+                  <strong id="cli-footprint-title">Footprint per prompt</strong>
+                </div>
+                <small>30 runs · 2026-10-29</small>
+              </header>
+
+              <div class="comparison-metric">
+                <div class="comparison-metric-title">
+                  <h4>Peak memory</h4>
+                  <span>whole process tree</span>
+                </div>
+                <div class="comparison-row is-agent">
+                  <span class="comparison-name">Agent RT</span>
+                  <span class="comparison-track"><i style="--w:9.5%"></i></span>
+                  <strong>36.5 MiB</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Codex</span>
+                  <span class="comparison-track"><i style="--w:50.2%"></i></span>
+                  <strong>194.1 MiB</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Claude Code</span>
+                  <span class="comparison-track"><i style="--w:52.5%"></i></span>
+                  <strong>202.7 MiB</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">opencode</span>
+                  <span class="comparison-track"><i style="--w:100.0%"></i></span>
+                  <strong>386.3 MiB</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Copilot CLI</span>
+                  <span class="comparison-track"><i style="--w:88.3%"></i></span>
+                  <strong>341.1 MiB</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Pi</span>
+                  <span class="comparison-track"><i style="--w:32.5%"></i></span>
+                  <strong>125.5 MiB</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">OpenHuman</span>
+                  <span class="comparison-track"><i style="--w:24.8%"></i></span>
+                  <strong>95.9 MiB</strong>
+                </div>
+              </div>
+
+              <div class="comparison-metric">
+                <div class="comparison-metric-title">
+                  <h4>Input tokens sent</h4>
+                  <span>system prompt + tools</span>
+                </div>
+                <div class="comparison-row is-agent">
+                  <span class="comparison-name">Agent RT</span>
+                  <span class="comparison-track"><i style="--w:4.4%"></i></span>
+                  <strong>851</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Codex</span>
+                  <span class="comparison-track"><i style="--w:43.8%"></i></span>
+                  <strong>8,420</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Claude Code</span>
+                  <span class="comparison-track"><i style="--w:100.0%"></i></span>
+                  <strong>19,229</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">opencode</span>
+                  <span class="comparison-track"><i style="--w:29.1%"></i></span>
+                  <strong>5,604</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Copilot CLI</span>
+                  <span class="comparison-track"><i style="--w:72.7%"></i></span>
+                  <strong>13,985</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">Pi</span>
+                  <span class="comparison-track"><i style="--w:6.9%"></i></span>
+                  <strong>1,330</strong>
+                </div>
+                <div class="comparison-row">
+                  <span class="comparison-name">OpenHuman</span>
+                  <span class="comparison-track"><i style="--w:21.9%"></i></span>
+                  <strong>4,208</strong>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <p class="comparison-caption">
+            Each CLI answered <code>hi</code> against a localhost mock model, called as its plain one-shot command. OpenHuman boots its headless core for each turn, as its own benchmark does. <a class="text-link" href="./docs/reference/comparison.html#agent-cli">Full table and feature comparison</a>.
+          </p>
+        </div>
+
         <details class="benchmark-note reveal">
           <summary><span class="note-mark" aria-hidden="true">i</span>Methodology</summary>
           <p>
-            Runtime and feature values are checked-in 30-run medians captured on September 28, 2026 against deterministic localhost OpenAI-compatible mocks. Warm completion comes from the retained historical HTTP/SSE runtime baseline; tool round trip comes from the HTTP/SSE feature benchmark. Fresh-install footprints were measured on October 3, 2026 and include transitive dependencies: Python uses clean Python 3.13.13 uv environments with copy mode and reports logical bytes above the empty-venv baseline; TypeScript uses clean Node.js 22.22.2/npm 10.9.7 projects and reports logical node_modules bytes, with Agent RT installed from its npm-pack tarball. Agent RT's runtime runner now defaults to the persistent Responses WebSocket path, so new WebSocket runs are not compared against that historical baseline until a new 30-run WebSocket baseline is promoted. These measurements are scenario-specific framework/adapter overhead, not model latency or an overall framework score.
+            Runtime and feature values are checked-in 30-run medians captured on September 28, 2026 against deterministic localhost OpenAI-compatible mocks. Warm completion comes from the retained historical HTTP/SSE runtime baseline; tool round trip comes from the HTTP/SSE feature benchmark. Fresh-install footprints were measured on October 3, 2026 and include transitive dependencies: Python uses clean Python 3.13.13 uv environments with copy mode and reports logical bytes above the empty-venv baseline; TypeScript uses clean Node.js 22.22.2/npm 10.9.7 projects and reports logical node_modules bytes, with Agent RT installed from its npm-pack tarball. Agent RT's runtime runner now defaults to the persistent Responses WebSocket path, so new WebSocket runs are not compared against that historical baseline until a new 30-run WebSocket baseline is promoted. These measurements are scenario-specific framework/adapter overhead, not model latency or an overall framework score. The agent CLI comparison uses 30 sequential runs per CLI plus an eight-way batch, measured on October 29, 2026 on 16-thread Linux x86_64 with each CLI's default tools and real credentials removed; it measures per-prompt harness overhead, not task quality.
           </p>
         </details>
       </div>

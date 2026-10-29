@@ -10,7 +10,7 @@ Meet **Artie**, the running robot, and its flagship features: **Guard** (blocks 
 
 [![5.8x less framework overhead than LangChain](https://raw.githubusercontent.com/Pro-GenAI/Agent-RT/main/docs/website/assets/share/overhead.png)](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
 
-The `agent-rt` CLI also sends **8–37× fewer input tokens per prompt** than Codex, Claude Code, opencode, and Copilot CLI, with 5–14× less memory. All numbers come from deterministic localhost mocks and measure runtime overhead, not model latency or task quality ([method and data](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)).
+The `agent-rt` CLI also sends **6–22× fewer input tokens per prompt** than Codex, Claude Code, opencode, and Copilot CLI, with 5–10× less memory. All numbers come from deterministic localhost mocks and measure runtime overhead, not model latency or task quality ([method and data](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)).
 
 Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, sandboxing, retrieval, and multi-agent orchestration without replacing your runtime. `asyncio`-native, with an optional API server and terminal CLI.
 

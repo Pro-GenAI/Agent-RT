@@ -27,8 +27,8 @@ Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you i
 
 ## 📈 By the Numbers
 
-- 🪙 **8–37× fewer input tokens** per prompt than Codex, Claude Code, opencode, and Copilot CLI
-- 🧠 **5–14× less memory** per CLI process than the same agent CLIs
+- 🪙 **6–22× fewer input tokens** per prompt than Codex, Claude Code, opencode, and Copilot CLI
+- 🧠 **5–10× less memory** per CLI process than the same agent CLIs, and the lowest of seven CLIs including Pi and OpenHuman
 - 📦 **66× smaller npm install** than LangChain.js (1.24 MiB vs 82.44 MiB)
 - ⚡ **5.8× less framework overhead** than LangChain in Python (1.56 ms vs 9.03 ms warm)
 - 🔄 **65+ third-party repositories** pass their tests before and after migration

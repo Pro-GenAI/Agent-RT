@@ -190,19 +190,29 @@ The checked-in CSV files linked above contain the published aggregates used by t
 
 ## Agent CLI harness comparison
 
-The `agent-rt` terminal client was compared with other agent CLIs. Each CLI was called as its plain one-shot prompt command with no extra flags. The model and provider settings each CLI needs went into its normal config file or environment variables instead. Every CLI was pointed at a deterministic localhost mock model, so no real model API was called. Each sequential run had its own mock server, a fresh temporary HOME/TMPDIR and git workspace, and real credentials stripped from its environment. Non-essential network features were turned off for each CLI that has them: Claude Code non-essential traffic, Copilot offline mode, and Codex plugins/apps/analytics. The table shows **30 clean sequential runs per CLI** plus 4- and 8-way parallel batches, measured on 2026-10-18 on a 16-thread Linux x86_64 machine. Each parallel batch shares one HOME, the way one user running parallel agents would.
+The `agent-rt` terminal client was compared with other agent CLIs: Codex, Claude Code, opencode, Copilot CLI, [Pi](https://github.com/earendil-works/pi) and [OpenHuman](https://github.com/tinyhumansai/openhuman). Each CLI was called as its plain one-shot prompt command with no extra flags. The model and provider settings each CLI needs went into its normal config file or environment variables instead. OpenHuman is the one exception: its release one-shot command cannot run a turn without a booted core, so it was driven the way its own benchmark drives it. The runner boots `openhuman-core run --headless-api`, sends one `openhuman.inference_agent_chat` JSON-RPC turn, and stops the core, all inside the measured run (see [`python/README.md`](python/README.md#agent-cli-harness-benchmark)). Every CLI was pointed at a deterministic localhost mock model, so no real model API was called. Each sequential run had its own mock server, a fresh temporary HOME/TMPDIR and git workspace, and real credentials stripped from its environment. Non-essential network features were turned off for each CLI that has them: Claude Code non-essential traffic, Copilot offline mode, Codex plugins/apps/analytics, and Pi's model-catalog refresh. The table shows **30 clean sequential runs per CLI** plus 4- and 8-way parallel batches, measured on 2026-10-29 on a 16-thread Linux x86_64 machine (Intel i7-12650H). Each parallel batch shares one HOME, the way one user running parallel agents would.
 
-| CLI | Command | Version | Median time | p95 time | Median CPU | Peak RSS | Model requests | Tools sent | Input tokens | Tool-schema tokens | Cost / prompt | 8 parallel: wall | 8 parallel: sum of individual RSS peaks |
+| CLI | Command | Version | Median time | p95 time | Median CPU | Peak RSS | Model requests | Tools sent | Input tokens | Tool-schema tokens | Cost / prompt | 8 parallel: wall | 8 parallel: peak batch RSS |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Agent RT | `agent-rt -p "hi"` | 0.0.1 | 559 ms | 726 ms | 525 ms | 34.9 MiB | 1 | 7 | 710 | 588 | $0.0022 | 778 ms | 277 MiB |
-| Codex | `codex exec "hi"` | 0.157.0 | 605 ms | 637 ms | 430 ms | 184.0 MiB | 1 | 10 | 6,629 | 1,998 | $0.0199 | 831 ms | 1,414 MiB |
-| Claude Code | `claude -p "hi"` | 2.1.302 | 791 ms | 2,048 ms | 865 ms | 228.6 MiB | 1 | 24 | 26,295 | 17,756 | $0.0789 | 2,220 ms | 1,774 MiB |
-| opencode | `opencode run "hi"` | 2.0.32 | 2,457 ms | 2,993 ms | 5,065 ms | 497.6 MiB | 2 | 11 | 5,685 | 2,710 | $0.0171 | 5,781 ms | 2,305 MiB |
-| Copilot CLI | `copilot -p "hi"` | 1.0.47 | 4,559 ms | 4,684 ms | 5,635 ms | 349.8 MiB | 1 | 16 | 13,983 | 5,262 | $0.0420 | 6,500 ms | 2,862 MiB |
+| Agent RT | `agent-rt -p "hi"` | 0.0.3 | 185 ms | 187 ms | 160 ms | 36.5 MiB | 1 | 8 | 851 | 729 | $0.0026 | 338 ms | 280 MiB |
+| Codex | `codex exec "hi"` | 0.165.0 | 283 ms | 313 ms | 130 ms | 194.1 MiB | 1 | 9 | 8,420 | 3,616 | $0.0253 | 318 ms | 1,183 MiB |
+| Claude Code | `claude -p "hi"` | 2.1.310 | 275 ms | 291 ms | 280 ms | 202.7 MiB | 1 | 12 | 19,229 | 10,575 | $0.0577 | 1,105 ms | 1,287 MiB |
+| opencode | `opencode run "hi"` | 2.2.0 | 683 ms | 703 ms | 1,460 ms | 386.3 MiB | 2 | 11 | 5,604 | 2,710 | $0.0169 | 2,188 ms | 1,703 MiB |
+| Copilot CLI | `copilot -p "hi"` | 1.0.47 | 1,595 ms | 1,812 ms | 1,935 ms | 341.1 MiB | 1 | 16 | 13,985 | 5,262 | $0.0420 | 2,796 ms | 2,873 MiB |
+| Pi | `pi -p "hi"` | 1.4.0 | 312 ms | 326 ms | 380 ms | 125.5 MiB | 1 | 4 | 1,330 | 609 | $0.0040 | 561 ms | 972 MiB |
+| OpenHuman | `openhuman-core run --headless-api + inference_agent_chat "hi"` | 0.64.15 | 492 ms | 508 ms | 55 ms | 95.9 MiB | 1 | 14 | 4,208 | 2,923 | $0.0127 | 688 ms | 641 MiB |
 
-Input tokens are a same-tokenizer estimate (`tiktoken` `o200k_base`) of the system prompt, messages and tool schemas each CLI sent, summed over all of its model requests for the prompt. They are not provider-billed counts. opencode makes a second model request per prompt, and it starts a background `opencode serve --service` process that the runner counts and then stops. Cost uses a reference price of $3 per million input tokens and $15 per million output tokens, with no prompt-cache discount. In this capture Agent RT had the lowest median time, with Codex close behind. Agent RT used about 5–14× less memory and sent about 8–37× fewer input tokens per prompt. Part of that token gap comes from Agent RT's smaller built-in tool set (workspace file and read-only git tools), so these numbers measure per-prompt harness overhead, not task quality or capability.
+Input tokens are a same-tokenizer estimate (`tiktoken` `o200k_base`) of the system prompt, messages and tool schemas each CLI sent, summed over all of its model requests for the prompt. They are not provider-billed counts. opencode makes a second model request per prompt, and it starts a background `opencode serve --service` process that the runner counts and then stops. Cost uses a reference price of $3 per million input tokens and $15 per million output tokens, with no prompt-cache discount. "8 parallel: peak batch RSS" is the simultaneous memory of all eight process trees, sampled in one sweep.
 
-**Concurrency-memory caveat:** The historical 2026-10-18 eight-way RAM column sums individually observed process peaks; those peaks need not coincide. It is **not** observed simultaneous batch RAM. Future complete captures will also publish `c8_batch_peak_rss_mib`, sampled from all live process trees during the same sweep. Concurrent mock requests are validated in aggregate (at least one per invocation), but cannot be attributed to each process sharing the mock.
+What the numbers show:
+
+- Agent RT had the lowest median time and memory of the seven. Against Codex, Claude Code, opencode and Copilot CLI it used about 5–10× less memory and sent about 6–22× fewer input tokens per prompt.
+- Codex was close behind and finished the 8-way batch slightly faster (318 ms vs 338 ms) at about 4× the batch memory.
+- Pi sends the fewest tool-schema tokens (4 tools: read, bash, edit, write) and the second-smallest prompt overall.
+- OpenHuman used the least CPU (compiled Rust, mostly idle while waiting), but its cold turn includes booting a full core. Its 14 tools cost 2,923 tokens, which matches its own published figure of about 4.6k system-prompt tokens. OpenHuman is designed to serve many agents from one long-lived core, so a warm core would show lower per-turn time and memory than this cold-start, process-per-agent scenario.
+- Part of every token gap comes from the size of each CLI's default tool set (Agent RT ships workspace file and read-only git tools). These numbers measure per-prompt harness overhead, not task quality or capability.
+
+Concurrent mock requests are validated in aggregate (at least one per invocation), but cannot be attributed to each process sharing the mock.
 
 Checked-in aggregate: [`python/cli-harness-measured-results.csv`](python/cli-harness-measured-results.csv).
 
@@ -211,3 +221,35 @@ Checked-in aggregate: [`python/cli-harness-measured-results.csv`](python/cli-har
 ![Agent CLI peak memory](assets/cli-harness-memory.svg)
 
 ![Agent CLI input tokens](assets/cli-harness-tokens.svg)
+
+### Pi and OpenHuman features
+
+Pi and OpenHuman are open-source harnesses with very different scopes. This feature comparison comes from each project's documentation and source as of 2026-10-29. ✅ built in · ◐ partial, via extension or add-on · — not provided.
+
+| | Agent RT | Pi | OpenHuman |
+| --- | --- | --- | --- |
+| **Language / runtime** | Python and TypeScript (aligned) | TypeScript (Node ≥ 22.19) | Rust (single process) |
+| **License** | MIT | MIT | GPL-3.0 |
+| **Primary shape** | Agent runtime library + CLI + web UI | Minimal coding-agent CLI + TS SDK | Desktop app + headless core + Rust library |
+| **One-shot CLI** | ✅ `agent-rt -p` | ✅ `pi -p`, JSON mode, RPC mode | ◐ `openhuman inference agent_chat` (needs a booted core in 0.64.15) |
+| **Embeddable library** | ✅ Python + TS packages | ✅ TS SDK (`pi-agent-core`, `pi-ai`) | ✅ Rust (`openhuman-embed`) |
+| **Providers** | OpenAI, Anthropic, any compatible endpoint, custom | 30+ built in, plus any compatible endpoint (`models.json`) | 26 BYOK presets, local runtimes (Ollama, LM Studio, MLX), managed subscription |
+| **Drop-in SDK migration** | ✅ One-import swap for OpenAI, Anthropic, LangChain, LlamaIndex, OpenAI Agents and others; `agent-rt migrate` | — | — |
+| **Permissions / approvals** | ✅ Built in | — None built in; relies on project trust, containers or extensions | ✅ Approval gate |
+| **Action blocking** | ✅ Guard: composable blockers, incl. Agent Action Guard | ◐ Via extension hooks | ◐ Prompt-injection screening on inputs; approval for irreversible actions |
+| **Sandboxing** | ✅ Fail-closed backend selection | ◐ Via containers or the Gondolin extension | ✅ OS jail or Docker |
+| **Tool catalog pruning** | ✅ Decision-model (Jev-compatible) pruning + `tool_search` | ◐ `codemode` (a script calls tools; the model sees only its output) | ✅ Jev tool search |
+| **Context reduction** | Smaller default catalog; Decision-gated memory/retrieval | Compaction | RLM tool-result compression |
+| **Memory** | ✅ mem0, Zep, Letta, Supermemory, memU, framework stores | — (sessions only) | ✅ Built-in recall every turn, with citations; swappable engines |
+| **Checkpoints / resume** | ✅ Budget-preserving checkpoints | ✅ Sessions with branching | ✅ Durable workflows that resume after a pause |
+| **Sub-agents / plan mode** | ✅ Agent-as-tool, plans | — By design (build via extensions) | ✅ Sub-agents, agent teams, Plan vs Build |
+| **MCP** | ✅ | ✅ stdio + streamable HTTP | ✅ |
+| **Skills / extensions** | ✅ Skills | ✅ Extensions, skills, prompt templates, themes, npm/git packages | ✅ Skills, loadable Rust modules |
+| **Messaging channels** | ◐ Telegram, Discord (Python, beta) | — (separate `pi-chat` project) | ✅ 14 channels |
+| **Browser / desktop control** | — | — | ✅ Browser and desktop apps |
+| **OAuth app integrations** | — | — | ✅ 119 apps via Composio |
+| **Voice** | — | — | ✅ Live voice agent, dictation, TTS |
+| **Web UI** | ✅ `agent-rt web` (time-travel debugger) | — (terminal UI) | ✅ Desktop app |
+| **OpenAI/Anthropic-compatible API server** | ✅ | — | ◐ Own JSON-RPC API |
+
+Pi is the minimalist option: a small core with few tools and no permission system, extended by the user. OpenHuman is the maximalist one: a personal-assistant platform with memory, channels, browser/desktop control, voice and agent fleets. Agent RT sits between them as a runtime with production controls (Guard, approvals, sandboxing, Checkpoints) and Python + TypeScript migration paths. It has none of OpenHuman's end-user assistant features (browser control, voice, OAuth app catalog).

@@ -2,3 +2,6 @@
 __pycache__/
 *.py[codz]
 *$py.class
+
+# Locally installed CLIs for benchmark_cli_harnesses.py
+cli-tools/

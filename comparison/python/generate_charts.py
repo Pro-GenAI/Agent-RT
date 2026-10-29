@@ -21,6 +21,8 @@ PALETTE = {
     "Claude Code": "#D97757",
     "opencode": "#94A3B8",
     "Copilot CLI": "#38BDF8",
+    "Pi": "#E879F9",
+    "OpenHuman": "#F97316",
 }
 FALLBACK = "#64748B"
 

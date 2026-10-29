@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare agent CLI harnesses (Agent RT, Codex, Claude Code, opencode, Copilot CLI).
+"""Compare agent CLI harnesses (Agent RT, Codex, Claude Code, opencode, Copilot CLI, Pi, OpenHuman).
 
 Every CLI is pointed at a deterministic localhost mock that speaks OpenAI Chat
 Completions, OpenAI Responses, and Anthropic Messages. Each run gets its own
@@ -38,6 +38,7 @@ import tiktoken
 from generate_charts import generate_charts
 
 HERE = Path(__file__).resolve().parent
+CLI_TOOLS = HERE / "cli-tools" / "bin"  # ignored local installs, searched after PATH
 PROMPT = "hi"
 RESPONSE_TEXT = "mock response"
 MODEL = "gpt-5.4"
@@ -242,6 +243,7 @@ class MockServer(ThreadingHTTPServer):
 class Launch:
     argv: list[str]
     env: dict[str, str]
+    display: str | None = None  # the command column, when argv is a wrapper
 
 
 def _agent_rt(binary: str, url: str, home: Path) -> Launch:
@@ -305,6 +307,24 @@ def _copilot(binary: str, url: str, home: Path) -> Launch:
     )
 
 
+def _pi(binary: str, url: str, home: Path) -> Launch:
+    agent = home / ".pi" / "agent"
+    agent.mkdir(parents=True)
+    (agent / "models.json").write_text(json.dumps({"providers": {"mock": {
+        "baseUrl": f"{url}/v1", "api": "openai-completions", "apiKey": "$MOCK_API_KEY",
+        "models": [{"id": MODEL}]}}}))
+    (agent / "settings.json").write_text(json.dumps({"defaultProvider": "mock", "defaultModel": MODEL}))
+    # PI_OFFLINE only stops the model-catalog refresh and update checks; the request is unchanged.
+    return Launch([binary, "-p", PROMPT], {"MOCK_API_KEY": API_KEY, "PI_OFFLINE": "1"})
+
+
+def _openhuman(binary: str, url: str, home: Path) -> Launch:
+    # The release's one-shot CLI cannot run a turn without a booted core, so boot the headless
+    # core and send one JSON-RPC turn, as OpenHuman's own benchmark does (see openhuman-turn.sh).
+    return Launch(["bash", str(HERE / "openhuman-turn.sh"), binary, f"{url}/v1", API_KEY, MODEL, PROMPT], {},
+                  display=f'openhuman-core run --headless-api + inference_agent_chat "{PROMPT}"')
+
+
 # Every CLI is invoked as its plain one-shot prompt command; settings go in config files/env.
 HARNESSES: dict[str, tuple[str, Callable[[str, str, Path], Launch]]] = {
     "Agent RT": (str(HERE / ".venv" / "bin" / "agent-rt"), _agent_rt),
@@ -312,25 +332,35 @@ HARNESSES: dict[str, tuple[str, Callable[[str, str, Path], Launch]]] = {
     "Claude Code": ("claude", _claude),
     "opencode": ("opencode", _opencode),
     "Copilot CLI": ("copilot", _copilot),
+    "Pi": ("pi", _pi),
+    "OpenHuman": ("openhuman-core", _openhuman),
 }
 
 
 def command(name: str) -> str:
     with tempfile.TemporaryDirectory() as tmp:
-        argv = HARNESSES[name][1]("x", "http://mock", Path(tmp)).argv
-    return " ".join([Path(HARNESSES[name][0]).name, *(f'"{a}"' if a == PROMPT else a for a in argv[1:])])
+        launch = HARNESSES[name][1]("x", "http://mock", Path(tmp))
+    return launch.display or " ".join(
+        [Path(HARNESSES[name][0]).name, *(f'"{a}"' if a == PROMPT else a for a in launch.argv[1:])])
 
 
 def resolve_binary(name: str) -> str | None:
     path = HARNESSES[name][0]
     # opencode's installer puts the binary in ~/.opencode/bin, often not on PATH.
-    found = path if Path(path).is_file() else shutil.which(path, path=f"{os.environ.get('PATH', '')}{os.pathsep}{Path.home() / '.opencode' / 'bin'}")
+    search = os.pathsep.join([os.environ.get("PATH", ""), str(Path.home() / ".opencode" / "bin"), str(CLI_TOOLS)])
+    found = path if Path(path).is_file() else shutil.which(path, path=search)
     return str(Path(found).resolve()) if found else None
 
 
 def version(binary: str) -> str:
+    if Path(binary).name == "openhuman-core":  # no --version flag; the booted core reports it
+        return _version_output(["bash", str(HERE / "openhuman-turn.sh"), binary, "--version"])
+    return _version_output([binary, "--version"])
+
+
+def _version_output(argv: list[str]) -> str:
     try:
-        out = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=30,
+        out = subprocess.run(argv, capture_output=True, text=True, timeout=30,
                              env={k: os.environ[k] for k in PASSTHROUGH_ENV if k in os.environ})
         return (out.stdout or out.stderr).strip().splitlines()[0]
     except (OSError, subprocess.SubprocessError, IndexError):
@@ -596,7 +626,7 @@ def publication_problems(rows: list[dict[str, Any]], args: argparse.Namespace) -
     problems = []
     names = [row["harness"] for row in rows]
     if len(names) != len(HARNESSES) or set(names) != set(HARNESSES):
-        problems.append("all five distinct harnesses must be present")
+        problems.append(f"all {len(HARNESSES)} distinct harnesses must be present")
     for row in rows:
         name = row["harness"]
         if row.get("runs", 0) < 30 or row.get("failures", 1):
@@ -622,7 +652,7 @@ def main() -> int:
     parser.add_argument("--output-usd-per-mtok", type=float, default=DEFAULT_OUTPUT_USD_PER_MTOK, help="reference output price")
     parser.add_argument("--output-dir", type=Path, default=HERE / "results" / "cli-harnesses")
     parser.add_argument("--publish", action="store_true",
-                        help="refresh cli-harness-measured-results.csv (all five installed, >= 30 clean runs, default contract)")
+                        help="refresh cli-harness-measured-results.csv (all CLIs installed, >= 30 clean runs, default contract)")
     args = parser.parse_args()
     if (args.runs < 1 or args.warmup < 0 or args.timeout <= 0
             or not args.concurrency or len(set(args.concurrency)) != len(args.concurrency)
