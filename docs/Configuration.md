@@ -101,7 +101,7 @@ client.chat.completions.create(
 | `observability` | `api_key`, `base_url`, `headers`, `trace_content`, `telemetry_enabled`, `enrich_tokens`, `app_name` (OpenLLMetry/Traceloop) |
 | `memory` | `backend` (`mem0`, the default, `memu`, `zep`, `letta`, `supermemory`) and `options` for that backend; see [Memory packages](Runtime-Guide.md#memory-packages). Used by `load_memory(config)` / `loadMemory(config)`. |
 | `serve` | `telegram` and `discord`, each with `bot_token` and `allowed_users` (user ids the bot answers), for the Python `agent-rt serve` command; see [Chat bots](Runtime-Guide.md#chat-bots-python-beta) |
-| `cli` | `home` (sessions and skills root, default `~/.agent-rt`), `compact_token_limit` (`agent-rt web` uses both too: its sessions share `home`/sessions with the terminal CLI) |
+| `cli` | `home` (sessions, skills, and `trusted_skills.json` root, default `~/.agent-rt`), `compact_token_limit` (`agent-rt web` uses both too: its sessions share `home`/sessions with the terminal CLI) |
 
 Lists are written as YAML lists; `headers` is a mapping. Unknown sections and keys fail at load time. `configure_runtime(config)` / `configureRuntime(config)` applies these settings to the runtime's implicit defaults (and starts OpenLLMetry when configured); the CLI and `agent_rt_api.build_from_config` call it for you. Settings that are passed explicitly to a constructor always win.
 

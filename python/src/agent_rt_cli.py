@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import base64
 import builtins
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -42,7 +43,9 @@ from agent_rt import (
 from ext.artie_moods import pose
 from ext.cli_tools import TOOLS, ToolCLIError, translate_tool_cli
 from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
-from ext.extensions import SkillPackage, SkillRegistry
+from ext.extensions import SkillPackage, SkillRegistry, load_skill_package
+from ext.mcp_servers import MCPConnection
+from ext.project_instructions import load_project_instructions
 
 DEFAULT_INSTRUCTIONS = (
     "You are Agent RT, a concise and capable coding assistant. "
@@ -106,6 +109,7 @@ SLASH_COMMANDS = (
     "/sessions",
     "/model",
     "/skills",
+    "/mcp",
     "/compact",
     "/copy",
     "/clear",
@@ -269,7 +273,7 @@ class WorkspaceCodeTools:
             return
         if decision == "approve":
             return
-        raise PermissionError("workspace edit denied by user")
+        raise PermissionError(f"{action} denied by user")
 
     _PROTECTED_PATH_NAMES = frozenset({".git", ".gitattributes", ".gitmodules"})
 
@@ -881,6 +885,12 @@ _CLI_WORKSPACE_SKILL_ROOTS = (
     Path(".agents") / "skills",
     Path(".agent-rt") / "skills",
 )
+# Where Claude Code and Codex keep user-level skills, read like <cli.home>/skills.
+_CLI_USER_SKILL_ROOTS = (
+    Path(".claude") / "skills",
+    Path(".codex") / "skills",
+    Path(".agents") / "skills",
+)
 
 
 def _skill_description(skill: SkillPackage) -> str:
@@ -888,22 +898,77 @@ def _skill_description(skill: SkillPackage) -> str:
     return description.strip() if isinstance(description, str) else ""
 
 
+def _skill_digest(skill: SkillPackage) -> str:
+    """SHA-256 of everything loaded from a skill's files, which is exactly what the scan judged."""
+    digest = hashlib.sha256()
+    parts: list[str | bytes] = [
+        skill.name,
+        skill.version,
+        str(skill.metadata.get("raw_frontmatter", "")),
+        skill.instructions,
+    ]
+    for path, resource in sorted(skill.resources.items()):
+        parts += [
+            path,
+            resource if isinstance(resource, (str, bytes)) else repr(resource),
+        ]
+    for part in parts:
+        data = part.encode("utf-8") if isinstance(part, str) else part
+        digest.update(len(data).to_bytes(8, "big") + data)
+    return digest.hexdigest()
+
+
+def _load_trusted_skills(path: Path) -> dict[str, str]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}  # missing or corrupt: every skill is scanned again
+    if not isinstance(data, dict):
+        return {}
+    return {k: v for k, v in data.items() if isinstance(k, str) and isinstance(v, str)}
+
+
+def _save_trusted_skills(path: Path, trusted: Mapping[str, str]) -> None:
+    # shortcut: last writer wins between concurrent launches; a lost entry only means one more scan.
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    temporary = path.with_suffix(".tmp")
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(trusted, indent=2, sort_keys=True) + "\n")
+    temporary.replace(path)
+
+
 def _discover_cli_skills(
     workspace: Path,
     *,
     agent_rt_home: Path | None = None,
+    user_home: Path | None = None,
     decision_provider: Any | None = None,
 ) -> tuple[SkillRegistry, tuple[str, ...]]:
-    """Discover global and workspace SKILL.md packages without following symlinks."""
+    """Discover global and workspace SKILL.md packages without following symlinks.
+
+    A skill that passes the full (Decision model) scan is trusted: its digest is kept in
+    ``<cli.home>/trusted_skills.json`` and later launches skip that scan while the files are
+    unchanged. A changed skill loses its trust and is scanned again.
+    """
 
     registry = SkillRegistry()
     warnings: list[str] = []
     global_names: set[str] = set()
     home = agent_rt_home or _agent_rt_home()
-    roots = (
+    user_home = user_home or Path.home()
+    global_roots = (
+        *(user_home / relative for relative in _CLI_USER_SKILL_ROOTS),
         home / "skills",
+    )
+    roots = (
+        *global_roots,
         *(workspace / relative for relative in _CLI_WORKSPACE_SKILL_ROOTS),
     )
+    trust_path = home / "trusted_skills.json"
+    trusted = _load_trusted_skills(trust_path)
+    trust_changed = False
+    decision_guard: Any = None
 
     for root in roots:
         if root.is_symlink() or not root.is_dir():
@@ -925,15 +990,40 @@ def _discover_cli_skills(
                 )
             )
 
-        is_global = root == home / "skills"
+        is_global = root in global_roots
         for candidate in candidates:
+            key = str(candidate.resolve())
             try:
-                skill = registry.install_from_path(
-                    candidate,
-                    activate=True,
-                    decision_provider=decision_provider,
-                )
+                skill = load_skill_package(candidate)
+                digest = _skill_digest(skill)
+                if trusted.get(key) == digest:
+                    # Unchanged since it passed the full scan: only the built-in pattern scan runs.
+                    registry.install(skill, activate=True)
+                else:
+                    if trusted.pop(key, None) is not None:
+                        trust_changed = True
+                        print(
+                            f"agent-rt: skill {skill.name!r} changed since it was "
+                            f"trusted ({candidate}); scanning it again",
+                            file=sys.stderr,
+                        )
+                    if decision_guard is None:
+                        from ext.decisions import (
+                            default_decision_provider,
+                            make_decision_registration_guard,
+                        )
+
+                        decision_guard = make_decision_registration_guard(
+                            decision_provider or default_decision_provider()
+                        )
+                    registry.install(
+                        skill, activate=True, registration_guard=decision_guard
+                    )
+                    trusted[key] = digest
+                    trust_changed = True
             except (OSError, UnicodeError, ValueError) as exc:
+                # A skill that no longer loads or passes the scan is not trusted any more.
+                trust_changed |= trusted.pop(key, None) is not None
                 warnings.append(f"{candidate}: {exc}")
                 continue
             if is_global:
@@ -946,6 +1036,13 @@ def _discover_cli_skills(
                     "globally installed skill of the same name"
                 )
 
+    if trust_changed:
+        try:
+            _save_trusted_skills(trust_path, trusted)
+        except (
+            OSError
+        ) as exc:  # skills still load; they are only scanned again next launch
+            print(f"agent-rt: skill trust not saved: {exc}", file=sys.stderr)
     return registry, tuple(warnings)
 
 
@@ -1257,6 +1354,7 @@ class ChatSession:
         compact_token_threshold: int | None = None,
         max_output_tokens: int | None = None,
         todos: TodoList | None = None,
+        project_instructions: str = "",
     ) -> None:
         if not model.strip():
             raise ValueError("model must not be empty")
@@ -1266,6 +1364,9 @@ class ChatSession:
         self.loop = loop
         self.model = model.strip()
         self.instructions = instructions
+        # AGENTS.md/CLAUDE.md text, re-read each launch and never saved with the transcript.
+        self.project_instructions = project_instructions
+        self.mcp_connections: tuple[MCPConnection, ...] = ()
         self.session_id = session_id or uuid.uuid4().hex[:12]
         self.store = store or TranscriptStore()
         self.autosave = autosave
@@ -1287,7 +1388,7 @@ class ChatSession:
     def agent(self) -> AgentConfig:
         return AgentConfig(
             name="cli",
-            instructions=self.instructions,
+            instructions=self.instructions + self.project_instructions,
             model=ModelSettings(
                 model=self.model, max_output_tokens=self.max_output_tokens
             ),
@@ -1478,11 +1579,22 @@ class TerminalChat:
             self._pause_response_status()
         try:
             path = arguments.get("path", "")
-            self.console.print(
-                "[bold yellow]Workspace edit requires approval[/bold yellow]"
-            )
-            self.console.print(f"action: {action}", markup=False)
-            self.console.print(f"path: {path!r}", markup=False)
+            if action.startswith("mcp__"):
+                self.console.print(
+                    "[bold yellow]MCP tool call requires approval[/bold yellow]"
+                )
+                self.console.print(f"tool: {action}", markup=False)
+                self.console.print("arguments:")
+                self.console.print(
+                    self._preview(json.dumps(dict(arguments), ensure_ascii=False)),
+                    markup=False,
+                )
+            else:
+                self.console.print(
+                    "[bold yellow]Workspace edit requires approval[/bold yellow]"
+                )
+                self.console.print(f"action: {action}", markup=False)
+                self.console.print(f"path: {path!r}", markup=False)
             if action == "replace_in_file":
                 self.console.print("old text:")
                 self.console.print(
@@ -1504,7 +1616,7 @@ class TerminalChat:
                 answer = (
                     (
                         await self.approval_prompt.prompt_async(
-                            "Approve edit? [y]es / [n]o / [a]uto-approve session > "
+                            "Approve? [y]es / [n]o / [a]uto-approve session > "
                         )
                     )
                     .strip()
@@ -1514,7 +1626,7 @@ class TerminalChat:
                     return "approve"
                 if answer in {"a", "all", "auto"}:
                     self.console.print(
-                        "[yellow]Auto-approving workspace edits for this session.[/yellow]"
+                        "[yellow]Auto-approving workspace edits and MCP tool calls for this session.[/yellow]"
                     )
                     return "approve_session"
                 if answer in {"n", "no", ""}:
@@ -1564,6 +1676,7 @@ class TerminalChat:
             "  /sessions             list saved sessions\n"
             "  /model [name]         select or validate a model from /v1/models\n"
             "  /skills               list discovered global/project skills\n"
+            "  /mcp                  list connected MCP servers and their tools\n"
             "  /compact              compact conversation context with the model\n"
             "  /copy                 copy the last assistant Markdown source\n"
             "  /clear                clear the screen and start a new session (empty history and todos)\n"
@@ -1585,6 +1698,16 @@ class TerminalChat:
             lines.append(f"{skill.name}@{skill.version}{suffix}")
         self.console.print("\n".join(lines), markup=False)
 
+    def _mcp(self) -> None:
+        if not self.session.mcp_connections:
+            self.console.print("No MCP servers connected.")
+            return
+        lines = []
+        for connection in self.session.mcp_connections:
+            lines.append(f"{connection.spec.name} ({connection.spec.describe()})")
+            lines.extend(f"  {tool.get('name')}" for tool in connection.tools)
+        self.console.print("\n".join(lines), markup=False)
+
     def _todos(self) -> None:
         items = self.session.todos.items
         if not items:
@@ -1603,6 +1726,7 @@ class TerminalChat:
             f"session={self.session.session_id} "
             f"messages={len(self.session.messages)} "
             f"skills={len(self.session.skills.active())} "
+            f"mcp={len(self.session.mcp_connections)} "
             f"stream={'on' if self.stream else 'off'}"
         )
 
@@ -1703,6 +1827,8 @@ class TerminalChat:
             self._todos()
         elif command == "/skills":
             self._skills()
+        elif command == "/mcp":
+            self._mcp()
         elif command == "/compact":
             original_count = await self.session.compact()
             if original_count:
@@ -1961,6 +2087,9 @@ def build_workspace_session(
     _register_skill_tools(workspace_registry, skills)
     todos = TodoList()
     todos.register(workspace_registry)
+    session_options.setdefault(
+        "project_instructions", load_project_instructions(workspace)[0]
+    )
     return ChatSession(
         AgentLoop(
             provider,
@@ -1980,9 +2109,18 @@ async def _stdio_workspace_approval(
     arguments: Mapping[str, Any],
 ) -> str:
     path = arguments.get("path", "")
-    print("Workspace edit requires approval", file=sys.stderr)
-    print(f"action: {action}", file=sys.stderr)
-    print(f"path: {path!r}", file=sys.stderr)
+    if action.startswith("mcp__"):
+        print("MCP tool call requires approval", file=sys.stderr)
+        print(f"tool: {action}", file=sys.stderr)
+        print(
+            "arguments: "
+            + TerminalChat._preview(json.dumps(dict(arguments), ensure_ascii=False)),
+            file=sys.stderr,
+        )
+    else:
+        print("Workspace edit requires approval", file=sys.stderr)
+        print(f"action: {action}", file=sys.stderr)
+        print(f"path: {path!r}", file=sys.stderr)
     if action == "replace_in_file":
         print(
             f"old text: {TerminalChat._preview(arguments.get('old_text', ''))}",
@@ -2000,14 +2138,14 @@ async def _stdio_workspace_approval(
 
     if not sys.stdin.isatty():
         print(
-            "workspace edit denied: interactive approval is unavailable",
+            f"{action} denied: interactive approval is unavailable",
             file=sys.stderr,
         )
         return "deny"
 
     while True:
         print(
-            "Approve edit? [y]es / [n]o / [a]uto-approve session > ",
+            "Approve? [y]es / [n]o / [a]uto-approve session > ",
             end="",
             file=sys.stderr,
             flush=True,
@@ -2016,11 +2154,69 @@ async def _stdio_workspace_approval(
         if answer in {"y", "yes"}:
             return "approve"
         if answer in {"a", "all", "auto"}:
-            print("Auto-approving workspace edits for this session.", file=sys.stderr)
+            print(
+                "Auto-approving workspace edits and MCP tool calls for this session.",
+                file=sys.stderr,
+            )
             return "approve_session"
         if answer in {"n", "no", ""}:
             return "deny"
         print("Enter y, n, or a.", file=sys.stderr)
+
+
+async def _start_mcp_servers(
+    session: ChatSession, workspace: Path
+) -> tuple[MCPConnection, ...]:
+    """Start the MCP servers Codex/Claude Code configs list and register their tools."""
+    from ext.mcp_servers import connect, discover_mcp_servers, register_mcp_tools
+
+    discovery = discover_mcp_servers(workspace)
+    warnings = list(discovery.warnings)
+    specs = list(discovery.servers)
+    if discovery.pending:
+        names = ", ".join(spec.name for spec in discovery.pending)
+        approved = False
+        if sys.stdin.isatty():
+            print(
+                "This workspace's .mcp.json asks to start these MCP servers:",
+                file=sys.stderr,
+            )
+            for spec in discovery.pending:
+                print(f"  {spec.name}: {spec.describe()}", file=sys.stderr)
+            print("Start them? [y/N] > ", end="", file=sys.stderr, flush=True)
+            answer = (await asyncio.to_thread(sys.stdin.readline)).strip().lower()
+            approved = answer in {"y", "yes"}
+        if approved:
+            specs.extend(discovery.pending)
+        else:
+            warnings.append(
+                f"project MCP servers not started ({names}): approve them at an "
+                "interactive prompt or in Claude Code"
+            )
+    results = await asyncio.gather(
+        *(connect(spec, client_version=_package_version()) for spec in specs),
+        return_exceptions=True,
+    )
+    connections = []
+    for spec, result in zip(specs, results):
+        if isinstance(result, BaseException):
+            warnings.append(
+                f"MCP server {spec.name!r} not started: {result or type(result).__name__}"
+            )
+        else:
+            connections.append(result)
+    workspace_tools = session.workspace_tools
+    registry = session.loop.tool_registry
+    assert workspace_tools is not None and isinstance(registry, ToolRegistry)
+    warnings += register_mcp_tools(
+        registry,
+        connections,
+        workspace_tools._require_write_approval,
+    )
+    for warning in warnings:
+        print(f"agent-rt: {warning}", file=sys.stderr)
+    session.mcp_connections = tuple(connections)
+    return session.mcp_connections
 
 
 def _positive_int(value: str) -> int:
@@ -2299,6 +2495,17 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
             print(f"agent-rt: session not found: {args.session}", file=sys.stderr)
             return 2
 
+    connections = await _start_mcp_servers(session, launch_workspace)
+    try:
+        return await _run_cli_session(session, args)
+    finally:
+        await asyncio.gather(
+            *(connection.transport.close() for connection in connections),
+            return_exceptions=True,
+        )
+
+
+async def _run_cli_session(session: ChatSession, args: argparse.Namespace) -> int:
     prompt = (args.prompt or "").strip()
     if not prompt and not sys.stdin.isatty():
         prompt = sys.stdin.read().strip()

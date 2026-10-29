@@ -103,7 +103,7 @@ Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-
 
 - 🧠 **Agent memory** — `AgentConfig.memory` mixes strings, objects, and stores from LangChain, LangGraph, LlamaIndex, AutoGen, OpenAI Agents, or mem0. `load_memory()` / `loadMemory()` connect mem0 (default), Zep, Letta, Supermemory, or memU (Python) and store finished conversations with `remember()` ([details](docs/Runtime-Guide.md#memory-packages)).
 - ✅ **Task lists** — `TodoList` gives a model one `todo` tool with a separate list per session; on by default in the CLI and web UI ([details](docs/Runtime-Guide.md#task-lists-todo-tool)).
-- 🖥️ **Terminal CLI and web UI** (Python) — `agent-rt` and `agent-rt web` share sessions, so a session started in one resumes in the other; edits need in-page or terminal approval ([details](docs/website/docs/guides/runtime-guide.html#web-ui)).
+- 🖥️ **Terminal CLI and web UI** (Python) — `agent-rt` and `agent-rt web` share sessions, so a session started in one resumes in the other; edits need in-page or terminal approval ([details](docs/website/docs/guides/runtime-guide.html#web-ui)). The CLI reads Codex and Claude Code project setup as is: `AGENTS.md`/`CLAUDE.md`, skills in `.agents/`, `.claude/`, `.codex/`, and MCP servers from `.mcp.json`, `~/.claude.json`, and `~/.codex/config.toml` ([details](docs/website/docs/guides/runtime-guide.html#project-instructions-skills-mcp)).
 - 💬 **Chat bots** (Python, beta) — `agent-rt serve telegram,discord` answers allowed users, with no workspace tools ([details](docs/Runtime-Guide.md#chat-bots-python-beta)).
 
 ## ⚖️ Quick Comparison

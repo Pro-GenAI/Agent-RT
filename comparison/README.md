@@ -243,8 +243,8 @@ Pi and OpenHuman are open-source harnesses with very different scopes. This feat
 | **Memory** | ✅ mem0, Zep, Letta, Supermemory, memU, framework stores | — (sessions only) | ✅ Built-in recall every turn, with citations; swappable engines |
 | **Checkpoints / resume** | ✅ Budget-preserving checkpoints | ✅ Sessions with branching | ✅ Durable workflows that resume after a pause |
 | **Sub-agents / plan mode** | ✅ Agent-as-tool, plans | — By design (build via extensions) | ✅ Sub-agents, agent teams, Plan vs Build |
-| **MCP** | ✅ | ✅ stdio + streamable HTTP | ✅ |
-| **Skills / extensions** | ✅ Skills | ✅ Extensions, skills, prompt templates, themes, npm/git packages | ✅ Skills, loadable Rust modules |
+| **MCP** | ✅ stdio + streamable HTTP; CLI reads Codex and Claude Code server configs | ✅ stdio + streamable HTTP | ✅ |
+| **Skills / extensions** | ✅ Skills from `.agents/`, `.claude/`, `.codex/`; re-scanned when files change | ✅ Extensions, skills, prompt templates, themes, npm/git packages | ✅ Skills, loadable Rust modules |
 | **Messaging channels** | ◐ Telegram, Discord (Python, beta) | — (separate `pi-chat` project) | ✅ 14 channels |
 | **Browser / desktop control** | — | — | ✅ Browser and desktop apps |
 | **OAuth app integrations** | — | — | ✅ 119 apps via Composio |

@@ -56,7 +56,7 @@
 <tr><td><strong>🧠 Decision-model control gates</strong></td><td>✅ Tool pruning, memory/retrieval gates, failure classification</td><td>—</td><td>—</td></tr>
 <tr><td><strong>🧠 Harmful-memory guard</strong></td><td>✅ Decision-model screening before memory persistence and retrieval exposure; detects harmful-action influence, misleading authority, instruction hijacking, and safeguard bypass attempts</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
 <tr><td><strong>🔎 Tool/skill pre-registration safety scan</strong></td><td>✅ Deterministic scan of names, descriptions, schemas/metadata, skill frontmatter/instructions, embedded tools, and string resources</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
-<tr><td><strong>🚧 Decision approval for external tools/skills</strong></td><td>✅ Fail-closed Decision-model scan before filesystem skill activation; checked registration path for untrusted tools</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
+<tr><td><strong>🚧 Decision approval for external tools/skills</strong></td><td>✅ Fail-closed Decision-model scan before filesystem skill activation, repeated whenever a trusted skill's files change; checked registration path for untrusted tools</td><td>◐ Application/integration-defined</td><td>◐ Application/integration-defined</td></tr>
 <tr><td><strong>✂️ Tool catalog pruning before model call</strong></td><td>✅ Built-in</td><td>◐ Integration-dependent</td><td>◐ Integration-dependent</td></tr>
 <tr><td><strong>📦 Sandboxing</strong></td><td>✅ Fail-closed backend selection</td><td>◐</td><td>◐</td></tr>
 <tr><td><strong>♻️ Budget-preserving checkpoints</strong></td><td>✅ Resume with prior turn/tool/token budgets</td><td>◐</td><td>◐</td></tr>
@@ -102,8 +102,8 @@
 <tr><td><strong>Memory</strong></td><td>✅ mem0, Zep, Letta, Supermemory, memU, framework stores</td><td>— (sessions only)</td><td>✅ Built-in recall every turn, with citations; swappable engines</td></tr>
 <tr><td><strong>Checkpoints / resume</strong></td><td>✅ Budget-preserving checkpoints</td><td>✅ Sessions with branching</td><td>✅ Durable workflows that resume after a pause</td></tr>
 <tr><td><strong>Sub-agents / plan mode</strong></td><td>✅ Agent-as-tool, plans</td><td>— By design (build via extensions)</td><td>✅ Sub-agents, agent teams, Plan vs Build</td></tr>
-<tr><td><strong>MCP</strong></td><td>✅</td><td>✅ stdio + streamable HTTP</td><td>✅</td></tr>
-<tr><td><strong>Skills / extensions</strong></td><td>✅ Skills</td><td>✅ Extensions, skills, prompt templates, themes, npm/git packages</td><td>✅ Skills, loadable Rust modules</td></tr>
+<tr><td><strong>MCP</strong></td><td>✅ stdio + streamable HTTP; CLI reads Codex and Claude Code server configs</td><td>✅ stdio + streamable HTTP</td><td>✅</td></tr>
+<tr><td><strong>Skills / extensions</strong></td><td>✅ Skills from <code>.agents/</code>, <code>.claude/</code>, <code>.codex/</code>; re-scanned when files change</td><td>✅ Extensions, skills, prompt templates, themes, npm/git packages</td><td>✅ Skills, loadable Rust modules</td></tr>
 <tr><td><strong>Messaging channels</strong></td><td>◐ Telegram, Discord (Python, beta)</td><td>— (separate <code>pi-chat</code> project)</td><td>✅ 14 channels</td></tr>
 <tr><td><strong>Browser / desktop control</strong></td><td>—</td><td>—</td><td>✅ Browser and desktop apps</td></tr>
 <tr><td><strong>OAuth app integrations</strong></td><td>—</td><td>—</td><td>✅ 119 apps via Composio</td></tr>

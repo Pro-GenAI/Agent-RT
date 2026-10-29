@@ -637,6 +637,7 @@ class TestCliSkills:
         skills, warnings = _discover_cli_skills(
             workspace,
             agent_rt_home=home,
+            user_home=tmp_path / "empty-user-home",
             decision_provider=BenignSkillDecisionProvider(),
         )
 
@@ -667,6 +668,7 @@ class TestCliSkills:
         skills, warnings = _discover_cli_skills(
             workspace,
             agent_rt_home=tmp_path / "empty-home",
+            user_home=tmp_path / "empty-user-home",
             decision_provider=BenignSkillDecisionProvider(),
         )
         assert warnings == ()
@@ -727,6 +729,7 @@ class TestCliSkills:
         skills, warnings = _discover_cli_skills(
             workspace,
             agent_rt_home=tmp_path / "empty-home",
+            user_home=tmp_path / "empty-user-home",
             decision_provider=BenignSkillDecisionProvider(),
         )
 
