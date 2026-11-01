@@ -4,7 +4,10 @@
 
 **Production AI agents without the framework tax.** A lightweight, provider-neutral runtime with explicit control over tools, safety, state, and orchestration.
 
-🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT)
+🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT) · [Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-python)
+
+[![Docker Hub Python](https://img.shields.io/badge/Docker_Hub-Python-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
+[![Python Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-python?style=for-the-badge&logo=docker&label=Python%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
 
 Meet **Artie**, the running robot, and its flagship features: **Guard** (blocks harmful tool calls before they run), **Checkpoints** (resume with budgets intact), and the migration **Wall** (65+ repositories passing their tests after migrating).
 
@@ -31,6 +34,13 @@ Python 3.10–3.14. Runs on Linux, Windows, macOS (Intel and Apple M-series), an
 ```bash
 pip install agent-rt
 pip install 'agent-rt[all]'   # or pick extras: anthropic, observability, api, cli
+```
+
+**Docker Hub:** The prebuilt [Python image](https://hub.docker.com/r/praneeth1v/agent-rt-python) includes the `agent-rt` CLI entrypoint and the provider, API, and web extras. Pull the latest tag (or a published version tag) and try the CLI:
+
+```bash
+docker pull praneeth1v/agent-rt-python:latest
+docker run --rm praneeth1v/agent-rt-python:latest --help
 ```
 
 Works with the `openai` (1.31+, including 2.x and 3.x) and `anthropic` (0.29+, including 1.x) SDK versions your project already pins — any release since mid-2024.

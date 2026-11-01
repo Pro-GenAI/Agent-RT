@@ -8,10 +8,14 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 
 [![PyPI](https://img.shields.io/pypi/v/agent-rt?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/agent-rt/)
 [![npm](https://img.shields.io/npm/v/agent-rt?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/agent-rt)
+[![Docker Hub Python](https://img.shields.io/badge/Docker_Hub-Python-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
+[![Docker Hub TypeScript](https://img.shields.io/badge/Docker_Hub-TypeScript-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 [![Docs](https://img.shields.io/badge/Docs-000000?style=for-the-badge&logo=github&logoColor=white)](https://agent-rt-pro.github.io/docs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Pro-GenAI/Agent-RT/blob/main/LICENSE)
 <a href="https://pepy.tech/projects/agent-rt"><img src="https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=PyPI%20Downloads" alt="PyPI Downloads" height="28"></a>
 ![NPM Downloads](https://img.shields.io/npm/d18m/agent-rt?style=for-the-badge&label=npm%20downloads)
+[![Python Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-python?style=for-the-badge&logo=docker&label=Python%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
+[![TypeScript Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-typescript?style=for-the-badge&logo=docker&label=TypeScript%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 
 <!-- [![PyPI Downloads](https://img.shields.io/pepy/dt/agent-rt?style=for-the-badge&label=Downloads)](https://pepy.tech/projects/agent-rt) -->
 <!-- [![PyPI Downloads](https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=Downloads)](https://pepy.tech/projects/agent-rt) -->
@@ -58,6 +62,15 @@ pip install agent-rt
 ```bash
 npm install agent-rt
 ```
+
+**Docker Hub (prebuilt images)**
+
+```bash
+docker pull praneeth1v/agent-rt-python:latest
+docker pull praneeth1v/agent-rt-typescript:latest
+```
+
+The [Python image](https://hub.docker.com/r/praneeth1v/agent-rt-python) launches the `agent-rt` CLI; the [TypeScript image](https://hub.docker.com/r/praneeth1v/agent-rt-typescript) contains the Node.js runtime and installed `agent-rt` package. See [container usage](docs/Runtime-Guide.md#docker-hub-images) for run commands and versioned tags.
 
 **⏱️ Try it in 10 seconds** with the API key you already use for Claude Code, Codex, opencode, or Copilot CLI (no config file needed):
 

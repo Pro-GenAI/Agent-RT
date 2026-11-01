@@ -51,6 +51,13 @@
 source .venv/bin/activate
 pip install agent-rt</code></pre>
 <h2>TypeScript / Node.js</h2><pre><code class="language-bash">npm install agent-rt</code></pre>
+<h2 id="docker-hub">Docker Hub images</h2><p>Prebuilt images are also available on Docker Hub: <a href="https://hub.docker.com/r/praneeth1v/agent-rt-python">Agent RT Python</a> and <a href="https://hub.docker.com/r/praneeth1v/agent-rt-typescript">Agent RT TypeScript</a>. Pull the latest tag, or use a published version tag such as <code>0.1.2</code>:</p>
+<pre><code class="language-bash">docker pull praneeth1v/agent-rt-python:latest
+docker pull praneeth1v/agent-rt-typescript:latest</code></pre>
+<p>The Python image starts the <code>agent-rt</code> CLI; the TypeScript image starts Node.js and has the <code>agent-rt</code> npm package preinstalled:</p>
+<pre><code class="language-bash">docker run --rm praneeth1v/agent-rt-python:latest --help
+docker run --rm praneeth1v/agent-rt-typescript:latest node -e "console.log(typeof require('agent-rt').AgentLoop)"</code></pre>
+<p>The Python image includes the API and web extras; the TypeScript image includes the OpenAI and Anthropic SDK peers. Docker Hub displays each image's pull count; the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/README.md">GitHub README</a> also includes live pull-count badges. Provide provider credentials/configuration at runtime, not in your image.</p>
 <h2>Configure models</h2><p>Agent RT is configured with one YAML file: <code>~/.agent-rt/config.yaml</code> in your home folder, or a project file explicitly passed with <code>--config</code> / <code>load_config(path)</code>. Declare as many models as you need; secrets are referenced as <code>os.environ/NAME</code> and are the only thing read from the environment.</p><pre><code class="language-yaml">model_list:
   - model_name: my-model
     agent_rt_params:

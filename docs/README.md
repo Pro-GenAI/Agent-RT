@@ -1,6 +1,8 @@
 # Agent RT documentation
 
-Agent RT (Agent Runtime) is a fast, lightweight, provider-neutral runtime for AI agents. Read the documents in this order:
+Agent RT (Agent Runtime) is a fast, lightweight, provider-neutral runtime for AI agents. Prebuilt images are also on Docker Hub: [Python](https://hub.docker.com/r/praneeth1v/agent-rt-python) and [TypeScript](https://hub.docker.com/r/praneeth1v/agent-rt-typescript). See the [container usage guide](Runtime-Guide.md#docker-hub-images) for pull and run commands.
+
+Read the documents in this order:
 
 | Document | Audience | Contents |
 | --- | --- | --- |

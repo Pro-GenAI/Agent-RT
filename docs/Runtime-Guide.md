@@ -2,6 +2,23 @@
 
 Detailed usage notes for features that the package READMEs only mention briefly. Examples are shown for Python unless a section says otherwise; the TypeScript package uses the same concepts with camelCase names. For design rationale and contracts see [Architecture and Extensions](Architecture-and-Extensions.md).
 
+## Docker Hub images
+
+Prebuilt images are published on Docker Hub for [Python (`praneeth1v/agent-rt-python`)](https://hub.docker.com/r/praneeth1v/agent-rt-python) and [TypeScript (`praneeth1v/agent-rt-typescript`)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript). Use `latest` or a published version tag (such as `0.1.2`); pull counts are visible on each Docker Hub repository and on the live badges in the [main README](../README.md).
+
+```bash
+docker pull praneeth1v/agent-rt-python:latest
+docker pull praneeth1v/agent-rt-typescript:latest
+
+# The Python image launches the agent-rt CLI by default.
+docker run --rm praneeth1v/agent-rt-python:latest --help
+
+# The TypeScript image starts Node.js; the agent-rt npm package is preinstalled.
+docker run --rm praneeth1v/agent-rt-typescript:latest node -e "console.log(typeof require('agent-rt').AgentLoop)"
+```
+
+The Python image includes the provider, API, and web extras; the TypeScript image includes the OpenAI and Anthropic SDK peers. For configured applications, supply credentials and configuration explicitly at runtime rather than baking secrets into an image. These images are alternatives to installing the PyPI/npm packages, not Docker-based sandbox backends used *by* Agent RT.
+
 ## Providers
 
 `load_model(load_config())` (Python) / `loadModel(await loadConfig())` (TypeScript) builds a provider from the `model_list` of a YAML config file (`~/.agent-rt/config.yaml`, or an explicit path such as `load_config("./agent-rt.yaml")`). It supports several models, ordered fallbacks for repeated `model_name`s, and several vector stores; see [Configuration](Configuration.md). The process environment is only used to resolve `os.environ/NAME` secret references.

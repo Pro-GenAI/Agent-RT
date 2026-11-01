@@ -3,13 +3,15 @@
 > Agent RT ("Agent Runtime") is a fast, lightweight, provider-neutral runtime for building production AI agents in Python and TypeScript, with tools, streaming, memory, policy, sandboxing, orchestration, and observability.
 
 - Install: `pip install agent-rt` (Python 3.10–3.14) or `npm install agent-rt` (Node.js 20, 22, 24, 26)
+- Docker Hub Python: https://hub.docker.com/r/praneeth1v/agent-rt-python (`docker pull praneeth1v/agent-rt-python:latest`)
+- Docker Hub TypeScript: https://hub.docker.com/r/praneeth1v/agent-rt-typescript (`docker pull praneeth1v/agent-rt-typescript:latest`)
 - Source: https://github.com/Pro-GenAI/Agent-RT
 - License: MIT
 
 ## Documentation
 
 - [Documentation home](https://agent-rt-pro.github.io/docs/)
-- [Installation](https://agent-rt-pro.github.io/docs/getting-started/installation.html)
+- [Installation and Docker Hub images](https://agent-rt-pro.github.io/docs/getting-started/installation.html)
 - [Quickstart](https://agent-rt-pro.github.io/docs/getting-started/quickstart.html)
 - [Runtime](https://agent-rt-pro.github.io/docs/concepts/runtime.html)
 - [Tools and policy](https://agent-rt-pro.github.io/docs/concepts/tools-policy.html)

@@ -4,7 +4,10 @@
 
 **Production AI agents without the framework tax.** A lightweight, provider-neutral runtime with explicit control over tools, safety, state, and orchestration.
 
-🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT)
+🌐 **[Website](https://agent-rt-pro.github.io/)** · [Documentation](https://agent-rt-pro.github.io/docs/) · [GitHub](https://github.com/Pro-GenAI/Agent-RT) · [Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
+
+[![Docker Hub TypeScript](https://img.shields.io/badge/Docker_Hub-TypeScript-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
+[![TypeScript Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-typescript?style=for-the-badge&logo=docker&label=TypeScript%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 
 Meet **Artie**, the running robot, and its flagship features: **Guard** (blocks harmful tool calls before they run), **Checkpoints** (resume with budgets intact), and the migration **Wall** (65+ repositories passing their tests after migrating).
 
@@ -28,6 +31,13 @@ Node 20, 22, 24, or 26. Runs on Linux, Windows, macOS (Intel and Apple M-series)
 
 ```bash
 npm install agent-rt
+```
+
+**Docker Hub:** The prebuilt [TypeScript image](https://hub.docker.com/r/praneeth1v/agent-rt-typescript) includes Agent RT and the OpenAI/Anthropic SDK peers. It starts Node.js by default:
+
+```bash
+docker pull praneeth1v/agent-rt-typescript:latest
+docker run --rm praneeth1v/agent-rt-typescript:latest node -e "console.log(typeof require('agent-rt').AgentLoop)"
 ```
 
 Provider SDKs are optional: add `openai` or `@anthropic-ai/sdk` only when you need them. For agent memory, add one of `mem0ai` (the default), `@getzep/zep-cloud`, `@letta-ai/letta-client`, or `supermemory` and call `loadMemory()` ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#memory-packages)). Agent RT works with the SDK versions your project already pins; releases since mid-2024 (`openai` 4.48+ through 7.x, `@anthropic-ai/sdk` 0.23+) are regression-tested.

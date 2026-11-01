@@ -303,6 +303,8 @@ npm pack --dry-run
 
 ## Container image versioning
 
+Published repositories: [Python on Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-python) and [TypeScript on Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-typescript). User-facing pull and run commands are in the [Runtime guide](Runtime-Guide.md#docker-hub-images).
+
 Both `python/Dockerfile` and `typescript/Dockerfile` set the OCI `org.opencontainers.image.version` label from `ARG AGENT_RT_VERSION`. The default build argument tracks the corresponding package version. Docker Hub releases pass the package version explicitly as a build argument and tag images with that version (and `latest`), so image metadata and published tags agree. Version bumps change source files only: rebuild and push to update existing Docker images.
 
 The TypeScript image uses a multi-stage Debian-slim Node 22 build. The final stage installs only production dependencies plus the OpenAI and Anthropic SDK peers (not the optional tracing/sandbox peers), and `scripts/prune-docker-deps.mjs` deletes ONNX Runtime's unused platform/architecture native binaries **within the install layer**. Keep the target platform's ONNX binary: `agent-action-guard` depends on it, so an Alpine/musl runtime image is not a drop-in replacement. `typescript/.dockerignore` limits the build context to the package metadata, TypeScript sources, and prune script. `temp/publish-dockerhub.sh ts` builds, reports the image size, runs a Node/SDK/ONNX smoke test, and offers to push it. Test the pruning behavior without Docker with `node --test typescript/tests/docker-prune.test.js`.

@@ -70,12 +70,16 @@
         "isAccessibleForFree": true,
         "downloadUrl": [
           "https://pypi.org/project/agent-rt/",
-          "https://www.npmjs.com/package/agent-rt"
+          "https://www.npmjs.com/package/agent-rt",
+          "https://hub.docker.com/r/praneeth1v/agent-rt-python",
+          "https://hub.docker.com/r/praneeth1v/agent-rt-typescript"
         ],
         "sameAs": [
           "https://github.com/Pro-GenAI/Agent-RT",
           "https://pypi.org/project/agent-rt/",
-          "https://www.npmjs.com/package/agent-rt"
+          "https://www.npmjs.com/package/agent-rt",
+          "https://hub.docker.com/r/praneeth1v/agent-rt-python",
+          "https://hub.docker.com/r/praneeth1v/agent-rt-typescript"
         ],
         "featureList": [
           "Provider-neutral model runtime",
@@ -235,6 +239,14 @@
               <span>npm</span><span aria-hidden="true">↗</span>
             </a>
           </nav>
+          <div class="dockerhub-badges reveal" role="group" aria-label="Prebuilt Docker Hub images">
+            <a class="dockerhub-badge" href="https://hub.docker.com/r/praneeth1v/agent-rt-python" target="_blank" rel="external noopener" aria-label="Python image on Docker Hub">
+              <span class="dockerhub-badge-name">Docker Hub</span><span class="dockerhub-badge-lang">Python ↗</span>
+            </a>
+            <a class="dockerhub-badge" href="https://hub.docker.com/r/praneeth1v/agent-rt-typescript" target="_blank" rel="external noopener" aria-label="TypeScript image on Docker Hub">
+              <span class="dockerhub-badge-name">Docker Hub</span><span class="dockerhub-badge-lang">TypeScript ↗</span>
+            </a>
+          </div>
         </div>
 
         <div class="hero-visual reveal" aria-label="Illustrative Agent RT run trace">
@@ -1301,6 +1313,7 @@
             <li><span>02</span><p>Describe your models and vector stores in <code>agent-rt.yaml</code> (secrets via <code>os.environ/NAME</code>).</p></li>
             <li><span>03</span><p>Run the agent through <code>AgentLoop</code>.</p></li>
           </ol>
+          <p class="reveal">Prefer a container? Pull <code>praneeth1v/agent-rt-python:latest</code> or <code>praneeth1v/agent-rt-typescript:latest</code> from Docker Hub. <a class="text-link" href="./docs/getting-started/installation.html#docker-hub">Docker instructions</a>.</p>
         </div>
 
         <div class="code-window reveal">

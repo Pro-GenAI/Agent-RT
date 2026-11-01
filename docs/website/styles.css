@@ -719,6 +719,28 @@ main, .site-footer { position: relative; z-index: 1; }
 .project-links a span:last-child { transition: transform .3s var(--ease); }
 .project-links a:hover span:last-child { transform: translate(2px, -2px); }
 
+/* Self-hosted Docker Hub badges; no external badge assets or browser API calls. */
+.dockerhub-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.dockerhub-badge {
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid rgba(36, 150, 237, .35);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.9;
+  transition: border-color .2s, transform .2s;
+}
+.dockerhub-badge-name { padding: 1px 9px; background: #243444; color: #f5f8fc; }
+.dockerhub-badge-lang { padding: 1px 10px; background: #2496ed; color: #061522; }
+.dockerhub-badge:hover, .dockerhub-badge:focus-visible { border-color: #7ac5ff; transform: translateY(-2px); }
+
 /* ---------- Hero console ---------- */
 
 .hero-visual {
