@@ -301,6 +301,10 @@ npm pack --dry-run
 
 `scripts/npm_publish.sh` runs `npm ci`, the regression suite, and a package preview before publishing.
 
+## Container image versioning
+
+Both `python/Dockerfile` and `typescript/Dockerfile` set the OCI `org.opencontainers.image.version` label from `ARG AGENT_RT_VERSION`. The default build argument tracks the corresponding package version. Docker Hub releases pass the package version explicitly as a build argument and tag images with that version (and `latest`), so image metadata and published tags agree. Version bumps change source files only: rebuild and push to update existing Docker images.
+
 ## Runtime module layout
 
 The runtime lives in themed modules with the **same folder and module names in both languages**: `python/src/ext/runtime/<folder>/<module>.py` and `typescript/src/runtime/<folder>/<module>.ts`. The public entrypoints only re-export them: `python/src/agent_rt.py` (re-exports the eager core; lazy names resolve through `__getattr__` from `ext/runtime/optional.py`) and `typescript/src/index.ts` (a barrel of `export ... from` lines). Import a runtime name from its module, never from the entrypoint, inside `ext/runtime/` or `src/runtime/`.

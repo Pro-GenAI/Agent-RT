@@ -254,10 +254,13 @@ agent-rt --session refactor --prompt "plan the migration"
 agent-rt --session refactor --resume
 agent-rt session list
 agent-rt session delete refactor
+agent-rt upgrade                           # check PyPI and upgrade immediately
 agent-rt --max-output-tokens 4096 -p "summarize this diff"
 ```
 
 An interactive session opens with a banner of Artie, the Agent RT mascot, drawn from the logo in colored half-block pixels (a colored ASCII version on consoles without 256 colors or UTF-8), showing its name, the version, the model, the session id, and the flagship features (Guard, Checkpoints, Wall); `-p`/`--prompt` runs print no banner. Artie has moods: when Guard (an action blocker or guardrail) blocks a call, the session prints Artie raising a shield beside the reason instead of a plain error, `agent-rt demo` shows the same pose when it stops the injected `rm -rf ~`, and `agent-rt migrate` prints Artie celebrating when the rewrite is kept.
+
+In interactive terminal sessions the CLI checks the published PyPI version at startup. If a newer stable release exists it announces the version and attempts to upgrade using the current installation's package manager (pip, uv, uv tool, or pipx). On success, press **Enter** to restart the CLI with the same arguments; enter other text to keep the current process. Use `/update` to check immediately while chatting, or `agent-rt upgrade` (also `artie upgrade`) to update without configuring a model. Update checks use a short network timeout; a failed startup check is ignored, while a manual check reports the failure. The updater does not run for one-shot prompts, demo, web, API, or migration commands. Editable source installs are never overwritten; temporary `uvx` environments cannot be upgraded in place (rerun with `uvx --refresh agent-rt`). Installer failure leaves the running CLI in place. A non-interactive `upgrade` completes without attempting a restart.
 
 Run `agent-rt demo` (`uvx agent-rt demo` or `npx agent-rt demo`) to try Agent RT with no config or API key: a scripted mock model meets a prompt injection, tries `rm -rf ~`, and the built-in action blocker stops it before the tool runs. The demo totals tokens and prints the process's peak memory.
 

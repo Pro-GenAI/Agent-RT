@@ -76,7 +76,7 @@ harmactionseval = [
 
 [[package]]
 name = "agent-rt"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
@@ -84,6 +84,7 @@ dependencies = [
     { name = "httpx" },
     { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "openai" },
+    { name = "packaging" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "websockets" },
@@ -230,6 +231,7 @@ requires-dist = [
     { name = "openai", marker = "extra == 'dev'", specifier = ">=1.31,<4" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.31,<4" },
     { name = "openai", marker = "extra == 'providers'", specifier = ">=1.31,<4" },
+    { name = "packaging", specifier = ">=23,<27" },
     { name = "picklescan", marker = "python_full_version >= '3.11' and extra == 'dev'", specifier = ">=1.0.5,<2" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10,<3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4,<5" },

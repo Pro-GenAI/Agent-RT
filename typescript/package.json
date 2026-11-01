@@ -1,7 +1,25 @@
 {
 	"name": "agent-rt",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Lightweight utilities for building AI agent harnesses",
+	"keywords": [
+		"ai-agents",
+		"agent-runtime",
+		"agent-harness",
+		"llm",
+		"tool-calling",
+		"guardrails",
+		"mcp",
+		"multi-agent",
+		"agent-orchestration",
+		"agent-memory",
+		"checkpointing",
+		"sandbox",
+		"observability",
+		"retrieval",
+		"structured-output",
+		"typescript"
+	],
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"bin": {

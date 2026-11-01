@@ -42,6 +42,12 @@ from agent_rt import (
 )
 from ext.artie_moods import pose
 from ext.cli_tools import TOOLS, ToolCLIError, translate_tool_cli
+from ext.cli_update import (
+    UpdateError,
+    check_latest_release,
+    install_release,
+    restart_cli,
+)
 from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
 from ext.extensions import SkillPackage, SkillRegistry, load_skill_package
 from ext.mcp_servers import MCPConnection
@@ -116,6 +122,7 @@ SLASH_COMMANDS = (
     "/save",
     "/status",
     "/todos",
+    "/update",
     "/exit",
     "/quit",
 )
@@ -1554,6 +1561,7 @@ class TerminalChat:
         self.session = session
         self.stream = stream
         self._last_response_markdown: str | None = None
+        self._restart_argv = tuple(sys.argv[1:])
         self._clipboard_copy = _copy_to_clipboard
         self._pause_response_status: Callable[[], None] | None = None
         self._resume_response_status: Callable[[], None] | None = None
@@ -1683,8 +1691,46 @@ class TerminalChat:
             "  /save                 save the current session\n"
             "  /status               show session/model/message count\n"
             "  /todos                show this session's todo list\n"
+            "  /update               check PyPI and install a newer Agent RT release\n"
             "  /exit                 quit"
         )
+
+    async def _update(self, *, manual: bool) -> None:
+        try:
+            update = await asyncio.to_thread(check_latest_release)
+        except UpdateError as exc:
+            if manual:
+                self.console.print(f"[yellow]{exc}[/yellow]")
+            return
+        if update is None:
+            if manual:
+                self.console.print(f"Agent RT {_package_version()} is up to date.")
+            return
+        self.console.print(
+            f"[cyan]Agent RT {update.latest} is available "
+            f"(installed: {update.installed}). Upgrading…[/cyan]"
+        )
+        try:
+            await asyncio.to_thread(install_release, update.latest)
+        except UpdateError as exc:
+            self.console.print(f"[yellow]{exc}[/yellow]")
+            return
+        self.console.print(f"[green]Agent RT upgraded to {update.latest}.[/green]")
+        if not sys.stdin.isatty():
+            self.console.print("Restart Agent RT to use the updated version.")
+            return
+        try:
+            answer = await self.approval_prompt.prompt_async(
+                "Press Enter to restart Agent RT (or type anything to continue): "
+            )
+        except (KeyboardInterrupt, EOFError):
+            return
+        if answer:
+            return
+        try:
+            restart_cli(self._restart_argv)
+        except OSError as exc:
+            self.console.print(f"[red]Unable to restart Agent RT:[/red] {exc}")
 
     def _skills(self) -> None:
         installed = self.session.skills.active()
@@ -1871,6 +1917,8 @@ class TerminalChat:
                     self.console.print(f"[red]Session not found:[/red] {argument}")
         elif command == "/model":
             await self._model_command(argument)
+        elif command == "/update":
+            await self._update(manual=True)
         else:
             self.console.print(f"[yellow]Unknown command:[/yellow] {command}")
         return True
@@ -1966,6 +2014,7 @@ class TerminalChat:
 
     async def run(self) -> int:
         self.banner()
+        await self._update(manual=False)
         while True:
             try:
                 line = await self.prompt.prompt_async(USER_INPUT_PROMPT)
@@ -2237,6 +2286,7 @@ def build_parser() -> argparse.ArgumentParser:
             "Move a project's framework imports to Agent RT, verified by its tests: agent-rt migrate [PATH]. "
             "Chat in your browser (needs agent-rt[web]): agent-rt web. "
             "Manage the sessions both clients share: agent-rt session list | delete ID. "
+            "Upgrade Agent RT: agent-rt upgrade. "
             "Offline tour on a mock model: agent-rt demo [--web]"
         ),
     )
@@ -2597,8 +2647,49 @@ def session_main(argv: Sequence[str]) -> int:
     return 0
 
 
+def upgrade_main(argv: Sequence[str] = ()) -> int:
+    """Check PyPI and upgrade, independently of model setup or CLI extras."""
+    try:
+        update = check_latest_release()
+    except UpdateError as exc:
+        print(f"agent-rt upgrade: {exc}", file=sys.stderr)
+        return 1
+    if update is None:
+        print(f"Agent RT {_package_version()} is up to date.")
+        return 0
+    print(
+        f"Agent RT {update.latest} is available "
+        f"(installed: {update.installed}). Upgrading…",
+        flush=True,
+    )
+    try:
+        install_release(update.latest)
+    except UpdateError as exc:
+        print(f"agent-rt upgrade: {exc}", file=sys.stderr)
+        return 1
+    print(f"Agent RT upgraded to {update.latest}.")
+    if sys.stdin.isatty():
+        try:
+            answer = input(
+                "Press Enter to restart Agent RT (or type anything to exit): "
+            )
+        except (KeyboardInterrupt, EOFError):
+            return 0
+        if not answer:
+            try:
+                restart_cli(argv)
+            except OSError as exc:
+                print(f"agent-rt upgrade: restart failed: {exc}", file=sys.stderr)
+                return 1
+    else:
+        print("Run agent-rt again to use the updated version.")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["upgrade"]:
+        return upgrade_main(argv[1:])
     if argv[:1] == ["session"]:
         return session_main(argv[1:])
     if argv[:1] == ["migrate"]:
@@ -2634,6 +2725,7 @@ __all__ = (
     "load_config_or_create",
     "main",
     "session_main",
+    "upgrade_main",
 )
 
 

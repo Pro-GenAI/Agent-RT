@@ -37,7 +37,9 @@ Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you i
 
 <sub>Measured against deterministic localhost mock models, so the numbers show runtime and harness overhead, not model latency or task quality. Part of the CLI token gap comes from Agent RT's smaller built-in tool set. Method and raw data: [`comparison/`](comparison/README.md).</sub>
 
-![Agent RT CLI demo: Agent Action Guard blocks an injected curl | sh tool call, then a README edit waits for user approval](docs/assets/agent-rt-demo.gif)
+![Agent RT CLI demo showing Artie, Guard blocking an injected shell tool call, and an approved README edit](docs/assets/agent-rt-demo.gif)
+
+<sub>Agent RT CLI in action: Guard rejects an unsafe tool call, while a legitimate workspace edit requires explicit approval. Deterministic offline demonstration.</sub>
 
 **Runs on:**
 
