@@ -1,5 +1,8 @@
-node_modules
-dist
-tests
-examples
-sbom.cdx.json
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!src/
+!src/**
+!scripts/
+!scripts/prune-docker-deps.mjs

@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const WebSocket = require("ws");
 const { VectorMock } = require("./vector-mock.js");
+require("./docker-prune.test.js");
 
 const {
   AgentLoop,
