@@ -21,6 +21,8 @@ The public site has no signup, newsletter, checkout, subscriptions, or visitor u
 
 `favicon.ico` (16/32/48 px), `apple-touch-icon.png` (180 px), and `assets/logo-mark.png` (the header/footer mark used by `styles.css` and `docs/docs.css`) are the running robot cut out of the original mascot artwork (without the tool tiles; the full artwork is not kept in the repo), with three fading speed lines so the motion still reads at icon sizes. `og-image.png` and the cards in `assets/share/` use the full mascot. `docs/assets/logo-mark.png` is the 512 px transparent master of that running mark (used by the package READMEs and videos). The Python web chat app (`python/src/ext/web_ui.html`) inlines a 48 px favicon and a 64 px brand mark as `data:` PNGs, because its CSP allows only `data:` images. Regenerate all of them together if the mascot changes. `assets/badge/runs-on-agent-rt.svg` is the opt-in "Runs on Agent RT" README badge (snippet in `docs/MIGRATION.md`), with a 72 px quantized copy of the running mark inlined as a `data:` PNG so the SVG stays self-contained; external READMEs hotlink it, so never move or rename it.
 
+The project links page lives at `links/index.html` (`/links/`). Keep its destinations and `sitemap.xml` current when official project links or documentation pages change.
+
 ## Homepage
 
 `robots.txt` allows all crawlers (search and AI) and points to `sitemap.xml`; `llms.txt` is a plain-text site summary for LLM crawlers. Keep both in sync with the docs pages.

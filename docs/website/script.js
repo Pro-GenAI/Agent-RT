@@ -102,12 +102,10 @@
   if (scrollWords) {
     const highlight = new Set(["explicit", "contracts", "hidden"]);
     const words = scrollWords.textContent.trim().split(/\s+/);
-    scrollWords.setAttribute("aria-label", words.join(" "));
     scrollWords.textContent = "";
     words.forEach((word, index) => {
       const span = document.createElement("span");
       span.className = "w";
-      span.setAttribute("aria-hidden", "true");
       if (highlight.has(word.toLowerCase().replace(/[^a-z]/g, ""))) span.classList.add("hl");
       span.textContent = word;
       scrollWords.appendChild(span);
