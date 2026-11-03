@@ -8,6 +8,14 @@
 - Source: https://github.com/Pro-GenAI/Agent-RT
 - License: MIT
 
+## Blog — practical solutions to difficult AI agent problems
+
+- [Blog index](https://agent-rt-pro.github.io/blog/)
+- [Even the latest AI models can act unsafely. Here’s the solution.](https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/)
+- [Best AI agent frameworks in 2026: a practical way to choose.](https://agent-rt-pro.github.io/blog/best-ai-agent-frameworks-2026/)
+- [Your AI agent crashed halfway through. Resume without duplicating work.](https://agent-rt-pro.github.io/blog/ai-agent-checkpoints-resume-safely/)
+- [AI agents are too slow and expensive. Fix the harness first.](https://agent-rt-pro.github.io/blog/ai-agents-too-slow-expensive/)
+
 ## Documentation
 
 - [Official project links](https://agent-rt-pro.github.io/links/)
@@ -27,6 +35,14 @@
 - [Architecture](https://agent-rt-pro.github.io/docs/reference/architecture.html)
 - [Development](https://agent-rt-pro.github.io/docs/reference/development.html)
 - [Privacy & terms](https://agent-rt-pro.github.io/docs/reference/privacy-terms.html)
+
+- [Introduction to agent harnesses](https://agent-rt-pro.github.io/docs/concepts/agent-harnesses.html)
+- [Architecture and extension contracts](https://agent-rt-pro.github.io/docs/reference/extension-contracts.html)
+- [Configuration reference](https://agent-rt-pro.github.io/docs/reference/configuration.html)
+- [Complete runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html)
+- [Complete migration API reference](https://agent-rt-pro.github.io/docs/guides/migration-reference.html)
+- [Complete developer handbook](https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html)
+- [Deployment privacy and launch checklist](https://agent-rt-pro.github.io/docs/reference/deployment-privacy-checklist.html)
 
 ## Highlights
 

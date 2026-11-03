@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Hard AI agent problems. Practical solutions. — Agent RT Blog</title>
+<meta name="description" content="The Agent RT blog: practical solutions to AI agent safety, framework selection, crash recovery, latency, and cost.">
+<meta name="author" content="Pro-GenAI">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://agent-rt-pro.github.io/blog/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Agent RT">
+<meta property="og:title" content="Hard AI agent problems. Practical solutions.">
+<meta property="og:description" content="The Agent RT blog: practical solutions to AI agent safety, framework selection, crash recovery, latency, and cost.">
+<meta property="og:url" content="https://agent-rt-pro.github.io/blog/">
+<meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hard AI agent problems. Practical solutions.">
+<meta name="twitter:description" content="The Agent RT blog: practical solutions to AI agent safety, framework selection, crash recovery, latency, and cost.">
+<meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Blog","@id":"https://agent-rt-pro.github.io/blog/#blog","url":"https://agent-rt-pro.github.io/blog/","name":"Hard AI agent problems. Practical solutions.","description":"The Agent RT blog: practical solutions to AI agent safety, framework selection, crash recovery, latency, and cost.","inLanguage":"en","publisher":{"@id":"https://agent-rt-pro.github.io/#organization"},"blogPost":[{"@id":"https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/#article"},{"@id":"https://agent-rt-pro.github.io/blog/best-ai-agent-frameworks-2026/#article"},{"@id":"https://agent-rt-pro.github.io/blog/ai-agent-checkpoints-resume-safely/#article"},{"@id":"https://agent-rt-pro.github.io/blog/ai-agents-too-slow-expensive/#article"}]},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/blog/#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://agent-rt-pro.github.io/blog/"}]}]}</script>
+<meta name="theme-color" content="#07090d">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="../favicon.ico">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../docs/docs.css">
+<link rel="stylesheet" href="./blog.css">
+</head>
+<body class="blog-site"><a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header blog-header"><div class="header-inner">
+<a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span><span>Agent RT</span></a>
+<span class="docs-label">Journal</span>
+<nav class="header-links" aria-label="Primary navigation"><a href="../">Home</a><a href="../docs/">Docs</a><a href="../links/">Links</a><a href="./" aria-current="page">Blog</a></nav>
+</div></header>
+<main class="docs-main blog-main" id="main"><div class="content wide blog-content">
+<nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="../">Home</a><span>/</span>Blog</nav>
+<section class="section-intro blog-hero"><span class="eyebrow">Agent RT journal / Solutions</span>
+<h1 class="doc-title">Hard problems.<br>Practical solutions.</h1>
+<p class="doc-lede">Building useful AI agents is the easy part. Keeping them safe, recoverable, fast, and maintainable is the real challenge. These practical guides turn production problems into concrete engineering decisions.</p>
+<div class="blog-tags" aria-label="Topics"><span>AI safety</span><span>Frameworks</span><span>Reliability</span><span>Performance</span></div>
+</section>
+<section class="blog-section" aria-labelledby="feature-heading"><div class="blog-section-top"><div><span class="eyebrow">Featured article / 01</span><h2 id="feature-heading">Start with the action boundary.</h2></div><p>The first difficult problem every tool-using agent must solve.</p></div>
+<a class="blog-card blog-feature" href="./latest-ai-models-unsafe-solution/"><div class="blog-meta"><span>AI safety</span><span>7 min read</span></div><h2>Even the latest AI models can act unsafely. Here’s the solution.</h2><p class="blog-teaser">A safer model is useful. A trustworthy execution boundary is essential.</p><div class="blog-pair"><div><small>The problem</small><p>A model follows hostile instructions and requests a dangerous tool action.</p></div><div><small>The solution</small><p>Enforce tool policy, approval, and sandbox boundaries independently of model output.</p></div></div><span class="blog-read">Read solution <span aria-hidden="true">↗</span></span></a></section>
+<section class="blog-section" aria-labelledby="more-heading"><div class="blog-section-top"><div><span class="eyebrow">Guides / 02–04</span><h2 id="more-heading">Explore the solutions.</h2></div><p>Build smarter, without sacrificing control.</p></div><div class="blog-grid"><a class="blog-card" href="./best-ai-agent-frameworks-2026/"><div class="blog-meta"><span>Frameworks</span><span>8 min read</span></div><h3>Best AI agent frameworks in 2026: a practical way to choose.</h3><p class="blog-teaser">The best framework is the one that solves your constraints, not the one with the longest feature list.</p><div class="blog-pair"><div><small>The problem</small><p>A framework looks impressive in demos but does not fit the workflow.</p></div><div><small>The solution</small><p>Choose by orchestration style, trust boundaries, persistence, and operational cost.</p></div></div><span class="blog-read">Read solution <span aria-hidden="true">↗</span></span></a>
+<a class="blog-card" href="./ai-agent-checkpoints-resume-safely/"><div class="blog-meta"><span>Reliability</span><span>6 min read</span></div><h3>Your AI agent crashed halfway through. Resume without duplicating work.</h3><p class="blog-teaser">A retry can finish the job—or quietly perform the same action twice.</p><div class="blog-pair"><div><small>The problem</small><p>A run crashes after writing to a service but before reporting completion.</p></div><div><small>The solution</small><p>Persist checkpoints and event history, and reconcile external side effects with idempotency keys.</p></div></div><span class="blog-read">Read solution <span aria-hidden="true">↗</span></span></a>
+<a class="blog-card" href="./ai-agents-too-slow-expensive/"><div class="blog-meta"><span>Performance</span><span>6 min read</span></div><h3>AI agents are too slow and expensive. Fix the harness first.</h3><p class="blog-teaser">Your model may not be the bottleneck. The work around it might be.</p><div class="blog-pair"><div><small>The problem</small><p>The agent spends time and tokens on tool schemas, context, and unnecessary loops.</p></div><div><small>The solution</small><p>Measure overhead and quality, narrow context and capabilities, and remove redundant model calls.</p></div></div><span class="blog-read">Read solution <span aria-hidden="true">↗</span></span></a></div></section>
+<aside class="blog-cta"><div><span class="eyebrow">From theory to production</span><h2>Build an agent you can operate.</h2><p>Start with a working runtime, then add bounded execution, permissions, and recoverable state.</p></div><a href="../docs/getting-started/quickstart.html">Agent RT quickstart ↗</a></aside>
+</div><footer class="docs-footer blog-footer">Agent RT · © 2026 Pro-GenAI · MIT licensed · <a href="../docs/reference/privacy-terms.html">Privacy &amp; terms</a> · <a href="https://github.com/Pro-GenAI/Agent-RT">GitHub source</a><p>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</p></footer></main></body></html>

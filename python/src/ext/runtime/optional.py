@@ -1,7 +1,7 @@
 """Lazily loaded feature surface.
 
 The implementations live in themed modules under ``ext.runtime`` (see
-docs/DEVELOPMENT.md); this module re-exports them so
+https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html); this module re-exports them so
 ``from ext.runtime.optional import X`` and the root ``agent_rt.__getattr__``
 keep working. Nothing here may be imported by the eager core.
 """

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Even the latest AI models can act unsafely. Here’s the solution. — Agent RT Blog</title>
+<meta name="description" content="How runtime permissions, approvals, isolation, and adversarial tests can prevent an AI model mistake from becoming a dangerous tool action.">
+<meta name="author" content="Pro-GenAI">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Agent RT">
+<meta property="og:title" content="Even the latest AI models can act unsafely. Here’s the solution.">
+<meta property="og:description" content="How runtime permissions, approvals, isolation, and adversarial tests can prevent an AI model mistake from becoming a dangerous tool action.">
+<meta property="og:url" content="https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/">
+<meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Even the latest AI models can act unsafely. Here’s the solution.">
+<meta name="twitter:description" content="How runtime permissions, approvals, isolation, and adversarial tests can prevent an AI model mistake from becoming a dangerous tool action.">
+<meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+<meta property="article:published_time" content="2026-11-03">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/#article","mainEntityOfPage":"https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/","headline":"Even the latest AI models can act unsafely. Here’s the solution.","description":"How runtime permissions, approvals, isolation, and adversarial tests can prevent an AI model mistake from becoming a dangerous tool action.","datePublished":"2026-11-03","dateModified":"2026-11-03","inLanguage":"en","articleSection":"AI safety","author":{"@type":"Organization","name":"Pro-GenAI"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"},"image":"https://agent-rt-pro.github.io/og-image.png"},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://agent-rt-pro.github.io/blog/"},{"@type":"ListItem","position":3,"name":"Even the latest AI models can act unsafely. Here’s the solution.","item":"https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/"}]}]}</script>
+<meta name="theme-color" content="#07090d">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="stylesheet" href="../../docs/docs.css">
+<link rel="stylesheet" href="../blog.css">
+</head>
+<body class="blog-site"><a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header blog-header"><div class="header-inner">
+<a class="brand" href="../../"><span class="brand-mark" aria-hidden="true"></span><span>Agent RT</span></a>
+<span class="docs-label">Journal</span>
+<nav class="header-links" aria-label="Primary navigation"><a href="../../">Home</a><a href="../../docs/">Docs</a><a href="../../links/">Links</a><a href="../" aria-current="page">Blog</a></nav>
+</div></header>
+<main class="docs-main blog-main" id="main"><div class="content blog-article">
+<nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="../../">Home</a><span>/</span><a href="../">Blog</a><span>/</span>AI safety</nav>
+<article><header class="section-intro blog-article-hero"><span class="eyebrow">AI safety / Field guide 01</span>
+<h1 class="doc-title">Even the latest AI models can act unsafely. Here’s the solution.</h1><p class="doc-lede">A safer model is useful. A trustworthy execution boundary is essential.</p>
+<div class="blog-byline"><span>Pro-GenAI</span><span aria-hidden="true">·</span><time datetime="2026-11-03">3 November 2026</time><span aria-hidden="true">·</span><span>7 min read</span></div></header>
+<div class="blog-brief"><div><small>Problem</small><p>A model follows hostile instructions and requests a dangerous tool action.</p></div><div><small>Solution</small><p>Enforce tool policy, approval, and sandbox boundaries independently of model output.</p></div></div>
+<div class="blog-body">
+<h2 id="problem">The hard problem is tool execution</h2>
+<p>An agent can read files, call external APIs, browse untrusted pages, or run shell commands. A capable model can still misunderstand a request or be redirected by instructions embedded in retrieved content. If the application treats the model’s next tool call as an authorization, a malicious document or log line may cross the boundary between <em>data</em> and <em>command</em>.</p>
+<p>The practical question is not whether every recent AI model is categorically safe or unsafe. It is what your system does when <strong>any</strong> model proposes an unsafe action. A model response is a proposal; your runtime should remain the authority for side effects.</p>
+<div class="blog-insight"><strong>Security principle</strong><p>Validate at the action boundary. An instruction to “ignore previous instructions” should not be able to expand a tool's permissions or bypass approval.</p></div>
+<h2 id="solution">Five defenses that work together</h2>
+<ol class="blog-steps">
+<li><strong>Least-privilege tool exposure.</strong> Give each step only the tools it needs. A read-only research task does not need an administrator shell.</li>
+<li><strong>Dispatch-time checks.</strong> Verify the currently allowed tool, argument shape, normalized paths, and deny rules before any side effect. Do not rely solely on hiding a tool schema from the model.</li>
+<li><strong>Explicit human review.</strong> Pause for approval before sensitive writes, external messages, deployments, or deletions. Show the exact proposed action and arguments.</li>
+<li><strong>Real execution isolation.</strong> Run generated code behind a sandbox with a controlled workspace, network policy, and resource limits. Fail closed when an isolation requirement cannot be met.</li>
+<li><strong>Budgets and cancellation.</strong> Cap turns, tool calls, elapsed time, and token consumption. Ensure a cancelled run cannot continue executing in the background.</li>
+</ol>
+<h2 id="implementation">How Agent RT fits</h2>
+<p>Agent RT provides policy controls, approval flows, sandbox integrations, and bounded execution. Its flagship <strong>Guard</strong> includes action blockers and an <em>opt-in</em> Agent Action Guard integration; this is not a claim that every guard is enabled for every installation. Decision models can screen candidates and inform policy, but must not replace deterministic authorization.</p>
+<p>Both language implementations are exercised by offline adversarial tests with deterministic malicious provider doubles. These scenarios cover hidden tools, malformed arguments, permission/approval bypass attempts, restricted data exfiltration, and budget abuse. No real model is needed to test these invariants.</p>
+<h2 id="test">Test rejection, not just refusal text</h2>
+<p>Feed the runner tool requests for undeclared commands, paths outside an allowed workspace, approval reuse with changed arguments, and malformed input. Assert the side effect did <em>not</em> happen. Repeat with real tool adapters inside your sandbox and check network egress, logging, and credential access.</p>
+<pre><code># Offline demonstrations; no API key required
+uvx agent-rt demo
+npx agent-rt demo</code></pre>
+<p>These demos illustrate the attack/defense model, not a guarantee for an application with arbitrary plugins or permissions. Review the <a href="../../docs/concepts/tools-policy.html">tools and policy guide</a> and <a href="../../docs/guides/production.html">production patterns</a> before deployment.</p>
+<h2 id="bottom-line">Bottom line</h2>
+<p>Stronger models reduce some mistakes. Runtime authorization, least privilege, isolation, and repeatable adversarial tests limit the damage when mistakes still occur. The strongest system uses all of them, rather than treating any one layer as a complete safety proof.</p></div></article>
+<nav class="blog-next" aria-label="More articles"><a href="../"><small>All solutions</small><strong>← Back to the blog</strong></a><a href="../best-ai-agent-frameworks-2026/"><small>Read next</small><strong>Best AI agent frameworks in 2026: a practical way to choose. ↗</strong></a></nav>
+</div><footer class="docs-footer blog-footer">Agent RT · © 2026 Pro-GenAI · MIT licensed · <a href="../../docs/reference/privacy-terms.html">Privacy &amp; terms</a> · <a href="https://github.com/Pro-GenAI/Agent-RT">GitHub source</a><p>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</p></footer></main></body></html>

@@ -24,7 +24,7 @@ Start with an OpenAI-compatible endpoint, then add tools, approvals, memory, san
 - **Scales large tool catalogs.** `Toolbase` combines local/deferred and MCP tools, safety-screens them, sends only the relevant subset per turn, and keeps `tool_search` available for fallback discovery.
 - **Small core.** OpenAI support is included; Anthropic, API serving, CLI, and sandboxes are opt-in extras.
 - **Production-ready.** Checkpoints, event streams, queues, tracing, cost ledgers, retrieval with post-retrieval reranking, and multi-agent patterns.
-- **Decision models.** Jev-compatible models, or the OpenAI-compatible Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#action-blockers)).
+- **Decision models.** Jev-compatible models, or the OpenAI-compatible Decisions API answer typed questions that gate tool safety, tool relevance, memory, and retrieval ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#action-blockers)).
 - **Easy to adopt.** Migration-compatible entry points for supported subsets of OpenAI, Anthropic, OpenRouter, LiteLLM, LangChain, Deep Agents, LlamaIndex, OpenAI Agents, AutoGen, and CrewAI code; across Agent RT's ongoing migration field testing, 65+ third-party repositories pass before and after migration.
 
 ## Install
@@ -63,7 +63,7 @@ Only API-key setups are reused; subscription sign-ins stay with the official cli
 + from agent_rt.openai import OpenAI
 ```
 
-Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_openai import ChatOpenAI`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md).
+Prepend `agent_rt.` to a supported import, for example `from agent_rt.langchain_openai import ChatOpenAI`. Across ongoing field testing, 65+ third-party repositories pass their own tests before and after this switch. See [Migration](https://agent-rt-pro.github.io/docs/guides/migration-reference.html).
 
 Try it with no API key: `uvx agent-rt demo` runs a scripted mock model through a prompt-injection attack, shows the built-in action blocker stopping `rm -rf ~` before the tool runs, totals tokens, and prints this process's peak RAM next to a competitor's published benchmark figure.
 
@@ -75,11 +75,11 @@ uvx agent-rt migrate
 
 It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall.
 
-Migrated? Add the opt-in [Runs on Agent RT badge](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/MIGRATION.md#runs-on-agent-rt-badge) to your README.
+Migrated? Add the opt-in [Runs on Agent RT badge](https://agent-rt-pro.github.io/docs/guides/migration-reference.html#runs-on-agent-rt-badge) to your README.
 
 ## Quick start
 
-Configure models and vector stores in `~/.agent-rt/config.yaml`, or explicitly select a project file with `--config ./agent-rt.yaml` / `load_config("./agent-rt.yaml")`. Secrets are referenced as `os.environ/NAME`; nothing else is read from the environment. Bedrock Knowledge Bases uses the optional `agent-rt[bedrock]` extra and AWS IAM credentials. See [Configuration](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Configuration.md) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
+Configure models and vector stores in `~/.agent-rt/config.yaml`, or explicitly select a project file with `--config ./agent-rt.yaml` / `load_config("./agent-rt.yaml")`. Secrets are referenced as `os.environ/NAME`; nothing else is read from the environment. Bedrock Knowledge Bases uses the optional `agent-rt[bedrock]` extra and AWS IAM credentials. See [Configuration](https://agent-rt-pro.github.io/docs/reference/configuration.html) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
 
 ```yaml
 model_list:
@@ -137,15 +137,15 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/pyt
 
 - **API server** (`agent-rt[api]`): OpenAI-compatible Chat Completions/Responses and Anthropic-compatible Messages endpoints.
 - **Terminal CLI** (`agent-rt[cli]`): `agent-rt -p "explain this stack trace"` or `agent-rt --config ./agent-rt.yaml -p "..."`. Reuse an existing agent CLI's models and API keys with `agent-rt claude -p "..."`, `agent-rt codex exec "..."`, `agent-rt opencode run "..."`, or `agent-rt copilot -p "..."`; `artie` is an alias for every `agent-rt` command ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#reuse-another-agent-cli)). It reads Codex and Claude Code project setup as is: `AGENTS.md`/`CLAUDE.md`, skills in `.agents/`, `.claude/`, `.codex/`, and MCP servers ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#project-instructions-skills-mcp)).
-- **CLI updates**: interactive sessions check for PyPI releases and automatically upgrade when possible; press Enter to restart. Run `/update` in a session or `agent-rt upgrade` from your shell to check manually ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#terminal-cli-python)).
-- **Task lists**: `TodoList` gives a model one `todo` tool with its own list per session; on by default in the CLI and web UI ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#task-lists-todo-tool)).
-- **Agent memory** (`agent-rt[memory]`, mem0 by default; or `mem0`, `memu`, `zep`, `letta`, `supermemory`): `memory = load_memory()` gives an agent long-term memory with `AgentConfig(memory=[memory])` and `await memory.remember(messages)` ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#memory-packages)).
-- **Chat bots** (beta): `agent-rt serve telegram,discord` answers allowed users on Telegram and Discord ([details](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md#chat-bots-python-beta)).
+- **CLI updates**: interactive sessions check for PyPI releases and automatically upgrade when possible; press Enter to restart. Run `/update` in a session or `agent-rt upgrade` from your shell to check manually ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#terminal-cli-python)).
+- **Task lists**: `TodoList` gives a model one `todo` tool with its own list per session; on by default in the CLI and web UI ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#task-lists-todo-tool)).
+- **Agent memory** (`agent-rt[memory]`, mem0 by default; or `mem0`, `memu`, `zep`, `letta`, `supermemory`): `memory = load_memory()` gives an agent long-term memory with `AgentConfig(memory=[memory])` and `await memory.remember(messages)` ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#memory-packages)).
+- **Chat bots** (beta): `agent-rt serve telegram,discord` answers allowed users on Telegram and Discord ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#chat-bots-python-beta)).
 - **Web UI** (`agent-rt[web]`): run `agent-rt web` in a project folder to chat in your browser, with sessions shared with the terminal CLI (`agent-rt session list`, `agent-rt session delete ID`) and in-page approval for file edits, plus a time-travel debugger (`agent-rt web --demo`: token budget, tool calls, blocked actions, and fork-from-checkpoint on the offline demo) ([details](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html#web-ui)).
 
 ## Learn more
 
 - [Website](https://agent-rt-pro.github.io/) and [documentation site](https://agent-rt-pro.github.io/docs/)
-- [Runtime guide](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Runtime-Guide.md) — API server, CLI, sandboxes, skills, providers
-- [Architecture and Extensions](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Architecture-and-Extensions.md) · [Introduction to Agent Harnesses](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/Introduction-to-Harness.md)
-- [Development](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/DEVELOPMENT.md) · [Comparisons](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
+- [Runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html) — API server, CLI, sandboxes, skills, providers
+- [Architecture and Extensions](https://agent-rt-pro.github.io/docs/reference/extension-contracts.html) · [Introduction to Agent Harnesses](https://agent-rt-pro.github.io/docs/concepts/agent-harnesses.html)
+- [Development](https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html) · [Comparisons](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Contributor Development Handbook — Agent RT Docs</title>
+  <meta name="description" content="Complete development handbook for Python, TypeScript, testing, security tools, evaluation, CI, packaging, and native architecture.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Contributor Development Handbook — Agent RT Docs">
+  <meta property="og:description" content="Complete development handbook for Python, TypeScript, testing, security tools, evaluation, CI, packaging, and native architecture.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Contributor Development Handbook — Agent RT Docs">
+  <meta name="twitter:description" content="Complete development handbook for Python, TypeScript, testing, security tools, evaluation, CI, packaging, and native architecture.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html#page","url":"https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html","name":"Contributor Development Handbook — Agent RT Docs","headline":"Contributor Development Handbook — Agent RT Docs","description":"Complete development handbook for Python, TypeScript, testing, security tools, evaluation, CI, packaging, and native architecture.","inLanguage":"en","dateModified":"2026-11-03","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Reference"},{"@type":"ListItem","position":4,"name":"Contributor Development Handbook","item":"https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="../../docs/vendor/github-dark-dimmed.min.css">
+  <script src="../../docs/vendor/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html">Runtime handbook</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html" aria-current="page">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html">Runtime handbook</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html" aria-current="page">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Reference<span>/</span>Contributor Development Handbook</div>
+<section class="section-intro"><span class="eyebrow">Reference</span><h1 class="doc-title">Contributor Development Handbook</h1><p class="doc-lede">Complete development handbook for Python, TypeScript, testing, security tools, evaluation, CI, packaging, and native architecture.</p></section>
+<div class="note">Complete reference content migrated from the repository Markdown documentation. Use the <a href="../">documentation index</a> to browse by topic.</div>
+<nav aria-label="On this page" class="note"><strong>On this page</strong><ul><li><a href="#python">Python</a></li><li><a href="#typescript">TypeScript</a></li><li><a href="#container-image-versioning">Container image versioning</a></li><li><a href="#runtime-module-layout">Runtime module layout</a></li><li><a href="#code-conventions">Code conventions</a></li><li><a href="#cross-platform-ci">Cross-platform CI</a></li><li><a href="#circleci-on-apple-silicon-macos">CircleCI on Apple Silicon macOS</a></li></ul></nav>
+<p>This guide contains contributor workflows for the Python and TypeScript implementations of Agent RT. Package READMEs are intentionally focused on end users.</p>
+<h2 id="python">Python</h2>
+<h3 id="setup-and-tests">Setup and tests</h3>
+<p>Python sources live in <code>python/src/</code>, tests in <code>python/tests/</code>, and repository utilities in <code>python/scripts/</code>. Python 3.10 through 3.14 are supported.</p>
+<p>The preferred workflow uses the locked <code>uv</code> environment:</p>
+<pre><code class="language-bash">cd python
+uv sync --extra dev --locked
+make test</code></pre>
+<p><code>make test</code> runs pytest with pytest-xdist using an automatic worker count and work-stealing distribution:</p>
+<pre><code class="language-bash">uv run --extra dev pytest -n auto --dist worksteal</code></pre>
+<p>Equivalent editable <code>pip</code> workflow:</p>
+<pre><code class="language-bash">cd python
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -e &quot;.[dev]&quot;
+pytest</code></pre>
+<p>The Python Makefile exposes the routine contributor commands:</p>
+<pre><code class="language-bash">make help
+make install
+make test
+make test-browsers
+make test-matrix
+make test-deps-matrix
+make lint
+make format
+make format-check
+make typecheck
+make quality
+make security-static
+make security-attacks
+make security
+make check</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Target</th><th>What it does</th></tr></thead><tbody><tr><td><code>make install</code></td><td>Install locked development dependencies (<code>uv sync --extra dev --locked</code>).</td></tr>
+<tr><td><code>make test</code></td><td>Run the regression suite in parallel.</td></tr>
+<tr><td><code>make test-chromium</code></td><td>Run the web UI tests in Chromium only (downloaded automatically; <code>AGENT_RT_CHROMIUM_PATH=/path/to/chrome</code> uses your own executable instead).</td></tr>
+<tr><td><code>make test-browsers</code></td><td>Run the web UI tests in every browser this OS can run (see below).</td></tr>
+<tr><td><code>make test-matrix</code></td><td>Run the suite across all supported Python versions.</td></tr>
+<tr><td><code>make test-deps-matrix</code></td><td>Run the suite across supported dependency versions (<code>openai</code>, <code>anthropic</code>, <code>httpx</code>, <code>websockets</code>, ... released since mid-2024).</td></tr>
+<tr><td><code>make lint</code> / <code>make format</code> / <code>make format-check</code></td><td>Ruff lint (its default rules minus the documented ignores in <code>pyproject.toml</code>); Black formatting; Black check without changes.</td></tr>
+<tr><td><code>make typecheck</code></td><td>Run mypy on <code>src</code>.</td></tr>
+<tr><td><code>make quality</code></td><td><code>typecheck</code> + <code>lint</code> + <code>format-check</code>.</td></tr>
+<tr><td><code>make security-static</code></td><td>Deterministic static security gate (fails on medium or higher).</td></tr>
+<tr><td><code>make security-attacks</code></td><td>Offline adversarial runtime scan.</td></tr>
+<tr><td><code>make security</code></td><td>Both gates plus the third-party developer security scan; runs all checks and prints a final PASS/FAIL summary (failures appear in red on color terminals).</td></tr>
+<tr><td><code>make check</code></td><td><code>quality</code> + <code>test</code> + <code>security</code>.</td></tr>
+<tr><td><code>make verify</code></td><td>Runs outside conda (its variables and PATH entries are dropped). <code>install</code>, <code>test</code>, <code>test-matrix</code>, <code>test-deps-matrix</code>, <code>security</code> (in <code>python/</code>: <code>install</code>, <code>test</code>, <code>test-chromium</code>, <code>test-matrix</code>, <code>security</code>), stopping at the first failure.</td></tr>
+<tr><td><code>make verify</code> (repository root)</td><td>Runs <code>make python-verify</code> then <code>make ts-verify</code> (each runs <code>make verify</code> in its folder), stopping at the first failure.</td></tr></tbody></table></div>
+<p>To run a single test file or test: <code>uv run --extra dev pytest tests/test_agent_loop.py -k name</code>.</p>
+<p>Run the same regression suite across all supported Python versions:</p>
+<pre><code class="language-bash">cd python
+./scripts/test-matrix.sh</code></pre>
+<p>Override the matrix when needed:</p>
+<pre><code class="language-bash">PYTHON_VERSIONS=&quot;3.13 3.14&quot; ./scripts/test-matrix.sh</code></pre>
+<p>The matrix uses <code>uv</code>, ignores inherited Conda activation variables, and creates isolated locked environments from <code>uv.lock</code>. Both <code>make test-matrix</code> and <code>make security</code> require Bash on <code>PATH</code>; on Windows without Bash, the Make targets stop immediately with an actionable error.</p>
+<p>Applications keep the SDK versions their own projects pin, so the runtime supports every <code>openai</code> (1.31+), <code>anthropic</code> (0.29+), <code>httpx</code> (0.27+), and <code>websockets</code> (13+) release since mid-2024. Run the suite against representative versions of those dependencies:</p>
+<pre><code class="language-bash">make test-deps-matrix
+DEPS_PROFILES=&quot;mid-2024 latest&quot; ./scripts/test-deps-matrix.sh   # subset
+DEPS_PYTHON=3.13 ./scripts/test-deps-matrix.sh                    # other interpreter (default 3.12)</code></pre>
+<p>Each profile (<code>mid-2024</code>, <code>late-2024</code>, <code>mid-2025</code>, <code>late-2025</code>, <code>mid-2026</code>, <code>latest</code>) installs the <code>dev</code> extra into a disposable virtual environment with that profile's pins applied as <code>uv pip install --override</code>, runs the full suite, deletes the environment, and ends with a per-profile PASS/FAIL summary; <code>uv.lock</code> and the <code>make test</code> environment are untouched. Keep the first profile at the <code>pyproject.toml</code> floors and the last at the newest releases, and widen the declared ranges when a new major SDK release passes. <code>tests/test_sdk_versions.py</code> drives the installed real SDKs against a loopback wire-format double, so SDK-specific breakage (for example request fields an older SDK rejects, or APIs it lacks) shows up offline. Old <code>openai</code> (&lt;1.55.3) and <code>anthropic</code> (&lt;0.40) releases need <code>httpx&lt;0.28</code>, which their applications already pin.</p>
+<p>Run the <code>agent-rt web</code> page in real browsers:</p>
+<pre><code class="language-bash">make test-browsers
+make test-browsers BROWSER_ARGS=&quot;--browsers-dir /path/to/cache&quot;</code></pre>
+<p><code>scripts/test_browsers.py</code> drives <code>tests/test_web_browsers.py</code> (streaming, Markdown escaping, in-page edit approval, stopping a run, multi-step replies, sessions surviving a reload, two tabs queuing on one session, phone width and light theme) once per browser against a real local server with a fake model, then prints a per-browser PASS/FAIL/SKIP summary. Nothing is installed system-wide: Playwright (pinned by <code>PLAYWRIGHT_VERSION</code> in the Makefile, because each release needs its own browser builds) comes from a throwaway <code>uv --with</code> environment (<code>uv.lock</code> is untouched), and its Chromium, Firefox, and WebKit builds download into <code>&lt;temp&gt;/agent-rt-browsers</code> (about 1.3 GB; reused between runs, delete it to reclaim space). Branded Chrome and Edge (and their beta/dev/canary channels) are not tested separately: they are Chromium-based, so Chromium covers them. When WebKit on Debian/Ubuntu lacks system libraries, the script fetches those packages with <code>apt-get download</code>, unpacks them with <code>dpkg-deb -x</code> into the same temp folder, and copies the libraries into WebKit's bundled <code>sys/lib</code> folder, so no <code>sudo</code> and no host package changes. On Windows, Playwright's browsers may need the Microsoft Visual C++ Redistributable (for example Firefox's <code>msvcp140_1.dll</code>, which no Playwright bundle ships); installing it needs administrator rights, so the script reports that browser as skipped with the download link (https://aka.ms/vs/17/release/vc_redist.x64.exe) instead of installing it. Safari itself is reported as skipped: Apple ships no Safari for Linux or current Windows, and on macOS Playwright cannot drive Safari (its <code>safaridriver</code> needs <code>sudo safaridriver --enable</code>); WebKit, Safari's engine, is tested on every OS instead. The normal <code>make test</code> run skips these tests.</p>
+<p>The regression suite is pytest-native. Async tests use pytest-asyncio in auto mode with function-scoped test and fixture loops. Vector database integration coverage runs entirely on localhost through <code>tests/helpers/vector_mock.py</code> and <code>tests/test_vector_mock_integration.py</code>, covering Chroma, Milvus, Pinecone, Qdrant, and Weaviate through core Agent RT plus LangChain and LlamaIndex compatibility paths.</p>
+<h3 id="python-security-tooling">Python security tooling</h3>
+<p>Run the repository security gates with:</p>
+<pre><code class="language-bash">uv run --extra dev python scripts/security_scan.py
+uv run --extra dev python scripts/security_scan.py --json
+uv run --extra dev python scripts/security_scan.py --fail-on medium
+uv run --extra dev python scripts/security_attack_scan.py
+uv run --extra dev python scripts/security_attack_scan.py --json
+uv run --extra dev python scripts/dev_security_scan.py</code></pre>
+<p>With the editable <code>pip</code> workflow, run the same scripts directly with Python. <code>./scripts/dev_security_scan.py</code> is also supported and prefers tools installed in the project <code>.venv</code> before the launching interpreter or global <code>PATH</code>.</p>
+<p>Use <code>--category code</code>, <code>--category agent-llm</code>, or <code>--category api-server</code> for focused static scans. <code>--include-tests</code> extends generic code scanning to tests and scripts.</p>
+<p>The deterministic repository gates do not call a real LLM or external model API. <code>security_attack_scan.py</code> uses a malicious provider double to exercise prompt-injection-driven hidden tool calls, malformed arguments, permission/approval bypass attempts, restricted-data exfiltration, and denial-of-wallet behavior against real runtime paths.</p>
+<p>The <code>dev</code> extra includes the <code>all</code> runtime integrations plus Ruff, Black, mypy, pytest/coverage, pre-commit/build/publishing tools, Bandit, pip-audit, detect-secrets, CycloneDX tooling, AgentSec, PromptFuzz, Fickling, PickleScan, and ModelScan where its Python-version constraints allow it.</p>
+<p>Complementary tools can be run directly:</p>
+<pre><code class="language-bash">uv run --extra dev bandit -r src
+uv run --extra dev pip-audit
+uv run --extra dev detect-secrets scan
+uv run --extra dev agentsec discover
+uv run --extra dev agentsec scan &lt;agent-installation&gt;
+uv run --extra dev promptfuzz list-attacks
+uv run --extra dev fickling --check-safety &lt;model-or-pickle-file&gt;
+uv run --extra dev picklescan --path &lt;model-or-pickle-file&gt;
+uv run --extra dev modelscan --path &lt;model-or-pickle-file&gt;
+uv run --extra dev cyclonedx-py environment -o sbom.json</code></pre>
+<p>PromptFuzz is used for its local corpus and local-target workflows. AgentSec inspects installed agent/MCP configurations. Fickling, PickleScan, and ModelScan inspect local serialized model artifacts.</p>
+<h3 id="python-evaluation">Python evaluation</h3>
+<p>HarmActionsEval is the default model-backed benchmark. It calls a real model through your OpenAI-compatible endpoint, so it incurs API cost and is non-deterministic; it is not part of the deterministic security gates or CI.</p>
+<pre><code class="language-bash">cd python
+export OPENAI_MODEL=&quot;your-model&quot;
+export OPENAI_API_KEY=&quot;...&quot;
+# Optional for OpenAI-compatible providers:
+export OPENAI_BASE_URL=&quot;https://your-provider.example/v1&quot;
+
+python scripts/evaluate_harness.py --scope benchmark
+python scripts/evaluate_harness.py --scope benchmark --k 3 --limit 25
+python scripts/evaluate_harness.py --scope benchmark --json</code></pre>
+<p>For offline regression and latency work:</p>
+<pre><code class="language-bash">python scripts/evaluate_harness.py --scope evals
+python scripts/evaluate_harness.py --scope tests
+python scripts/evaluate_harness.py --scope benchmark --benchmark performance --iterations 500</code></pre>
+<p>Scopes are <code>evals</code>, <code>tests</code>, <code>benchmark</code>, and <code>all</code>. The default benchmark is <code>harmactions</code>; <code>--benchmark performance</code> selects the local ToolRegistry dispatch microbenchmark. HarmActionsEval supports <code>--k</code>, <code>--offset</code>, <code>--limit</code>, <code>--cache-path</code>, <code>--output</code>, and <code>--json</code>.</p>
+<h3 id="python-packaging">Python packaging</h3>
+<p>Package metadata is defined in <code>python/pyproject.toml</code>. Validate the publish path without uploading:</p>
+<pre><code class="language-bash">cd python
+./pip_publish.sh --dry-run</code></pre>
+<p><code>pip_publish.sh</code> runs the regression suite before building and validating the distribution.</p>
+<p>The banner's pixel Artie is generated, not hand-drawn: <code>python/src/ext/artie_art.py</code> comes from <code>docs/assets/logo-mark.png</code> (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with <code>uv run --with pillow python3 scripts/render_artie_art.py</code>; <code>--check</code> reports a stale module without rewriting it. Artie's mood poses (shield, celebrate) are hand-drawn ASCII in <code>python/src/ext/artie_moods.py</code> and <code>typescript/src/ext/artie.ts</code>; keep the two identical.</p>
+<h2 id="typescript">TypeScript</h2>
+<h3 id="setup-and-tests-1">Setup and tests</h3>
+<p>TypeScript sources live in <code>typescript/src/</code> (core in <code>src/runtime/</code>, re-exported by the <code>index.ts</code> barrel, see <a href="#runtime-module-layout">Runtime module layout</a>; companion contracts, framework adapters, and transports under <code>src/ext/</code>, mirroring Python's <code>ext</code> package), tests in <code>typescript/tests/</code>, and evaluation/publishing utilities in <code>typescript/scripts/</code>. Node 20, 22, 24, and 26 are supported.</p>
+<p>Install reproducibly and run the runtime suite:</p>
+<pre><code class="language-bash">cd typescript
+npm ci
+npm test</code></pre>
+<p>The TypeScript Makefile exposes the same target names as Python (<code>make help</code> lists them), backed by npm scripts: <code>make quality</code> runs <code>typecheck</code>, <code>lint</code>, <code>format-check</code>, and dead-code detection, and <code>make security</code> runs the equivalent security checks individually, prints a final PASS/FAIL summary, and highlights failures in red on color terminals.</p>
+<p>Run the suite across supported Node versions with <code>nvm</code>:</p>
+<pre><code class="language-bash">npm run test:matrix</code></pre>
+<p>The default matrix is Node 20, 22, 24, and 26. The script supports Unix <code>nvm</code> and <code>nvm-windows</code> from Git Bash. Each matrix install uses <code>npm ci --omit=optional --ignore-scripts</code>.</p>
+<p>Override the matrix when needed:</p>
+<pre><code class="language-bash">NODE_VERSIONS=&quot;22 24 26&quot; npm run test:matrix</code></pre>
+<p>Run the suite against representative optional-peer SDK versions released since mid-2024 (<code>openai</code> 4.x-7.x, <code>@anthropic-ai/sdk</code> 0.23+):</p>
+<pre><code class="language-bash">make test-deps-matrix                                   # or: npm run test:deps-matrix
+DEPS_PROFILES=&quot;mid-2024 latest&quot; npm run test:deps-matrix</code></pre>
+<p>The script builds <code>dist/</code> once from the locked install, then for each profile copies <code>dist/</code>, <code>tests/</code>, and <code>scripts/</code> into a disposable directory, installs only the runtime dependencies, the test double, and the profile's SDK versions, runs <code>npm run test:run</code>, and ends with a per-profile PASS/FAIL summary. The locked <code>node_modules</code> used by <code>npm test</code> is untouched. <code>tests/sdk-versions.test.js</code> drives the installed real SDKs against a loopback wire-format double.</p>
+<p>Run code-quality checks with:</p>
+<pre><code class="language-bash">npm run typecheck
+npm run lint
+npm run quality:dead-code
+npm run quality:check
+npm run format
+npm run format:check</code></pre>
+<p>Formatting is intentionally separate from <code>quality:check</code>. GitHub's cross-platform workflow runs both, plus the Python <code>mypy</code>/Ruff/Black gate, in its <code>quality</code> job, so a failing check blocks pull requests and releases.</p>
+<p>The runtime tests use Node's built-in test runner. OpenAI HTTP/SSE behavior, embeddings, batches, model listing, error injection, and vector protocol coverage use <code>@copilotkit/aimock</code> where possible. <code>tests/vector-mock.js</code> extends aimock for Agent RT-specific Chroma v2, Milvus, and Weaviate query routes. The vector integration suite covers all five built-in vector backends without live services.</p>
+<h3 id="typescript-security-tooling">TypeScript security tooling</h3>
+<p>Run security checks with:</p>
+<pre><code class="language-bash">npm run security:scan
+npm run security:scan -- --json
+npm run security:scan:gate
+npm run security:attacks
+npm run security:deps
+npm run security:secrets
+npm run security:mcp
+npm run security:ai:static
+npm run security:sbom
+npm run security:gate</code></pre>
+<p>Use <code>--category code</code>, <code>--category agent-llm</code>, or <code>--category api-server</code> for focused built-in scans. <code>security:scan:gate</code> fails on medium-or-higher findings. <code>security:attacks</code> runs a deterministic malicious-model emulator. <code>security:deps</code> gates npm advisories, <code>security:secrets</code> scans for credentials, <code>security:mcp</code> covers MCP-specific issues, and <code>security:sbom</code> generates and validates <code>sbom.cdx.json</code>.</p>
+<p>The deterministic security gates do not call a real LLM or external model API. <code>security:ai:static</code> is heuristic and review-oriented rather than part of the deterministic gate.</p>
+<p>Development-only quality and security packages stay in <code>devDependencies</code>, not runtime dependencies or optional provider peers.</p>
+<h3 id="typescript-evaluation">TypeScript evaluation</h3>
+<p>The TypeScript benchmark runner delegates HarmActionsEval to the sibling Python runner so both runtimes use the same upstream benchmark and metrics:</p>
+<pre><code class="language-bash">cd typescript
+export OPENAI_MODEL=&quot;your-model&quot;
+export OPENAI_API_KEY=&quot;...&quot;
+# Optional:
+export OPENAI_BASE_URL=&quot;https://your-provider.example/v1&quot;
+
+npm run evaluate:benchmark
+npm run evaluate:benchmark -- --k 3 --limit 25
+npm run evaluate:benchmark -- --json</code></pre>
+<p>Offline commands:</p>
+<pre><code class="language-bash">npm run evaluate:evals
+npm run evaluate:tests
+npm run evaluate:performance -- --iterations 500</code></pre>
+<p>The underlying runner accepts <code>--scope evals|tests|benchmark|all</code>, <code>--benchmark harmactions|performance</code>, <code>--k</code>, <code>--offset</code>, <code>--limit</code>, <code>--cache-path</code>, <code>--output</code>, <code>--iterations</code>, and <code>--json</code>. Set <code>PYTHON</code> to override the interpreter used for HarmActionsEval.</p>
+<h3 id="typescript-packaging">TypeScript packaging</h3>
+<p>Build output is written to <code>typescript/dist/</code>, with <code>dist/index.js</code> and <code>dist/index.d.ts</code> as package entry points.</p>
+<p>Preview the package contents:</p>
+<pre><code class="language-bash">cd typescript
+npm pack --dry-run</code></pre>
+<p><code>scripts/npm_publish.sh</code> runs <code>npm ci</code>, the regression suite, and a package preview before publishing.</p>
+<h2 id="container-image-versioning">Container image versioning</h2>
+<p>Published repositories: <a href="https://hub.docker.com/r/praneeth1v/agent-rt-python">Python on Docker Hub</a> and <a href="https://hub.docker.com/r/praneeth1v/agent-rt-typescript">TypeScript on Docker Hub</a>. User-facing pull and run commands are in the <a href="/docs/guides/runtime-reference.html#docker-hub-images">Runtime guide</a>.</p>
+<p>Both <code>python/Dockerfile</code> and <code>typescript/Dockerfile</code> set the OCI <code>org.opencontainers.image.version</code> label from <code>ARG AGENT_RT_VERSION</code>. The default build argument tracks the corresponding package version. Docker Hub releases pass the package version explicitly as a build argument and tag images with that version (and <code>latest</code>), so image metadata and published tags agree. Version bumps change source files only: rebuild and push to update existing Docker images.</p>
+<p>The TypeScript image uses a multi-stage Debian-slim Node 22 build. The final stage installs only production dependencies plus the OpenAI and Anthropic SDK peers (not the optional tracing/sandbox peers), and <code>scripts/prune-docker-deps.mjs</code> deletes ONNX Runtime's unused platform/architecture native binaries <strong>within the install layer</strong>. Keep the target platform's ONNX binary: <code>agent-action-guard</code> depends on it, so an Alpine/musl runtime image is not a drop-in replacement. <code>typescript/.dockerignore</code> limits the build context to the package metadata, TypeScript sources, and prune script. <code>temp/publish-dockerhub.sh ts</code> builds, reports the image size, runs a Node/SDK/ONNX smoke test, and offers to push it. Test the pruning behavior without Docker with <code>node --test typescript/tests/docker-prune.test.js</code>.</p>
+<h2 id="runtime-module-layout">Runtime module layout</h2>
+<p>The runtime lives in themed modules with the <strong>same folder and module names in both languages</strong>: <code>python/src/ext/runtime/&lt;folder&gt;/&lt;module&gt;.py</code> and <code>typescript/src/runtime/&lt;folder&gt;/&lt;module&gt;.ts</code>. The public entrypoints only re-export them: <code>python/src/agent_rt.py</code> (re-exports the eager core; lazy names resolve through <code>__getattr__</code> from <code>ext/runtime/optional.py</code>) and <code>typescript/src/index.ts</code> (a barrel of <code>export ... from</code> lines). Import a runtime name from its module, never from the entrypoint, inside <code>ext/runtime/</code> or <code>src/runtime/</code>.</p>
+<div class="table-wrap"><table><thead><tr><th>Module</th><th>Contents</th></tr></thead><tbody><tr><td><code>types</code></td><td>JSON values, messages, content parts, tool calls, sessions, cancellation (Python: the lazy <code>asyncio</code> shim)</td></tr>
+<tr><td><code>settings</code></td><td><code>runtime_settings</code> / <code>configure_runtime</code></td></tr>
+<tr><td><code>platform</code></td><td>TypeScript only: Node module loading, optional peers, byte buffers</td></tr>
+<tr><td><code>agent/</code></td><td><code>config</code>, <code>limits</code>, <code>loop</code>, <code>run_steps</code>, <code>tool_execution</code>, <code>plan_compiler</code>, <code>planning</code>, <code>reflection</code>, <code>delegation</code>, <code>teams</code></td></tr>
+<tr><td><code>authorization/</code></td><td><code>permissions</code>, <code>grants</code>, <code>approvals</code>, <code>identity</code>, <code>secrets</code>, <code>policy</code></td></tr>
+<tr><td><code>guardrails/</code></td><td><code>results</code>, <code>tool_guardrails</code>, <code>boundary</code>, <code>privacy</code>, <code>exfiltration</code></td></tr>
+<tr><td><code>tools/</code></td><td><code>definitions</code>, <code>capabilities</code>, <code>registry</code>, <code>todos</code>, <code>toolbase</code>, <code>validation</code>, <code>programs</code></td></tr>
+<tr><td><code>models/</code></td><td><code>interfaces</code>, <code>sdk</code>, <code>provider_settings</code>, <code>conversion</code>, <code>openai_payloads</code>, <code>openai_http</code>, <code>openai</code>, <code>anthropic_payloads</code>, <code>anthropic</code>, <code>configured</code>, <code>routing</code></td></tr>
+<tr><td><code>context/</code></td><td><code>items</code>, <code>assembler</code></td></tr>
+<tr><td><code>memory/</code></td><td><code>sources</code>, <code>sessions</code>, <code>long_term</code>, <code>semantic</code>, <code>lifecycle</code>, <code>policies</code></td></tr>
+<tr><td><code>checkpoints/</code></td><td><code>store</code>, <code>events</code></td></tr>
+<tr><td><code>resilience/</code></td><td><code>transactions</code>, <code>retry</code>, <code>rate_limits</code>, <code>budgets</code>, <code>idempotency</code></td></tr>
+<tr><td><code>tasks/</code></td><td><code>background</code>, <code>queue</code>, <code>scheduler</code></td></tr>
+<tr><td><code>workspace/</code></td><td><code>filesystem</code>, <code>stores</code>, <code>artifacts</code></td></tr>
+<tr><td><code>observability/</code></td><td><code>openllmetry</code>, <code>audit</code>, <code>metrics</code>, <code>tracing</code>, <code>usage</code>, <code>replay</code></td></tr>
+<tr><td><code>protocols/</code></td><td><code>mcp</code>, <code>mcp_access</code>, <code>adapters</code>, <code>remote</code></td></tr>
+<tr><td><code>retrieval/</code></td><td><code>registry</code>, <code>vector_db</code>, <code>vector_stores</code>, <code>file_search</code>, <code>web_search</code></td></tr>
+<tr><td><code>interfaces/</code></td><td><code>browser</code>, <code>realtime</code>, <code>surfaces</code></td></tr>
+<tr><td><code>sandbox/</code></td><td><code>policy</code>, <code>backends</code>, <code>native</code>, <code>docker</code>, <code>e2b</code>, <code>microsandbox</code>, <code>swe_rex</code>, <code>session</code></td></tr></tbody></table></div>
+<p>Python keeps startup fast by loading only the eager core on <code>import agent_rt</code>. Modules re-exported by <code>ext/runtime/optional.py</code> (identity, secrets, policy, exfiltration, planning, reflection, delegation, teams, tracing, usage, replay, the memory stores other than <code>sources</code>, workspace stores/artifacts, and all of <code>protocols/</code>, <code>retrieval/</code>, <code>interfaces/</code>, and <code>sandbox/</code>) are lazy: core modules must not import them at module level, and new public lazy names go in <code>_LAZY_FEATURE_EXPORTS</code> in <code>agent_rt.py</code>. <code>tests/test_import_surface.py</code> guards this. Moved core symbols keep <code>__module__ == &quot;agent_rt&quot;</code> so pickles and introspection stay stable. Python module-level imports between runtime modules must stay acyclic; break a run-time-only cycle with a function-local import, as <code>configure_runtime</code> does.</p>
+<p><strong>Size rule:</strong> every file in those folders, and both entrypoints, stays at or under 800 lines (aim for 200–600). <code>python3 scripts/check_module_size.py</code> enforces it in the CI <code>quality</code> job. The agent loop stays under it by keeping only the run orchestration in <code>agent/loop</code>: tool-call execution lives in <code>agent/tool_execution</code>, the other run steps (deadlines, model requests, token usage, pending approvals) in <code>agent/run_steps</code>, and plan compilation in <code>agent/plan_compiler</code>. The steps share one run-state object (<code>_RunState</code> / <code>RunState</code>), and values that change mid-run (Python: <code>deadline_hit</code>, <code>tool_policy</code>, <code>active_visible_tool_names</code>; TypeScript: <code>toolPolicy</code>, <code>activeVisibleToolNames</code>) are read and written there by the loop too. TypeScript step functions read <code>AgentLoop</code>'s private fields through the <code>AgentLoopInternals</code> <code>this</code> type, so the published <code>AgentLoop</code> declaration stays unchanged. When a module nears the cap, split it by theme inside the same folder, in both languages.</p>
+<h2 id="code-conventions">Code conventions</h2>
+<ul>
+<li>Keep Python and TypeScript semantics aligned and add focused tests in both languages when adding a runtime contract (see &quot;Contract evolution and migration&quot; in <code>Architecture-and-Extensions.md</code>).
+</li>
+<li>Provider payload builders may cache conversions only with strong references to the cached inputs.
+</li>
+<li>Define each helper name once per module; in Python and JavaScript a later definition silently replaces an earlier one.
+</li>
+<li>TypeScript formatting comes from <code>typescript/.prettierrc</code> (tabs, single quotes); keep it in the repository so <code>npm run format:check</code> gives the same result locally and in CI.
+</li>
+<li>Keep deterministic gates offline: tests, security scans, and adversarial scans must not call a real LLM or external model API.
+</li>
+<li>Keep documentation current: <code>README.md</code> for user-facing capabilities, <code>docs/</code> for durable architecture, and <code>docs/MIGRATION.md</code> when a compatibility surface changes.
+</li></ul>
+<h2 id="cross-platform-ci">Cross-platform CI</h2>
+<p>Cross-platform CI lives in <code>.github/workflows/cross-platform.yml</code>. It runs on pull requests and pushes to <code>main</code>. Both runtimes are tested on Linux x86-64 and arm64, Windows, and macOS (Intel and Apple Silicon); the arm64/Linux jobs cover the Raspberry Pi instruction-set architecture. The dedicated Raspberry Pi CPU/memory-limited checks run in CircleCI.</p>
+<p>The PyPI workflow triggers when a GitHub release is <strong>published</strong> and builds and uploads the package for the release tag; it does not depend on cross-platform CI.</p>
+<h2 id="circleci-on-apple-silicon-macos">CircleCI on Apple Silicon macOS</h2>
+<p>CircleCI configuration lives in <code>.circleci/config.yml</code> and intentionally uses the macOS <code>m4pro.medium</code> resource class. Every macOS job verifies <code>uname -m</code> is <code>arm64</code>. Apple Silicon and Raspberry Pi workflows run by default (<code>run_mac_ci</code> and <code>run_pi_ci</code> are enabled); individual workflows can be disabled through the pipeline parameters.</p>
+<p>The CircleCI workflow runs:</p>
+<ul>
+<li>Python regression tests across Python 3.10-3.14.
+</li>
+<li><code>make test-browsers</code>: the <code>agent-rt web</code> page in every browser the macOS runner can run (Playwright Chromium, Firefox, and WebKit, plus any preinstalled Chrome or Edge), with the downloaded browsers cached in <code>~/agent-rt-browsers</code>. This is the only CI that runs the browser tests; GitHub cross-platform CI does not.
+</li>
+<li>Python built-in static security scanning, deterministic offline adversarial scanning, the website CSP check (<code>scripts/check_website_csp.py</code>) and its regression tests (<code>scripts/test_check_website_csp.py</code>), the homepage migration-wall freshness check (<code>scripts/render_migration_wall.py --check</code>), and the third-party developer security gate.
+</li>
+<li>TypeScript regression tests across Node 20, 22, 24, and 26.
+</li>
+<li>TypeScript type/lint/dead-code checks plus the deterministic security gate.
+</li></ul>
+<p>The dependency-version matrices (<code>make test-deps-matrix</code>: Python <code>openai</code>, <code>anthropic</code>, <code>httpx</code>, <code>websockets</code>; TypeScript <code>openai</code> and <code>@anthropic-ai/sdk</code>; releases since mid-2024) are slower and run in a separate <code>apple_silicon_deps_matrix</code> workflow enabled only by the <code>run_deps_matrix</code> pipeline parameter (set it to <code>true</code> when triggering the pipeline). They also run on <code>m4pro.medium</code> arm64 runners.</p>
+<p>All deterministic security gates remain offline with respect to real LLM/model endpoints.</p>
+<div class="page-nav"><a class="next-link" href="../"><small>Back to</small><strong>← Documentation index</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+</div>
+</body></html>

@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Complete Migration Reference — Agent RT Docs</title>
+  <meta name="description" content="Detailed Agent RT migration examples and compatibility coverage for frameworks, SDKs, tools, memory, models, and agent workflows.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/guides/migration-reference.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Complete Migration Reference — Agent RT Docs">
+  <meta property="og:description" content="Detailed Agent RT migration examples and compatibility coverage for frameworks, SDKs, tools, memory, models, and agent workflows.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/guides/migration-reference.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Complete Migration Reference — Agent RT Docs">
+  <meta name="twitter:description" content="Detailed Agent RT migration examples and compatibility coverage for frameworks, SDKs, tools, memory, models, and agent workflows.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/guides/migration-reference.html#page","url":"https://agent-rt-pro.github.io/docs/guides/migration-reference.html","name":"Complete Migration Reference — Agent RT Docs","headline":"Complete Migration Reference — Agent RT Docs","description":"Detailed Agent RT migration examples and compatibility coverage for frameworks, SDKs, tools, memory, models, and agent workflows.","inLanguage":"en","dateModified":"2026-11-03","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/guides/migration-reference.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Guides"},{"@type":"ListItem","position":4,"name":"Complete Migration Reference","item":"https://agent-rt-pro.github.io/docs/guides/migration-reference.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="../../docs/vendor/github-dark-dimmed.min.css">
+  <script src="../../docs/vendor/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html" aria-current="page">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html">Runtime handbook</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html" aria-current="page">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html">Runtime handbook</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Guides<span>/</span>Complete Migration Reference</div>
+<section class="section-intro"><span class="eyebrow">Guides</span><h1 class="doc-title">Complete Migration Reference</h1><p class="doc-lede">Detailed Agent RT migration examples and compatibility coverage for frameworks, SDKs, tools, memory, models, and agent workflows.</p></section>
+<div class="note">Complete reference content migrated from the repository Markdown documentation. Use the <a href="../">documentation index</a> to browse by topic.</div>
+<nav aria-label="On this page" class="note"><strong>On this page</strong><ul><li><a href="#automatic-migration-agent-rt-migrate">Automatic migration (agent-rt migrate)</a></li><li><a href="#langchain">LangChain</a></li><li><a href="#llamaindex">LlamaIndex</a></li><li><a href="#openai-agents-sdk">OpenAI Agents SDK</a></li><li><a href="#autogen-agentchat">AutoGen AgentChat</a></li><li><a href="#crewai">CrewAI</a></li><li><a href="#deep-agents">Deep Agents</a></li><li><a href="#litellm">LiteLLM</a></li><li><a href="#openrouter">OpenRouter</a></li><li><a href="#openai-python-sdk">OpenAI Python SDK</a></li><li><a href="#anthropic-python-sdk">Anthropic Python SDK</a></li><li><a href="#openai-and-anthropic-sdk-topics">OpenAI and Anthropic SDK topics</a></li><li><a href="#openai-and-anthropic-coverage-matrix">OpenAI and Anthropic coverage matrix</a></li><li><a href="#memory-from-other-frameworks">Memory from other frameworks</a></li><li><a href="#native-agent-rt-path">Native Agent RT path</a></li></ul></nav>
+<p>Agent RT provides lightweight Python and TypeScript/JavaScript compatibility entry points for common migration paths. They preserve familiar entry points while translating requests into Agent RT's provider-neutral <code>ModelRequest</code> and <code>ModelResponse</code> contracts internally.</p>
+<p>The compatibility layer is intentionally a focused subset, not a claim of drop-in parity with every LangChain, Deep Agents, LlamaIndex, OpenAI Agents SDK, AutoGen, CrewAI, LiteLLM, OpenAI SDK, Anthropic SDK, or OpenRouter SDK feature. Use it to reduce the initial migration diff, then move framework-specific orchestration, tools, memory, streaming, and policy code to Agent RT's native APIs where needed.</p>
+<p>Migration compatibility field testing is ongoing. So far, 65+ third-party repositories have passed their test suites both before and after migration to Agent RT.</p>
+<p>The adapters deliberately keep the upstream SDKs' environment behavior (<code>OPENAI_API_KEY</code>, <code>OPENAI_BASE_URL</code>, <code>OPENAI_MODEL</code>, <code>ANTHROPIC_API_KEY</code>, <code>ANTHROPIC_BASE_URL</code>, <code>ANTHROPIC_MODEL</code>) so migrated code runs unchanged. Agent RT's own runtime is configured with <code>agent-rt.yaml</code> instead; see <a href="/docs/reference/configuration.html">Configuration</a>.</p>
+<h2 id="automatic-migration-agent-rt-migrate">Automatic migration (<code>agent-rt migrate</code>)</h2>
+<p><code>uvx agent-rt migrate [PATH]</code> (Python) and <code>npx agent-rt migrate [PATH]</code> (TypeScript/JavaScript) rewrite every supported import in a project and verify the result with the project's own tests:</p>
+<ol>
+<li>Plan the rewrite in memory. Python rewrites the same roots as the field tests (<code>openai</code>, <code>anthropic</code>, <code>langchain*</code>, <code>llama_index</code>, <code>agents</code>, <code>autogen_*</code>, <code>crewai</code>), skipping a root the project defines itself (a local <code>agents/</code> package). TypeScript rewrites only specifiers that the installed <code>agent-rt</code> package exports.
+</li>
+<li>Run the tests before the rewrite: <code>python -m pytest</code> in the project environment (the active virtual environment, then <code>./.venv</code>, then <code>python3</code>; <code>--python</code> overrides it, and extra pytest arguments go after <code>--</code>), or <code>npm test</code>. Nothing is changed when no tests are found or no test report is produced.
+</li>
+<li>Write the rewrite and run the tests again.
+</li>
+<li>Keep the rewrite if the tests pass, or if every test that fails afterwards also failed before, in the same test at the same line (the innermost traceback or stack frame inside the project, so library frames do not count). Any other failure, an unreadable report, or an interrupted run restores every rewritten file.
+</li></ol>
+<p>Per-test comparison reads pytest's JUnit report, Vitest's JUnit report, or Jest's JSON report. With any other JavaScript test runner only the exit code is known, so a suite that already fails before migration cannot be verified and the rewrite is restored.</p>
+<p>Both commands print a before-and-after card: tests passed, test-suite time, peak memory of the test process (Python only), and the size of the directly imported upstream packages compared with <code>agent-rt</code> (dependency trees are not counted). The project environment must already contain <code>agent-rt</code> (and <code>pytest</code> for Python). For a repository whose <code>origin</code> is on GitHub, a successful run prints a pre-filled GitHub issue link to add it to the <a href="/">migration wall</a>; nothing is sent automatically.</p>
+<h3 id="runs-on-agent-rt-badge">&quot;Runs on Agent RT&quot; badge</h3>
+<p>Maintainers whose repository runs on Agent RT can add this badge to their README:</p>
+<p><a href="/#migration"><img src="/assets/badge/runs-on-agent-rt.svg" alt="Runs on Agent RT" loading="lazy"></a></p>
+<pre><code class="language-markdown">[![Runs on Agent RT](https://agent-rt-pro.github.io/assets/badge/runs-on-agent-rt.svg)](https://agent-rt-pro.github.io/#migration)</code></pre>
+<p>The badge is opt-in: the Agent RT project never opens pull requests or issues asking repositories (including those on the migration wall) to add it.</p>
+<p>Minimum environment for the snippets below:</p>
+<ul>
+<li>OpenAI: set <code>OPENAI_API_KEY</code> to use the default <code>https://api.openai.com/v1</code> endpoint, or set <code>OPENAI_BASE_URL</code> for an OpenAI-compatible endpoint (a key is then optional if that endpoint does not require one). <code>OPENAI_MODEL</code> supplies the default model.
+</li>
+<li>Anthropic: set <code>ANTHROPIC_API_KEY</code> (and optionally <code>ANTHROPIC_BASE_URL</code> / <code>ANTHROPIC_MODEL</code>).
+</li>
+<li>OpenRouter (the OpenRouter SDK shims and LiteLLM <code>openrouter/</code> models): set <code>OPENROUTER_API_KEY</code>. It never falls back to <code>OPENAI_API_KEY</code>.
+</li>
+<li>OpenAI requests use a Responses WebSocket transport by default. Custom OpenAI-compatible endpoints that do not implement it must opt out by passing an explicit provider configured with <code>websocket=False</code> (Python) or <code>websocket: false</code> (TypeScript) to the compatibility client, for example <code>AsyncOpenAI(provider=OpenAIModelProvider(OpenAIProviderSettings(base_url=..., websocket=False)))</code>. The <code>websocket: false</code> model parameter in <code>agent-rt.yaml</code> applies to native startup (see <a href="/docs/reference/extension-contracts.html#provider-selection-and-transports">Architecture and Extensions</a>); the compatibility clients construct their provider from the settings above and do not read it.
+</li></ul>
+<p>Upstream tool-type, beta-header, and API-shape identifiers shown in these examples (for example <code>code_execution_20250825</code>, <code>web_search_20250305</code>, and <code>mcp-client-2026-09-15</code>) reflect the upstream SDKs when this guide was last reviewed. Check the upstream documentation for the versions you target.</p>
+<h2 id="langchain">LangChain</h2>
+<p>For exact migrations, preserve the upstream module path and only prepend <code>agent_rt.</code>. For example, <code>langchain_openai</code> becomes <code>agent_rt.langchain_openai</code>. The combined flattened alias <code>agent_rt.langchain</code> (used by the agent examples below) remains supported:</p>
+<pre><code class="language-python">import os
+
+from agent_rt.langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model=os.environ[&quot;OPENAI_MODEL&quot;])
+response = await llm.ainvoke(&quot;Hello&quot;)
+print(response.content)</code></pre>
+<p>The Python compatibility surface covers the common LangChain v1 model-and-agent migration path without requiring LangChain itself. It includes richer messages and metadata, sync/async invocation, batching, streaming, callable tools, structured output, and a bounded <code>create_agent()</code> tool loop.</p>
+<p>Supported:</p>
+<ul>
+<li>Messages: <code>BaseMessage</code>, <code>HumanMessage</code>, <code>AIMessage</code>, <code>AIMessageChunk</code>, <code>SystemMessage</code>, and <code>ToolMessage</code>, including <code>text</code>, <code>content_blocks</code>, additional/response metadata, usage metadata, IDs/names, tool calls, and tool-call IDs.
+</li>
+<li>Models: <code>ChatOpenAI</code>, <code>ChatAnthropic</code>, and <code>init_chat_model()</code>, with string/message inputs plus <code>invoke()</code>, <code>ainvoke()</code>, <code>batch()</code>, <code>abatch()</code>, <code>stream()</code>, <code>astream()</code>, <code>bind()</code>, and <code>bind_tools()</code>. The LangChain v1 submodule paths <code>langchain.chat_models</code> (including <code>chat_models.base</code> with <code>_ConfigurableModel</code> / <code>BaseChatModel</code>), <code>langchain.agents</code> (<code>.middleware</code>, <code>.structured_output</code>), <code>langchain.embeddings</code>, <code>langchain.messages</code>, and <code>langchain.tools</code> resolve under the <code>agent_rt.</code> prefix. <code>langchain_core</code> is not part of the migration surface and stays upstream.
+</li>
+<li>Embeddings: <code>langchain_openai.OpenAIEmbeddings</code> and <code>init_embeddings()</code> embed through an Agent RT OpenAI provider (sync and async <code>embed_documents()</code> / <code>embed_query()</code>).
+</li>
+<li>Tools: OpenAI-style function schemas, ordinary Python callables, LangChain-like tool objects, and the compatibility <code>@tool</code> decorator. Python annotations are converted to a basic JSON Schema.
+</li>
+<li>Structured output: <code>with_structured_output()</code> accepts raw JSON Schema mappings and Pydantic-style classes exposing <code>model_json_schema()</code> or <code>schema()</code>; <code>include_raw=True</code> returns <code>raw</code>, <code>parsed</code>, and <code>parsing_error</code>. Agent <code>response_format</code> additionally accepts <code>ProviderStrategy</code>, <code>ToolStrategy</code>, and <code>AutoStrategy</code>; tool strategy uses a synthetic structured-response tool and bounded validation-error feedback/retries.
+</li>
+<li>Agents: <code>create_agent()</code> runs a bounded model -&gt; tool -&gt; model loop with <code>system_prompt</code>, callable tool execution, optional final structured response parsing, sync/async invocation, and <code>updates</code> / <code>messages</code> streaming. <code>MemorySaver</code> and native Agent RT checkpoint stores support <code>thread_id</code> history/state resume; <code>InMemoryStore</code>, runtime context/state schema validation, and tool runtime/store/context/state injection cover the common LangGraph stateful-agent migration path. Middleware hooks cover before/after model, wrapped tool calls, post-agent processing, model/tool call limits, approval callbacks, PII redaction, summarization, and dynamic tool selection.
+</li>
+<li>Runnable/config: chat and structured runnables support <code>with_retry()</code>, fallbacks, <code>pipe()</code>, configurable fields, lightweight function/object callbacks, per-input batch config, and bounded <code>max_concurrency</code>.
+</li>
+<li>Retrieval/documents: <code>Document</code>, <code>TextLoader</code>, <code>JSONLoader</code>, <code>CSVLoader</code>, <code>DirectoryLoader</code>, <code>RecursiveCharacterTextSplitter</code>, <code>AgentRTEmbeddings</code>, <code>MemoryVectorStore</code>, <code>AgentRTRetriever</code>, <code>ExternalVectorStoreRetriever</code>, <code>EnsembleRetriever</code>, and <code>ContextualCompressionRetriever</code> cover provider-neutral retrieval, injected external vector stores, hybrid fusion, and reranking. Vendor-shaped vector-store adapters are also available for Chroma, Pinecone, Qdrant, Milvus, and Weaviate; they route read/query operations through Agent RT's environment-configured vector DB providers without importing the vendor SDKs.
+</li>
+<li>Prompts/LCEL: <code>PromptTemplate</code>, <code>ChatPromptTemplate</code>, <code>MessagesPlaceholder</code>, <code>RunnableLambda</code>, <code>RunnablePassthrough</code>, retry/fallback/configurable runnables, and <code>pipe()</code> cover the common composition path.
+</li>
+<li>Document chains: stuff, map-reduce, refine, and retrieval chains are available through <code>create_stuff_documents_chain()</code>, <code>create_map_reduce_documents_chain()</code>, <code>create_refine_documents_chain()</code>, and <code>create_retrieval_chain()</code>.
+</li>
+<li>Output parsing: common string and JSON output parsers are available in both runtimes; Python additionally provides <code>PydanticOutputParser</code> for Pydantic-style model validation.
+</li></ul>
+<h3 id="langchain-tool-and-agent-migration">LangChain tool and agent migration</h3>
+<pre><code class="language-python">from agent_rt.langchain import ChatOpenAI, create_agent, tool
+
+@tool
+def weather(city: str) -&gt; str:
+    &quot;&quot;&quot;Return weather for a city.&quot;&quot;&quot;
+    return f&quot;Sunny in {city}.&quot;  # replace with a real lookup
+
+model = ChatOpenAI(model=&quot;your-model&quot;)
+agent = create_agent(model, tools=[weather], system_prompt=&quot;Be concise.&quot;)
+
+result = await agent.ainvoke(
+    {&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Weather in Boston?&quot;}]}
+)
+print(result[&quot;messages&quot;][-1].content)</code></pre>
+<h3 id="langchain-structured-output-migration">LangChain structured output migration</h3>
+<pre><code class="language-python">schema = {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {&quot;answer&quot;: {&quot;type&quot;: &quot;string&quot;}},
+    &quot;required&quot;: [&quot;answer&quot;],
+}
+
+structured = ChatOpenAI(model=&quot;your-model&quot;).with_structured_output(schema)
+result = await structured.ainvoke(&quot;Return an answer object.&quot;)
+print(result[&quot;answer&quot;])</code></pre>
+<h3 id="langchain-streaming-and-batching-migration">LangChain streaming and batching migration</h3>
+<pre><code class="language-python">model = ChatOpenAI(model=&quot;your-model&quot;)
+
+batch = await model.abatch([&quot;first prompt&quot;, &quot;second prompt&quot;])
+
+async for chunk in model.astream(&quot;Stream a response.&quot;):
+    print(chunk.content, end=&quot;&quot;)</code></pre>
+<h3 id="langchain-vector-database-migration">LangChain vector database migration</h3>
+<p>The common vendor vector-store packages/modules can migrate to Agent RT without installing their vendor SDK clients. The compatibility classes preserve the familiar search/retriever shape, but execute retrieval through Agent RT's built-in HTTP vector DB providers.</p>
+<div class="table-wrap"><table><thead><tr><th>Upstream Python import</th><th>Agent RT Python import</th></tr></thead><tbody><tr><td><code>langchain_chroma.Chroma</code></td><td><code>agent_rt.langchain_chroma.Chroma</code></td></tr>
+<tr><td><code>langchain_pinecone.PineconeVectorStore</code></td><td><code>agent_rt.langchain_pinecone.PineconeVectorStore</code></td></tr>
+<tr><td><code>langchain_qdrant.QdrantVectorStore</code></td><td><code>agent_rt.langchain_qdrant.QdrantVectorStore</code></td></tr>
+<tr><td><code>langchain_milvus.Milvus</code></td><td><code>agent_rt.langchain_milvus.Milvus</code></td></tr>
+<tr><td><code>langchain_weaviate.WeaviateVectorStore</code></td><td><code>agent_rt.langchain_weaviate.WeaviateVectorStore</code></td></tr></tbody></table></div>
+<p>For TypeScript/JavaScript, Agent RT publishes the corresponding package-export aliases <code>agent-rt/@langchain/chroma</code>, <code>agent-rt/@langchain/pinecone</code>, <code>agent-rt/@langchain/qdrant</code>, <code>agent-rt/@langchain/milvus</code>, and <code>agent-rt/@langchain/weaviate</code>. Compatibility aliases also cover the older/community-shaped <code>agent-rt/@langchain/community/vectorstores/{chroma,pinecone,qdrant,milvus,weaviate}</code> subpaths.</p>
+<pre><code class="language-python">import os
+
+from agent_rt.langchain_qdrant import QdrantVectorStore
+
+store = QdrantVectorStore(
+    embedding=embeddings,  # an embeddings object, e.g. AgentRTEmbeddings
+    environment=os.environ,
+)
+documents = await store.asimilarity_search(&quot;How does Agent RT retrieve context?&quot;, k=4)</code></pre>
+<p>The adapter reads <code>AGENT_RT_VECTOR_DB_URL</code>, <code>AGENT_RT_VECTOR_DB_COLLECTION</code>, the generic/backend-native credential variables, and <code>AGENT_RT_VECTOR_DB_OPTION_*</code> settings as the upstream-style environment surface of the compatibility class. The imported class fixes the vendor backend implied by its package name; applications that declare vector stores in <code>vector_store_registry</code> should use <code>vector_store_registry_from_config</code> plus <code>AgentRTRetriever</code>.</p>
+<p>This compatibility surface is intentionally retrieval-oriented: <code>similarity_search</code> / <code>similaritySearch</code>, scored search, and retriever conversion are supported against existing collections. Vendor-specific collection creation, ingestion/upsert, deletion, index administration, sparse/hybrid vendor features, and lifecycle APIs remain backend-native.</p>
+<h3 id="langchain-compatibility-scope">LangChain compatibility scope</h3>
+<p>The common LangChain migration path is implemented without taking a runtime dependency on LangChain. The compatibility layer includes chat and message APIs, tools and agents, structured output, common Runnable/LCEL composition, prompt templates and message placeholders, checkpoint/store/context/state helpers, middleware, loaders, retrieval and vector-store bridges, hybrid retrieval/reranking composition, common output parsers, and stuff/map-reduce/refine/retrieval document chains.</p>
+<p>Explicit non-goals are provider-specific multimodal block aliases outside Agent RT's normalized content-part contract, bundled vendor SDK clients for external vector databases, and exhaustive emulation of every specialized LangChain integration package. Those integrations can be injected through Agent RT provider/retriever/vector-store contracts instead of being reimplemented in the compatibility layer.</p>
+<h3 id="langchain-compatibility-coverage">LangChain compatibility coverage</h3>
+<p>This matrix compares the compatibility surface implemented by Agent RT with the corresponding upstream LangChain v1 / LangGraph-backed agent capabilities. <code>✅</code> means the common migration path is implemented, <code>⚠️</code> means Agent RT implements a deliberately narrower subset, and <code>❌</code> means the upstream capability is not implemented by <code>agent_rt.langchain</code> / <code>agent-rt/langchain</code>. Upstream LangChain has a much larger provider and integration ecosystem than this table can enumerate.</p>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Agent RT Python</th><th>Agent RT TypeScript / JavaScript</th><th>Upstream LangChain</th></tr></thead><tbody><tr><td>Core messages</td><td>✅ <code>BaseMessage</code>, <code>HumanMessage</code>, <code>AIMessage</code>, <code>AIMessageChunk</code>, <code>SystemMessage</code>, <code>ToolMessage</code></td><td>✅ Same common message set</td><td>Full message hierarchy and utilities</td></tr>
+<tr><td>Message metadata / tool-call IDs</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>OpenAI chat model</td><td>✅ <code>ChatOpenAI</code></td><td>✅ <code>ChatOpenAI</code></td><td>✅ via <code>langchain-openai</code></td></tr>
+<tr><td>Anthropic chat model</td><td>✅ <code>ChatAnthropic</code></td><td>✅ <code>ChatAnthropic</code></td><td>✅ via <code>langchain-anthropic</code></td></tr>
+<tr><td>Provider-based model factory</td><td>✅ <code>init_chat_model()</code></td><td>✅ <code>initChatModel()</code></td><td>✅</td></tr>
+<tr><td>Sync model invocation</td><td>✅ <code>invoke()</code></td><td>— JavaScript API is async</td><td>✅ Python; JavaScript is async</td></tr>
+<tr><td>Async model invocation</td><td>✅ <code>ainvoke()</code></td><td>✅ <code>invoke()</code> returns a Promise</td><td>✅</td></tr>
+<tr><td>Batch invocation</td><td>✅ <code>batch()</code> / <code>abatch()</code></td><td>✅ <code>batch()</code></td><td>✅</td></tr>
+<tr><td>Streaming</td><td>✅ <code>stream()</code> / <code>astream()</code></td><td>✅ async <code>stream()</code></td><td>✅</td></tr>
+<tr><td>Split streaming tool-call JSON deltas</td><td>✅ accumulated by call ID</td><td>✅ accumulated by call ID</td><td>✅ provider/integration dependent</td></tr>
+<tr><td>Model binding</td><td>✅ <code>bind()</code></td><td>✅ <code>bind()</code></td><td>✅</td></tr>
+<tr><td>Tool binding</td><td>✅ <code>bind_tools()</code></td><td>✅ <code>bindTools()</code></td><td>✅</td></tr>
+<tr><td>Callable/tool helper</td><td>✅ callables + <code>@tool</code> + LangChain-like tool objects</td><td>✅ <code>tool()</code> + LangChain-like tool objects</td><td>✅</td></tr>
+<tr><td>Python annotation schema inference</td><td>✅ basic JSON Schema</td><td>—</td><td>✅ richer type/schema ecosystem</td></tr>
+<tr><td>Structured model output</td><td>✅ <code>with_structured_output()</code></td><td>✅ <code>withStructuredOutput()</code></td><td>✅</td></tr>
+<tr><td>Raw + parsed structured result</td><td>✅ <code>include_raw=True</code></td><td>✅ <code>includeRaw: true</code></td><td>✅</td></tr>
+<tr><td>Provider/tool/auto structured-output strategy</td><td>✅ <code>ProviderStrategy</code>, <code>ToolStrategy</code>, <code>AutoStrategy</code></td><td>✅ same strategy concepts</td><td>✅</td></tr>
+<tr><td><code>create_agent</code> / <code>createAgent</code> tool loop</td><td>✅ bounded model → tool → model loop</td><td>✅ bounded model → tool → model loop</td><td>✅ LangGraph-backed agent runtime</td></tr>
+<tr><td>Agent streaming modes</td><td>✅ <code>updates</code> / <code>messages</code></td><td>✅ <code>updates</code> / <code>messages</code> / <code>values</code></td><td>✅ broader LangGraph streaming modes</td></tr>
+<tr><td>Runtime context/state validation and tool injection</td><td>✅ common context/state schema path</td><td>✅ common context/state schema path</td><td>✅</td></tr>
+<tr><td>Built-in model/tool call limits</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>PII middleware</td><td>✅ redaction-oriented compatibility middleware</td><td>✅</td><td>✅ richer configurable middleware</td></tr>
+<tr><td>Summarization middleware</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Dynamic tool selection middleware</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Runnable retry</td><td>✅ <code>with_retry()</code></td><td>✅ <code>withRetry()</code></td><td>✅</td></tr>
+<tr><td>Runnable fallbacks</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Configurable fields</td><td>✅ common configurable-field path</td><td>✅ common configurable-field path</td><td>✅</td></tr>
+<tr><td>Per-input batch config / concurrency bounds</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>Document</code></td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Text / JSON / CSV loaders</td><td>✅ <code>TextLoader</code>, <code>JSONLoader</code>, <code>CSVLoader</code></td><td>✅ same loaders using Agent RT <code>FileSystem</code></td><td>✅ plus many loaders</td></tr>
+<tr><td>Directory loader</td><td>✅ <code>DirectoryLoader</code></td><td>✅ <code>DirectoryLoader</code> using Agent RT <code>FileSystem</code></td><td>✅ plus many loader variants</td></tr>
+<tr><td>Recursive character splitter</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Embeddings interface</td><td>✅ <code>AgentRTEmbeddings</code></td><td>✅ <code>AgentRTEmbeddings</code></td><td>✅ many provider integrations</td></tr>
+<tr><td>In-memory vector store</td><td>✅ <code>MemoryVectorStore</code></td><td>✅ <code>MemoryVectorStore</code></td><td>✅</td></tr>
+<tr><td>Agent RT retrieval-provider bridge</td><td>✅ <code>AgentRTRetriever</code></td><td>✅ <code>AgentRTRetriever</code></td><td>— Agent RT-specific</td></tr>
+<tr><td>Stuff / map-reduce / refine document chains</td><td>✅</td><td>✅</td><td>✅ broader chain families</td></tr>
+<tr><td>Retrieval chain</td><td>✅ <code>create_retrieval_chain()</code></td><td>✅ <code>createRetrievalChain()</code></td><td>✅</td></tr>
+<tr><td>Common multimodal content blocks</td><td>⚠️ text/image/audio/video/pdf/document/file/json normalization</td><td>⚠️ same common normalization</td><td>Broader provider-specific multimodal/content-block support</td></tr>
+<tr><td>Zod schema support</td><td>—</td><td>⚠️ <code>toJSONSchema()</code> for provider/tool schema plus <code>parse()</code> / <code>safeParse()</code> local structured-output validation</td><td>✅ native Zod-oriented tool/schema integrations</td></tr>
+<tr><td>Short-term thread memory / checkpoint resume</td><td>⚠️ <code>MemorySaver</code> + Agent RT checkpoint stores keyed by <code>thread_id</code></td><td>⚠️ same common path</td><td>✅ LangGraph checkpointing/persistence</td></tr>
+<tr><td>Long-term key/value store</td><td>⚠️ <code>InMemoryStore</code></td><td>⚠️ <code>InMemoryStore</code></td><td>✅ LangGraph stores plus external backends</td></tr>
+<tr><td>Middleware hooks</td><td>⚠️ before/after model, wrapped tools, post-agent</td><td>⚠️ equivalent common hooks</td><td>✅ extensible middleware system</td></tr>
+<tr><td>Human-in-the-loop tool approval</td><td>⚠️ approval callback middleware</td><td>⚠️ approval callback middleware</td><td>✅ graph interrupts / durable resume workflows</td></tr>
+<tr><td>Runnable piping / common LCEL composition</td><td>✅ <code>pipe()</code>, sequence, <code>RunnableLambda</code>, <code>RunnablePassthrough</code></td><td>✅ same common composition path</td><td>✅ broader LCEL / Runnable composition</td></tr>
+<tr><td>Callback support</td><td>✅ lightweight function/object callback path</td><td>✅ lightweight function/object callback path</td><td>✅ broader callback managers + integration hooks</td></tr>
+<tr><td>Prompt templates</td><td>✅ <code>PromptTemplate</code>, <code>ChatPromptTemplate</code>, <code>MessagesPlaceholder</code></td><td>✅ same common prompt set</td><td>✅ broader prompt/template ecosystem</td></tr>
+<tr><td>External vector databases</td><td>⚠️ Chroma/Pinecone/Qdrant/Milvus/Weaviate package-shaped read/query adapters + injected <code>ExternalVectorStoreRetriever</code>; no vendor SDK clients</td><td>⚠️ matching package-export adapters + injected bridge</td><td>✅ broad vector-store ecosystem with full vendor lifecycles</td></tr>
+<tr><td>Advanced retrievers / hybrid search / rerankers</td><td>✅ <code>EnsembleRetriever</code> weighted RRF + <code>ContextualCompressionRetriever</code> over injected retrievers/compressors</td><td>✅ same common composition/reranking path</td><td>✅ broad integration ecosystem</td></tr>
+<tr><td>General output-parser families</td><td>✅ string + JSON + Pydantic-style parsing</td><td>✅ string + JSON parsing</td><td>✅ broader parser ecosystem</td></tr>
+<tr><td>LangChain package dependency required</td><td>❌ compatibility layer is dependency-free with respect to LangChain</td><td>❌ compatibility layer is dependency-free with respect to LangChain</td><td>✅ upstream packages themselves</td></tr></tbody></table></div>
+<p>The compatibility target is the common model/tool/agent/RAG migration path, not API-complete emulation of every optional LangChain integration package. The five supported vector DB packages above provide retrieval/query compatibility only; vendor-specific write/admin APIs, other loaders, other rerankers, and other middleware can remain upstream or be injected through the documented Agent RT compatibility contracts.</p>
+<h3 id="typescript-javascript-langchain-migration">TypeScript / JavaScript LangChain migration</h3>
+<p>TypeScript/JavaScript applications can use the published <code>agent-rt/langchain</code> entry point without installing LangChain:</p>
+<pre><code class="language-ts">import {
+  ChatOpenAI,
+  HumanMessage,
+  createAgent,
+  tool,
+} from &quot;agent-rt/langchain&quot;;
+
+const weather = tool(
+  async ({ city }) =&gt; ({ city, forecast: &quot;sunny&quot; }),
+  {
+    name: &quot;weather&quot;,
+    description: &quot;Get weather for a city&quot;,
+    schema: {
+      type: &quot;object&quot;,
+      properties: { city: { type: &quot;string&quot; } },
+      required: [&quot;city&quot;],
+    },
+  },
+);
+
+const model = new ChatOpenAI({ model: &quot;your-model&quot; });
+const response = await model.invoke([new HumanMessage(&quot;Hello&quot;)]);
+
+const agent = createAgent({
+  model,
+  tools: [weather],
+  systemPrompt: &quot;Be concise.&quot;,
+});
+const result = await agent.invoke({
+  messages: [{ role: &quot;user&quot;, content: &quot;Weather in Boston?&quot; }],
+});</code></pre>
+<p>Supported in TypeScript/JavaScript:</p>
+<ul>
+<li>Messages: <code>BaseMessage</code>, <code>HumanMessage</code>, <code>AIMessage</code>, <code>AIMessageChunk</code>, <code>SystemMessage</code>, and <code>ToolMessage</code>, including text/content blocks, additional/response metadata, usage metadata, names/IDs, tool calls, and tool-call IDs.
+</li>
+<li>Models: <code>ChatOpenAI</code>, <code>ChatAnthropic</code>, and <code>initChatModel()</code>, with string/message inputs plus async <code>invoke()</code>, <code>batch()</code>, <code>stream()</code>, <code>bind()</code>, and <code>bindTools()</code>.
+</li>
+<li>Tools: OpenAI-style function schemas and LangChain-like tool objects. The compatibility <code>tool()</code> helper accepts JSON Schema directly and also accepts schema objects exposing <code>toJSONSchema()</code>. <code>StructuredTool</code>, <code>DynamicStructuredTool</code>, and <code>DynamicTool</code> validate input against their <code>schema</code> (JSON Schema <code>required</code>, or a zod-like <code>safeParse()</code>), raising <code>ToolInputParsingException</code>; a <code>tool_call</code> input returns a <code>ToolMessage</code>. LangChain v1's <code>fakeModel()</code> test helper is exported: <code>respond(message | Error)</code> and <code>respondWithTools([{ name, args, id? }])</code> script responses in order (any message object with <code>content</code> / <code>tool_calls</code> works), <code>calls</code> / <code>callCount</code> record requests, and an unscripted call throws. It runs through the same agent loop as real models, without network access. <code>createAgent().invoke()</code> returns the final state with <code>messages</code> normalized to <code>BaseMessage</code> objects, as LangChain does. As in LangChain's tool node, input a tool's schema rejects becomes a <code>ToolInvocationError</code> (with <code>toolCall</code>, <code>toolError</code>, and the error's stack in its message), while an error the tool itself throws is passed on unchanged; <code>toolErrorMiddleware({ onError })</code> turns either into the tool message the model receives. <code>ToolInputParsingException</code> messages use zod's <code>prettifyError()</code> format. Callback-handler objects passed as <code>invoke(input, { callbacks })</code> receive <code>handleToolStart</code> / <code>handleToolEnd</code> / <code>handleToolError</code> for each tool call, and the model gets the same <code>callbacks</code> (Agent RT chat models call <code>handleChatModelStart</code> / <code>handleLLMEnd</code> / <code>handleLLMError</code>).
+</li>
+<li>Structured output: <code>withStructuredOutput()</code> routes JSON Schema through Agent RT <code>StructuredOutputRequirement</code>; <code>includeRaw: true</code> returns <code>raw</code>, <code>parsed</code>, and <code>parsing_error</code>. Agent <code>responseFormat</code> accepts <code>ProviderStrategy</code>, <code>ToolStrategy</code>, and <code>AutoStrategy</code>; tool strategy uses a synthetic output tool with bounded validation retries.
+</li>
+<li>Agents: <code>createAgent()</code> accepts <code>model</code> or <code>llm</code>, runs a bounded model -&gt; tool -&gt; model loop with <code>systemPrompt</code>, tool execution, optional final structured response parsing, async invocation, and <code>updates</code> / <code>messages</code> / <code>values</code> streaming shapes. <code>MemorySaver</code> and native Agent RT <code>CheckpointStore</code> implementations support <code>thread_id</code> resume; <code>InMemoryStore</code>, context/state schema validation, runtime injection, and middleware hooks cover the common stateful-agent path.
+</li>
+<li>Runnable/config: chat and structured runnables support <code>withRetry()</code>, fallbacks, <code>pipe()</code>, configurable fields, lightweight function/object callbacks, per-input batch config, and bounded concurrency.
+</li>
+<li>Retrieval/documents: <code>Document</code>, <code>TextLoader</code>, <code>JSONLoader</code>, <code>CSVLoader</code>, <code>DirectoryLoader</code>, <code>RecursiveCharacterTextSplitter</code>, <code>AgentRTEmbeddings</code>, <code>MemoryVectorStore</code>, <code>AgentRTRetriever</code>, <code>ExternalVectorStoreRetriever</code>, <code>EnsembleRetriever</code>, and <code>ContextualCompressionRetriever</code> cover the common provider-neutral and injected-vector-store retrieval path.
+</li>
+<li>Prompts/LCEL and chains: <code>PromptTemplate</code>, <code>ChatPromptTemplate</code>, <code>MessagesPlaceholder</code>, <code>RunnableLambda</code>, <code>RunnablePassthrough</code>, <code>pipe()</code>, and stuff/map-reduce/refine/retrieval document chains cover the common composition path.
+</li>
+<li>Structured validation accepts JSON Schema / <code>toJSONSchema()</code> and can also use schema objects exposing <code>parse()</code> or <code>safeParse()</code> for local validation when JSON Schema conversion is unavailable.
+</li></ul>
+<pre><code class="language-ts">const schema = {
+  type: &quot;object&quot;,
+  properties: { answer: { type: &quot;string&quot; } },
+  required: [&quot;answer&quot;],
+};
+
+const structured = model.withStructuredOutput(schema, { includeRaw: true });
+const value = await structured.invoke(&quot;Return an answer object.&quot;);
+
+const batch = await model.batch([&quot;first prompt&quot;, &quot;second prompt&quot;]);
+for await (const chunk of model.stream(&quot;Stream a response.&quot;)) {
+  process.stdout.write(chunk.text);
+}</code></pre>
+<p>TypeScript/JavaScript follows the same completed common-migration scope as Python. Provider-specific multimodal aliases and bundled vendor integration clients remain explicit non-goals; injected Agent RT providers, retrievers, vector stores, compressors, and middleware are the extension points for those ecosystems.</p>
+<h2 id="llamaindex">LlamaIndex</h2>
+<p>Use exact-prefix imports where possible: <code>llama_index.llms.openai</code> becomes <code>agent_rt.llama_index.llms.openai</code>. The historical flattened <code>agent_rt.llamaindex</code> entry point remains available for the broader combined compatibility surface:</p>
+<pre><code class="language-python">import os
+
+from agent_rt.llama_index.llms.openai import OpenAI
+from agent_rt.llamaindex import FunctionAgent, FunctionTool, Memory
+
+def weather(city: str) -&gt; str:
+    &quot;&quot;&quot;Return deterministic weather.&quot;&quot;&quot;
+    return f&quot;Sunny in {city}.&quot;
+
+llm = OpenAI(model=os.environ[&quot;OPENAI_MODEL&quot;])
+tool = FunctionTool.from_defaults(fn=weather)
+agent = FunctionAgent(
+    llm=llm,
+    tools=[tool],
+    system_prompt=&quot;Be concise.&quot;,
+)
+memory = Memory.from_defaults(session_id=&quot;weather-thread&quot;)
+response = await agent.run(&quot;What is the weather in SF?&quot;, memory=memory)
+print(response)</code></pre>
+<p>Supported:</p>
+<ul>
+<li>LLM/messages: <code>OpenAI</code>, <code>Anthropic</code>, <code>ChatMessage</code>, <code>MessageRole</code>, <code>ChatResponse</code>, and <code>CompletionResponse</code>, with sync/async <code>chat()</code> / <code>achat()</code> and <code>complete()</code> / <code>acomplete()</code>. <code>ChatMessage.from_str()</code> covers the common string-message helper.
+</li>
+<li>Streaming: <code>stream_chat()</code> / <code>astream_chat()</code> and <code>stream_complete()</code> / <code>astream_complete()</code> emit LlamaIndex-shaped responses with <code>delta</code> fields while routing through Agent RT streaming providers. The synchronous wrappers currently materialize the async provider stream before returning the iterator, so exact upstream backpressure/timing semantics are not claimed.
+</li>
+<li>Function tools: <code>FunctionTool.from_defaults()</code>, <code>ToolMetadata</code>, and <code>ToolOutput</code> support annotated callable schema inference, direct sync/async invocation, and conversion to Agent RT tool definitions. <code>predict_and_call()</code> / <code>apredict_and_call()</code> cover the common single-model tool-selection path.
+</li>
+<li>Structured output: <code>as_structured_llm()</code>, <code>structured_predict()</code>, and <code>astructured_predict()</code> accept raw JSON Schema mappings or Pydantic-style model classes and translate them into Agent RT <code>StructuredOutputRequirement</code>.
+</li>
+<li>Agents: <code>FunctionAgent</code> provides a bounded model -&gt; tool -&gt; model loop with system prompts, tool-call IDs, sync/async tools, bounded tool retries, return-error policy, and explicit <code>handoff_to_agent</code> routing. <code>ReActAgent</code> uses a Thought/Action/Action Input/Observation/Answer parser loop with bounded parse correction; <code>CodeActAgent</code> uses a code-block/Answer parser and executes code only through an explicitly supplied <code>code_executor</code>. <code>AgentWorkflow.from_agents()</code> routes named-agent handoffs with shared memory/context and bounded handoff depth, while <code>from_tools_or_functions()</code> retains the common single-agent constructor.
+</li>
+<li>Workflow/memory: <code>Workflow</code>, <code>step</code>, typed <code>Event</code> subclasses, <code>WorkflowMiddleware</code>, fan-out event lists, <code>Context.collect_events()</code> fan-in, <code>InputRequiredEvent</code> / <code>HumanResponseEvent</code> HITL resume, and Agent RT checkpoint stores cover durable workflow migration. <code>Context</code> supports JSON serialization plus checkpoint save/load. <code>Memory</code> / <code>ChatMemoryBuffer</code> add async aliases, token-budget flushing, <code>StaticMemoryBlock</code>, <code>FactExtractionMemoryBlock</code>, <code>VectorMemoryBlock</code>, and chat-store-backed memory blocks.
+</li>
+<li>RAG/indexing: <code>Document</code>, <code>TextNode</code>, <code>NodeWithScore</code>, Agent RT <code>FileSystem</code>-backed <code>SimpleDirectoryReader</code>, <code>SentenceSplitter</code>, <code>IngestionPipeline</code>, <code>AgentRTEmbedding</code>, <code>SimpleVectorStore</code>, <code>StorageContext</code>, <code>VectorStoreIndex</code>, <code>VectorIndexRetriever</code>, <code>AgentRTRetriever</code>, <code>RetrieverQueryEngine</code>, and <code>ResponseSynthesizer</code> cover the common local/provider-neutral RAG migration path. Read/query compatibility modules are also provided for Chroma, Pinecone, Qdrant, Milvus, and Weaviate and route through Agent RT's vector DB HTTP providers.
+</li>
+<li>Module paths: the <code>llama_index.core</code> tree (<code>core.schema</code>, <code>core.node_parser</code>, <code>core.workflow</code>, <code>core.prompts</code>, <code>core.llms</code>, <code>core.tools</code>, <code>core.memory</code>, <code>core.agent.workflow</code>, <code>core.base.llms.types</code>, <code>core.base.embeddings.base</code>, <code>core.storage</code>, <code>core.vector_stores</code>, and the other listed core subpackages) plus <code>llama_index.llms.ollama</code>, <code>llama_index.embeddings.openai</code>, and <code>llama_index.embeddings.ollama</code> resolve under the <code>agent_rt.</code> prefix. <code>OpenAIEmbedding</code>, <code>OllamaEmbedding</code>, and <code>BaseEmbedding</code> add sync <code>get_text_embedding()</code> / <code>get_query_embedding()</code> / <code>get_text_embedding_batch()</code>; <code>Ollama</code> and <code>OllamaEmbedding</code> use Ollama's OpenAI-compatible <code>/v1</code> endpoint (<code>base_url</code>, else <code>OLLAMA_HOST</code>), and <code>VectorStoreIndex(nodes, storage_context=...)</code> defaults <code>embed_model</code> to <code>Settings.embed_model</code> and embeds nodes that have no embedding yet, and <code>NodeWithScore</code> proxies <code>text</code>, <code>metadata</code>, and <code>get_text()</code> / <code>get_content()</code> to its node. <code>ChromaVectorStore(chroma_collection=collection)</code> reads and writes the chromadb collection the application created (queries return <code>1 / (1 + distance)</code> as the score); without one it queries Agent RT's Chroma provider. <code>SimpleDirectoryReader</code> takes the upstream <code>input_dir</code> / <code>input_files</code> / <code>recursive</code> / <code>filename_as_id</code> / <code>required_exts</code> arguments and reads the local paths the application names, raising <code>ValueError</code> when nothing matches; pass <code>file_system=</code> to read through an Agent RT <code>FileSystem</code> instead. Property graphs are not supported: <code>PropertyGraphIndex</code>, the property-graph extractors and retrievers (including the subclassable <code>CustomPGRetriever</code>), and <code>load_index_from_storage</code> can be imported so modules load, but using them raises <code>NotImplementedError</code>. <code>GeminiEmbedding</code> uses Gemini's OpenAI-compatible endpoint with <code>api_key</code>, <code>GOOGLE_API_KEY</code>, or <code>GEMINI_API_KEY</code>. <code>llama_index.readers.file</code> provides <code>FlatReader</code> (one document per file) and <code>PDFReader</code> (one document per page, needs <code>pypdf</code>); both read the path the application gives them, or read through an Agent RT <code>FileSystem</code> passed as <code>file_system</code>.
+</li>
+<li>Prompts/settings/observability: <code>PromptTemplate</code>, <code>ChatPromptTemplate</code>, <code>JSONOutputParser</code>, <code>Settings</code>, and <code>CallbackManager</code> cover common migration shapes. Non-streaming calls emit <code>llm-start</code> / <code>llm-end</code> / <code>llm-error</code>; provider streams additionally emit <code>llm-stream</code>. Model, finish-reason, and usage metadata are retained on response messages. <code>count_tokens()</code> / <code>acount_tokens()</code> use the provider token-count contract when available and can fall back to <code>Settings.tokenizer</code>. Multimodal Agent RT content parts are retained in <code>ChatMessage.blocks</code>, split streaming tool-call arguments are accumulated by call ID, and structured chat/completion streams expose the best parseable partial object in <code>raw</code>.
+</li></ul>
+<p>Structured prediction and direct tool use can migrate independently of the agent loop:</p>
+<pre><code class="language-python">schema = {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {&quot;answer&quot;: {&quot;type&quot;: &quot;string&quot;}},
+    &quot;required&quot;: [&quot;answer&quot;],
+}
+
+parsed = await llm.astructured_predict(schema, &quot;Return an answer object.&quot;)
+selected = await llm.apredict_and_call([tool], user_msg=&quot;Weather in SF?&quot;)</code></pre>
+<h3 id="llamaindex-vector-database-migration">LlamaIndex vector database migration</h3>
+<p>Python vector-store modules preserve the upstream module hierarchy after adding the <code>agent_rt.</code> prefix:</p>
+<div class="table-wrap"><table><thead><tr><th>Upstream Python import</th><th>Agent RT Python import</th></tr></thead><tbody><tr><td><code>llama_index.vector_stores.chroma.ChromaVectorStore</code></td><td><code>agent_rt.llama_index.vector_stores.chroma.ChromaVectorStore</code></td></tr>
+<tr><td><code>llama_index.vector_stores.pinecone.PineconeVectorStore</code></td><td><code>agent_rt.llama_index.vector_stores.pinecone.PineconeVectorStore</code></td></tr>
+<tr><td><code>llama_index.vector_stores.qdrant.QdrantVectorStore</code></td><td><code>agent_rt.llama_index.vector_stores.qdrant.QdrantVectorStore</code></td></tr>
+<tr><td><code>llama_index.vector_stores.milvus.MilvusVectorStore</code></td><td><code>agent_rt.llama_index.vector_stores.milvus.MilvusVectorStore</code></td></tr>
+<tr><td><code>llama_index.vector_stores.weaviate.WeaviateVectorStore</code></td><td><code>agent_rt.llama_index.vector_stores.weaviate.WeaviateVectorStore</code></td></tr></tbody></table></div>
+<p>TypeScript/JavaScript package-export aliases are <code>agent-rt/@llamaindex/chroma</code>, <code>agent-rt/@llamaindex/pinecone</code>, <code>agent-rt/@llamaindex/qdrant</code>, <code>agent-rt/@llamaindex/milvus</code>, and <code>agent-rt/@llamaindex/weaviate</code>.</p>
+<pre><code class="language-python">import os
+
+from agent_rt.llama_index.vector_stores.qdrant import QdrantVectorStore
+
+vector_store = QdrantVectorStore(environment=os.environ)
+nodes = await vector_store.aquery(
+    {
+        &quot;query_embedding&quot;: query_embedding,
+        &quot;query_str&quot;: &quot;How does Agent RT migrate vector retrieval?&quot;,
+        &quot;similarity_top_k&quot;: 4,
+    }
+)</code></pre>
+<p>These modules target existing vector collections. Query/search and conversion to LlamaIndex-shaped <code>NodeWithScore</code> results are supported; <code>add</code>/upsert, deletion, collection administration, and vendor-specific sparse/hybrid lifecycle features intentionally fail or remain backend-native. This prevents the compatibility layer from silently creating or mutating external indexes.</p>
+<p>LlamaIndex compatibility still intentionally leaves specialized integrations and byte-for-byte upstream internals outside the adapter:</p>
+<ul>
+<li>Advanced RAG integrations beyond the provider-neutral core adapter: vector DB write/admin lifecycles, graph/property indexes, hybrid/sparse retrieval and reranking, specialized readers/parsers, persistent index/document stores, and exact ingestion-cache behavior. Chroma, Pinecone, Qdrant, Milvus, and Weaviate have read/query compatibility modules, but not full upstream vendor lifecycle parity.
+</li>
+<li>Vendor-specific hosted memory/vector/chat stores that require their own authentication or database runtime. The compatibility memory blocks accept injected chat stores/retrievers instead of opening hidden services.
+</li>
+<li>Provider-specific prompt wording, private parser internals, callback payload minutiae, and every vendor-specific multimodal/message option. The compatibility layer preserves the documented migration semantics above rather than claiming exact internal implementation identity.
+</li></ul>
+<p>Where exact vendor lifecycle or provider-specific behavior matters, use the corresponding native Agent RT provider, retrieval, checkpoint, workflow, or storage contract explicitly.</p>
+<h3 id="llamaindex-compatibility-coverage">LlamaIndex compatibility coverage</h3>
+<p>This matrix compares the compatibility surface implemented by Agent RT with the corresponding upstream LlamaIndex Framework capabilities, compared with the LlamaIndex developer documentation (as of the last review; check the upstream version you target) for agents, memory, state/context persistence, indexing, storage, response synthesis, rerankers/postprocessors, evaluation, and LlamaParse/LlamaCloud. <code>✅</code> means the common migration path is implemented, <code>⚠️</code> means Agent RT intentionally implements a narrower provider-neutral subset, and <code>❌</code> means that upstream capability is not implemented by <code>agent_rt.llamaindex</code> / <code>agent-rt/llamaindex</code>.</p>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Agent RT Python</th><th>Agent RT TypeScript / JavaScript</th><th>Upstream LlamaIndex</th></tr></thead><tbody><tr><td>OpenAI LLM wrapper</td><td>✅ <code>OpenAI</code></td><td>✅ <code>OpenAI</code> / <code>openai()</code></td><td>✅</td></tr>
+<tr><td>Anthropic LLM wrapper</td><td>✅ <code>Anthropic</code></td><td>✅ <code>Anthropic</code> / <code>anthropic()</code></td><td>✅</td></tr>
+<tr><td>Chat messages / roles</td><td>✅ <code>ChatMessage</code>, <code>MessageRole</code></td><td>✅ common message shapes</td><td>✅</td></tr>
+<tr><td>Chat responses</td><td>✅ <code>ChatResponse</code></td><td>✅ LlamaIndex-shaped chat responses</td><td>✅</td></tr>
+<tr><td>Completion responses</td><td>✅ <code>CompletionResponse</code></td><td>✅ LlamaIndex-shaped completion responses</td><td>✅</td></tr>
+<tr><td>Sync chat/completion</td><td>✅ <code>chat()</code> / <code>complete()</code></td><td>— JavaScript API is async</td><td>✅ Python; JS is async</td></tr>
+<tr><td>Async chat/completion</td><td>✅ <code>achat()</code> / <code>acomplete()</code></td><td>✅ <code>chat()</code> / <code>complete()</code> return Promises</td><td>✅</td></tr>
+<tr><td>Chat streaming</td><td>✅ <code>stream_chat()</code> / <code>astream_chat()</code></td><td>✅ <code>stream: true</code> async iterables</td><td>✅</td></tr>
+<tr><td>Completion streaming</td><td>✅ <code>stream_complete()</code> / <code>astream_complete()</code></td><td>✅ <code>stream: true</code> async iterables</td><td>✅</td></tr>
+<tr><td>Usage / finish-reason metadata</td><td>✅</td><td>✅</td><td>✅ provider dependent</td></tr>
+<tr><td>Split streaming tool-call delta accumulation</td><td>✅ by tool-call ID</td><td>✅ by tool-call ID</td><td>✅ integration dependent</td></tr>
+<tr><td>Provider token counting</td><td>✅ <code>count_tokens()</code> / <code>acount_tokens()</code> + tokenizer fallback</td><td>✅ <code>countTokens()</code> + tokenizer fallback</td><td>✅ provider/tokenizer dependent</td></tr>
+<tr><td>Function tools</td><td>✅ <code>FunctionTool.from_defaults()</code></td><td>✅ <code>FunctionTool.fromDefaults()</code> and <code>tool()</code></td><td>✅</td></tr>
+<tr><td>Callable schema inference</td><td>✅ Python annotations → basic JSON Schema</td><td>—</td><td>✅ richer typing/schema integrations</td></tr>
+<tr><td>JSON Schema tool parameters</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Direct tool invocation</td><td>✅ sync/async</td><td>✅ async</td><td>✅</td></tr>
+<tr><td>Tool retries</td><td>✅ bounded retries</td><td>✅ bounded <code>maxRetries</code></td><td>✅ integration/agent dependent</td></tr>
+<tr><td>Tool error-as-result behavior</td><td>✅</td><td>✅ <code>errorBehavior: &quot;return_error&quot;</code></td><td>✅ patterns available upstream</td></tr>
+<tr><td>Return-direct tools</td><td>✅ common agent path</td><td>✅ <code>returnDirect</code></td><td>✅</td></tr>
+<tr><td>Structured LLM wrapper</td><td>✅ <code>as_structured_llm()</code></td><td>✅ <code>asStructuredLLM()</code></td><td>✅</td></tr>
+<tr><td>Structured prediction</td><td>✅ <code>structured_predict()</code> / <code>astructured_predict()</code></td><td>✅ <code>structuredPredict()</code></td><td>✅</td></tr>
+<tr><td>Raw JSON Schema structured output</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Pydantic-style schema classes</td><td>✅ <code>model_json_schema()</code> / <code>schema()</code> style</td><td>—</td><td>✅ Python</td></tr>
+<tr><td>Structured streaming partial parsing</td><td>✅ best parseable partial</td><td>✅ best parseable partial</td><td>✅ implementation/provider dependent</td></tr>
+<tr><td><code>FunctionAgent</code></td><td>✅ bounded tool loop</td><td>✅ bounded tool loop</td><td>✅</td></tr>
+<tr><td>ReAct agent</td><td>✅ <code>ReActAgent</code></td><td>✅ <code>ReActAgent</code></td><td>✅</td></tr>
+<tr><td>Agent event stream</td><td>✅ <code>AgentStream</code>, <code>ToolCall</code>, <code>ToolCallResult</code>, <code>AgentOutput</code></td><td>✅ <code>AgentInput</code>, <code>AgentStream</code>, <code>ToolCall</code>, <code>ToolCallResult</code>, <code>AgentOutput</code></td><td>✅</td></tr>
+<tr><td>Awaitable agent run</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Async-iterable agent run</td><td>✅ event stream</td><td>✅ event stream</td><td>✅</td></tr>
+<tr><td>Multi-agent workflow</td><td>✅ <code>AgentWorkflow.from_agents()</code></td><td>✅ <code>AgentWorkflow.fromAgents()</code></td><td>✅</td></tr>
+<tr><td>Explicit agent handoff tool</td><td>✅ <code>handoff_to_agent</code></td><td>✅ <code>handoff_to_agent</code></td><td>✅ multi-agent workflows</td></tr>
+<tr><td>Shared memory/context across handoffs</td><td>✅ common path</td><td>✅ common path</td><td>✅</td></tr>
+<tr><td>Bounded handoff depth</td><td>✅</td><td>✅</td><td>✅ compatibility safety bound; upstream behavior varies</td></tr>
+<tr><td>Workflow framework</td><td>✅ <code>Workflow</code>, <code>step</code>, typed <code>Event</code></td><td>✅ <code>Workflow</code>, <code>step()</code>, typed workflow events</td><td>✅</td></tr>
+<tr><td>Workflow fan-out</td><td>✅ event lists</td><td>✅ event lists</td><td>✅</td></tr>
+<tr><td>Workflow fan-in / event collection</td><td>✅ <code>Context.collect_events()</code></td><td>✅ <code>collectEvents()</code></td><td>✅</td></tr>
+<tr><td>Human-in-the-loop workflow events</td><td>✅ <code>InputRequiredEvent</code> / <code>HumanResponseEvent</code></td><td>✅ same common flow</td><td>✅</td></tr>
+<tr><td>Workflow middleware</td><td>✅ before/after step hooks</td><td>✅ middleware hooks</td><td>✅ broader workflow extension surface</td></tr>
+<tr><td>Workflow checkpoint save/load</td><td>✅ Agent RT <code>CheckpointStore</code></td><td>✅ Agent RT <code>CheckpointStore</code></td><td>✅ workflow persistence patterns</td></tr>
+<tr><td>Context key/value store</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Context JSON serialization</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Basic chat memory</td><td>✅ <code>Memory</code> / <code>ChatMemoryBuffer</code></td><td>✅ <code>Memory</code> / <code>ChatMemoryBuffer</code></td><td>✅; upstream deprecates <code>ChatMemoryBuffer</code> in favor of <code>Memory</code></td></tr>
+<tr><td>Token-budget memory flushing</td><td>✅</td><td>✅ common memory limit behavior</td><td>✅</td></tr>
+<tr><td><code>Document</code> / <code>TextNode</code> / <code>NodeWithScore</code></td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Simple directory reader</td><td>✅ Agent RT <code>FileSystem</code>-backed</td><td>✅ Agent RT <code>FileSystem</code>-backed</td><td>✅ plus broad reader ecosystem</td></tr>
+<tr><td>Sentence splitter</td><td>✅ <code>SentenceSplitter</code></td><td>✅ <code>SentenceSplitter</code></td><td>✅</td></tr>
+<tr><td>Ingestion pipeline</td><td>✅ <code>IngestionPipeline</code></td><td>✅ <code>IngestionPipeline</code></td><td>✅</td></tr>
+<tr><td>Embedding model bridge</td><td>✅ <code>AgentRTEmbedding</code></td><td>✅ <code>AgentRTEmbedding</code></td><td>✅ many embedding integrations</td></tr>
+<tr><td>Simple in-memory vector store</td><td>✅ <code>SimpleVectorStore</code></td><td>✅ <code>SimpleVectorStore</code></td><td>✅</td></tr>
+<tr><td>External vector DB modules</td><td>⚠️ Chroma/Pinecone/Qdrant/Milvus/Weaviate read/query modules; mutation remains backend-native</td><td>⚠️ matching <code>agent-rt/@llamaindex/*</code> package exports</td><td>✅ broad vector-store integrations with vendor-specific lifecycles</td></tr>
+<tr><td>Storage context</td><td>✅ <code>StorageContext</code></td><td>✅ <code>StorageContext</code></td><td>✅</td></tr>
+<tr><td>Vector store index</td><td>✅ <code>VectorStoreIndex</code></td><td>✅ <code>VectorStoreIndex</code></td><td>✅</td></tr>
+<tr><td>Vector index retriever</td><td>✅ <code>VectorIndexRetriever</code></td><td>✅ <code>VectorIndexRetriever</code></td><td>✅</td></tr>
+<tr><td>Agent RT retrieval-provider bridge</td><td>✅ <code>AgentRTRetriever</code></td><td>✅ <code>AgentRTRetriever</code></td><td>— Agent RT-specific</td></tr>
+<tr><td>Retriever query engine</td><td>✅ <code>RetrieverQueryEngine</code></td><td>✅ <code>RetrieverQueryEngine</code></td><td>✅</td></tr>
+<tr><td>Prompt template</td><td>✅ <code>PromptTemplate</code></td><td>✅ <code>PromptTemplate</code></td><td>✅</td></tr>
+<tr><td>Chat prompt template</td><td>✅ <code>ChatPromptTemplate</code></td><td>✅ <code>ChatPromptTemplate</code></td><td>✅</td></tr>
+<tr><td>JSON output parser</td><td>✅ <code>JSONOutputParser</code></td><td>✅ <code>JSONOutputParser</code></td><td>✅</td></tr>
+<tr><td>Global settings</td><td>✅ <code>Settings</code></td><td>✅ <code>Settings</code></td><td>✅</td></tr>
+<tr><td>Callback manager</td><td>✅ lightweight callback events</td><td>✅ lightweight callback events</td><td>✅ richer instrumentation/callback ecosystem</td></tr>
+<tr><td>LLM start/end/error callbacks</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Streaming callback events</td><td>✅ <code>llm-stream</code></td><td>✅ <code>llm-stream</code></td><td>✅</td></tr>
+<tr><td>Exact sync streaming backpressure/timing</td><td>⚠️ sync wrappers materialize async streams</td><td>—</td><td>✅ native implementation semantics</td></tr>
+<tr><td>Common multimodal content blocks</td><td>⚠️ Agent RT content parts retained in <code>ChatMessage.blocks</code></td><td>⚠️ common Agent RT blocks preserved</td><td>✅ broader provider-specific multimodal support</td></tr>
+<tr><td>Zod-like tool/schema conversion</td><td>—</td><td>⚠️ common dependency-free shapes / <code>toJSONSchema()</code></td><td>✅ native TS schema ecosystem</td></tr>
+<tr><td>Abort/cancellation propagation</td><td>⚠️</td><td>✅ <code>AbortSignal</code> through model/tool calls</td><td>✅ framework/runtime dependent</td></tr>
+<tr><td><code>predict_and_call</code> helper</td><td>✅ <code>predict_and_call()</code> / <code>apredict_and_call()</code></td><td>⚠️ covered through tool-enabled LLM/agent paths, not the same Python helper</td><td>✅ Python</td></tr>
+<tr><td>Zod structured output</td><td>—</td><td>⚠️ common Zod shapes / parser-like objects</td><td>✅ TS ecosystem</td></tr>
+<tr><td>Agent cancellation</td><td>⚠️</td><td>✅ <code>cancel()</code> with abort propagation</td><td>✅ runtime dependent</td></tr>
+<tr><td>Response synthesizer</td><td>⚠️ basic <code>ResponseSynthesizer</code></td><td>⚠️ basic <code>ResponseSynthesizer</code></td><td>✅ documented modes include <code>refine</code>, <code>compact</code>, <code>tree_summarize</code>, <code>simple_summarize</code>, <code>no_text</code>, <code>accumulate</code>, and <code>compact_accumulate</code></td></tr>
+<tr><td>Query-engine tools</td><td>❌ dedicated <code>QueryEngineTool</code> compatibility</td><td>❌ dedicated <code>QueryEngineTool</code> compatibility</td><td>✅ documented tool abstraction</td></tr>
+<tr><td>Prebuilt tool specs / API tool integrations</td><td>❌</td><td>❌</td><td>✅ broad tool-spec/integration ecosystem</td></tr>
+<tr><td>CodeAct agent</td><td>✅ <code>CodeActAgent</code> with explicit <code>code_executor</code></td><td>❌</td><td>✅ Python agent ecosystem</td></tr>
+<tr><td>Planning agent</td><td>❌ dedicated compatibility class</td><td>✅ Agent RT <code>PlanningAgent</code> with explicit planner callback</td><td>⚠️ upstream planning is supported as an agent/workflow pattern; this compatibility class is not claimed as an exact current core symbol</td></tr>
+<tr><td>Exact upstream workflow internals / scheduling semantics</td><td>❌ byte-for-byte parity</td><td>❌ byte-for-byte parity</td><td>✅ native implementation</td></tr>
+<tr><td>Static memory block</td><td>✅ <code>StaticMemoryBlock</code></td><td>❌</td><td>✅ Python memory system</td></tr>
+<tr><td>Fact-extraction memory block</td><td>✅ <code>FactExtractionMemoryBlock</code></td><td>❌</td><td>✅ Python memory system</td></tr>
+<tr><td>Vector memory block</td><td>✅ <code>VectorMemoryBlock</code></td><td>❌</td><td>✅ Python memory system</td></tr>
+<tr><td>Chat-store-backed memory block</td><td>✅ <code>ChatStoreMemoryBlock</code></td><td>❌ dedicated compatibility class</td><td>Not one of the three current predefined memory blocks documented upstream</td></tr>
+<tr><td>Vendor-hosted memory/chat stores</td><td>❌ direct vendor clients; inject stores/retrievers</td><td>❌ direct vendor clients</td><td>✅ integration ecosystem</td></tr>
+<tr><td>Specialized readers/parsers</td><td>❌ except core adapter</td><td>⚠️ injected <code>LlamaParseReader</code> contract</td><td>✅ many readers + LlamaParse integrations</td></tr>
+<tr><td>Exact ingestion cache semantics</td><td>❌</td><td>❌</td><td>✅ native ingestion/cache implementations</td></tr>
+<tr><td>Persist/load storage context, docstore, index store</td><td>❌ full upstream persistence API</td><td>❌ full upstream persistence API</td><td>✅ filesystem persistence plus swappable document/index/vector stores</td></tr>
+<tr><td>Summary/List index</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Tree index</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Keyword table index</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Knowledge-graph / property-graph indexes</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Document summary index</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Object index</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>SQL / structured-data query engines</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Chat engines / <code>as_chat_engine()</code></td><td>❌</td><td>❌</td><td>✅ multiple documented chat modes</td></tr>
+<tr><td>Vendor SDK clients for vector databases</td><td>❌ not bundled (read/query adapters above only)</td><td>❌ not bundled</td><td>✅ broad ecosystem</td></tr>
+<tr><td>Hybrid / sparse retrieval</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Advanced rerankers / postprocessors</td><td>❌</td><td>❌</td><td>✅ documented similarity filters, cross-encoder/hosted rerankers, LLM rerankers, and other node postprocessors</td></tr>
+<tr><td>Persistent document/index stores</td><td>❌ vendor-specific persistence</td><td>❌ vendor-specific persistence</td><td>✅</td></tr>
+<tr><td>Broader output-parser families</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Exact callback payload/span semantics</td><td>❌</td><td>❌</td><td>✅ native integrations</td></tr>
+<tr><td>LlamaParse hosted authentication/API lifecycle</td><td>❌</td><td>❌; TS adapter requires injected parser</td><td>✅ hosted integration</td></tr>
+<tr><td>LlamaCloud retrieval/index management</td><td>❌</td><td>⚠️ <code>LlamaCloudRetriever</code> / <code>LlamaCloudIndex</code> over injected Agent RT retrieval</td><td>✅ hosted project/index lifecycle</td></tr>
+<tr><td>Faithfulness evaluator</td><td>❌</td><td>✅ lightweight LLM-backed <code>FaithfulnessEvaluator</code></td><td>✅</td></tr>
+<tr><td>Relevancy evaluator</td><td>❌</td><td>✅ lightweight LLM-backed <code>RelevancyEvaluator</code></td><td>✅</td></tr>
+<tr><td>Broader evaluation suite</td><td>❌</td><td>❌</td><td>✅ broader evaluator/evaluation ecosystem</td></tr>
+<tr><td>LlamaIndex package dependency required</td><td>❌ compatibility layer does not require LlamaIndex</td><td>❌ compatibility layer does not require LlamaIndex</td><td>✅ upstream packages themselves</td></tr></tbody></table></div>
+<p>The compatibility target is the common LLM/tool/agent/workflow/RAG migration path, not API-complete LlamaIndex emulation. Applications that depend on hosted LlamaCloud/LlamaParse lifecycle semantics, specialized indexes and storage backends, advanced retrievers/rerankers, exact workflow scheduling internals, or the full evaluation/instrumentation ecosystem should use native Agent RT contracts or retain the relevant upstream LlamaIndex packages.</p>
+<h3 id="typescript-javascript-llamaindex-migration">TypeScript / JavaScript LlamaIndex migration</h3>
+<p>TypeScript/JavaScript applications can use <code>agent-rt/llamaindex</code> for the current LlamaIndex.TS LLM/tool/agent-workflow migration path without installing LlamaIndex:</p>
+<pre><code class="language-ts">import {
+  AgentStream,
+  Memory,
+  OpenAI,
+  agent,
+  tool,
+} from &quot;agent-rt/llamaindex&quot;;
+
+const weather = tool({
+  name: &quot;weather&quot;,
+  description: &quot;Get weather for a city&quot;,
+  parameters: {
+    type: &quot;object&quot;,
+    properties: { city: { type: &quot;string&quot; } },
+    required: [&quot;city&quot;],
+  },
+  execute: async ({ city }) =&gt; `Sunny in ${city}.`,
+});
+
+const llm = new OpenAI({ model: &quot;your-model&quot; });
+const memory = Memory.fromDefaults({ sessionId: &quot;weather-thread&quot; });
+const workflow = agent({
+  llm,
+  tools: [weather],
+  systemPrompt: &quot;Be concise.&quot;,
+});
+
+const run = workflow.run(&quot;Weather in SF?&quot;, { memory });
+
+for await (const event of run) {
+  if (event instanceof AgentStream) {
+    process.stdout.write(event.data.delta);
+  }
+}
+
+const result = await run;
+console.log(result.data);</code></pre>
+<p>Supported in TypeScript/JavaScript:</p>
+<ul>
+<li>LLMs: <code>OpenAI</code>, <code>Anthropic</code>, <code>openai()</code>, and <code>anthropic()</code> route through Agent RT <code>ModelProvider</code> contracts. <code>chat({ messages })</code> and <code>complete({ prompt })</code> support non-streaming and <code>stream: true</code> async-iterable response shapes.
+</li>
+<li>Messages/tool calls: user/system/assistant/tool chat messages translate to Agent RT <code>ModelMessage</code>; assistant tool calls and tool-result IDs are preserved across model -&gt; tool -&gt; model turns.
+</li>
+<li>Tools: current <code>tool({...})</code> and <code>tool(fn, options)</code> forms plus <code>FunctionTool.fromDefaults()</code> are supported. Parameters may be raw JSON Schema or schema objects exposing <code>toJSONSchema()</code>; executable tools expose metadata, <code>execute()</code>, <code>call()</code>, and Agent RT <code>ToolDefinition</code> translation. Compatibility tools support bounded <code>maxRetries</code>, <code>errorBehavior: &quot;return_error&quot;</code>, <code>returnDirect</code>, and <code>AbortSignal</code> propagation.
+</li>
+<li>Structured output: <code>structuredPredict()</code> and <code>asStructuredLLM()</code> translate raw JSON Schema, <code>toJSONSchema()</code> objects, and common dependency-free Zod schema shapes (object/string/number/boolean/literal/enum/optional/nullable/array/union) to Agent RT <code>StructuredOutputRequirement</code>. Parser-like objects exposing <code>parse()</code> or <code>safeParse()</code> validate parsed JSON. Structured chat/completion support <code>stream: true</code> and expose the best parseable partial object in <code>raw</code>.
+</li>
+<li>Agents/workflows: <code>agent()</code> and <code>FunctionAgent</code> provide the bounded native tool loop; <code>ReActAgent</code> implements a Thought/Action/Action Input/Observation/Answer parser loop; <code>PlanningAgent</code> supports explicit task-decomposition callbacks; and <code>AgentWorkflow.fromAgents()</code> routes named-agent handoffs with shared memory/context and bounded handoff depth. <code>run()</code> remains awaitable/async iterable, exposes <code>cancel()</code>, and forwards <code>AbortSignal</code> into Agent RT model/tool calls.
+</li>
+<li>Agent events: <code>AgentInput</code>, <code>AgentStream</code>, <code>ToolCall</code>, <code>ToolCallResult</code>, and <code>AgentOutput</code> are emitted from the compatibility run context. With a streaming Agent RT provider, <code>AgentStream</code> follows model text deltas.
+</li>
+<li>Memory/state/workflows: <code>Memory</code> / <code>ChatMemoryBuffer</code> cover common in-process history methods. <code>Context</code> supplies an async key/value store, process-friendly JSON round trips, fan-in <code>collectEvents()</code>, and native Agent RT <code>CheckpointStore</code> save/load. <code>Workflow</code>, <code>step()</code>, typed workflow events, middleware, fan-out lists, fan-in collection, HITL <code>respond()</code>, and checkpoint-backed resume cover the common <code>@llamaindex/workflow</code> migration path.
+</li>
+<li>RAG/indexing: <code>Document</code>, <code>TextNode</code>, <code>NodeWithScore</code>, Agent RT <code>FileSystem</code>-backed <code>SimpleDirectoryReader</code>, <code>SentenceSplitter</code>, <code>IngestionPipeline</code>, <code>AgentRTEmbedding</code>, <code>SimpleVectorStore</code>, <code>StorageContext</code>, <code>VectorStoreIndex</code>, <code>VectorIndexRetriever</code>, <code>AgentRTRetriever</code>, <code>RetrieverQueryEngine</code>, <code>ResponseSynthesizer</code>, and <code>getResponseSynthesizer()</code> cover the common local RAG migration path. External retrieval stays behind Agent RT <code>RetrievalProvider</code> / <code>RetrievalRegistry</code> rather than opening hidden vendor stores.
+</li>
+<li>Prompts/settings/observability: <code>PromptTemplate</code>, <code>ChatPromptTemplate</code>, <code>JSONOutputParser</code>, <code>Settings</code>, and <code>CallbackManager</code> cover common prompt/global-configuration migration. Non-streaming calls emit <code>llm-start</code> / <code>llm-end</code> / <code>llm-error</code>; provider streams additionally emit <code>llm-stream</code>. <code>LLM.countTokens()</code> uses Agent RT <code>TokenCountingModelProvider</code> when available and can fall back to <code>Settings.tokenizer</code>. Non-text response blocks are preserved, split tool-call deltas are merged by call ID, and <code>Settings.llm</code> / <code>Settings.embedModel</code> remain honored by agents, RAG, synthesis, and evaluators.
+</li>
+<li>Hosted-contract adapters/evaluation: <code>LlamaParseReader</code> requires an explicit Agent RT <code>FileSystem</code> plus injected parser, while <code>LlamaCloudRetriever</code> / <code>LlamaCloudIndex</code> require an explicit Agent RT retrieval provider or registry. <code>FaithfulnessEvaluator</code> and <code>RelevancyEvaluator</code> provide lightweight LLM-backed evaluation without opening hidden vendor connections.
+</li></ul>
+<p>The TypeScript adapter still intentionally leaves specialized integrations and byte-for-byte upstream internals outside the compatibility layer:</p>
+<ul>
+<li>Advanced RAG integrations beyond the core adapter: third-party vector-database-specific stores, graph/property indexes, advanced hybrid/sparse retrieval and reranking, specialized readers/parsers, persistent document/index stores, and exact upstream ingestion-cache semantics.
+</li>
+<li>Exact LlamaParse/LlamaCloud hosted authentication, project/index creation, management APIs, and vendor lifecycle semantics. The compatibility adapters intentionally cover injected parsing and Agent RT retrieval contracts, with no hidden hosted state or side effects.
+</li>
+<li>Rare Zod refinements/transforms/custom schema internals and provider-specific prompt/message/tool option minutiae that cannot be inferred dependency-free. Common Zod shapes, streamed structured partials, callback streaming, tool-delta merging, and multimodal blocks are supported as described above.
+</li></ul>
+<p>Use native Agent RT provider, retrieval, checkpoint, workflow, and storage contracts when those vendor-specific lifecycle details matter.</p>
+<h2 id="openai-agents-sdk">OpenAI Agents SDK</h2>
+<p>OpenAI Agents applications can migrate the common agent/tool/handoff path without installing the upstream SDK. In Python, preserve the upstream <code>agents</code> import shape by prepending <code>agent_rt.</code>:</p>
+<pre><code class="language-python">from agent_rt.agents import Agent, Runner, function_tool
+
+@function_tool
+def lookup(topic: str) -&gt; str:
+    &quot;&quot;&quot;Look up a topic.&quot;&quot;&quot;
+    return f&quot;Found {topic}&quot;
+
+agent = Agent(
+    name=&quot;Researcher&quot;,
+    instructions=&quot;Use tools when useful.&quot;,
+    tools=[lookup],
+)
+
+result = await Runner.run(agent, &quot;Research Agent RT&quot;)
+print(result.final_output)</code></pre>
+<p><code>agent_rt.openai_agents</code> is provided as a descriptive alias for the same Python surface. The compatibility layer supports <code>Agent</code>, <code>Runner.run()</code>, <code>Runner.run_sync()</code>, <code>function_tool</code>, <code>Agent.as_tool()</code>, and bounded <code>handoff()</code> delegation. Tool execution is routed through Agent RT <code>ToolRegistry</code> and <code>AgentLoop</code>, so Agent RT argument validation, registration scanning, permissions/guardrails configured on native integrations, and run limits remain available. Default handoff (<code>transfer_to_&lt;agent&gt;</code>) and <code>Agent.as_tool()</code> names use the SDK's lowercase function-style normalization. Agent-level <code>input_guardrails</code> / <code>output_guardrails</code> (<code>@input_guardrail</code>, <code>@output_guardrail</code>, <code>GuardrailFunctionOutput</code>, <code>RunContextWrapper</code>) are supported: input guardrails finish before the first model call, so a tripwire raises <code>InputGuardrailTripwireTriggered</code> before any model or tool side effect, and output guardrails raise <code>OutputGuardrailTripwireTriggered</code>. As in the SDK, reaching <code>max_turns</code> raises <code>MaxTurnsExceeded</code>. The <code>agents.exceptions</code>, <code>agents.guardrail</code>, <code>agents.run_context</code>, <code>agents.usage</code>, <code>agents.tracing</code>, and <code>agents.mcp</code> submodules are importable. <code>set_default_openai_key()</code> sets <code>OPENAI_API_KEY</code>; <code>trace()</code>, <code>set_tracing_disabled()</code>, and <code>enable_verbose_stdout_logging()</code> are accepted no-ops. <code>RunState</code> and the <code>MCPServer*</code> classes are importable stand-ins that raise <code>NotImplementedError</code> when used (use Agent RT approval checkpoints and an injected <code>MCPClient</code>). Handoffs are represented as bounded delegated tool calls; exact upstream ownership-transfer state, session internals, hosted tools, tracing objects, and <code>Runner.run_streamed()</code> event semantics are intentionally not emulated.</p>
+<p>TypeScript/JavaScript uses the exact prefixed package specifier:</p>
+<pre><code class="language-ts">import { Agent, run, tool } from &quot;agent-rt/@openai/agents&quot;;
+
+const lookup = tool({
+  name: &quot;lookup&quot;,
+  description: &quot;Look up a topic&quot;,
+  parameters: {
+    type: &quot;object&quot;,
+    properties: { topic: { type: &quot;string&quot; } },
+    required: [&quot;topic&quot;],
+  },
+  execute: async ({ topic }) =&gt; `Found ${topic}`,
+});
+
+const agent = new Agent({
+  name: &quot;Researcher&quot;,
+  instructions: &quot;Use tools when useful.&quot;,
+  tools: [lookup],
+});
+
+const result = await run(agent, &quot;Research Agent RT&quot;);
+console.log(result.finalOutput);</code></pre>
+<p>The TypeScript adapter supports <code>Agent</code>, <code>Agent.create()</code>, <code>Agent.asTool()</code>, <code>Runner</code>, <code>run()</code>, <code>tool()</code>, and <code>handoff()</code>. Tool schemas may be raw JSON Schema or objects exposing <code>toJSONSchema()</code> / <code>jsonSchema</code>. Tools follow the SDK shape: <code>strict</code> (default <code>true</code>) and <code>invoke(runContext, inputJson)</code>, which parses the JSON, validates it with a zod-like <code>parse()</code> schema when given, and returns the SDK's default error text on failure unless <code>errorFunction: null</code>. <code>RunContext</code>, <code>Usage</code>, <code>ModelBehaviorError</code>, and a no-op <code>setTracingDisabled()</code> are exported. <code>Agent</code> keeps <code>modelSettings</code> and supports <code>clone(overrides)</code>. <code>model</code> may be a model name, an SDK <code>Model</code> (an object with <code>getResponse()</code> and optionally <code>getStreamedResponse()</code>, such as a test double or <code>aisdk(...)</code>), or an Agent RT provider. SDK models still run inside Agent RT's <code>AgentLoop</code>. Requests and responses are translated to the SDK's item shapes, and the original SDK items (reasoning, <code>providerData</code>, images, files) are replayed to the model unchanged on later turns. <code>new Runner({ modelProvider })</code> accepts an Agent RT <code>ModelProvider</code> or an SDK-style provider with <code>getModel()</code>. <code>new OpenAIProvider({ apiKey, baseURL, openAIClient })</code> drives an injected OpenAI-shaped client. <code>new OpenAIChatCompletionsModel(client, model)</code> is an SDK <code>Model</code> that builds Chat Completions requests the way the upstream model does: text-part content, <code>image_url</code> and <code>file</code> parts, <code>reasoning</code> replay, <code>reasoning_effort</code> from <code>modelSettings.reasoning</code>, <code>max_tokens</code>, tool <code>strict</code> flags, and <code>response_format</code> for JSON-schema output. It also aggregates streamed chunks into the same output items. The runner emits <code>agent_tool_start</code> / <code>agent_tool_end</code> through <code>runner.on()</code>. Runs accept SDK input items and send <code>outputType</code> (a JSON-schema definition or a zod-like schema) with every model request. As in the SDK, the final text is parsed as JSON, and then by a zod-like <code>outputType</code>; it is not run through Agent RT's schema validation and repair. Runs also honor <code>toolUseBehavior</code> (<code>stop_on_first_tool</code>, <code>{ stopAtToolNames }</code>, or a function), and return <code>history</code> as SDK input items plus <code>newItems</code>, <code>usage</code>, <code>interruptions</code>, and <code>state</code>. <code>run(agent, input, { stream: true })</code> returns a <code>StreamedRunResult</code> that yields <code>raw_model_stream_event</code>, <code>run_item_stream_event</code> (<code>tool_called</code>, <code>tool_output</code>, <code>message_output_created</code>), and <code>agent_updated_stream_event</code>, with <code>completed</code>, <code>error</code>, <code>cancelled</code>, and <code>toTextStream()</code>. As in the SDK, <code>tool()</code> names are normalized with <code>toFunctionToolName()</code> (characters other than letters and digits become <code>_</code>, so <code>update-page</code> is called as <code>update_page</code>), default handoff names are <code>transfer_to_&lt;normalized agent name&gt;</code>, and a <code>toolNameOverride</code> is used verbatim. A tool with <code>needsApproval</code> pauses the run with <code>interruptions</code>; every call in the model's turn runs (or is collected as an interruption) before the run pauses; <code>RunState.fromString(agent, result.state.toString())</code>, <code>approve()</code> / <code>reject(item, { message })</code>, and <code>runner.run(agent, state)</code> continue it, and approved calls run through Agent RT's <code>ToolRegistry</code>. Saved states use Agent RT's own format, not the SDK's. Agent-level <code>inputGuardrails</code> / <code>outputGuardrails</code> (<code>{ name, execute }</code>) are supported: input guardrails finish before the first model call and throw <code>InputGuardrailTripwireTriggered</code> on a tripwire, output guardrails throw <code>OutputGuardrailTripwireTriggered</code>, and reaching <code>maxTurns</code> throws <code>MaxTurnsExceededError</code>, as in the SDK. Tool <code>inputGuardrails</code> run before the approval check, and again when an approved call resumes. They can allow a call, return <code>rejectContent</code> text to the model, or throw <code>ToolGuardrailTripwireTriggered</code>. An error that a tool's <code>errorFunction</code> rethrows ends the run, as in the SDK. <code>agent-rt/openai-agents</code> is also available as a descriptive alias.</p>
+<h2 id="autogen-agentchat">AutoGen AgentChat</h2>
+<p>Current AutoGen AgentChat migration is Python-only, matching the upstream framework's Python surface. Prefix the common package paths with <code>agent_rt.</code>:</p>
+<pre><code class="language-python">from agent_rt.autogen_agentchat.agents import AssistantAgent
+from agent_rt.autogen_agentchat.conditions import TextMentionTermination
+from agent_rt.autogen_agentchat.teams import RoundRobinGroupChat
+from agent_rt.autogen_ext.models.openai import OpenAIChatCompletionClient
+
+client = OpenAIChatCompletionClient(model=&quot;your-model&quot;)
+assistant = AssistantAgent(
+    &quot;assistant&quot;,
+    model_client=client,
+    system_message=&quot;Be concise.&quot;,
+)
+
+result = await assistant.run(task=&quot;Summarize the request&quot;)
+
+team = RoundRobinGroupChat(
+    [assistant],
+    termination_condition=TextMentionTermination(&quot;TERMINATE&quot;),
+    max_turns=4,
+)
+team_result = await team.run(task=&quot;Complete the task&quot;)</code></pre>
+<p>Supported: <code>AssistantAgent</code> (including <code>memory=[...]</code>: AutoGen <code>Memory</code> objects such as <code>ListMemory</code>, plus any Agent RT memory source; see <a href="#memory-from-other-frameworks">Memory from other frameworks</a>), callable tools through the Agent RT tool loop, <code>run()</code> / compatibility <code>run_stream()</code>, <code>RoundRobinGroupChat</code>, <code>TextMentionTermination</code>, <code>MaxMessageTermination</code>, <code>TokenUsageTermination</code>, <code>TimeoutTermination</code>, combined termination conditions with <code>dump_component()</code> configs, <code>TextMessage.dump()</code> / <code>load()</code> / <code>to_text()</code>, <code>UserProxyAgent</code> (<code>on_messages()</code> answers from a sync or async <code>input_func</code>, optionally taking the cancellation token), <code>autogen_agentchat.base</code> (<code>TaskResult</code>, <code>Response</code>, <code>TerminationCondition</code>), <code>autogen_agentchat.ui.Console</code>, and <code>OpenAIChatCompletionClient</code> as a lightweight Agent RT provider binding. <code>autogen_ext.models.anthropic.AnthropicChatCompletionClient</code> and <code>autogen_ext.models.ollama.OllamaChatCompletionClient</code> build their Agent RT provider lazily on first use. Team turns are bounded and normalized through Agent RT.</p>
+<p>This is not a reimplementation of AutoGen Core. Selector/swarm teams, distributed runtimes, component serialization, persisted team continuation without an explicit task, code executors, exact event streaming/backpressure, and the broader extension ecosystem remain outside the compatibility layer.</p>
+<h2 id="crewai">CrewAI</h2>
+<p>CrewAI migration is also Python-only. The common sequential crew path is available under the prefixed package:</p>
+<pre><code class="language-python">from agent_rt.crewai import Agent, Crew, Process, Task
+
+researcher = Agent(
+    role=&quot;Researcher&quot;,
+    goal=&quot;Find useful facts&quot;,
+    llm=&quot;your-model&quot;,
+)
+writer = Agent(
+    role=&quot;Writer&quot;,
+    goal=&quot;Write the final answer&quot;,
+    llm=&quot;your-model&quot;,
+)
+
+research = Task(
+    description=&quot;Research {topic}&quot;,
+    expected_output=&quot;Useful notes&quot;,
+    agent=researcher,
+)
+writing = Task(
+    description=&quot;Write about {topic}&quot;,
+    expected_output=&quot;Final answer&quot;,
+    agent=writer,
+    context=[research],
+)
+
+result = await Crew(
+    agents=[researcher, writer],
+    tasks=[research, writing],
+    process=Process.sequential,
+).kickoff_async(inputs={&quot;topic&quot;: &quot;Agent RT&quot;})</code></pre>
+<p>The adapter supports <code>Agent</code>, <code>Task</code>, <code>Crew</code>, <code>Process.sequential</code>, task context, input formatting, <code>kickoff()</code>, and <code>kickoff_async()</code>, with each task executed through Agent RT's bounded agent loop. <code>LLM(model, temperature=..., max_tokens=..., base_url=..., api_key=...)</code> takes CrewAI's LiteLLM-style names (<code>anthropic/&lt;model&gt;</code> uses the Anthropic provider; <code>openai/&lt;model&gt;</code> or a bare name uses OpenAI), offers <code>call()</code> / <code>acall()</code>, and can be passed as <code>Agent(llm=...)</code>. <code>Process.hierarchical</code>, per-task <code>async_execution</code> scheduling, CrewAI Flows, manager/delegation internals, knowledge/storage lifecycle, and exhaustive CrewAI tool/plugin semantics intentionally fail or remain upstream-native rather than being silently approximated.</p>
+<p>There is no Agent RT TypeScript CrewAI or AutoGen compatibility surface because those migration targets are Python-first; Agent RT does not invent non-upstream JavaScript APIs.</p>
+<h2 id="deep-agents">Deep Agents</h2>
+<p>Deep Agents migration (<code>deepagents</code> / npm <code>deepagents</code>) runs <code>create_deep_agent</code> / <code>createDeepAgent</code> on the LangChain compatibility agent loop, so models, tools, middleware, checkpointers, and structured output behave as in the <a href="#langchain">LangChain</a> section:</p>
+<pre><code class="language-python">from agent_rt.deepagents import create_deep_agent
+
+agent = create_deep_agent(
+    model=&quot;openai:gpt-4.1&quot;,
+    tools=[internet_search],
+    system_prompt=&quot;You are an expert researcher.&quot;,
+    subagents=[{&quot;name&quot;: &quot;critic&quot;, &quot;description&quot;: &quot;Reviews drafts.&quot;, &quot;system_prompt&quot;: &quot;Be critical.&quot;}],
+)
+result = agent.invoke({&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Research Agent RT&quot;}], &quot;files&quot;: {&quot;/brief.md&quot;: &quot;...&quot;}})
+print(result[&quot;messages&quot;][-1].content, result[&quot;files&quot;].keys(), result[&quot;todos&quot;])</code></pre>
+<pre><code class="language-ts">import { createDeepAgent } from &quot;agent-rt/deepagents&quot;;
+
+const agent = createDeepAgent({ model: &quot;openai:gpt-4.1&quot;, tools: [internetSearch], systemPrompt: &quot;You are an expert researcher.&quot; });
+const result = await agent.invoke({ messages: [{ role: &quot;user&quot;, content: &quot;Research Agent RT&quot; }] });</code></pre>
+<p>Supported: the built-in <code>write_todos</code>, <code>ls</code>, <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>glob</code>, and <code>grep</code> tools; <code>task</code> delegation to the default <code>general-purpose</code> subagent and declarative subagents (<code>name</code>, <code>description</code>, <code>system_prompt</code> / <code>systemPrompt</code>, <code>tools</code>, <code>model</code>, <code>middleware</code>), which run isolated from the parent conversation but share its files; and <code>files</code> / <code>todos</code> in the input and result. As with upstream's default <code>StateBackend</code>, the filesystem is virtual agent state and never touches the host. <code>model</code> is required (upstream's implicit default is deprecated). Sandboxed <code>execute</code>, <code>backend</code>, <code>interrupt_on</code> / <code>interruptOn</code>, <code>skills</code>, <code>memory</code>, <code>permissions</code>, compiled or async subagents, and the forked subagent mode raise instead of being approximated. Subagent dictionaries/objects are strictly checked: only the documented six fields are accepted, and both <code>name</code> and <code>description</code> must be non-empty; unknown routing, security, or execution fields raise before the model runs. In TypeScript, top-level <code>files</code> / <code>todos</code> are mapped by <code>invoke()</code>; pass them in <code>state</code> when using <code>stream()</code>.</p>
+<h2 id="litellm">LiteLLM</h2>
+<p>LiteLLM migration is Python-only, because LiteLLM has no official JavaScript SDK (from TypeScript, point the <code>agent-rt/openai</code> shim at a LiteLLM proxy with <code>baseURL</code>):</p>
+<pre><code class="language-python">from agent_rt.litellm import acompletion, completion
+
+response = completion(model=&quot;anthropic/claude-sonnet-4-5&quot;, messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello&quot;}])
+print(response.choices[0].message.content)
+print(response[&quot;choices&quot;][0][&quot;message&quot;][&quot;content&quot;])  # LiteLLM's dict-style access also works</code></pre>
+<p>Supported: <code>completion</code>, <code>acompletion</code>, <code>embedding</code>, and <code>aembedding</code> (including <code>stream=True</code>, <code>tools</code>, <code>response_format</code>, and <code>reasoning_effort</code>, as in the OpenAI shim), with <code>api_key</code>, <code>api_base</code> / <code>base_url</code>, and <code>custom_llm_provider</code>. Models route by provider prefix: <code>openai/&lt;model&gt;</code> or a bare OpenAI model (plus any OpenAI-compatible server through <code>api_base</code>), <code>anthropic/&lt;model&gt;</code> or a bare <code>claude-*</code> model, and <code>openrouter/&lt;model&gt;</code>. Other LiteLLM providers (<code>gemini/</code>, <code>bedrock/</code>, <code>azure/</code>, ...) raise a <code>ValueError</code> rather than calling the wrong endpoint; point an Agent RT provider at them with <code>provider=</code> instead. Errors are the <code>agent_rt.openai</code> exception classes (also exported from <code>agent_rt.litellm</code> and <code>agent_rt.litellm.exceptions</code>, with <code>Timeout</code> as an alias of <code>APITimeoutError</code>), matching LiteLLM's own exceptions, which subclass OpenAI's. Module-level settings such as <code>litellm.api_key</code>, callbacks, the router, caching, and budget tracking are not emulated. Chat requests accept the same fields as the OpenRouter shim below (<code>model</code>, <code>messages</code>, <code>temperature</code>, <code>max_tokens</code>, <code>max_completion_tokens</code>, <code>tools</code>, <code>response_format</code>, <code>reasoning_effort</code>, <code>stream</code>); other options such as <code>tool_choice</code>, <code>top_p</code>, or <code>stop</code> raise <code>NotImplementedError</code> unless <code>drop_params=True</code>, which drops them as LiteLLM does. Request-level <code>timeout</code>, <code>request_timeout</code>, and a non-zero <code>num_retries</code> also raise <code>NotImplementedError</code> (rather than being ignored), since requests make one attempt with no client deadline; configure equivalent policies through a native Agent RT provider if needed. Python <code>completion(stream=True)</code> delivers chunks incrementally and its iterator supports <code>with ... as stream:</code> or explicit <code>stream.close()</code> for early termination; an abandoned iterator is closed when garbage-collected.</p>
+<h2 id="openrouter">OpenRouter</h2>
+<p>OpenRouter's OpenAI-compatible endpoint already works with the <a href="#openai-python-sdk">OpenAI SDK</a> shim (<code>base_url=&quot;https://openrouter.ai/api/v1&quot;</code>). Code written against OpenRouter's own SDKs migrates with the prefix:</p>
+<pre><code class="language-python">from agent_rt.openrouter import OpenRouter
+
+with OpenRouter() as client:  # reads OPENROUTER_API_KEY
+    response = client.chat.send(model=&quot;openai/gpt-5&quot;, messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello&quot;}])
+    print(response.choices[0].message.content)</code></pre>
+<pre><code class="language-ts">import { OpenRouter } from &quot;agent-rt/@openrouter/sdk&quot;;
+
+const openRouter = new OpenRouter(); // reads OPENROUTER_API_KEY
+const result = await openRouter.chat.send({ chatRequest: { model: &quot;openai/gpt-5&quot;, messages: [{ role: &quot;user&quot;, content: &quot;Hello&quot; }] } });
+console.log(result.choices[0].message.content);</code></pre>
+<p>Supported: <code>chat.send</code> (and Python <code>chat.send_async</code>), including streaming and tools, plus <code>embeddings.generate</code> (Python <code>generate_async</code>). Python keeps the SDK's snake_case names; TypeScript accepts the SDK 1.x <code>chatRequest</code> wrapper or a flat request and returns camelCase results (<code>finishReason</code>, <code>toolCalls</code>, <code>usage.promptTokens</code>) and stream chunks. <code>api_key</code> / <code>apiKey</code>, <code>server_url</code> / <code>serverURL</code>, and an Agent RT <code>provider</code> are honored; TypeScript also takes <code>fetch</code>. Chat request fields honored by both SDK shims are <code>model</code>, <code>messages</code>, <code>temperature</code>, <code>max_tokens</code> / <code>maxTokens</code>, <code>max_completion_tokens</code> / <code>maxCompletionTokens</code>, <code>tools</code>, <code>response_format</code> / <code>responseFormat</code>, <code>reasoning_effort</code> / <code>reasoningEffort</code>, and <code>stream</code>. Unsupported generation options (<code>top_p</code> / <code>topP</code>, <code>tool_choice</code> / <code>toolChoice</code>, etc.) and OpenRouter routing fields (<code>provider</code>, <code>models</code>, <code>plugins</code>, ...) raise before a model call instead of being silently ignored; TypeScript per-call SDK options are also rejected. Python synchronous streams can be closed explicitly or used as context managers. Attribution headers, the other SDK resources (credits, keys, generations, ...), SDK error classes, and function-valued TypeScript <code>apiKey</code> are not emulated.</p>
+<h2 id="openai-python-sdk">OpenAI Python SDK</h2>
+<p>For chat completions, change the import while keeping the familiar client shape:</p>
+<pre><code class="language-python">import os
+
+from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+response = await client.chat.completions.create(
+    model=os.environ[&quot;OPENAI_MODEL&quot;],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello&quot;}],
+)
+print(response.choices[0].message.content)</code></pre>
+<p><code>OpenAI</code> and <code>AsyncOpenAI</code> support <code>chat.completions.create()</code> in both normal and streaming modes, including basic messages, OpenAI-style tool definitions, JSON Schema structured outputs via <code>response_format</code>, temperature, token limits, usage, text deltas, and tool-call deltas. They also expose <code>client.responses.create()</code> with string or item-list input, <code>instructions</code>, function-call / function-call-output history, <code>output_text</code>, function-call output items, JSON Schema structured outputs via <code>text.format</code>, and Responses-style streaming events such as <code>response.output_text.delta</code>, <code>response.function_call_arguments.delta</code>, and <code>response.completed</code>. Embeddings, batches, and the model catalog are covered below. Uploads, fine-tuning, audio/image generation, vector stores, and other SDK resources require Agent RT native APIs or the upstream SDK because Agent RT does not expose equivalent provider-neutral contracts.</p>
+<h3 id="openai-responses-migration">OpenAI Responses migration</h3>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+response = await client.responses.create(
+    model=&quot;your-model&quot;,
+    instructions=&quot;Be concise.&quot;,
+    input=&quot;Summarize this request.&quot;,
+)
+print(response.output_text)
+
+stream = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Stream this answer.&quot;,
+    stream=True,
+)
+async for event in stream:
+    if event.type == &quot;response.output_text.delta&quot;:
+        print(event.delta, end=&quot;&quot;)</code></pre>
+<h2 id="anthropic-python-sdk">Anthropic Python SDK</h2>
+<p>For messages, switch the import to <code>agent_rt.anthropic</code>:</p>
+<pre><code class="language-python">import os
+
+from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+response = await client.messages.create(
+    model=os.environ[&quot;ANTHROPIC_MODEL&quot;],
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello&quot;}],
+)
+print(response.content[0].text)</code></pre>
+<p><code>Anthropic</code> and <code>AsyncAnthropic</code> support <code>messages.create()</code> in normal and streaming modes, including system text, tools, JSON Schema structured outputs through the current <code>output_config.format</code> shape (and the deprecated <code>output_format</code> migration shape), temperature, token limits, usage, text deltas, tool-input deltas, and <code>tool_use</code> / <code>tool_result</code> conversation history. <code>messages.stream()</code> is also available as a sync or async context manager with <code>text_stream</code> and <code>get_final_message()</code>. Responses are <code>agent_rt.anthropic.types.Message</code> objects whose <code>stop_reason</code> uses Anthropic's values (<code>end_turn</code>, <code>tool_use</code>, <code>max_tokens</code>, <code>refusal</code>). Response content blocks can be sent back as conversation history unchanged. <code>agent_rt.anthropic.types</code> provides the common <code>Message</code>, <code>TextBlock</code>, <code>ToolUseBlock</code>, <code>Usage</code>, and <code>*Param</code> request types. As with the SDKs, blank <code>ANTHROPIC_*</code> / <code>OPENAI_*</code> environment values count as unset in the compatibility clients. Token counting, batches, and the model catalog are covered below. Files and other Anthropic SDK resources require native Agent RT support or the upstream SDK. The built-in Anthropic provider uses the optional Anthropic SDK, so install <code>agent-rt[anthropic]</code> when not injecting a custom Agent RT provider.</p>
+<h3 id="anthropic-streaming-migration">Anthropic streaming migration</h3>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+async with client.messages.stream(
+    model=&quot;your-model&quot;,
+    max_tokens=512,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Stream this answer.&quot;}],
+) as stream:
+    async for text in stream.text_stream:
+        print(text, end=&quot;&quot;)
+    final = await stream.get_final_message()</code></pre>
+<h2 id="openai-and-anthropic-sdk-topics">OpenAI and Anthropic SDK topics</h2>
+<p>The sections below cover capabilities shared by the OpenAI and Anthropic compatibility clients, with Python and TypeScript/JavaScript examples.</p>
+<h3 id="openai-client-options-types-and-transports">OpenAI client options, types, and transports</h3>
+<p>As in the SDKs, a client built without <code>base_url</code> / <code>baseURL</code> or an API key reads <code>OPENAI_BASE_URL</code> / <code>OPENAI_API_KEY</code> (and <code>ANTHROPIC_BASE_URL</code> / <code>ANTHROPIC_API_KEY</code>) when it is constructed; blank values count as unset. Chat Completions return <code>tool_calls</code> and accept <code>stream=True</code> / <code>stream: true</code> (an iterable of <code>chat.completion.chunk</code> objects), and JSON mode (<code>response_format={&quot;type&quot;: &quot;json_object&quot;}</code>) maps to <code>JSON_OBJECT_OUTPUT</code>, which OpenAI-compatible providers send as JSON mode again.</p>
+<p>In Python, <code>agent_rt.openai.types</code> (including <code>types.chat</code>, <code>types.chat.chat_completion</code>, <code>types.chat.chat_completion_chunk</code>, <code>types.completion_usage</code>, <code>types.create_embedding_response</code>, and <code>types.responses</code>) exports the SDK class names; shim responses are instances of them, and test doubles can build them with keyword arguments. <code>agent_rt.openai.resources</code> exposes the resource classes the clients use (<code>resources.responses.Responses</code>, <code>resources.chat.completions.Completions</code>, and their <code>Async</code> variants), so patching one reaches every client. <code>responses.parse(text_format=Model)</code> and <code>chat.completions.parse(response_format=Model)</code> send a strict JSON schema and return <code>output_parsed</code> / <code>message.parsed</code>. Clients expose <code>timeout</code>, <code>max_retries</code>, <code>close()</code> / <code>is_closed()</code>, and context-manager use. <code>agent_rt.openai._base_client.SyncAPIClient</code> / <code>AsyncAPIClient</code> exist so SDK-internal patch targets resolve; the clients subclass them, but their <code>request()</code> raises <code>NotImplementedError</code> because shim traffic goes through Agent RT providers. The Responses API (<code>responses.create()</code> / <code>parse()</code>) also runs through the provider's Chat Completions transport, so an injected <code>http_client</code> that only serves <code>/v1/responses</code> is not supported. <code>OpenAI(http_client=httpx.Client(...))</code> (or an <code>httpx.AsyncClient</code>) sends every request through that client, so offline transports such as <code>httpx.MockTransport</code> keep working.</p>
+<h3 id="sdk-errors">SDK errors</h3>
+<p>Both compatibility modules export each SDK's error hierarchy under the upstream names: <code>APIError</code>, <code>APIStatusError</code> (Python), <code>APIConnectionError</code>, <code>APITimeoutError</code> / <code>APIConnectionTimeoutError</code>, <code>BadRequestError</code>, <code>AuthenticationError</code>, <code>PermissionDeniedError</code>, <code>NotFoundError</code>, <code>ConflictError</code>, <code>UnprocessableEntityError</code>, <code>RateLimitError</code>, and <code>InternalServerError</code>, plus the <code>OpenAIError</code> / <code>AnthropicError</code> base. The constructors take the SDK signatures, so tests that build errors (<code>anthropic.RateLimitError(&quot;slow down&quot;, response=response, body=None)</code> in Python, <code>new Anthropic.APIError(status, error, message, headers)</code> in TypeScript) keep working. In TypeScript the classes are also static members (<code>OpenAI.APIError</code>, <code>Anthropic.RateLimitError</code>). OpenAI and Anthropic each get their own classes, as in the SDKs. Provider failures from <code>create()</code> that carry an HTTP status are re-raised as the matching class (an HTTP 429 that Agent RT's rate-limit gate wraps is still raised as <code>RateLimitError</code>), with the response headers and JSON error body (<code>error.code</code> in TypeScript, <code>error.body</code> in Python), and connection and timeout failures as <code>APIConnectionError</code> / timeout errors. Other exceptions pass through unchanged.</p>
+<p>In TypeScript, <code>agent-rt/openai</code>, <code>agent-rt/anthropic</code>, and <code>agent-rt/@anthropic-ai/sdk</code> provide an ES module entry, so <code>import Anthropic from &quot;agent-rt/@anthropic-ai/sdk&quot;</code> yields the client class in <code>&quot;type&quot;: &quot;module&quot;</code> projects. <code>Anthropic</code> also carries the SDK type names (<code>Anthropic.MessageParam</code>, <code>Anthropic.Messages.Message</code>, <code>Anthropic.TextBlockParam</code>, ...). Its responses include <code>tool_use</code> blocks, <code>tool_use</code> / <code>tool_result</code> history blocks are accepted, and <code>messages.parse()</code> / <code>beta.messages.parse()</code> return <code>parsed_output</code> (using the format's <code>parse()</code> when present). <code>messages.stream()</code> returns a <code>MessageStream</code> (async iteration over raw stream events, <code>.on()</code> / <code>.once()</code> / <code>.off()</code> for <code>streamEvent</code>, <code>text</code>, <code>contentBlock</code>, <code>message</code>, <code>finalMessage</code>, <code>error</code>, and <code>end</code>, plus <code>finalMessage()</code>, <code>finalText()</code>, <code>done()</code>, and <code>abort()</code>), and <code>messages.create({ stream: true })</code> returns the raw event stream. <code>messages.stream()</code> sends a streaming request through the provider when no local migration tool (MCP, web search, sandboxed code) is involved; otherwise, and for <code>create({ stream: true })</code>, the completed message runs through the bounded tool loop. Either way the listeners and iteration see events derived from the completed message, so each text block arrives as one delta. The TypeScript client constructors also accept the SDKs' standard options (<code>timeout</code>, <code>maxRetries</code>, <code>defaultHeaders</code>, <code>fetch</code>, and similar) so migrated code type-checks. An injected <code>fetch</code> carries every request, as in the SDKs (offline test transports keep working; the OpenAI WebSocket transport is disabled then); retries and timeouts still come from the Agent RT provider.</p>
+<h3 id="structured-output-migration">Structured output migration</h3>
+<p>OpenAI Chat Completions, OpenAI Responses, and Anthropic Messages all map their JSON Schema controls to Agent RT's provider-neutral <code>StructuredOutputRequirement</code>. Pydantic-style model classes are accepted without a hard Pydantic dependency when they expose <code>model_json_schema()</code> (or the older <code>schema()</code> method).</p>
+<pre><code class="language-python">schema = {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {&quot;answer&quot;: {&quot;type&quot;: &quot;string&quot;}},
+    &quot;required&quot;: [&quot;answer&quot;],
+    &quot;additionalProperties&quot;: False,
+}
+
+# `openai_client` / `anthropic_client` are AsyncOpenAI / AsyncAnthropic instances.
+openai_response = await openai_client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Return an answer object.&quot;,
+    text={
+        &quot;format&quot;: {
+            &quot;type&quot;: &quot;json_schema&quot;,
+            &quot;name&quot;: &quot;answer&quot;,
+            &quot;schema&quot;: schema,
+            &quot;strict&quot;: True,
+        }
+    },
+)
+
+anthropic_response = await anthropic_client.messages.create(
+    model=&quot;your-model&quot;,
+    max_tokens=512,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Return an answer object.&quot;}],
+    output_config={
+        &quot;format&quot;: {
+            &quot;type&quot;: &quot;json_schema&quot;,
+            &quot;schema&quot;: schema,
+        }
+    },
+)</code></pre>
+<h3 id="typescript-javascript-structured-output-migration">TypeScript / JavaScript structured output migration</h3>
+<p>The npm package publishes <code>agent-rt/openai</code> and <code>agent-rt/anthropic</code> compatibility entry points for low-friction SDK migration. Existing JavaScript/TypeScript call sites can keep the familiar structured-output request shapes while routing execution through Agent RT <code>ModelProvider</code> contracts.</p>
+<p>OpenAI Chat Completions JSON Schema migration:</p>
+<pre><code class="language-ts">// Before: import OpenAI from &quot;openai&quot;;
+import OpenAI from &quot;agent-rt/openai&quot;;
+
+const client = new OpenAI({ defaultModel: &quot;your-model&quot; });
+const response = await client.chat.completions.create({
+  model: &quot;your-model&quot;,
+  messages: [{ role: &quot;user&quot;, content: &quot;Return an answer object.&quot; }],
+  response_format: {
+    type: &quot;json_schema&quot;,
+    json_schema: {
+      name: &quot;answer&quot;,
+      schema,
+      strict: true,
+    },
+  },
+});</code></pre>
+<p>OpenAI Responses structured output uses the current <code>text.format</code> shape:</p>
+<pre><code class="language-ts">const response = await client.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Return an answer object.&quot;,
+  text: {
+    format: {
+      type: &quot;json_schema&quot;,
+      name: &quot;answer&quot;,
+      schema,
+      strict: true,
+    },
+  },
+});</code></pre>
+<p>Anthropic migration keeps the SDK-style <code>messages.create()</code> call and accepts both current <code>output_config.format</code> and the older <code>output_format</code> migration shape:</p>
+<pre><code class="language-ts">// Before: import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const client = new Anthropic({ defaultModel: &quot;your-model&quot; });
+const response = await client.messages.create({
+  model: &quot;your-model&quot;,
+  max_tokens: 512,
+  messages: [{ role: &quot;user&quot;, content: &quot;Return an answer object.&quot; }],
+  output_config: {
+    format: {
+      type: &quot;json_schema&quot;,
+      schema,
+    },
+  },
+});</code></pre>
+<p>The compatibility clients may also receive an explicit Agent RT provider with <code>new OpenAI({ provider })</code> or <code>new Anthropic({ provider })</code>, which is useful for custom providers and deterministic tests. All three vendor request shapes normalize to the existing TypeScript <code>StructuredOutputRequirement</code>. The native <code>AnthropicModelProvider</code> forwards that requirement as <code>output_config.format</code>; the existing <code>OpenAIModelProvider</code> continues to emit JSON Schema through <code>response_format</code>.</p>
+<h3 id="embeddings-and-token-counting">Embeddings and token counting</h3>
+<p>OpenAI embedding migrations can use the familiar <code>client.embeddings.create()</code> surface. Agent RT routes the request through the provider-neutral <code>EmbeddingRequest</code> / <code>EmbeddingResponse</code> contract and supports both the built-in OpenAI-compatible HTTP transport and OpenAI SDK clients.</p>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+response = await client.embeddings.create(
+    model=&quot;text-embedding-model&quot;,
+    input=[&quot;first document&quot;, &quot;second document&quot;],
+    dimensions=1024,
+)
+vector = response.data[0].embedding</code></pre>
+<p>Anthropic token counting is exposed through the familiar <code>messages.count_tokens()</code> method and routes through Agent RT's <code>TokenCountingModelProvider</code> contract. <code>agent_rt.openai</code> does not wrap any OpenAI token-counting endpoint; token usage remains available on OpenAI generation and embedding responses.</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+count = await client.messages.count_tokens(
+    model=&quot;your-model&quot;,
+    system=&quot;Be concise.&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;How many tokens is this?&quot;}],
+)
+print(count.input_tokens)</code></pre>
+<p>Anthropic does not provide a first-party embeddings endpoint, so <code>agent_rt.anthropic</code> intentionally does not expose <code>embeddings.create()</code>. Use an embedding-capable provider through Agent RT's embedding contract when semantic vectors are needed.</p>
+<p>The TypeScript/JavaScript migration entry points expose the equivalent SDK-style surfaces. <code>agent-rt/openai</code> provides <code>client.embeddings.create()</code> and normalizes requests through the async <code>EmbeddingModelProvider</code> / <code>EmbeddingRequest</code> / <code>EmbeddingResponse</code> contracts. The native OpenAI provider supports both SDK clients and the dependency-light OpenAI-compatible <code>POST /v1/embeddings</code> transport.</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+
+const client = new OpenAI({ defaultModel: &quot;text-embedding-model&quot; });
+const response = await client.embeddings.create({
+  model: &quot;text-embedding-model&quot;,
+  input: [&quot;first document&quot;, &quot;second document&quot;],
+  dimensions: 1024,
+  encoding_format: &quot;float&quot;,
+});
+const vector = response.data[0].embedding;</code></pre>
+<p><code>agent-rt/anthropic</code> follows the official JavaScript SDK naming and exposes <code>client.messages.countTokens()</code>. It routes through the provider-neutral <code>TokenCountingModelProvider</code> contract and returns <code>{ input_tokens }</code>. Generation-only settings such as <code>max_tokens</code>, <code>temperature</code>, and structured-output configuration are omitted from the native Anthropic count request.</p>
+<pre><code class="language-ts">import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const client = new Anthropic({ defaultModel: &quot;your-model&quot; });
+const count = await client.messages.countTokens({
+  model: &quot;your-model&quot;,
+  system: &quot;Be concise.&quot;,
+  messages: [{ role: &quot;user&quot;, content: &quot;How many tokens is this?&quot; }],
+});
+console.log(count.input_tokens);</code></pre>
+<p>As in Python, the JavaScript compatibility layer does not fabricate an Anthropic embeddings endpoint or wrap an OpenAI token-count endpoint. The synchronous <code>EmbeddingProvider</code> used by <code>SemanticMemory</code> remains separate from the async model-provider embedding contract.</p>
+<h3 id="code-execution-migration">Code execution migration</h3>
+<p>OpenAI <code>code_interpreter</code> / hosted <code>shell</code> tool declarations and Anthropic <code>code_execution_*</code> tool declarations can be migrated onto Agent RT's existing sandbox runtime. Code execution is deliberately opt-in: pass an explicit <code>SandboxSession</code> to the compatibility client. The adapter translates the hosted-tool declaration into an Agent RT tool, executes model-requested code through <code>SandboxSession.run_code()</code> (or shell commands through <code>SandboxSession.execute()</code>), appends the sandbox result as a tool result, and continues the model turn until a final response is produced. Persistent interpreter state, workspace isolation, timeouts, output limits, environment filtering, and network policy remain controlled by the supplied sandbox session.</p>
+<pre><code class="language-python">from agent_rt import (
+    CallbackSandboxBackend,
+    CodeInterpreterRegistry,
+    SandboxCommandResult,
+    SandboxSession,
+)
+from agent_rt.openai import AsyncOpenAI
+
+interpreters = CodeInterpreterRegistry()
+
+async def python_runner(
+    session_id, runtime, code, state, workspace, environment, limits, network_policy
+):
+    # Replace this example runner with the project's configured sandbox runtime.
+    return SandboxCommandResult(exit_code=0, stdout=b&quot;sandbox result&quot;)
+
+async def command_runner(
+    session_id, command, workspace, limits, environment, network_policy
+):
+    # Replace this example runner with the project's configured sandbox runtime.
+    return SandboxCommandResult(exit_code=0, stdout=b&quot;sandbox result&quot;)
+
+interpreters.register(&quot;python&quot;, python_runner)
+sandbox = SandboxSession(
+    &quot;migration-session&quot;,
+    CallbackSandboxBackend(command_runner),
+    interpreters=interpreters,
+)
+client = AsyncOpenAI(sandbox_session=sandbox)
+
+response = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Use Python to analyze the data.&quot;,
+    tools=[{&quot;type&quot;: &quot;code_interpreter&quot;, &quot;container&quot;: {&quot;type&quot;: &quot;auto&quot;}}],
+)</code></pre>
+<p>Anthropic uses the same Agent RT sandbox path:</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic(sandbox_session=sandbox)
+response = await client.messages.create(
+    model=&quot;your-model&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Use code to calculate the answer.&quot;}],
+    tools=[{&quot;type&quot;: &quot;code_execution_20250825&quot;, &quot;name&quot;: &quot;code_execution&quot;}],
+)</code></pre>
+<p>If a hosted code-execution tool is requested without <code>sandbox_session</code>, the compatibility layer fails before invoking the model. This prevents migration convenience from silently bypassing Agent RT's sandbox policy. Streaming <code>responses.create(..., stream=True)</code>, Anthropic <code>messages.create(..., stream=True)</code>, and Anthropic <code>messages.stream()</code> are supported; local code/tool rounds are resolved inside the sandbox before the final vendor-shaped output stream is emitted.</p>
+<p>The TypeScript/JavaScript migration entry points use the same sandbox policy through the camelCase <code>sandboxSession</code> option. OpenAI Responses <code>code_interpreter</code> and hosted <code>shell</code> declarations are translated into Agent RT tools, executed through <code>SandboxSession.runCode()</code> or <code>SandboxSession.execute()</code>, appended to provider-neutral message history, and followed by an automatic model continuation. Completed OpenAI Responses include <code>code_interpreter_call</code> or <code>shell_call</code> output items before the final assistant message.</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+import { CodeInterpreterRegistry, SandboxSession } from &quot;agent-rt&quot;;
+
+const interpreters = new CodeInterpreterRegistry();
+interpreters.register(&quot;python&quot;, async (
+  sessionId, runtime, code, state, workspace, environment, limits, networkPolicy
+) =&gt; {
+  // Delegate to the project's configured sandbox runtime.
+  return { exitCode: 0, stdout: new TextEncoder().encode(&quot;sandbox result&quot;) };
+});
+
+const sandbox = new SandboxSession(&quot;migration-session&quot;, sandboxBackend, { interpreters });
+const client = new OpenAI({ sandboxSession: sandbox });
+
+const response = await client.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Use Python to analyze the data.&quot;,
+  tools: [{ type: &quot;code_interpreter&quot;, container: { type: &quot;auto&quot; } }],
+});</code></pre>
+<p>Anthropic's JavaScript migration surface accepts versioned <code>code_execution_*</code> declarations and returns <code>server_tool_use</code> plus <code>code_execution_tool_result</code> content blocks before the final text:</p>
+<pre><code class="language-ts">import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const client = new Anthropic({ sandboxSession: sandbox });
+const response = await client.messages.create({
+  model: &quot;your-model&quot;,
+  max_tokens: 1024,
+  messages: [{ role: &quot;user&quot;, content: &quot;Use code to calculate the answer.&quot; }],
+  tools: [{ type: &quot;code_execution_20250825&quot;, name: &quot;code_execution&quot; }],
+});</code></pre>
+<p><code>maxCodeToolRounds</code> bounds automatic local execution/continuation rounds and defaults to <code>8</code>. As in Python, declaring a hosted code tool without a sandbox fails before provider invocation. The JavaScript compatibility layer does not execute arbitrary ordinary function tools implicitly; only the translated Agent RT sandbox tools are eligible for automatic local execution.</p>
+<h3 id="remote-mcp-migration">Remote MCP migration</h3>
+<p>OpenAI remote-MCP tool declarations and Anthropic MCP Connector declarations can be migrated onto Agent RT's transport-neutral MCP clients. The compatibility layer does not open vendor-declared URLs directly. Instead, configure and inject Agent RT <code>MCPClient</code> or <code>AuthorizedMCPClient</code> instances through <code>mcp_clients={...}</code>. This keeps transport, credentials, capability filtering, authorization, and policy enforcement inside Agent RT.</p>
+<p>For OpenAI Responses, the <code>server_label</code> selects the injected client. <code>allowed_tools</code> further narrows the tools discovered from that client; an <code>AuthorizedMCPClient</code> can impose stricter policy filtering. Vendor <code>server_url</code>, <code>authorization</code>, <code>headers</code>, and <code>require_approval</code> fields are accepted as migration-shaped metadata but do not bypass the injected Agent RT MCP transport or policy.</p>
+<pre><code class="language-python">from agent_rt import AuthorizedMCPClient, MCPAccessPolicy, MCPClient
+from agent_rt.openai import AsyncOpenAI
+
+mcp = MCPClient(your_mcp_transport, requested_capabilities=(&quot;tools&quot;,))
+# Optional: wrap with AuthorizedMCPClient(mcp, policy) for Agent RT policy enforcement.
+client = AsyncOpenAI(mcp_clients={&quot;docs&quot;: mcp})
+
+response = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Search the documentation.&quot;,
+    tools=[
+        {
+            &quot;type&quot;: &quot;mcp&quot;,
+            &quot;server_label&quot;: &quot;docs&quot;,
+            &quot;server_url&quot;: &quot;https://example.com/mcp&quot;,
+            &quot;allowed_tools&quot;: [&quot;search&quot;],
+            &quot;require_approval&quot;: &quot;never&quot;,
+        }
+    ],
+)</code></pre>
+<p>The adapter initializes the Agent RT MCP client if necessary, discovers tools, exposes allowed tools to the model as namespaced function definitions, calls the selected MCP tool through <code>call_tool()</code>, appends its result to model history, and continues generation. OpenAI Responses include vendor-shaped <code>mcp_call</code> output items for executed MCP calls.</p>
+<p>The TypeScript/JavaScript migration clients expose the same design through the camelCase <code>mcpClients</code> option. The declared vendor URL/auth fields remain migration metadata only; Agent RT never opens those URLs or forwards those credentials. The injected <code>MCPClient</code> / <code>AuthorizedMCPClient</code> owns transport, authentication, authorization, capability filtering, and policy enforcement.</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+import { MCPClient } from &quot;agent-rt&quot;;
+
+const mcp = new MCPClient(yourTransport, &quot;agent-rt&quot;, &quot;1&quot;, [&quot;tools&quot;]);
+const client = new OpenAI({ mcpClients: { docs: mcp } });
+
+const response = await client.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Search the documentation.&quot;,
+  tools: [
+    {
+      type: &quot;mcp&quot;,
+      server_label: &quot;docs&quot;,
+      server_url: &quot;https://vendor-declared.example/mcp&quot;,
+      allowed_tools: [&quot;search&quot;],
+      require_approval: &quot;never&quot;,
+    },
+  ],
+});</code></pre>
+<p>The JS adapter initializes the injected MCP client when needed, calls <code>listTools()</code>, applies OpenAI <code>allowed_tools</code>, exposes namespaced Agent RT tool definitions (<code>mcp__&lt;server&gt;__&lt;tool&gt;</code>), invokes only bound MCP tools through <code>callTool()</code>, appends the result to provider-neutral message history, and continues the model turn. Completed OpenAI Responses include <code>mcp_call</code> output items with the server label, original MCP tool name, arguments, and serialized result.</p>
+<p>Anthropic's current MCP Connector shape is supported through <code>client.beta.messages</code>: <code>mcp_servers</code> defines the server names and <code>mcp_toolset</code> entries select/configure them. Each declared server must be referenced by exactly one toolset, matching Anthropic's validation rule. <code>default_config.enabled</code> and per-tool <code>configs</code> are honored when deciding which discovered MCP tools are exposed.</p>
+<p>The TypeScript compatibility client also exposes <code>client.beta.messages.create()</code> for this migration surface:</p>
+<pre><code class="language-ts">import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const client = new Anthropic({ mcpClients: { docs: mcp } });
+const response = await client.beta.messages.create({
+  model: &quot;your-model&quot;,
+  max_tokens: 1024,
+  messages: [{ role: &quot;user&quot;, content: &quot;Search the docs.&quot; }],
+  mcp_servers: [
+    {
+      type: &quot;url&quot;,
+      name: &quot;docs&quot;,
+      url: &quot;https://vendor-declared.example/mcp&quot;,
+    },
+  ],
+  tools: [
+    {
+      type: &quot;mcp_toolset&quot;,
+      mcp_server_name: &quot;docs&quot;,
+      default_config: { enabled: true },
+    },
+  ],
+});</code></pre>
+<p>Anthropic <code>mcp_servers</code> are validated for unique names and exactly one matching <code>mcp_toolset</code>. <code>default_config.enabled</code> and per-tool <code>configs</code> control discovery visibility, while an injected <code>AuthorizedMCPClient</code> may further restrict discovery/invocation. Returned compatibility content contains <code>mcp_tool_use</code> and <code>mcp_tool_result</code> blocks before final assistant text. Vendor-declared URL/authentication fields are never used to bypass the injected Agent RT MCP transport.</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic(mcp_clients={&quot;docs&quot;: mcp})
+response = await client.beta.messages.create(
+    model=&quot;your-model&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Search the documentation.&quot;}],
+    mcp_servers=[
+        {
+            &quot;type&quot;: &quot;url&quot;,
+            &quot;url&quot;: &quot;https://example.com/mcp&quot;,
+            &quot;name&quot;: &quot;docs&quot;,
+        }
+    ],
+    tools=[
+        {
+            &quot;type&quot;: &quot;mcp_toolset&quot;,
+            &quot;mcp_server_name&quot;: &quot;docs&quot;,
+            &quot;default_config&quot;: {&quot;enabled&quot;: False},
+            &quot;configs&quot;: {&quot;search&quot;: {&quot;enabled&quot;: True}},
+        }
+    ],
+    betas=[&quot;mcp-client-2026-09-15&quot;],
+)</code></pre>
+<p>Anthropic non-streaming responses include <code>mcp_tool_use</code> and <code>mcp_tool_result</code> blocks for executed MCP calls. <code>messages.stream()</code> and <code>messages.create(..., stream=True)</code> also execute MCP tool rounds through Agent RT before emitting the final vendor-shaped response stream. If a declaration references a server that is not present in <code>mcp_clients</code>, the compatibility layer fails before the model call.</p>
+<h3 id="models-api-migration">Models API migration</h3>
+<p>Both compatibility clients expose the common model catalog operations used by the upstream SDKs: <code>models.list()</code> and <code>models.retrieve(...)</code>. Agent RT normalizes provider model metadata into <code>ModelCatalogEntry</code> internally and then returns vendor-shaped objects from the compatibility clients.</p>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+models = await client.models.list()
+model = await client.models.retrieve(models.data[0].id)
+print(model.id)</code></pre>
+<p>OpenAI-compatible transports use <code>GET /v1/models</code> and <code>GET /v1/models/{model}</code> directly, so this works without installing the OpenAI SDK when the configured compatible server supports those endpoints. OpenAI-shaped model objects expose <code>id</code>, <code>object</code>, <code>created</code>, and <code>owned_by</code>.</p>
+<p>Anthropic compatibility provides the equivalent <code>models.list()</code> and <code>models.retrieve(model_id)</code> methods:</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+models = await client.models.list()
+model = await client.models.retrieve(models.data[0].id)
+print(model.display_name)</code></pre>
+<p>Anthropic-shaped model objects expose <code>id</code>, <code>type</code>, <code>display_name</code>, and <code>created_at</code>; list responses include <code>data</code>, <code>has_more</code>, <code>first_id</code>, and <code>last_id</code>. The compatibility layer materializes the provider result into one page rather than reproducing every upstream auto-pagination helper.</p>
+<p>The TypeScript/JavaScript migration entry points expose the same catalog surface through <code>agent-rt/openai</code> and <code>agent-rt/anthropic</code>:</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const openai = new OpenAI();
+const openAIModels = await openai.models.list();
+const openAIModel = await openai.models.retrieve(openAIModels.data[0].id);
+
+const anthropic = new Anthropic();
+const anthropicModels = await anthropic.models.list();
+const anthropicModel = await anthropic.models.retrieve(anthropicModels.data[0].id);</code></pre>
+<p>The TypeScript core defines provider-neutral <code>ModelCatalogEntry</code> and <code>ModelCatalogProvider</code> contracts. Native OpenAI and Anthropic providers implement <code>listModels()</code> / <code>retrieveModel()</code>. The dependency-light OpenAI-compatible transport uses <code>GET /v1/models</code> and <code>GET /v1/models/{model}</code> directly. OpenAI compatibility returns <code>{ object: &quot;list&quot;, data }</code> and OpenAI-shaped model objects; Anthropic compatibility returns a materialized page with <code>data</code>, <code>has_more: false</code>, <code>first_id</code>, and <code>last_id</code>.</p>
+<h3 id="stateful-response-continuation">Stateful response continuation</h3>
+<p>OpenAI Responses compatibility supports <code>previous_response_id</code> for client-local continuation. Every completed compatibility response receives a stable <code>resp_agent_rt_...</code> identifier. Agent RT stores the native provider-neutral message history for a bounded number of completed responses on that client; passing a prior response ID prepends that history before the new input. This preserves native assistant messages and tool-result rounds rather than reconstructing context from rendered text.</p>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI(max_response_states=128)
+first = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Remember that the project codename is Atlas.&quot;,
+)
+second = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;What is the codename?&quot;,
+    previous_response_id=first.id,
+)</code></pre>
+<p>The continuation cache is intentionally scoped to the compatibility client instead of being a hidden global store. <code>max_response_states</code> bounds retained response histories (default <code>128</code>); oldest entries are evicted first. Unknown or evicted IDs raise <code>ValueError</code> before invoking the model. Streaming responses commit continuation state only when a <code>response.completed</code> event is observed, so an unconsumed or interrupted stream does not become a valid continuation point. Sync <code>OpenAI()</code> clients use the same behavior.</p>
+<p>This is a migration compatibility feature, not a durable conversation database. Applications that need persistence across process restarts should use Agent RT session memory/checkpointing and reconstruct the requested history explicitly.</p>
+<p>Anthropic Messages does not use an OpenAI-style response ID continuation primitive. Its conversation state remains client-managed by supplying prior assistant/user/tool blocks in <code>messages</code>; Agent RT already preserves those message-history shapes, including <code>tool_use</code>, <code>tool_result</code>, MCP, and ordinary assistant content.</p>
+<p>The TypeScript/JavaScript <code>agent-rt/openai</code> migration client provides the same client-local <code>previous_response_id</code> continuation behavior for its non-streaming Responses path:</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+
+const client = new OpenAI({ maxResponseStates: 128 });
+const first = await client.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Remember that the project codename is Atlas.&quot;,
+});
+const second = await client.responses.create({
+  model: &quot;your-model&quot;,
+  previous_response_id: first.id,
+  input: &quot;What is the codename?&quot;,
+});</code></pre>
+<p>Each completed JS compatibility response receives a stable client-local <code>resp_agent_rt_&lt;n&gt;</code> identifier. The continuation store keeps provider-neutral <code>ModelMessage</code> history rather than rendered response text, so ordinary assistant messages, sandbox code/tool calls, MCP calls, and their tool-result messages remain intact when the next request is assembled. Unknown or evicted IDs are rejected before provider invocation. <code>maxResponseStates</code> defaults to <code>128</code>, must be a positive integer, and evicts the oldest retained response when the bound is exceeded. The store is scoped to the compatibility client and is not durable across process restarts.</p>
+<h3 id="file-search-migration">File search migration</h3>
+<p>OpenAI Responses <code>file_search</code> tool declarations can be migrated onto Agent RT's provider-neutral retrieval layer. Pass an explicit <code>RetrievalRegistry</code> to the compatibility client. Each OpenAI <code>vector_store_id</code> is interpreted as the name of a provider registered in that Agent RT registry; the compatibility layer does not create or manage OpenAI vector-store resources.</p>
+<pre><code class="language-python">from agent_rt import RetrievalRegistry
+from agent_rt.openai import AsyncOpenAI
+
+retrieval = RetrievalRegistry()
+retrieval.register(&quot;vs_docs&quot;, your_file_retrieval_provider)
+retrieval.register(&quot;vs_release&quot;, your_release_retrieval_provider)
+
+client = AsyncOpenAI(retrieval_registry=retrieval)
+response = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Find the deployment guide.&quot;,
+    tools=[
+        {
+            &quot;type&quot;: &quot;file_search&quot;,
+            &quot;vector_store_ids&quot;: [&quot;vs_docs&quot;, &quot;vs_release&quot;],
+            &quot;max_num_results&quot;: 5,
+            &quot;filters&quot;: {&quot;team&quot;: &quot;platform&quot;},
+            &quot;ranking_options&quot;: {&quot;score_threshold&quot;: 0.5},
+        }
+    ],
+)</code></pre>
+<p>The adapter translates the hosted tool into an Agent RT model tool. When the model requests a search, Agent RT issues <code>RetrievalQuery</code> calls against every named provider, forwards the declared filters and per-provider result limit, merges results by score, applies <code>score_threshold</code>, truncates to <code>max_num_results</code>, appends the merged result payload as a tool result, and continues generation. Returned OpenAI Responses include a <code>file_search_call</code> output item with the executed query and normalized result entries (<code>file_id</code>, <code>filename</code>, <code>score</code>, <code>text</code>, and <code>attributes</code>).</p>
+<p>Streaming Responses use the same local retrieval round-trip and include the completed <code>file_search_call</code> in the final <code>response.completed</code> object. File-search tool rounds are also preserved in the compatibility client's <code>previous_response_id</code> history. If <code>file_search</code> is declared without <code>retrieval_registry</code>, the call fails before invoking the model.</p>
+<p>Agent RT intentionally leaves indexing, persistence, embeddings, hybrid search, and access control to the registered <code>RetrievalProvider</code>. This avoids coupling application migration to OpenAI's vector-store service while preserving the familiar Responses tool declaration. Anthropic does not expose the same hosted <code>file_search</code> tool shape, so no synthetic <code>agent_rt.anthropic.file_search</code> API is added.</p>
+<p>The TypeScript/JavaScript <code>agent-rt/openai</code> migration client supports the same mapping through the camelCase <code>retrievalRegistry</code> option:</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+import { RetrievalRegistry } from &quot;agent-rt&quot;;
+
+const retrieval = new RetrievalRegistry();
+retrieval.register(&quot;vs_docs&quot;, yourFileRetrievalProvider);
+retrieval.register(&quot;vs_release&quot;, yourReleaseRetrievalProvider);
+
+const client = new OpenAI({ retrievalRegistry: retrieval });
+const response = await client.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Find the deployment guide.&quot;,
+  tools: [
+    {
+      type: &quot;file_search&quot;,
+      vector_store_ids: [&quot;vs_docs&quot;, &quot;vs_release&quot;],
+      max_num_results: 5,
+      filters: { team: &quot;platform&quot; },
+      ranking_options: { score_threshold: 0.5 },
+    },
+  ],
+});</code></pre>
+<p>Each <code>vector_store_id</code> is the name of an Agent RT <code>RetrievalProvider</code> registered in that <code>RetrievalRegistry</code>; the JavaScript migration layer does not create OpenAI vector stores or hidden indexes. It issues one <code>RetrievalQuery</code> per named provider, forwards <code>filters</code> and the result limit, removes scored results below <code>score_threshold</code>, merges results by descending score, truncates to <code>max_num_results</code>, appends the normalized result payload as a tool result, and continues the model call. Completed Responses include a <code>file_search_call</code> item containing <code>queries</code> and normalized <code>file_id</code>, <code>filename</code>, <code>score</code>, <code>text</code>, and <code>attributes</code> result fields.</p>
+<p>File-search assistant/tool-result history is retained natively by the JavaScript <code>previous_response_id</code> store, so continuation does not reconstruct retrieval context from rendered text. Declaring <code>file_search</code> without <code>retrievalRegistry</code> fails before provider invocation. The JavaScript compatibility layer intentionally leaves indexing, persistence, embeddings, hybrid ranking, and retrieval authorization to the registered providers and does not add a synthetic Anthropic file-search surface.</p>
+<h3 id="web-search-migration">Web search migration</h3>
+<p>OpenAI <code>web_search</code> / <code>web_search_preview*</code> tools and Anthropic <code>web_search_*</code> server tools can be migrated onto Agent RT's provider-neutral web retrieval path. By default the compatibility adapters resolve the web-search backend lazily from environment variables only when a web-search tool is declared. Ordinary model calls do not require web-search configuration.</p>
+<p>Select the backend with:</p>
+<pre><code class="language-text">AGENT_RT_WEB_SEARCH_TOOL=tavily|brave|serper</code></pre>
+<p>Set the selected backend credential with its conventional environment variable:</p>
+<pre><code class="language-text">TAVILY_API_KEY=...
+BRAVE_SEARCH_API_KEY=...
+SERPER_API_KEY=...</code></pre>
+<p>The generic fallbacks <code>AGENT_RT_WEB_SEARCH_API_KEY</code> and <code>AGENT_RT_WEB_SEARCH_TOKEN</code> are also accepted. <code>AGENT_RT_WEB_SEARCH_TIMEOUT_SECONDS</code> controls the HTTP timeout and defaults to <code>20</code>. Missing/unsupported tool selection or missing credentials fails before the model performs a web-search round trip. The provider-specific credential takes precedence over <code>AGENT_RT_WEB_SEARCH_API_KEY</code>, which takes precedence over <code>AGENT_RT_WEB_SEARCH_TOKEN</code>. Missing provider selection, unsupported provider names, missing credentials, invalid timeouts, HTTP failures, and malformed provider responses fail closed in both runtimes. Credentials remain encapsulated inside <code>EnvironmentWebSearchProvider</code>; they are never added to model-visible tool schemas, tool arguments, response objects, or continuation history.</p>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+response = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Find the latest Agent RT documentation.&quot;,
+    tools=[{&quot;type&quot;: &quot;web_search&quot;}],
+)</code></pre>
+<p>The adapter exposes one internal Agent RT web-search function to the model, executes the selected retrieval provider, appends normalized results as the tool result, and continues generation. OpenAI Responses include a completed <code>web_search_call</code> item with the query, URL sources, and normalized search results. OpenAI <code>search_context_size</code> plus domain/location fields are carried into the provider-neutral retrieval filters where supplied.</p>
+<p>Anthropic uses the same Agent RT provider path:</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+response = await client.messages.create(
+    model=&quot;your-model&quot;,
+    max_tokens=1024,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Search for current documentation.&quot;}],
+    tools=[
+        {
+            &quot;type&quot;: &quot;web_search_20250305&quot;,
+            &quot;name&quot;: &quot;web_search&quot;,
+            &quot;allowed_domains&quot;: [&quot;example.com&quot;],
+        }
+    ],
+)</code></pre>
+<p>Anthropic non-streaming compatibility responses include <code>server_tool_use</code> and <code>web_search_tool_result</code> blocks followed by the final assistant content. <code>allowed_domains</code>, <code>blocked_domains</code>, and user-location metadata are preserved as provider-neutral retrieval filters. An application may bypass environment selection by explicitly injecting any <code>RetrievalProvider(kind=&quot;web&quot;)</code> as <code>web_search_provider=...</code> on either compatibility client.</p>
+<p>The built-in environment provider supports Tavily, Brave Search, and Serper over HTTP. It normalizes each backend into Agent RT <code>RetrievalResult</code> values so application code and compatibility adapters do not depend on provider-specific response shapes.</p>
+<p>TypeScript/JavaScript uses the same environment configuration and the camelCase <code>webSearchProvider</code> option. The migration clients translate the declarations into an Agent RT retrieval tool named <code>agent_rt_web_search</code>.</p>
+<p>OpenAI Responses migration:</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+
+const client = new OpenAI();
+const response = await client.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Find the latest release notes.&quot;,
+  tools: [{
+    type: &quot;web_search&quot;,
+    search_context_size: &quot;medium&quot;,
+  }],
+});</code></pre>
+<p>The model sees a provider-neutral <code>agent_rt_web_search</code> function. Agent RT executes the selected Tavily, Brave Search, or Serper provider, appends the normalized search result as tool history, and automatically continues the model call. OpenAI Responses expose a completed <code>web_search_call</code> with the search query, URL sources, normalized result title/text/URL/score fields, and final assistant output. <code>allowed_domains</code>, <code>blocked_domains</code>, <code>user_location</code>, <code>search_context_size</code>, explicit <code>filters</code>, and result limits are forwarded into the retrieval query.</p>
+<p>Anthropic migration uses the same Agent RT provider while preserving Anthropic's server-tool-shaped response blocks:</p>
+<pre><code class="language-ts">import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const client = new Anthropic();
+const response = await client.messages.create({
+  model: &quot;your-model&quot;,
+  max_tokens: 512,
+  messages: [{ role: &quot;user&quot;, content: &quot;Search the web.&quot; }],
+  tools: [{
+    type: &quot;web_search_20250305&quot;,
+    name: &quot;web_search&quot;,
+    max_uses: 3,
+    allowed_domains: [&quot;example.com&quot;],
+  }],
+});</code></pre>
+<p>Returned compatibility content contains <code>server_tool_use</code> followed by <code>web_search_tool_result</code> blocks before final text. Both clients also accept <code>webSearchProvider</code> with any Agent RT <code>RetrievalProvider</code> of the application's choosing; when supplied, that explicit provider is used instead of environment selection. The built-in <code>EnvironmentWebSearchProvider</code> uses Node's native <code>fetch</code>, so this feature adds no required web-search SDK dependency.</p>
+<h3 id="batch-processing-migration">Batch processing migration</h3>
+<p>Agent RT compatibility supports the common batch lifecycle for both OpenAI and Anthropic. The core providers expose a small provider-neutral <code>BatchJob</code> (<code>id</code>, <code>status</code>, <code>raw</code>) while compatibility clients preserve upstream SDK objects when available.</p>
+<p>OpenAI exposes <code>client.batches.create()</code>, <code>retrieve()</code>, <code>list()</code>, and <code>cancel()</code> in both sync and async clients:</p>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+batch = await client.batches.create(
+    input_file_id=&quot;file_...&quot;,
+    endpoint=&quot;/v1/responses&quot;,
+    completion_window=&quot;24h&quot;,
+    metadata={&quot;job&quot;: &quot;nightly&quot;},
+)
+status = await client.batches.retrieve(batch.id)
+page = await client.batches.list(limit=20)
+await client.batches.cancel(batch.id)</code></pre>
+<p>OpenAI batch creation remains file-ID based, matching the upstream Batch API. Agent RT does not synthesize an upload/file store here: callers must provide an existing <code>input_file_id</code> until Files/Uploads compatibility is implemented separately. The lightweight OpenAI-compatible transport supports <code>POST /v1/batches</code>, <code>GET /v1/batches/{id}</code>, <code>GET /v1/batches</code>, and <code>POST /v1/batches/{id}/cancel</code>, including <code>after</code>/<code>limit</code> list parameters.</p>
+<p>Anthropic exposes the upstream <code>client.messages.batches</code> surface with inline requests:</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+batch = await client.messages.batches.create(
+    requests=[
+        {
+            &quot;custom_id&quot;: &quot;request-1&quot;,
+            &quot;params&quot;: {
+                &quot;model&quot;: &quot;your-model&quot;,
+                &quot;max_tokens&quot;: 256,
+                &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Summarize this.&quot;}],
+            },
+        }
+    ]
+)
+status = await client.messages.batches.retrieve(batch.id)
+page = await client.messages.batches.list(limit=20)
+results = await client.messages.batches.results(batch.id)
+async for item in results:
+    print(item.custom_id, item.result)</code></pre>
+<p>Anthropic compatibility supports <code>create</code>, <code>retrieve</code>, <code>list</code>, <code>cancel</code>, and <code>results</code>. Async <code>results()</code> returns an async iterable; sync clients return a normal iterable. Pagination helpers are intentionally materialized into one compatibility page rather than reproducing every upstream auto-pagination helper.</p>
+<p>Custom Agent RT providers may implement the optional <code>create_batch</code>, <code>retrieve_batch</code>, <code>list_batches</code>, <code>cancel_batch</code>, and (for result-bearing providers) <code>batch_results</code> methods and return <code>BatchJob</code> values.</p>
+<p>The TypeScript/JavaScript package exposes the equivalent lifecycle through <code>agent-rt/openai</code> and <code>agent-rt/anthropic</code>. The TypeScript core uses provider-neutral <code>BatchJob</code> and <code>BatchProvider</code> contracts (<code>createBatch</code>, <code>retrieveBatch</code>, <code>listBatches</code>, <code>cancelBatch</code>, and optional <code>batchResults</code>).</p>
+<p>OpenAI migration:</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+
+const client = new OpenAI();
+const batch = await client.batches.create({
+  input_file_id: &quot;file_...&quot;,
+  endpoint: &quot;/v1/responses&quot;,
+  completion_window: &quot;24h&quot;,
+  metadata: { job: &quot;nightly&quot; },
+});
+const status = await client.batches.retrieve(batch.id);
+const page = await client.batches.list({ limit: 20 });
+await client.batches.cancel(batch.id);</code></pre>
+<p>OpenAI creation remains intentionally file-ID based. The JavaScript compatibility layer does not fabricate file uploads or storage; callers must supply an existing <code>input_file_id</code>. The dependency-light compatible transport implements <code>POST /v1/batches</code>, <code>GET /v1/batches/{id}</code>, <code>GET /v1/batches</code>, and <code>POST /v1/batches/{id}/cancel</code>, including <code>after</code> and <code>limit</code> list parameters.</p>
+<p>Anthropic Message Batches migration:</p>
+<pre><code class="language-ts">import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const client = new Anthropic();
+const batch = await client.messages.batches.create({
+  requests: [
+    {
+      custom_id: &quot;request-1&quot;,
+      params: {
+        model: &quot;your-model&quot;,
+        max_tokens: 256,
+        messages: [{ role: &quot;user&quot;, content: &quot;Summarize this.&quot; }],
+      },
+    },
+  ],
+});
+const status = await client.messages.batches.retrieve(batch.id);
+const page = await client.messages.batches.list({ limit: 20 });
+const results = await client.messages.batches.results(batch.id);
+for await (const item of results) {
+  console.log(item.custom_id, item.result);
+}</code></pre>
+<p><code>messages.batches</code> supports <code>create</code>, <code>retrieve</code>, <code>list</code>, <code>cancel</code>, and <code>results</code>. <code>results()</code> always returns an async iterable on the migration surface; provider SDK async iterables pass through, while ordinary iterables are wrapped. List responses are materialized into one page (<code>has_more: false</code>) rather than reproducing every SDK pagination helper. When native SDK objects are available, the migration layer preserves their raw vendor-shaped batch objects.</p>
+<h3 id="reasoning-and-thinking-controls">Reasoning and thinking controls</h3>
+<p>Python and TypeScript OpenAI/Anthropic migration clients normalize vendor reasoning controls into the provider-neutral <code>ReasoningConfig</code> on <code>ModelRequest</code>. This keeps reasoning configuration available to custom Agent RT providers while letting the built-in providers emit the vendor-specific request shape.</p>
+<p>OpenAI Chat Completions accepts <code>reasoning_effort</code>:</p>
+<pre><code class="language-python">from agent_rt.openai import AsyncOpenAI
+
+client = AsyncOpenAI()
+response = await client.chat.completions.create(
+    model=&quot;your-model&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Solve this carefully.&quot;}],
+    reasoning_effort=&quot;high&quot;,
+)</code></pre>
+<p>OpenAI Responses accepts the <code>reasoning</code> object. Agent RT preserves both <code>effort</code> and <code>summary</code> in <code>ReasoningConfig</code>; the native Responses WebSocket transport forwards both fields. When the native OpenAI provider is using its HTTP/SSE transport (<code>OPENAI_WEBSOCKET=0</code> / <code>websocket=False</code>), <code>effort</code> is forwarded as <code>reasoning_effort</code> while <code>summary</code> remains available only to provider implementations that support a Responses-style request.</p>
+<pre><code class="language-python">response = await client.responses.create(
+    model=&quot;your-model&quot;,
+    input=&quot;Solve this carefully.&quot;,
+    reasoning={&quot;effort&quot;: &quot;high&quot;, &quot;summary&quot;: &quot;auto&quot;},
+)</code></pre>
+<p>Anthropic Messages accepts current adaptive thinking plus effort through <code>output_config</code>, and also preserves the legacy extended-thinking budget form for older compatible models:</p>
+<pre><code class="language-python">from agent_rt.anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+response = await client.messages.create(
+    model=&quot;your-model&quot;,
+    max_tokens=4096,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Solve this carefully.&quot;}],
+    thinking={&quot;type&quot;: &quot;adaptive&quot;},
+    output_config={&quot;effort&quot;: &quot;high&quot;},
+)
+
+legacy = await client.messages.create(
+    model=&quot;older-model&quot;,
+    max_tokens=4096,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Solve this carefully.&quot;}],
+    thinking={&quot;type&quot;: &quot;enabled&quot;, &quot;budget_tokens&quot;: 2048},
+)</code></pre>
+<p>The native <code>AnthropicModelProvider</code> maps <code>ReasoningConfig.thinking</code> to <code>thinking</code>, maps <code>ReasoningConfig.effort</code> to <code>output_config.effort</code>, and merges effort with <code>output_config.format</code> when structured output is also requested. <code>budget_tokens</code> is emitted only with <code>thinking=&quot;enabled&quot;</code>; Agent RT validates that combination but intentionally leaves model-specific availability to the upstream provider, since Anthropic support differs by model generation.</p>
+<p>TypeScript/JavaScript uses the same migration shapes:</p>
+<pre><code class="language-ts">import OpenAI from &quot;agent-rt/openai&quot;;
+import Anthropic from &quot;agent-rt/anthropic&quot;;
+
+const openai = new OpenAI();
+await openai.chat.completions.create({
+  model: &quot;your-model&quot;,
+  messages: [{ role: &quot;user&quot;, content: &quot;Solve this carefully.&quot; }],
+  reasoning_effort: &quot;high&quot;,
+});
+
+await openai.responses.create({
+  model: &quot;your-model&quot;,
+  input: &quot;Solve this carefully.&quot;,
+  reasoning: { effort: &quot;high&quot;, summary: &quot;auto&quot; },
+});
+
+const anthropic = new Anthropic();
+await anthropic.messages.create({
+  model: &quot;your-model&quot;,
+  max_tokens: 4096,
+  messages: [{ role: &quot;user&quot;, content: &quot;Solve this carefully.&quot; }],
+  thinking: { type: &quot;adaptive&quot; },
+  output_config: { effort: &quot;high&quot; },
+});
+
+await anthropic.messages.create({
+  model: &quot;older-model&quot;,
+  max_tokens: 4096,
+  messages: [{ role: &quot;user&quot;, content: &quot;Solve this carefully.&quot; }],
+  thinking: { type: &quot;enabled&quot;, budget_tokens: 2048 },
+});</code></pre>
+<p>The TypeScript core exposes <code>ReasoningConfig</code> with <code>effort</code>, <code>summary</code>, <code>thinking</code>, and <code>budgetTokens</code>. <code>OpenAIModelProvider</code> maps <code>effort</code> to Chat Completions <code>reasoning_effort</code>; its Responses WebSocket path forwards both <code>effort</code> and <code>summary</code>. <code>AnthropicModelProvider</code> emits <code>thinking</code>, converts <code>budgetTokens</code> to <code>budget_tokens</code>, maps <code>effort</code> to <code>output_config.effort</code>, and merges effort with structured-output <code>output_config.format</code>. Invalid empty effort/summary values and invalid thinking-budget combinations fail before model invocation.</p>
+<p>Native Agent RT callers can use the same provider-neutral contract directly:</p>
+<pre><code class="language-python">from agent_rt import ModelRequest, ReasoningConfig
+
+request = ModelRequest(
+    messages=messages,
+    reasoning=ReasoningConfig(
+        effort=&quot;high&quot;,
+        thinking=&quot;adaptive&quot;,
+    ),
+)</code></pre>
+<h2 id="openai-and-anthropic-coverage-matrix">OpenAI and Anthropic coverage matrix</h2>
+<p>This matrix lists major OpenAI and Anthropic API/SDK capabilities that are useful migration targets. It is intentionally broader than the compatibility layer so that unsupported areas are explicit rather than implied. In the &quot;Agent RT&quot; column, ✅ means the capability is covered by the compatibility clients, ⚠️ means a narrower subset, and ❌ means it is not covered; the OpenAI and Anthropic columns describe the upstream capability for comparison and are not support markers.</p>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Agent RT</th><th>OpenAI</th><th>Anthropic</th></tr></thead><tbody><tr><td>Basic text generation</td><td>✅</td><td>Responses + Chat Completions</td><td>Messages</td></tr>
+<tr><td>Sync + async clients</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Streaming text</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Function/tool calls</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Tool-call streaming</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Tool result history</td><td>✅</td><td>Function outputs</td><td><code>tool_use</code> / <code>tool_result</code></td></tr>
+<tr><td>Structured output</td><td>✅</td><td>JSON Schema / structured outputs</td><td>Structured outputs</td></tr>
+<tr><td>Stateful response continuation</td><td>✅ OpenAI <code>previous_response_id</code>; Anthropic client-managed history</td><td><code>previous_response_id</code>, conversations/state</td><td>Message history/client-managed state</td></tr>
+<tr><td>Web search tool</td><td>✅ via env-selected Agent RT web retrieval</td><td>Hosted web search</td><td>Server-side web search</td></tr>
+<tr><td>Reasoning/thinking controls</td><td>✅ provider-neutral <code>ReasoningConfig</code></td><td>Reasoning effort/configuration</td><td>Adaptive/extended thinking + effort</td></tr>
+<tr><td>File search/RAG tool</td><td>✅ OpenAI via Agent RT retrieval</td><td>File search + vector stores</td><td>Different document/file mechanisms</td></tr>
+<tr><td>Code execution</td><td>✅ via Agent RT sandbox</td><td>Code Interpreter / hosted shell</td><td>Server-side code execution</td></tr>
+<tr><td>Remote MCP</td><td>✅ via Agent RT MCP clients</td><td>Remote MCP tool</td><td>MCP connector/infrastructure</td></tr>
+<tr><td>Embeddings</td><td>✅ OpenAI</td><td>Embeddings API</td><td>—</td></tr>
+<tr><td>Batch processing</td><td>✅ lifecycle + Anthropic results</td><td>Batch API</td><td>Message Batches</td></tr>
+<tr><td>Token counting</td><td>✅ Anthropic</td><td>Usage/token information varies by API</td><td>Dedicated token counting</td></tr>
+<tr><td>Models API</td><td>✅ list/retrieve</td><td>Models API</td><td>Models API</td></tr>
+<tr><td>Responses API shape</td><td>⚠️</td><td>Full Responses API</td><td>—</td></tr>
+<tr><td>Prompt caching</td><td>❌ in compatibility layer</td><td>Prompt caching</td><td>Explicit/automatic prompt caching</td></tr>
+<tr><td>Image/vision inputs</td><td>❌ in compatibility clients (native <code>ModelProvider</code> adapters do convert image parts)</td><td>Images in Responses/messages</td><td>Vision</td></tr>
+<tr><td>PDF/document inputs</td><td>❌ in compatibility clients (native adapters convert PDF/file parts)</td><td>File/PDF input</td><td>PDFs/documents/Files API</td></tr>
+<tr><td>Audio input/output</td><td>❌</td><td>Audio + speech + transcription</td><td>No equivalent full audio suite</td></tr>
+<tr><td>Realtime voice</td><td>❌</td><td>WebRTC/WebSocket/SIP Realtime API</td><td>—</td></tr>
+<tr><td>Files/uploads</td><td>❌</td><td>Files + Uploads</td><td>Files API</td></tr>
+<tr><td>Vector stores</td><td>❌</td><td>Vector stores + file batches</td><td>—</td></tr>
+<tr><td>Computer use</td><td>❌</td><td>Computer use</td><td>Computer use</td></tr>
+<tr><td>Image generation</td><td>❌</td><td>Image generation</td><td>—</td></tr>
+<tr><td>Moderation</td><td>❌</td><td>Moderations API</td><td>No equivalent general endpoint</td></tr>
+<tr><td>Fine-tuning</td><td>❌</td><td>Fine-tuning API</td><td>—</td></tr>
+<tr><td>Evals</td><td>❌ in compatibility clients</td><td>Evals/platform evaluation features</td><td>Evaluation tooling/platform features</td></tr>
+<tr><td>Admin/usage/cost APIs</td><td>❌</td><td>Organization/project administration surfaces</td><td>Admin, usage and cost APIs</td></tr>
+<tr><td>Cloud-specific SDK clients</td><td>❌</td><td>Azure-specific ecosystem separately</td><td>Bedrock / Vertex integrations</td></tr>
+<tr><td>Native SDK retry/timeout/raw-response helpers</td><td>❌ mostly missing</td><td>Full SDK</td><td>Full SDK</td></tr></tbody></table></div>
+<h2 id="memory-from-other-frameworks">Memory from other frameworks</h2>
+<p><code>AgentConfig.memory</code> (see <a href="/docs/guides/runtime-reference.html#agent-memory">Runtime Guide</a>) accepts memory objects from other packages directly, both the real upstream objects and the Agent RT compatibility shims, so existing memory can be reused without rewriting it. Each one is searched with the latest user prompt on every run and is untrusted by default.</p>
+<div class="table-wrap"><table><thead><tr><th>Package</th><th>Python</th><th>TypeScript</th><th>How it is read</th></tr></thead><tbody><tr><td>LangChain</td><td>retrievers, <code>Document</code>s, chat message histories</td><td>retrievers, <code>Document</code>s, chat message histories (<code>getMessages</code>)</td><td>retriever <code>ainvoke</code>/<code>invoke(query)</code>; history's last <code>limit</code> messages</td></tr>
+<tr><td>LangGraph</td><td><code>BaseStore</code> (<code>InMemoryStore</code>, Postgres, ...)</td><td><code>BaseStore</code></td><td><code>search(namespace, query=, limit=)</code>; pass the namespace as <code>search_kwargs={&quot;namespace&quot;: (...)}</code> / <code>searchOptions: { namespace: [...] }</code></td></tr>
+<tr><td>LlamaIndex</td><td>retrievers, nodes, <code>Memory</code> / <code>ChatMemoryBuffer</code></td><td>retrievers, nodes, <code>Memory</code> / <code>ChatMemoryBuffer</code></td><td><code>aretrieve</code>/<code>retrieve(query)</code>; memory <code>aget(input=query)</code> / <code>getMessages(query)</code>, last <code>limit</code> messages</td></tr>
+<tr><td>AutoGen</td><td><code>Memory</code> (<code>ListMemory</code>, ...)</td><td>—</td><td><code>query(query)</code> results</td></tr>
+<tr><td>OpenAI Agents</td><td><code>Session</code></td><td><code>Session</code></td><td><code>get_items(limit)</code> / <code>getItems(limit)</code></td></tr>
+<tr><td>mem0</td><td><code>Memory</code> / <code>AsyncMemory</code> / <code>MemoryClient</code></td><td><code>Memory</code> / <code>MemoryClient</code></td><td><code>search(query, top_k=, **search_kwargs)</code> (<code>limit=</code> on mem0 1.x); scope it with <code>search_kwargs={&quot;filters&quot;: {&quot;user_id&quot;: ...}}</code> / <code>searchOptions: { filters: { user_id } }</code></td></tr></tbody></table></div>
+<pre><code class="language-python">from agent_rt import AgentConfig, MemorySource, ModelSettings
+
+agent = AgentConfig(
+    name=&quot;assistant&quot;,
+    instructions=&quot;Be concise.&quot;,
+    model=ModelSettings(model=&quot;claude-sonnet-5&quot;),
+    memory=[
+        vector_store.as_retriever(),                        # LangChain
+        MemorySource(langgraph_store, search_kwargs={&quot;namespace&quot;: (&quot;users&quot;, user_id)}),
+        index.as_retriever(similarity_top_k=3),             # LlamaIndex
+        MemorySource(mem0, search_kwargs={&quot;filters&quot;: {&quot;user_id&quot;: user_id}}),
+    ],
+)</code></pre>
+<p>Documents, nodes, records and chat messages are reduced to their text (plus role, tags and metadata when present) before they reach the model. The AutoGen <code>AssistantAgent(memory=[...])</code> and the OpenAI Agents compatibility <code>Agent(memory=[...])</code> (an Agent RT extension in both languages) pass their lists to <code>AgentConfig.memory</code>. Memory is read-only here: Agent RT does not write new turns back to these stores (use <a href="/docs/guides/runtime-reference.html#memory-packages"><code>load_memory()</code></a> for a backend you can also write to), and an OpenAI Agents <code>Session</code> used this way supplies context rather than replacing the conversation history.</p>
+<h2 id="native-agent-rt-path">Native Agent RT path</h2>
+<p>Compatibility adapters are intended to reduce the first migration diff. New functionality should prefer native Agent RT contracts such as <code>AgentConfig</code>, <code>AgentLoop</code>, <code>ModelProvider</code>, <code>ToolRegistry</code>, guardrails, permissions, checkpoints, memory, and sandboxing. This keeps runtime behavior explicit and avoids carrying framework-specific abstractions into new code.</p>
+<div class="page-nav"><a class="next-link" href="../"><small>Back to</small><strong>← Documentation index</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+</div>
+</body></html>

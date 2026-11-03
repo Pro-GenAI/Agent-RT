@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Complete Runtime Guide — Agent RT Docs</title>
+  <meta name="description" content="Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/guides/runtime-reference.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Complete Runtime Guide — Agent RT Docs">
+  <meta property="og:description" content="Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/guides/runtime-reference.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Complete Runtime Guide — Agent RT Docs">
+  <meta name="twitter:description" content="Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#page","url":"https://agent-rt-pro.github.io/docs/guides/runtime-reference.html","name":"Complete Runtime Guide — Agent RT Docs","headline":"Complete Runtime Guide — Agent RT Docs","description":"Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.","inLanguage":"en","dateModified":"2026-11-03","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Guides"},{"@type":"ListItem","position":4,"name":"Complete Runtime Guide","item":"https://agent-rt-pro.github.io/docs/guides/runtime-reference.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="../../docs/vendor/github-dark-dimmed.min.css">
+  <script src="../../docs/vendor/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html" aria-current="page">Runtime handbook</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html" aria-current="page">Runtime handbook</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Guides<span>/</span>Complete Runtime Guide</div>
+<section class="section-intro"><span class="eyebrow">Guides</span><h1 class="doc-title">Complete Runtime Guide</h1><p class="doc-lede">Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.</p></section>
+<div class="note">Complete reference content migrated from the repository Markdown documentation. Use the <a href="../">documentation index</a> to browse by topic.</div>
+<nav aria-label="On this page" class="note"><strong>On this page</strong><ul><li><a href="#docker-hub-images">Docker Hub images</a></li><li><a href="#providers">Providers</a></li><li><a href="#content-and-provider-behaviour">Content and provider behaviour</a></li><li><a href="#agent-loop-guarantees">Agent loop guarantees</a></li><li><a href="#agent-memory">Agent memory</a></li><li><a href="#tool-access-lists-and-unadvertised-calls">Tool access lists and unadvertised calls</a></li><li><a href="#secure-preset">Secure preset</a></li><li><a href="#action-blockers">Action blockers</a></li><li><a href="#api-server-python">API server (Python)</a></li><li><a href="#task-lists-todo-tool">Task lists (todo tool)</a></li><li><a href="#toolbase-relevance-selection-and-tool-search">Toolbase, relevance selection, and tool search</a></li><li><a href="#deterministic-pii-morphing">Deterministic PII morphing</a></li><li><a href="#terminal-cli-python">Terminal CLI (Python)</a></li><li><a href="#web-ui-python">Web UI (Python)</a></li><li><a href="#chat-bots-python-beta">Chat bots (Python, beta)</a></li><li><a href="#sandboxes">Sandboxes</a></li><li><a href="#skills-and-registration-safety">Skills and registration safety</a></li><li><a href="#migration-entry-points">Migration entry points</a></li><li><a href="#vector-databases">Vector databases</a></li></ul></nav>
+<p>Detailed usage notes for features that the package READMEs only mention briefly. Examples are shown for Python unless a section says otherwise; the TypeScript package uses the same concepts with camelCase names. For design rationale and contracts see <a href="/docs/reference/extension-contracts.html">Architecture and Extensions</a>.</p>
+<h2 id="docker-hub-images">Docker Hub images</h2>
+<p>Prebuilt images are published on Docker Hub for <a href="https://hub.docker.com/r/praneeth1v/agent-rt-python">Python (<code>praneeth1v/agent-rt-python</code>)</a> and <a href="https://hub.docker.com/r/praneeth1v/agent-rt-typescript">TypeScript (<code>praneeth1v/agent-rt-typescript</code>)</a>. Use <code>latest</code> or a published version tag (such as <code>0.1.2</code>); pull counts are visible on each Docker Hub repository and on the live badges in the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/README.md">main README</a>.</p>
+<pre><code class="language-bash">docker pull praneeth1v/agent-rt-python:latest
+docker pull praneeth1v/agent-rt-typescript:latest
+
+# The Python image launches the agent-rt CLI by default.
+docker run --rm praneeth1v/agent-rt-python:latest --help
+
+# The TypeScript image starts Node.js; the agent-rt npm package is preinstalled.
+docker run --rm praneeth1v/agent-rt-typescript:latest node -e &quot;console.log(typeof require('agent-rt').AgentLoop)&quot;</code></pre>
+<p>The Python image includes the provider, API, and web extras; the TypeScript image includes the OpenAI and Anthropic SDK peers. For configured applications, supply credentials and configuration explicitly at runtime rather than baking secrets into an image. These images are alternatives to installing the PyPI/npm packages, not Docker-based sandbox backends used <em>by</em> Agent RT.</p>
+<h2 id="providers">Providers</h2>
+<p><code>load_model(load_config())</code> (Python) / <code>loadModel(await loadConfig())</code> (TypeScript) builds a provider from the <code>model_list</code> of a YAML config file (<code>~/.agent-rt/config.yaml</code>, or an explicit path such as <code>load_config(&quot;./agent-rt.yaml&quot;)</code>). It supports several models, ordered fallbacks for repeated <code>model_name</code>s, and several vector stores; see <a href="/docs/reference/configuration.html">Configuration</a>. The process environment is only used to resolve <code>os.environ/NAME</code> secret references.</p>
+<p>The OpenAI provider uses the native OpenAI-compatible transport by default and supports HTTP/SSE plus Responses WebSocket operation where available. The Anthropic provider uses the optional official Anthropic SDK. Reasoning/thinking controls are normalized into the provider-neutral <code>ReasoningConfig</code>, and each provider translates them into vendor-specific request fields.</p>
+<h2 id="content-and-provider-behaviour">Content and provider behaviour</h2>
+<ul>
+<li><strong>Media:</strong> image, PDF/file, and (OpenAI) audio <code>ContentPart</code>s are sent as the provider's native blocks; <code>data</code> may be an http(s) URL, a <code>data:</code> URL, base64, or bytes. Parts a provider cannot carry (for example video) raise instead of being dropped.
+</li>
+<li><strong>Anthropic thinking:</strong> thinking blocks are kept on the assistant message (a JSON part with a vendor MIME type) and replayed before <code>tool_use</code>, so extended thinking works across tool turns. Anthropic requests default to <code>max_tokens=4096</code>; set <code>max_output_tokens</code> (<code>maxOutputTokens</code> in TypeScript) for longer outputs.
+</li>
+<li><strong>Context trust:</strong> untrusted retrieved/file/observation items reach the model as user-role data; only workflow state and items explicitly marked trusted are system messages.
+</li>
+<li><strong>Validation:</strong> tool arguments and structured output are checked against a JSON Schema subset (types, bounds, <code>pattern</code>, <code>const</code>, <code>anyOf</code>/<code>oneOf</code>/<code>allOf</code>/<code>not</code>, local <code>$ref</code>, <code>additionalProperties</code>).
+</li>
+<li><strong>Truncation:</strong> a Responses WebSocket <code>response.incomplete</code> returns <code>finish_reason=&quot;length&quot;</code> (<code>finishReason: &quot;length&quot;</code> in TypeScript) with usage rather than raising.
+</li></ul>
+<h2 id="agent-loop-guarantees">Agent loop guarantees</h2>
+<p>The <code>AgentLoop</code> keeps every tool call answered: if a run stops early (approval needed, timeout, cancellation, <code>max_tool_calls</code>) unexecuted calls receive a <code>tool_not_executed</code> tool message, completed results from a concurrent batch are kept, and loop-detector state is per run.</p>
+<h2 id="agent-memory">Agent memory</h2>
+<p>Give an agent memory with <code>AgentConfig.memory</code>, a list of sources. Each run resolves every source and adds the results to the model context as <code>retrieved</code> context items (ids <code>memory:&lt;name&gt;:&lt;n&gt;</code>, metadata <code>memory_source</code>), so context policies, offloading and prompt-injection defenses apply to them as to any retrieved data.</p>
+<div class="table-wrap"><table><thead><tr><th>Source</th><th>What the model sees</th><th>Default trust</th></tr></thead><tbody><tr><td>A string</td><td>The text</td><td>trusted</td></tr>
+<tr><td>Any custom object (dataclass, pydantic model, dict, class instance; <code>Set</code>/<code>Map</code> in TypeScript)</td><td>Its fields as JSON</td><td>trusted</td></tr>
+<tr><td>A memory store or retriever: Agent RT's <code>InMemoryLongTermMemoryStore</code>, or one from LangChain, LangGraph, LlamaIndex, AutoGen, OpenAI Agents (<code>Session</code>) or mem0 (<a href="/docs/guides/migration-reference.html#memory-from-other-frameworks">details</a>)</td><td>The results for the latest user prompt</td><td>untrusted</td></tr>
+<tr><td>A function <code>(query) -&gt; value or list</code> (may be async)</td><td>Its return values, each handled as above</td><td>untrusted</td></tr></tbody></table></div>
+<p>Wrap a source in <code>MemorySource</code> to set its <code>name</code>, <code>trust</code>, <code>limit</code> (default 5 results for stores and functions), <code>scope</code> (passed to an Agent RT store's search) or <code>search_kwargs</code> / <code>searchOptions</code> (passed to another framework's search, such as a mem0 <code>user_id</code> or a LangGraph <code>namespace</code>). Store and function results default to untrusted because they often hold user- or tool-written text; untrusted memory is sent as user-role data and, like other untrusted context, hides side-effecting tools unless <code>PromptInjectionDefense(allow_untrusted_side_effects=True)</code> is set. Mark a source <code>trust=&quot;trusted&quot;</code> only when you control what is written to it.</p>
+<pre><code class="language-python">from agent_rt import AgentConfig, InMemoryLongTermMemoryStore, MemorySource, ModelSettings
+
+agent = AgentConfig(
+    name=&quot;assistant&quot;,
+    instructions=&quot;Be concise.&quot;,
+    model=ModelSettings(model=&quot;claude-sonnet-5&quot;),
+    memory=[
+        &quot;The user prefers metric units.&quot;,
+        user_profile,                                   # any custom object
+        MemorySource(store, name=&quot;facts&quot;, limit=3),     # searched every run
+        MemorySource(fetch_recent_orders, name=&quot;orders&quot;),  # (query) -&gt; values
+    ],
+)</code></pre>
+<pre><code class="language-ts">const agent = {
+  name: &quot;assistant&quot;,
+  instructions: &quot;Be concise.&quot;,
+  model: { model: &quot;claude-sonnet-5&quot; },
+  memory: [
+    &quot;The user prefers metric units.&quot;,
+    userProfile,
+    new MemorySource(store, { name: &quot;facts&quot;, limit: 3 }),
+    new MemorySource(fetchRecentOrders, { name: &quot;orders&quot; }),
+  ],
+};</code></pre>
+<p><code>resolve_agent_memory(memory, query)</code> / <code>resolveAgentMemory(memory, query)</code> return the same context items without running the loop.</p>
+<h3 id="memory-packages">Memory packages</h3>
+<p><code>load_memory()</code> / <code>loadMemory()</code> connect a dedicated memory package and return a <code>MemoryBackend</code>: put it in <code>AgentConfig.memory</code> to recall memories for every run, and call <code>remember(messages)</code> after a run to store the conversation (only user and assistant turns are sent; system prompts and tool output are dropped).</p>
+<div class="table-wrap"><table><thead><tr><th>Backend</th><th>Python install</th><th>TypeScript install</th><th>Options</th></tr></thead><tbody><tr><td><code>mem0</code> (default)</td><td><code>pip install 'agent-rt[memory]'</code> or <code>'agent-rt[mem0]'</code></td><td><code>npm install mem0ai</code></td><td><code>user_id</code> (default <code>default</code>), <code>agent_id</code>, <code>run_id</code>; <code>config</code> for a self-hosted <code>Memory</code> config, or <code>api_key</code> (+ <code>host</code>) for the hosted platform</td></tr>
+<tr><td><code>memu</code></td><td><code>pip install 'agent-rt[memu]'</code> (Python 3.13+)</td><td>— (Python-only)</td><td><code>user_id</code>, plus memU's <code>llm_profiles</code>, <code>database_config</code>, <code>blob_config</code>, <code>memorize_config</code>, <code>retrieve_config</code>, <code>user_config</code></td></tr>
+<tr><td><code>zep</code></td><td><code>pip install 'agent-rt[zep]'</code></td><td><code>npm install @getzep/zep-cloud</code></td><td><code>api_key</code>, <code>base_url</code>, <code>graph_id</code> (searched), <code>thread_id</code> (written)</td></tr>
+<tr><td><code>letta</code></td><td><code>pip install 'agent-rt[letta]'</code></td><td><code>npm install @letta-ai/letta-client</code></td><td><code>api_key</code>, <code>base_url</code>, <code>agent_id</code> (archival passages)</td></tr>
+<tr><td><code>supermemory</code></td><td><code>pip install 'agent-rt[supermemory]'</code></td><td><code>npm install supermemory</code></td><td><code>api_key</code>, <code>base_url</code>, <code>namespace</code> (default <code>default</code>)</td></tr></tbody></table></div>
+<pre><code class="language-python">from agent_rt import AgentConfig, AgentLoop, ModelSettings, load_memory
+
+memory = load_memory(options={&quot;user_id&quot;: &quot;alice&quot;})          # mem0
+# memory = load_memory(backend=&quot;zep&quot;, options={...})       # or any backend above
+# memory = load_memory(config)                             # agent_rt_settings.memory
+
+agent = AgentConfig(name=&quot;assistant&quot;, instructions=&quot;Be concise.&quot;,
+                    model=ModelSettings(model=&quot;claude-sonnet-5&quot;), memory=[memory])
+result = await AgentLoop(provider).run(agent, messages)
+await memory.remember(result.messages)</code></pre>
+<pre><code class="language-ts">const memory = await loadMemory(undefined, { options: { user_id: 'alice' } });
+const agent = { name: 'assistant', instructions: 'Be concise.', model: { model: 'claude-sonnet-5' }, memory: [memory] };
+const result = await new AgentLoop(provider).run(agent, messages);
+await memory.remember(result.messages);</code></pre>
+<p>The backend can also be set once in <code>agent-rt.yaml</code> (<code>agent_rt_settings.memory: {backend, options}</code>, see <a href="/docs/reference/configuration.html">Configuration</a>); <code>backend</code>/<code>options</code> passed in code win. Unknown backends and options fail at load time, and an uninstalled package raises with the install command. These packages call their own services: mem0 and memU use an LLM and embedding model to extract and index memories (mem0's self-hosted default is OpenAI, so it needs <code>OPENAI_API_KEY</code>), and mem0 sends its own anonymous telemetry unless <code>MEM0_TELEMETRY=False</code>. Recalled memories are untrusted by default, like any store.</p>
+<h2 id="tool-access-lists-and-unadvertised-calls">Tool access lists and unadvertised calls</h2>
+<p><code>Toolbase.initialize</code> accepts <code>allowlist</code>, <code>blocklist</code>, <code>read_allowlist</code>, <code>read_blocklist</code>, <code>write_allowlist</code>, and <code>write_blocklist</code> (TypeScript uses the same option keys in the <code>Toolbase.initialize({...})</code> object). Lists match exact exposed tool names, including MCP names such as <code>mcp.docs.weather</code>. An omitted allowlist imposes no restriction; an empty allowlist allows nothing. Deny rules override allow rules. Read scopes apply to tools marked <code>none</code> or <code>read</code>; all other side effects use write scopes.</p>
+<p>Excluded tools are removed before relevance selection, model exposure, and <code>tool_search</code>. Excluded MCP tools are not registered. Direct calls through <code>Toolbase.execute</code> to screened-out tools are rejected, and <code>AgentLoop</code> rejects any call not present in the active advertised tool set, including names fabricated by a provider.</p>
+<pre><code class="language-python">base = await Toolbase.initialize(
+    tool_registry=registry,
+    blocklist=(&quot;shell.delete&quot;,),
+    read_allowlist=(&quot;documents.search&quot;, &quot;documents.read&quot;),
+    write_allowlist=(),
+)</code></pre>
+<h2 id="secure-preset">Secure preset</h2>
+<p>The core runtime leaves permissions, approvals, timeouts, and token caps off so trusted local scripts stay simple. For untrusted input or production, start from the preset instead:</p>
+<ul>
+<li><code>SECURE_RUN_LIMITS</code> (Python <code>AgentRunLimits</code>, TypeScript <code>AgentRunLimits</code> object): 16 turns, 64 tool calls, a 120 s timeout, and 100,000 total tokens. These are the API server's defaults.
+</li>
+<li><code>secure_tool_registry(permission_rules, approval_manager=None, **options)</code> / <code>secureToolRegistry(permissionRules, approvalManager?)</code>: a <code>ToolRegistry</code> whose permissions deny by default. Only <code>none</code>/<code>read</code> tools are allowed (tools that declare no <code>side_effect</code> count as <code>none</code>). Add allow rules for anything else; deny rules always win. Consequential and destructive tools still raise <code>ApprovalRequiredError</code> until approved.
+</li></ul>
+<p>Model-backed tool-input screening is not part of the preset because it needs the optional <code>agent-action-guard</code> model. Turn it on with <code>enable_model_tool_input_guardrail=True</code> (Python, also accepted by <code>secure_tool_registry</code>) or the <code>ToolRegistry</code> constructor's <code>modelToolInputGuardrail: { enabled: true }</code> argument (TypeScript).</p>
+<p>Approvals over chat: <code>ChatApprovals(manager, send)</code> / <code>new ChatApprovals(manager, send)</code> pushes every request that needs a human to a chat channel as a complete escaped JSON description of the tool and all arguments with a short reply code (sent once per request, even when a paused run is resumed). <code>handle_reply(&quot;approve&quot;)</code> / <code>handleReply('deny 2')</code> turns the reply into a <code>once</code> grant bound to the exact arguments; the code is only needed when several approvals wait. <code>send(text, code)</code> is any transport; <code>ntfy_sender(topic)</code> / <code>ntfySender(topic)</code> delivers a phone push through ntfy without blocking the agent loop. Wire your bot's incoming-message webhook to <code>handle_reply</code> and accept messages only from the approving human, since anyone who can reply can approve. Tool names, full paths and every argument value are rendered without truncation; control and formatting characters appear as visible JSON escapes; a failing channel is logged and the run stays paused. Not a YAML setting: construct it in code.</p>
+<h2 id="action-blockers">Action blockers</h2>
+<p><code>ToolRegistry</code> accepts multiple deny-only action blockers in addition to transform-capable tool-input guardrails. Blockers run in order and the first rejection raises <code>ActionBlockedError</code> before input guardrails, argument validation, approval, or handler execution.</p>
+<p>The built-in rule blocker defaults to <code>sudo</code>, <code>rm -rf</code>, <code>git add</code>, <code>git commit</code>, <code>git push</code>, <code>git reset --hard</code>, <code>git merge</code>, and <code>git rebase</code>; pass a different command list to replace those defaults.</p>
+<pre><code class="language-python">from agent_rt import (
+    RuleBasedActionBlocker,
+    ToolRegistry,
+    make_agent_action_guard_action_blocker,
+    make_decision_action_blocker,
+)
+
+def organization_blocker(call, definition, context):
+    if definition.side_effect == &quot;write&quot; and context.get(&quot;read_only&quot;):
+        return &quot;write actions are disabled for this run&quot;
+    return False
+
+registry = ToolRegistry(
+    action_blockers=(
+        RuleBasedActionBlocker([&quot;sudo&quot;, &quot;rm -rf&quot;, &quot;git push&quot;, &quot;git reset --hard&quot;]),
+        make_agent_action_guard_action_blocker(),
+        make_decision_action_blocker(jev_provider, threshold=0.85),
+        organization_blocker,
+    ),
+)</code></pre>
+<p>A custom Python blocker may be a callable or an object exposing <code>check</code>; it can return <code>False</code>/<code>None</code> to allow, <code>True</code> or a reason string to block, or an <code>ActionBlockerResult</code>. TypeScript exposes the corresponding <code>RuleBasedActionBlocker</code>, <code>makeAgentActionGuardActionBlocker</code>, and <code>makeDecisionActionBlocker</code> APIs; <code>registry.actionBlockers</code> is the configured ordered list. The Decision-model adapter accepts a provider with <code>decide</code>, including Jev-compatible providers and <code>OpenAIDecisionProvider</code>, and evaluates a typed <code>noul</code> score against the configured threshold.</p>
+<p>Every Decision helper also works with the OpenAI-compatible Decisions API. Set <code>decision_model: {provider: openai, api_key: os.environ/OPENAI_API_KEY}</code> in <code>agent-rt.yaml</code> (add <code>base_url</code> to target any OpenAI-compatible Decisions host; it is independent of the generative model's <code>base_url</code>, so LLMs and Decision models can come from different APIs), or construct <code>OpenAIDecisionProvider(base_url=..., api_key=...)</code> / <code>new OpenAIDecisionProvider({ baseUrl, apiKey })</code> directly. The adapter sends <code>noul</code> questions as <code>predicate</code> and <code>choice</code> questions (with their <code>criteria</code>) as <code>choice</code> to <code>POST /v1/decisions</code>, passes non-string state as an <code>input_json</code> part, and maps the answers back to the same shape a Jev host returns. A refused or missing answer raises, so guards fail closed.</p>
+<h2 id="api-server-python">API server (Python)</h2>
+<p>Install <code>agent-rt[api]</code> to expose configured agents through OpenAI-compatible Chat Completions/Responses APIs and an Anthropic-compatible Messages API.</p>
+<pre><code class="language-python">from agent_rt import AgentConfig, AgentLoop, ModelSettings, load_config, load_model
+from agent_rt_api import serve
+
+provider = load_model(load_config())
+loop = AgentLoop(provider)
+agent = AgentConfig(
+    name=&quot;assistant&quot;,
+    instructions=&quot;You are a helpful assistant.&quot;,
+    model=ModelSettings(model=&quot;your-provider-model&quot;),
+)
+
+serve(loop, {&quot;assistant&quot;: agent}, port=8000)</code></pre>
+<p>The server includes bounded concurrency/queues, request and generation limits, authentication support, streaming, and conservative defaults for unauthenticated serving.</p>
+<ul>
+<li><strong>Rate limiting</strong> is keyed by verified credential (or client address), never by an unverified <code>Authorization</code>/<code>x-api-key</code> value, so rotating bogus credentials neither evades nor floods the limiter.
+</li>
+<li><strong>Validation happens before streaming starts</strong>: malformed bodies, bad <code>temperature</code>/<code>max_tokens</code>, unknown models, and unsupported content parts (for example <code>image_url</code>) return a 4xx instead of failing inside an SSE stream. Unsupported parts are rejected, never silently dropped.
+</li>
+<li><strong>Interrupted runs are labelled honestly</strong>: limit-driven stops (<code>max_turns</code>, <code>max_tool_calls</code>, token budget, timeout) report <code>finish_reason: &quot;length&quot;</code> (Anthropic <code>stop_reason: &quot;max_tokens&quot;</code>) and never expose unexecuted server-side tool calls to the client.
+</li>
+<li><code>/health</code> returns only <code>{&quot;status&quot;: &quot;ok&quot;}</code> to unauthenticated callers when API keys are configured; agent names and queue depth require a valid key.
+</li></ul>
+<p>The TypeScript package provides the API-façade contracts but no ready-made HTTP server.</p>
+<h2 id="task-lists-todo-tool">Task lists (todo tool)</h2>
+<p><code>TodoList</code> gives a model a task list through one <code>todo</code> tool. Its <code>action</code> is <code>add</code> (with <code>content</code>, optional <code>status</code>), <code>update</code> (<code>id</code> plus <code>content</code> and/or <code>status</code>), <code>remove</code> (<code>id</code>), <code>clear</code> (empties the whole list), or <code>list</code>; statuses are <code>pending</code>, <code>in_progress</code>, and <code>completed</code>, and every action returns the whole list. Bad calls (unknown ids, empty content, a full list of 100 tasks) come back to the model as tool errors and leave the list unchanged.</p>
+<p>Each <code>TodoList</code> holds exactly one session's tasks, and the tool it registers only sees that list, so create one per session to keep lists from leaking between sessions:</p>
+<pre><code class="language-python">todos = TodoList()
+todos.register(registry)          # adds the &quot;todo&quot; tool
+todos.replace(saved_items)        # restore a stored list; validated</code></pre>
+<pre><code class="language-ts">const todos = new TodoList();
+todos.register(registry);
+todos.replace(savedItems);</code></pre>
+<p>The terminal CLI and the web UI register the tool by default. Each session keeps its own list, saved in its transcript: <code>/new</code> and <code>/clear</code> start a new session (new id, empty history and list; the previous session stays resumable), <code>/resume</code> restores the session's list, <code>/todos</code> shows it, and the web UI sends each session's list with its prompts and saves it with the session.</p>
+<h2 id="toolbase-relevance-selection-and-tool-search">Toolbase, relevance selection, and tool search</h2>
+<p>For large tool inventories, initialize a <code>Toolbase</code> rather than exposing every schema to every model turn. <code>Toolbase.initialize</code> / <code>Toolbase.initialize(...)</code> combines enabled local tools, materialized deferred tools, and tools discovered from configured MCP clients into one internal catalog. An optional safety filter is applied to that complete catalog first. The per-turn visibility selector then chooses the relevant subset, while <code>tool_search</code> remains available so the agent can discover a safe tool that was not initially selected.</p>
+<p>When <code>Toolbase</code> is passed as the <code>tool_registry</code> / <code>toolRegistry</code> argument to <code>AgentLoop</code>, the loop automatically uses its visibility filter. Tools returned by <code>tool_search</code> are promoted on later turns, but they still have to survive capability grants, prompt-injection filtering, tool-selection policy, context isolation, argument validation, action blockers, approvals, and all other execution-time checks. Replacing a screened tool definition also fails closed until the toolbase is rebuilt.</p>
+<p>Decision models can configure both stages together with <code>make_decision_toolbase</code> in Python or <code>makeDecisionToolbase</code> in TypeScript. These helpers safety-screen tool definitions before relevance selection, so an unsafe tool cannot be rediscovered through <code>tool_search</code>.</p>
+<h2 id="deterministic-pii-morphing">Deterministic PII morphing</h2>
+<pre><code class="language-python">from agent_rt import PIIEntity, PIIMorpher
+
+morpher = PIIMorpher()
+safe_text = morpher.morph_text(&quot;Contact alice@example.com&quot;)
+lookup = morpher.mapping  # short fingerprint -&gt; deterministic fake value
+
+safe_name = morpher.morph_text(
+    &quot;Customer Alice Smith&quot;,
+    entities=(PIIEntity(kind=&quot;person&quot;, start=9, end=20),),
+)</code></pre>
+<pre><code class="language-ts">import { PIIMorpher } from &quot;agent-rt&quot;;
+
+const morpher = new PIIMorpher();
+const safeText = morpher.morphText(&quot;Contact alice@example.com&quot;);
+const lookup = morpher.mapping;</code></pre>
+<p><code>PIIMorpher</code> is enabled by default when used through <code>PrivacyRedactor</code>. It detects a conservative set of high-confidence identifiers in free text (email, North American phone number, SSN, Luhn-valid payment-card number, and IPv4), uses common structured field names for person/address/date values, and accepts explicit entity spans from external PII/NER detectors. The same PII maps to the same realistic synthetic value in Python and TypeScript. Its in-memory lookup stores only a 20-hex fingerprint (10 SHA-256 hex characters plus 10 MD5 hex characters) to fake-data mapping, never the original PII. Pass <code>enabled=False</code> (Python) / <code>{ enabled: false }</code> (TypeScript) to disable morphing.</p>
+<p>The short unkeyed fingerprint is for deterministic lookup, not a cryptographic privacy boundary. Treat the mapping as sensitive metadata, and use keyed HMAC or deterministic encryption/tokenization when dictionary-attack resistance or reversible pseudonymization is required.</p>
+<h2 id="terminal-cli-python">Terminal CLI (Python)</h2>
+<p>Install <code>agent-rt[cli]</code> to add the <code>agent-rt</code> command. <code>artie</code> is an alias for it with the same subcommands and options (<code>artie -p &quot;...&quot;</code>, <code>artie migrate</code>, <code>artie web</code>); with <code>uvx</code>, run it as <code>uvx --from agent-rt artie</code>:</p>
+<pre><code class="language-bash">agent-rt
+agent-rt -p &quot;explain this stack trace&quot;
+agent-rt --config ./agent-rt.yaml -p &quot;explain this stack trace&quot;
+agent-rt --session refactor --prompt &quot;plan the migration&quot;
+agent-rt --session refactor --resume
+agent-rt session list
+agent-rt session delete refactor
+agent-rt upgrade                           # check PyPI and upgrade immediately
+agent-rt --max-output-tokens 4096 -p &quot;summarize this diff&quot;</code></pre>
+<p>An interactive session opens with a banner of Artie, the Agent RT mascot, drawn from the logo in colored half-block pixels (a colored ASCII version on consoles without 256 colors or UTF-8), showing its name, the version, the model, the session id, and the flagship features (Guard, Checkpoints, Wall); <code>-p</code>/<code>--prompt</code> runs print no banner. Artie has moods: when Guard (an action blocker or guardrail) blocks a call, the session prints Artie raising a shield beside the reason instead of a plain error, <code>agent-rt demo</code> shows the same pose when it stops the injected <code>rm -rf ~</code>, and <code>agent-rt migrate</code> prints Artie celebrating when the rewrite is kept.</p>
+<p>In interactive terminal sessions the CLI checks the published PyPI version at startup. If a newer stable release exists it announces the version and attempts to upgrade using the current installation's package manager (pip, uv, uv tool, or pipx). On success, press <strong>Enter</strong> to restart the CLI with the same arguments; enter other text to keep the current process. Use <code>/update</code> to check immediately while chatting, or <code>agent-rt upgrade</code> (also <code>artie upgrade</code>) to update without configuring a model. Update checks use a short network timeout; a failed startup check is ignored, while a manual check reports the failure. The updater does not run for one-shot prompts, demo, web, API, or migration commands. Editable source installs are never overwritten; temporary <code>uvx</code> environments cannot be upgraded in place (rerun with <code>uvx --refresh agent-rt</code>). Installer failure leaves the running CLI in place. A non-interactive <code>upgrade</code> completes without attempting a restart.</p>
+<p>Run <code>agent-rt demo</code> (<code>uvx agent-rt demo</code> or <code>npx agent-rt demo</code>) to try Agent RT with no config or API key: a scripted mock model meets a prompt injection, tries <code>rm -rf ~</code>, and the built-in action blocker stops it before the tool runs. The demo totals tokens and prints the process's peak memory.</p>
+<p>The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. <code>--config PATH</code> selects the YAML config file (default: <code>~/.agent-rt/config.yaml</code>; project files require an explicit path); see <a href="/docs/reference/configuration.html">Configuration</a>. Workspace writes require approval; Git integration is inspection-only. File writes and exact-text replacements check that the target has not changed during a pending approval and abort rather than overwriting intervening edits. The <code>todo</code> tool (see <a href="#task-lists-todo-tool">Task lists</a>) is on by default, with one list per session. Writes to <code>.git/</code> and to <code>.gitattributes</code>/<code>.gitmodules</code> are refused outright, and the Git tools fail closed when the repository's own config defines <code>filter.*</code> drivers (Git runs those commands during <code>status</code>/<code>diff</code>). Workspace tool errors (for example a non-matching <code>replace_in_file</code>) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.</p>
+<h3 id="project-instructions-skills-and-mcp-servers">Project instructions, skills, and MCP servers</h3>
+<p>The CLI reads the same files Codex and Claude Code read, so a repository set up for either works unchanged:</p>
+<ul>
+<li><strong>Instructions</strong>: <code>~/.codex/AGENTS.md</code>, <code>~/.claude/CLAUDE.md</code>, then <code>AGENTS.md</code> (or <code>AGENTS.override.md</code>), <code>CLAUDE.md</code>, <code>.claude/CLAUDE.md</code>, and <code>CLAUDE.local.md</code> in each folder from the Git root down to the launch folder. Nearer files come later and take precedence. They are added to the system prompt for each launch (not saved in the transcript), capped at 32 KiB in total; a symlink pointing outside the repository (or, for the global files, the home folder) is ignored, and a <code>CLAUDE.md</code> symlinked to <code>AGENTS.md</code> is read once. <code>@path</code> imports are not expanded.
+</li>
+<li><strong>Skills</strong>: <code>SKILL.md</code> folders in <code>~/.claude/skills</code>, <code>~/.codex/skills</code>, <code>~/.agents/skills</code>, and <code>&lt;cli.home&gt;/skills</code>, plus the project's <code>.claude/skills</code>, <code>.codex/skills</code>, <code>.agents/skills</code>, and <code>.agent-rt/skills</code>. <code>/skills</code> lists them. A skill that passes the full registration scan (including the Decision model) at launch becomes trusted: a SHA-256 of its loaded files is stored in <code>&lt;cli.home&gt;/trusted_skills.json</code> (owner-only), and later launches skip the Decision scan while the files are unchanged (the built-in pattern scan still runs). If any file of a trusted skill changes, it loses its trust at the next launch and is scanned again; a skill that then fails is left out.
+</li>
+<li><strong>MCP servers</strong>: <code>[mcp_servers.*]</code> in <code>~/.codex/config.toml</code> (Python 3.11+), <code>mcpServers</code> in <code>~/.claude.json</code> (user and per-project entries), and the project's <code>.mcp.json</code>. stdio and streamable HTTP servers are supported (<code>${VAR}</code> and <code>${VAR:-default}</code> expand in Claude Code entries; Codex <code>bearer_token_env_var</code>, <code>env_http_headers</code>, and <code>enabled = false</code> are honored); legacy SSE servers are skipped with a warning. A project <code>.mcp.json</code> comes with the repository, so its servers start only after you approve them at launch, or if you already approved them in Claude Code (<code>enabledMcpjsonServers</code>); servers listed in <code>disabledMcpjsonServers</code> never start. Tools appear as <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>, pass the usual registration-safety scan, and every call asks for approval like a workspace edit (<code>a</code> approves edits and MCP calls for the rest of the session). <code>/mcp</code> lists connected servers and their tools. The web UI loads instructions and skills but not MCP servers.
+</li></ul>
+<h3 id="reuse-another-agent-clis-setup">Reuse another agent CLI's setup</h3>
+<p><code>agent-rt claude</code>, <code>agent-rt codex</code>, <code>agent-rt opencode</code>, and <code>agent-rt copilot</code> accept that tool's own one-shot command and flags. They read its model, provider, and API-key settings from its usual environment variables and config files, so no <code>agent-rt.yaml</code> is needed:</p>
+<pre><code class="language-bash">agent-rt claude -p &quot;explain this stack trace&quot; --model opus
+agent-rt codex exec &quot;explain this stack trace&quot; -m gpt-5.5
+agent-rt opencode run &quot;explain this stack trace&quot;
+agent-rt copilot -p &quot;explain this stack trace&quot;</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Command</th><th>Flags</th><th>Environment variables</th><th>Config files</th></tr></thead><tbody><tr><td><code>agent-rt claude</code></td><td><code>-p</code>, <code>--model</code>, <code>--system-prompt</code>, <code>--append-system-prompt</code>, <code>--max-turns</code>, <code>-r/--resume</code>, <code>--session-id</code></td><td><code>ANTHROPIC_API_KEY</code>, <code>ANTHROPIC_BASE_URL</code>, <code>ANTHROPIC_MODEL</code>, <code>ANTHROPIC_DEFAULT_MODEL</code>, <code>ANTHROPIC_DEFAULT_SONNET_MODEL</code> / <code>_OPUS_</code> / <code>_HAIKU_</code> / <code>_FABLE_MODEL</code> (alias targets), <code>CLAUDE_CODE_MAX_OUTPUT_TOKENS</code>, <code>CLAUDE_CONFIG_DIR</code></td><td><code>model</code> and <code>env</code> in <code>$CLAUDE_CONFIG_DIR/settings.json</code> (default <code>~/.claude</code>); <code>model</code> only from <code>.claude/settings.json</code> and <code>.claude/settings.local.json</code></td></tr>
+<tr><td><code>agent-rt codex</code></td><td><code>exec</code>, <code>-m</code>, <code>-c key=value</code>, <code>-p/--profile</code>, <code>--oss</code>, <code>--local-provider</code>, <code>-C</code>, <code>--ephemeral</code></td><td><code>CODEX_HOME</code>, <code>CODEX_API_KEY</code> (then <code>OPENAI_API_KEY</code>), a provider's <code>env_key</code>, <code>OPENAI_BASE_URL</code></td><td><code>$CODEX_HOME/config.toml</code>: <code>model</code>, <code>model_provider</code>, <code>openai_base_url</code>, <code>oss_provider</code>, <code>model_providers.&lt;id&gt;</code> (<code>base_url</code>, <code>env_key</code>, <code>requires_openai_auth</code>, <code>experimental_bearer_token</code>), profiles as <code>$CODEX_HOME/&lt;name&gt;.config.toml</code> or <code>[profiles.&lt;name&gt;]</code>; the API key in <code>$CODEX_HOME/auth.json</code>; built-in <code>ollama</code> and <code>lmstudio</code> providers</td></tr>
+<tr><td><code>agent-rt opencode</code></td><td><code>run</code>, <code>-m provider/model</code>, <code>-s</code>, <code>--dir</code></td><td><code>OPENCODE_CONFIG</code>, <code>OPENCODE_CONFIG_DIR</code>, <code>OPENCODE_CONFIG_CONTENT</code>, <code>OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX</code>, <code>XDG_CONFIG_HOME</code>, <code>XDG_DATA_HOME</code>, <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code></td><td><code>~/.config/opencode/opencode.json(c)</code> (JSONC, <code>{env:NAME}</code> and <code>{file:path}</code> substitution), <code>model</code> only from the project <code>opencode.json(c)</code>; API-key entries in <code>~/.local/share/opencode/auth.json</code></td></tr>
+<tr><td><code>agent-rt copilot</code></td><td><code>-p</code>, <code>--model</code>, <code>-C</code>, <code>--resume</code></td><td><code>COPILOT_PROVIDER_BASE_URL</code>, <code>COPILOT_PROVIDER_TYPE</code> (<code>openai</code>/<code>anthropic</code>), <code>COPILOT_PROVIDER_API_KEY</code>, <code>COPILOT_PROVIDER_BEARER_TOKEN</code> (OpenAI-compatible only), <code>COPILOT_MODEL</code>, <code>COPILOT_PROVIDER_MODEL_ID</code>, <code>COPILOT_PROVIDER_WIRE_MODEL</code>, <code>COPILOT_PROVIDER_MAX_OUTPUT_TOKENS</code></td><td>none (BYOK is environment-only)</td></tr></tbody></table></div>
+<p>These are the variables each tool documents for models, endpoints, and credentials (<a href="https://code.claude.com/docs/en/env-vars">Claude Code</a>, <a href="https://learn.chatgpt.com/docs/config-file/environment-variables">Codex</a>, <a href="https://opencode.ai/docs/cli/">opencode</a>, and <code>copilot help providers</code> for Copilot CLI). Project-level files may only choose the model. Endpoints and keys come from user-level config or the environment, so a cloned repository cannot send your API key to its own server; Codex's project <code>.codex/config.toml</code> is not read for the same reason. Documented variables that Agent RT cannot honor are reported rather than silently dropped. <code>ANTHROPIC_CUSTOM_HEADERS</code>, <code>ANTHROPIC_BETAS</code>, Codex <code>http_headers</code>/<code>env_http_headers</code>/<code>query_params</code>, <code>COPILOT_PROVIDER_WIRE_API=responses</code>, and the permission variable <code>COPILOT_ALLOW_ALL</code> print a notice. <code>ANTHROPIC_AUTH_TOKEN</code>, <code>CLAUDE_CODE_OAUTH_TOKEN</code>, <code>CLAUDE_CODE_USE_BEDROCK</code>/<code>_VERTEX</code>/<code>_FOUNDRY</code>, <code>CODEX_ACCESS_TOKEN</code>, and Copilot's <code>azure</code> provider type stop with a message saying what to set instead.</p>
+<p>Only API-key credentials are reused. Subscription and OAuth sign-ins (Claude.ai, ChatGPT, GitHub Copilot's hosted models, opencode OAuth providers) belong to the official clients and are refused with a hint about which key to set. The CLI's own <code>agent-rt.yaml</code> is not read in these modes.</p>
+<h2 id="web-ui-python">Web UI (Python)</h2>
+<p>Install <code>agent-rt[web]</code> to add the <code>agent-rt web</code> command. It serves a browser chat for the current folder on <code>http://127.0.0.1:8765/</code> prints a reusable launch link (<code>/?token=…</code>), and opens a private redirect file carrying a single-use code. The file is owner-only inside a private directory and is deleted at shutdown; the browser command line contains only its file path:</p>
+<pre><code class="language-bash">agent-rt web
+agent-rt web --config ./agent-rt.yaml --model gpt-5.5 --port 9000 --no-open</code></pre>
+<p>No config file is needed: without one, or with one that has no <code>model_list</code> (even a blank file), the web UI uses OpenAI with <code>OPENAI_API_KEY</code> (and <code>OPENAI_BASE_URL</code>, when set, for another OpenAI-compatible endpoint) and lists the models from its <code>/v1/models</code>, starting with the first unless you pass <code>--model</code>. Use a config to choose other providers or endpoints. The web UI uses the same workspace tools, skills, and run limits as the terminal CLI. Sessions are shared with the terminal CLI: both save them as JSON files in <code>~/.agent-rt/sessions</code> (under <code>cli.home</code>, owner-only), so a session started in <code>agent-rt</code> opens in the web UI and the reverse, and <code>agent-rt session list</code> / <code>agent-rt session delete ID</code> manage them from either side. The server reads and writes that folder through <code>/api/sessions</code>, and the browser still sends the session history with each prompt. Sessions are listed per workspace folder (a link to another folder's session opens a new one; sessions saved before workspaces were recorded show in every folder), and a tab picks up sessions the terminal saved or deleted when you return to it. The server starts in about half a second and uses about 50 MB; the first tool call loads the Agent Action Guard classifier that screens workspace tool calls, which adds about 150 MB. Long replies stream without freezing the page. Drag the sessions sidebar's right edge (or focus it and use the arrow keys) to resize it between 180 and 480 pixels; the width is remembered in this browser. The model menu starts with the <code>model_list</code> names from your config, with <code>agent_rt_settings.default_model</code> (or the first entry) selected; once the page has loaded it also asks each configured endpoint's <code>/v1/models</code> (in the background, 10 seconds per endpoint, failures ignored) and adds those model ids, which are sent straight to the endpoint that listed them. Workspace edits show an approval card in the page (approve, approve for this session, or deny). While a run is going the run button becomes a stop button; stopping, like closing the tab, stops the run and denies its pending edit. Each tab keeps its own session (in the URL), so several tabs can run different sessions at the same time; a second tab sending to a session that is already running waits for that run (browser Web Locks), then continues from both turns. The server listens on loopback only, rejects requests whose <code>Host</code> is not <code>127.0.0.1</code> or <code>localhost</code>, and serves the page and API only to a browser that opened the launch link: the link's per-launch token becomes an <code>HttpOnly</code>, <code>SameSite=Strict</code> cookie, and API calls also need a custom header, so other users and processes on the computer and other websites cannot drive it. With <code>--no-open</code>, open the printed link yourself; to use <code>localhost</code> instead of <code>127.0.0.1</code>, change the host in that link.</p>
+<p>The web server limits memory growth from slow browser connections with a bounded streaming queue. By default, four agent runs execute at once and up to four additional requests may wait for a slot (for up to 15 seconds); excess requests receive HTTP 429. Use <code>--max-concurrent-runs N</code> and <code>--max-queued-runs N</code> to adjust those limits (<code>--max-queued-runs 0</code> rejects immediately when full). Each completed or disconnected stream releases its slot.</p>
+<h3 id="time-travel-debugger">Time-travel debugger</h3>
+<p>The same server has a debugger page at <code>/debug</code> (linked from the sessions sidebar). Run <code>agent-rt web --demo</code> (or <code>agent-rt demo --web</code>) to open it straight away with no config or API key. It replays the offline <code>agent-rt demo</code> scenario on a scripted mock model: a weather tool returns a prompt injection, the model tries <code>run_shell</code> with <code>rm -rf ~</code>, and the built-in action blocker stops it before the tool runs. Each model turn is its own <code>AgentLoop.run</code>, resumed from the previous turn's <code>AgentCheckpoint</code>, so every node on the timeline is a real checkpoint. The page shows the token budget, tool calls run, and blocked actions for the selected checkpoint, plus that step's events and the transcript at that point. <strong>Replay branch</strong> steps through the branch from the start, and the arrow keys move between checkpoints and branches. <strong>Fork &amp; resume</strong> starts a new branch from the selected checkpoint, optionally with the latest tool result rewritten (for example, with the injection removed) or with a different token budget (try 20 to see <code>budget_exhausted</code>). The debugger state lives in server memory, is capped at 200 checkpoints, and is lost when the server stops. In <code>--demo</code> mode, chat is off.</p>
+<p>Deleting a session coordinates with an active run using Web Locks when available, preventing the run from recreating a deleted transcript. Very long unfinished Markdown blocks render as plain text while streaming and receive full Markdown formatting when complete, avoiding repeated expensive parsing.</p>
+<h2 id="chat-bots-python-beta">Chat bots (Python, beta)</h2>
+<p><code>agent-rt serve</code> (or <code>artie serve</code>) runs Agent RT as a Telegram and/or Discord bot. It is a beta feature and prints a note saying so at startup. Name the platforms as one comma-separated argument; the command fails when none is passed or a name is unknown:</p>
+<pre><code class="language-bash">agent-rt serve telegram,discord
+agent-rt serve telegram --config ./agent-rt.yaml --model gpt-5.5</code></pre>
+<p>Each platform reads <code>agent_rt_settings.serve.&lt;platform&gt;</code> from the YAML config:</p>
+<pre><code class="language-yaml">agent_rt_settings:
+  serve:
+    telegram: {bot_token: os.environ/TELEGRAM_BOT_TOKEN, allowed_users: [123456789]}
+    discord: {bot_token: os.environ/DISCORD_BOT_TOKEN, allowed_users: [&quot;123456789012345678&quot;]}</code></pre>
+<ul>
+<li>The bot answers only the user ids in <code>allowed_users</code>. Anyone else gets a reply that includes their user id, so the owner can add it.
+</li>
+<li>The bots have no workspace, file, or command tools, because anyone can message a public bot. Each chat (a Telegram chat or a Discord channel or DM) keeps its own conversation in memory until the process stops; send <code>/new</code> to start over.
+</li>
+<li>Telegram uses long polling (<code>getUpdates</code>), so no public URL or webhook is needed; delete any webhook set on the bot first.
+</li>
+<li>Discord connects to the Gateway and answers direct messages, plus server messages that mention the bot. It does not need the privileged Message Content intent. Replies never ping <code>@everyone</code>, roles, or users.
+</li>
+<li>A rejected token, or a Discord gateway close that reconnecting cannot fix, stops the command with exit code 1. Network errors are logged and retried. Tokens are redacted from logs.
+</li></ul>
+<h2 id="sandboxes">Sandboxes</h2>
+<p><code>SandboxSession</code> runs commands through a fail-closed backend selected with <code>agent_rt_settings.sandbox.backend</code> (<code>native</code>, <code>docker</code>, <code>e2b</code>, <code>microsandbox</code>, <code>swe-rex</code>).</p>
+<ul>
+<li><strong>Native:</strong> requires an explicit restricted account and runs as that account's primary gid unless <code>sandbox.gid</code> is set; it never keeps the caller's gid. The TypeScript backend uses <code>setpriv --clear-groups --no-new-privs</code> and reads the primary gid from <code>/etc/passwd</code>; the Python backend drops supplementary groups.
+</li>
+<li><strong>Docker:</strong> containers run with all capabilities dropped, <code>no-new-privileges</code>, and swap capped to the memory limit. Set <code>sandbox.docker_user</code> to run as a non-root user and <code>sandbox.docker_read_only: true</code> for a read-only root filesystem.
+</li>
+<li><strong>Lifetime:</strong> timeouts and cancellation kill the command (the process group for native, the container for Docker), not just await it. TypeScript backends receive an <code>AbortSignal</code> in their execute context.
+</li>
+<li><strong>Limits:</strong> output is capped while it is read (<code>SandboxResourceLimits.output_bytes</code> in Python, <code>outputBytes</code> in TypeScript; default 16 MiB), and <code>memory_bytes</code>/<code>process_count</code> (<code>memoryBytes</code>/<code>processCount</code>) of <code>0</code> are rejected.
+</li>
+<li><strong>Cleanup:</strong> call <code>await session.close()</code> to release E2B/microsandbox sessions and microVMs.
+</li>
+<li><strong>Snapshots:</strong> snapshots and clones capture only the in-process workspace and session settings, not the disk inside a native, Docker, or cloud backend.
+</li></ul>
+<h2 id="skills-and-registration-safety">Skills and registration safety</h2>
+<p><code>SkillRegistry</code> (from <code>agent-rt/extensions</code> in TypeScript) loads Claude Code/Codex-style <code>SKILL.md</code> directories and collections:</p>
+<pre><code class="language-ts">import { SkillRegistry } from &quot;agent-rt/extensions&quot;;
+
+const skills = new SkillRegistry();
+await skills.installFromPath(&quot;.claude/skills/review&quot;, { activate: true });
+await skills.installDirectory(&quot;.agents/skills&quot;);</code></pre>
+<p>Python exposes the same methods as <code>install_from_path</code> and <code>install_directory</code>. Filesystem skill registration is fail-closed: Agent RT performs deterministic scanning and, for externally sourced registrations, requires a configured Decision model before registry mutation.</p>
+<h2 id="migration-entry-points">Migration entry points</h2>
+<p>Prepend the package name to a supported upstream import path.</p>
+<div class="table-wrap"><table><thead><tr><th>Upstream</th><th>Python</th><th>TypeScript</th></tr></thead><tbody><tr><td><code>openai</code></td><td><code>agent_rt.openai</code></td><td><code>agent-rt/openai</code></td></tr>
+<tr><td><code>anthropic</code> / <code>@anthropic-ai/sdk</code></td><td><code>agent_rt.anthropic</code></td><td><code>agent-rt/@anthropic-ai/sdk</code></td></tr>
+<tr><td><code>langchain_openai</code> / <code>@langchain/openai</code></td><td><code>agent_rt.langchain_openai</code></td><td><code>agent-rt/@langchain/openai</code></td></tr>
+<tr><td><code>llama_index.llms.openai</code> / <code>@llamaindex/openai</code></td><td><code>agent_rt.llama_index.llms.openai</code></td><td><code>agent-rt/@llamaindex/openai</code></td></tr>
+<tr><td><code>agents</code> / <code>@openai/agents</code></td><td><code>agent_rt.agents</code></td><td><code>agent-rt/@openai/agents</code></td></tr>
+<tr><td><code>autogen_agentchat.agents</code></td><td><code>agent_rt.autogen_agentchat.agents</code></td><td>Python-only</td></tr>
+<tr><td><code>crewai</code></td><td><code>agent_rt.crewai</code></td><td>Python-only</td></tr>
+<tr><td><code>deepagents</code></td><td><code>agent_rt.deepagents</code></td><td><code>agent-rt/deepagents</code></td></tr>
+<tr><td><code>litellm</code></td><td><code>agent_rt.litellm</code></td><td>Python-only</td></tr>
+<tr><td><code>openrouter</code> / <code>@openrouter/sdk</code></td><td><code>agent_rt.openrouter</code></td><td><code>agent-rt/@openrouter/sdk</code></td></tr></tbody></table></div>
+<p>TypeScript also keeps the historical aliases <code>agent-rt/langchain</code>, <code>agent-rt/llamaindex</code>, and <code>agent-rt/anthropic</code>. Compatibility routes model execution through Agent RT provider contracts instead of creating a second runtime; AutoGen, CrewAI, and LiteLLM compatibility are Python-only because Agent RT does not invent JavaScript APIs without an upstream surface to preserve. See <a href="/docs/guides/migration-reference.html">Migration</a> for the supported subset and semantic gaps.</p>
+<h2 id="vector-databases">Vector databases</h2>
+<p>Built-in HTTP vector adapters cover Chroma, Milvus, Pinecone, Qdrant, and Weaviate; FAISS and pgvector plug in through custom registry factories. See <a href="/docs/reference/features-defaults.html">Features and defaults</a> for the full list.</p>
+<p>Security boundaries for these integrations:</p>
+<ul>
+<li>The compatible API rejects foreign HTTP Origins and non-JSON request bodies. Without API keys it also checks Host against loopback names or explicit <code>allowed_hosts</code>; use <code>allowed_websocket_origins</code> to allow a trusted browser origin for HTTP and WebSocket requests. Bind hosts passed to <code>serve</code> are allowed explicitly, except wildcard bind addresses.
+</li>
+<li>Project MCP startup shows JSON-escaped argument lists, environment/header names, and <code>${VAR}</code> source names without printing expanded credentials. Project <code>PATH</code>, loader variables and runtime startup hooks are refused, including for previously approved server names.
+</li>
+<li>Hosted shell/code tools in compat clients run only when that specific hosted tool is offered by the request. Supplying a sandbox alone grants no execution permission.
+</li>
+<li>Guard prefix rules inspect mixed-type argument lists and shell list/group/substitution boundaries. These rules are defense in depth; wrapper commands and path-qualified executables require permissions, approvals and sandbox policy too.
+</li>
+<li>Python E2B refuses unsupported network restrictions before creating a sandbox, including HTTP/WebSocket/IP restrictions and bandwidth/transfer caps. Unrestricted E2B execution requires <code>mode=&quot;unrestricted&quot;</code> and all three <code>allow_http</code>, <code>allow_websocket</code>, and <code>allow_ip_addresses</code> flags enabled, without network caps.
+</li>
+<li>Tenant-bound <code>ScopedMemoryStore</code> keeps storage IDs in a tenant namespace and returns the original caller IDs. Existing raw records must be copied through the tenant-bound view before switching a persisted store; they are not silently adopted into the namespace. Base-store access remains trusted administrative access.
+</li></ul>
+<div class="page-nav"><a class="next-link" href="../"><small>Back to</small><strong>← Documentation index</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+</div>
+</body></html>

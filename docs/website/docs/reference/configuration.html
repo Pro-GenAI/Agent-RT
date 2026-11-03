@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Configuration Reference — Agent RT Docs</title>
+  <meta name="description" content="Complete agent-rt.yaml configuration reference for model lists, vector stores, runtime controls, secrets, and compatibility adapters.">
+  <meta name="author" content="Pro-GenAI">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://agent-rt-pro.github.io/docs/reference/configuration.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Agent RT">
+  <meta property="og:title" content="Configuration Reference — Agent RT Docs">
+  <meta property="og:description" content="Complete agent-rt.yaml configuration reference for model lists, vector stores, runtime controls, secrets, and compatibility adapters.">
+  <meta property="og:url" content="https://agent-rt-pro.github.io/docs/reference/configuration.html">
+  <meta property="og:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <meta property="og:image:alt" content="Agent RT — lightweight AI agent runtime for Python and TypeScript">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Configuration Reference — Agent RT Docs">
+  <meta name="twitter:description" content="Complete agent-rt.yaml configuration reference for model lists, vector stores, runtime controls, secrets, and compatibility adapters.">
+  <meta name="twitter:image" content="https://agent-rt-pro.github.io/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","@id":"https://agent-rt-pro.github.io/docs/reference/configuration.html#page","url":"https://agent-rt-pro.github.io/docs/reference/configuration.html","name":"Configuration Reference — Agent RT Docs","headline":"Configuration Reference — Agent RT Docs","description":"Complete agent-rt.yaml configuration reference for model lists, vector stores, runtime controls, secrets, and compatibility adapters.","inLanguage":"en","dateModified":"2026-11-03","isPartOf":{"@id":"https://agent-rt-pro.github.io/#website"},"about":{"@id":"https://agent-rt-pro.github.io/#software"},"publisher":{"@id":"https://agent-rt-pro.github.io/#organization"}},{"@type":"BreadcrumbList","@id":"https://agent-rt-pro.github.io/docs/reference/configuration.html#breadcrumbs","itemListElement":[{"@type":"ListItem","position":1,"name":"Agent RT","item":"https://agent-rt-pro.github.io/"},{"@type":"ListItem","position":2,"name":"Documentation","item":"https://agent-rt-pro.github.io/docs/"},{"@type":"ListItem","position":3,"name":"Reference"},{"@type":"ListItem","position":4,"name":"Configuration Reference","item":"https://agent-rt-pro.github.io/docs/reference/configuration.html"}]}]}</script>
+  <meta name="theme-color" content="#07090d"><meta name="color-scheme" content="dark">
+  <link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="../../docs/docs.css">
+  <link rel="stylesheet" href="../../docs/vendor/github-dark-dimmed.min.css">
+  <script src="../../docs/vendor/highlight.min.js" defer></script>
+  <script src="../../docs/docs.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="docs-header"><div class="header-inner">
+  <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Agent RT</span></a>
+  <span class="docs-label">Documentation</span>
+  <nav class="header-links" aria-label="Global"><a href="../../">Home</a><a href="../">Docs</a><a href="https://github.com/Pro-GenAI/Agent-RT">GitHub ↗</a></nav>
+</div></header>
+<div class="mobile-nav"><details><summary>Documentation menu</summary><div class="mobile-links"><a href="../">Overview</a><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html">Runtime handbook</a><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html" aria-current="page">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></details></div>
+<div class="docs-shell">
+<aside class="sidebar" aria-label="Documentation navigation"><a class="sidebar-home" href="../">← Documentation home</a><div class="nav-group"><h2>Getting started</h2><a href="../getting-started/installation.html">Installation</a><a href="../getting-started/quickstart.html">Quickstart</a></div><div class="nav-group"><h2>Core concepts</h2><a href="../concepts/runtime.html">Runtime model</a><a href="../concepts/tools-policy.html">Tools & policy</a><a href="../concepts/state-memory.html">State & memory</a><a href="../concepts/agent-harnesses.html">Agent harnesses</a></div><div class="nav-group"><h2>Guides</h2><a href="../guides/migration.html">Migration</a><a href="../guides/migration-reference.html">Migration API reference</a><a href="../guides/production.html">Production patterns</a><a href="../guides/vector-databases.html">Vector databases</a><a href="../guides/runtime-guide.html">Runtime guide</a><a href="../guides/runtime-reference.html">Runtime handbook</a></div><div class="nav-group"><h2>Reference</h2><a href="../reference/features-defaults.html">Features & defaults</a><a href="../reference/configuration.html" aria-current="page">Configuration</a><a href="../reference/architecture.html">Architecture</a><a href="../reference/extension-contracts.html">Extension contracts</a><a href="../reference/development.html">Development</a><a href="../reference/contributor-handbook.html">Contributor handbook</a><a href="../reference/privacy-terms.html">Privacy &amp; terms</a><a href="../reference/deployment-privacy-checklist.html">Deployment checklist</a></div></aside>
+<main class="docs-main" id="main"><article class="content">
+<div class="breadcrumbs"><a href="../">Docs</a><span>/</span>Reference<span>/</span>Configuration Reference</div>
+<section class="section-intro"><span class="eyebrow">Reference</span><h1 class="doc-title">Configuration Reference</h1><p class="doc-lede">Complete agent-rt.yaml configuration reference for model lists, vector stores, runtime controls, secrets, and compatibility adapters.</p></section>
+<div class="note">Complete reference content migrated from the repository Markdown documentation. Use the <a href="../">documentation index</a> to browse by topic.</div>
+<nav aria-label="On this page" class="note"><strong>On this page</strong><ul><li><a href="#finding-the-file">Finding the file</a></li><li><a href="#modellist">modellist</a></li><li><a href="#vectorstoreregistry">vectorstoreregistry</a></li><li><a href="#agentrtsettings">agentrtsettings</a></li><li><a href="#secrets-and-validation">Secrets and validation</a></li><li><a href="#using-it-from-code">Using it from code</a></li><li><a href="#compatibility-adapters">Compatibility adapters</a></li></ul></nav>
+<p>Agent RT is configured with one YAML file, modelled on LiteLLM's <code>config.yaml</code>. Provider selection, models, vector stores, sandbox, web search, execution limits, Decision models, observability, and server settings all live there. The process environment is <strong>not</strong> a configuration source: it is read only to resolve secrets written as <code>os.environ/NAME</code>.</p>
+<p>A complete annotated example is <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml"><code>agent-rt.example.yaml</code></a>.</p>
+<h2 id="finding-the-file">Finding the file</h2>
+<div class="table-wrap"><table><thead><tr><th>Order</th><th>Location</th></tr></thead><tbody><tr><td>1</td><td>An explicit path: <code>agent-rt --config PATH</code>, <code>load_config(path)</code> (Python), <code>loadConfig(path)</code> (TypeScript)</td></tr>
+<tr><td>2</td><td><code>~/.agent-rt/config.yaml</code>, then <code>~/.config/agent-rt/config.yaml</code> (home folder)</td></tr></tbody></table></div>
+<p>Project files such as <code>./agent-rt.yaml</code> are loaded only when explicitly selected (<code>--config ./agent-rt.yaml</code>, <code>load_config(&quot;./agent-rt.yaml&quot;)</code>, or <code>loadConfig(&quot;./agent-rt.yaml&quot;)</code>). Opening an untrusted repository therefore cannot silently redirect providers or resolve its secret references. Selecting an explicit file trusts its endpoints, secret references, and runtime settings.</p>
+<p><code>.yml</code> is accepted wherever <code>.yaml</code> is. The first file found wins; files are never merged. An explicit path that does not exist is an error, and when nothing is found the error lists every location that was checked. The <code>agent-rt</code> command, run without <code>--config</code>, instead creates an owner-only starter config at <code>~/.agent-rt/config.yaml</code> (its <code>model_list</code> is commented out); the library keeps the error. Neither <code>agent-rt</code> nor <code>agent-rt web</code> needs a <code>model_list</code>: with no config, or one without <code>model_list</code> (even a blank file), they use OpenAI with <code>os.environ/OPENAI_API_KEY</code> (plus <code>os.environ/OPENAI_BASE_URL</code> when that variable is set, as the OpenAI SDK does) and offers the models its <code>/v1/models</code> lists, starting with the first (or <code>--model</code>). A bare <code>./config.yaml</code> is deliberately not searched (too easy to pick up another tool's file); pass it with <code>--config config.yaml</code>.</p>
+<h2 id="modellist"><code>model_list</code></h2>
+<pre><code class="language-yaml">model_list:
+  - model_name: claude-sonnet-5            # the name clients request
+    agent_rt_params:                       # litellm_params is accepted as an alias
+      model: anthropic/claude-sonnet-5     # &lt;provider&gt;/&lt;model&gt;
+      api_key: os.environ/ANTHROPIC_API_KEY
+      api_base: https://api.anthropic.com  # optional (also for OpenAI-compatible endpoints)
+      websocket: false                     # optional, OpenAI only
+    model_info: {context_window: 200000}   # optional metadata</code></pre>
+<ul>
+<li>Providers are <code>openai</code> and <code>anthropic</code>. An OpenAI-compatible endpoint is <code>openai/&lt;model&gt;</code> plus <code>api_base</code> (WebSocket transport is then off unless <code>websocket: true</code>). Any other provider prefix is rejected when the file loads.
+</li>
+<li><strong>Several models:</strong> list as many as needed. Clients choose one by <code>model_name</code>; the CLI uses <code>-m</code>, the API server uses the request's <code>model</code> field.
+</li>
+<li><strong>Fallbacks:</strong> repeating a <code>model_name</code> adds an ordered fallback deployment. The next deployment is tried when one raises before producing output (streams fall back only before the first event).
+</li>
+<li><strong>Embeddings:</strong> an embedding model is just another entry; vector stores reference it by <code>model_name</code>.
+</li>
+<li>Provider clients are created lazily, one per deployment.
+</li></ul>
+<h2 id="vectorstoreregistry"><code>vector_store_registry</code></h2>
+<pre><code class="language-yaml">vector_store_registry:
+  - vector_store_name: docs-kb
+    agent_rt_params:
+      vector_store_id: T37J8R4WTM          # what clients pass as vector_store_ids
+      custom_llm_provider: qdrant          # chroma | milvus | pinecone | qdrant | weaviate
+      api_base: https://qdrant.internal:6333
+      collection: docs
+      api_key: os.environ/QDRANT_API_KEY
+      embedding_model: embed-small         # a model_name above
+      timeout: 20                          # optional request timeout in seconds
+      options: {}                          # non-secret adapter options
+      vector_store_description: Product documentation
+      vector_store_metadata: {source: https://example.com/docs}
+      allowed_models: [claude-sonnet-5]    # optional access list</code></pre>
+<p><code>custom_llm_provider</code> supports the built-in HTTP adapters (<code>chroma</code>, <code>milvus</code>, <code>pinecone</code>, <code>qdrant</code>, <code>weaviate</code>) and AWS Bedrock Knowledge Bases (<code>bedrock</code>). HTTP adapters require <code>api_base</code> and <code>collection</code>; Bedrock uses <code>vector_store_id</code> as the Knowledge Base ID and needs neither. Other hosted providers (<code>openai</code>, <code>azure</code>, <code>vertex_ai</code>) are not yet supported. Store credentials and client creation are deferred until the store is searched, so unused stores with missing credentials do not prevent server startup.</p>
+<p>A Bedrock entry compatible with LiteLLM's configuration shape:</p>
+<pre><code class="language-yaml">vector_store_registry:
+  - vector_store_name: bedrock-litellm-website-knowledgebase
+    litellm_params:
+      vector_store_id: T37J8R4WTM
+      custom_llm_provider: bedrock
+      vector_store_description: Bedrock documentation knowledge base
+      vector_store_metadata: {source: https://www.litellm.com/docs}
+      options: {region: us-west-2}  # optional; AWS SDK region resolution also works</code></pre>
+<p>Bedrock retrieval uses AWS's <strong>Retrieve</strong> API with IAM authentication from the AWS SDK's standard credential chain (not an Agent RT environment configuration setting). Install the optional client in Python with <code>pip install 'agent-rt[bedrock]'</code> or in TypeScript with <code>npm install @aws-sdk/client-bedrock-agent-runtime</code>. The AWS region can be supplied through <code>options.region</code>; otherwise, the SDK's normal region resolution applies. Both runtimes support injecting Bedrock clients for offline tests (<code>bedrock_client_factory</code> / <code>bedrockClientFactory</code>).</p>
+<p>Every store is registered in a <code>RetrievalRegistry</code> under both its name and its <code>vector_store_id</code>; names and ids must be unique. Building the registry (<code>vector_store_registry_from_config</code> / <code>vectorStoreRegistryFromConfig</code>) pins HTTP adapters' embeddings to their <code>embedding_model</code>. Bedrock performs hosted retrieval and does not require a local embedding model.</p>
+<h3 id="passing-vector-stores-to-a-model-filesearch">Passing vector stores to a model (<code>file_search</code>)</h3>
+<p>The API server (Python <code>agent_rt_api</code>) accepts the OpenAI-style tool on Chat Completions and Responses requests:</p>
+<pre><code class="language-python">client.chat.completions.create(
+    model=&quot;claude-sonnet-5&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What is litellm?&quot;}],
+    tools=[{&quot;type&quot;: &quot;file_search&quot;, &quot;vector_store_ids&quot;: [&quot;T37J8R4WTM&quot;], &quot;max_num_results&quot;: 5}],
+)</code></pre>
+<ul>
+<li><code>file_search</code> is the only request-defined tool accepted; any other <code>type</code> is rejected, and the Anthropic Messages endpoint still rejects request-defined tools.
+</li>
+<li>The runtime gives the model a request-scoped <code>file_search(query)</code> tool limited to the listed stores. Results are merged by score and returned as <strong>untrusted tool output</strong>, so the existing prompt-injection and output guardrails apply.
+</li>
+<li>Unknown store ids, and stores whose <code>allowed_models</code> excludes the requested model, are rejected with a 400 before the run starts.
+</li>
+<li>Outside the server, call <code>register_file_search_tool(registry, retrieval, stores)</code> / <code>registerFileSearchTool(...)</code> on your own tool registry, using <code>resolve_vector_stores</code> / <code>resolveVectorStores</code> to validate ids.
+</li></ul>
+<h2 id="agentrtsettings"><code>agent_rt_settings</code></h2>
+<div class="table-wrap"><table><thead><tr><th>Section</th><th>Keys</th></tr></thead><tbody><tr><td><code>default_model</code></td><td>A <code>model_name</code>; defaults to the first entry. <code>agent-rt</code> and <code>agent-rt web</code> select it at startup.</td></tr>
+<tr><td><code>server</code></td><td><code>host</code>, <code>port</code>, <code>api_keys</code>, <code>default_agent</code>, <code>allowed_websocket_origins</code>, <code>max_concurrent_requests</code>, <code>max_queued_requests</code></td></tr>
+<tr><td><code>execution_limits</code></td><td><code>timeout_seconds</code>, <code>memory_bytes</code>, <code>cpu_seconds</code> (defaults for every tool call and sandbox session)</td></tr>
+<tr><td><code>sandbox</code></td><td><code>backend</code>, <code>workspace_root</code>, <code>native_root</code>, <code>docker_image</code>, <code>docker_binary</code>, <code>docker_user</code>, <code>docker_read_only</code>, <code>e2b_template</code>, <code>microsandbox_image</code>, <code>swerex_url</code>, <code>swerex_api_key</code>, <code>uid</code>, <code>gid</code>, <code>network_mode</code>, <code>network_max_transfer_bytes</code>, <code>network_max_bytes_per_second</code>, <code>allowed_domains</code>, <code>blocked_domains</code>, <code>allow_http</code>, <code>allow_ip</code>, <code>allow_proxy</code>, <code>allow_websocket</code>, <code>setpriv_binary</code>, <code>prlimit_binary</code></td></tr>
+<tr><td><code>web_search</code></td><td><code>tool</code> (<code>tavily</code>, <code>brave</code>, <code>serper</code>), <code>api_key</code>, <code>timeout_seconds</code></td></tr>
+<tr><td><code>decision_model</code></td><td><code>provider</code> (<code>jev</code>, the default, or <code>openai</code> for the OpenAI-compatible Decisions API), <code>base_url</code>, <code>model</code>, <code>timeout_seconds</code>, <code>api_key</code>. With <code>provider: openai</code>, <code>base_url</code> defaults to <code>https://api.openai.com/v1</code> and <code>model</code> to <code>gpt-6-luna</code>; <code>api_key</code> is required. Set <code>base_url</code> to use any other OpenAI-compatible Decisions host; it is independent of the generative model's <code>base_url</code>, so LLMs and Decision models can be served by different APIs. To self-host an open-source Jev-compatible endpoint without Docker, run <a href="https://github.com/ollaya-dev/ollaya">Ollaya</a> (<code>ollaya serve</code>, default <code>http://127.0.0.1:11435</code>) and set <code>base_url</code> to it and <code>model</code> to a name from its <code>GET /v1/models</code>.</td></tr>
+<tr><td><code>observability</code></td><td><code>api_key</code>, <code>base_url</code>, <code>headers</code>, <code>trace_content</code>, <code>telemetry_enabled</code>, <code>enrich_tokens</code>, <code>app_name</code> (OpenLLMetry/Traceloop)</td></tr>
+<tr><td><code>memory</code></td><td><code>backend</code> (<code>mem0</code>, the default, <code>memu</code>, <code>zep</code>, <code>letta</code>, <code>supermemory</code>) and <code>options</code> for that backend; see <a href="/docs/guides/runtime-reference.html#memory-packages">Memory packages</a>. Used by <code>load_memory(config)</code> / <code>loadMemory(config)</code>.</td></tr>
+<tr><td><code>serve</code></td><td><code>telegram</code> and <code>discord</code>, each with <code>bot_token</code> and <code>allowed_users</code> (user ids the bot answers), for the Python <code>agent-rt serve</code> command; see <a href="/docs/guides/runtime-reference.html#chat-bots-python-beta">Chat bots</a></td></tr>
+<tr><td><code>cli</code></td><td><code>home</code> (sessions, skills, and <code>trusted_skills.json</code> root, default <code>~/.agent-rt</code>), <code>compact_token_limit</code> (<code>agent-rt web</code> uses both too: its sessions share <code>home</code>/sessions with the terminal CLI)</td></tr></tbody></table></div>
+<p>Lists are written as YAML lists; <code>headers</code> is a mapping. Unknown sections and keys fail at load time. <code>configure_runtime(config)</code> / <code>configureRuntime(config)</code> applies these settings to the runtime's implicit defaults (and starts OpenLLMetry when configured); the CLI and <code>agent_rt_api.build_from_config</code> call it for you. Settings that are passed explicitly to a constructor always win.</p>
+<h2 id="secrets-and-validation">Secrets and validation</h2>
+<ul>
+<li>A value that is exactly <code>os.environ/NAME</code> is replaced by that environment variable when the file loads. A missing or blank variable fails with the YAML path of the key (for example <code>model_list[0].agent_rt_params.api_key</code>); secret values are never included in errors or <code>repr</code>. For a model's or vector store's <code>api_key</code>/<code>api_base</code> and anything under <code>agent_rt_settings.server</code>, <code>agent_rt_settings.serve</code> or <code>agent_rt_settings.memory.options</code>, the failure is deferred until that deployment, store or server is used, so one file can list providers you have no key for: a deployment with an unset key is skipped in favour of the next fallback.
+</li>
+<li>Literal keys in the file also work but are discouraged.
+</li>
+<li>YAML is parsed as YAML 1.1 with safe types only, identically in both implementations (as PyYAML's <code>safe_load</code>: <code>yes</code>/<code>no</code> are booleans, <code>0123</code> is octal); custom tags such as <code>!!python/object</code> are rejected. Quote values such as IDs that must stay strings.
+</li>
+<li>When no file is found, loading raises <code>ConfigNotFoundError</code> (a <code>ConfigError</code>). The OpenAI Agents compatibility layer uses the config only for an agent whose model is a declared <code>model_name</code>; when no file is found, or the agent asks for a model the file does not declare (including the upstream default <code>gpt-4o-mini</code>), it falls back to the upstream SDK's environment variables. An invalid file is always reported.
+</li>
+<li>Files over 1 MB are rejected. Unknown keys, wrong types, duplicate vector store names/ids, unknown <code>default_model</code>, <code>embedding_model</code> or <code>allowed_models</code> references, and unsupported providers all fail when the file loads, with the YAML path in the message.
+</li></ul>
+<h2 id="using-it-from-code">Using it from code</h2>
+<pre><code class="language-python">from agent_rt import load_config, load_model, configure_runtime
+
+config = load_config()               # or load_config(&quot;/etc/agent-rt/prod.yaml&quot;)
+configure_runtime(config)
+provider = load_model(config)        # routes by model_name, with fallbacks</code></pre>
+<pre><code class="language-ts">import { loadConfig, loadModel, configureRuntime } from &quot;agent-rt&quot;;
+
+const config = await loadConfig(); // or loadConfig(&quot;/etc/agent-rt/prod.yaml&quot;)
+configureRuntime(config);
+const provider = await loadModel(config);</code></pre>
+<p>Serve every configured model (Python, <code>agent-rt[api]</code>):</p>
+<pre><code class="language-bash">python -m agent_rt_api --config agent-rt.yaml</code></pre>
+<p>or call <code>agent_rt_api.serve_from_config(config_path=...)</code>. <code>build_from_config</code> returns the loop, one agent per <code>model_name</code>, the retrieval registry and server options if you want to assemble the app yourself.</p>
+<h2 id="compatibility-adapters">Compatibility adapters</h2>
+<p>The migration adapters (<code>agent_rt.openai</code>, <code>agent_rt.anthropic</code>, LangChain, LlamaIndex, OpenAI Agents) deliberately keep the upstream SDKs' environment behaviour (<code>OPENAI_API_KEY</code>, <code>OPENAI_BASE_URL</code>, <code>ANTHROPIC_API_KEY</code>, ...) so migrated code works unchanged. The CLI tool modes (<code>agent-rt claude</code>, <code>agent-rt codex</code>, <code>agent-rt opencode</code>, <code>agent-rt copilot</code>) likewise read that tool's own environment variables and config files instead of <code>agent-rt.yaml</code>; see <a href="/docs/guides/runtime-reference.html#reuse-another-agent-clis-setup">Runtime Guide</a>. Agent RT's own configuration is only the YAML file.</p>
+<div class="page-nav"><a class="next-link" href="../"><small>Back to</small><strong>← Documentation index</strong></a></div></article>
+<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+</div>
+</body></html>
