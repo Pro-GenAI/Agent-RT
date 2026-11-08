@@ -107,12 +107,17 @@ test('subagent permissions are narrowed and reviewer failures are monitored', as
     /escalate/,
   );
   assert.equal(swarm.metrics.total('subagent.started'), 0);
+  assert.equal(swarm.metrics.total('subagent.denied', { reason: 'permission' }), 2);
+  const tool = swarm.root.asTool(config('worker'), { allowedTools: { lookup: 'read' } });
+  assert.equal(tool.definition.sideEffect, 'read');
+  const toolOutcome = await tool.handler({ task: 'delegated' }, { services: {}, requestContext: {}, limits: {} });
+  assert.equal(toolOutcome.error, 'Error: worker failure');
   const out = await swarm.deploy('task', config('worker'), { allowedTools: {} });
   assert.equal(out.error, 'Error: worker failure');
   assert.equal(out.review.error, 'Error: reviewer failure');
-  assert.equal(swarm.metrics.total('subagent.failed'), 1);
-  assert.equal(swarm.metrics.total('subagent.review.failed'), 1);
-  assert.equal(swarm.traces.list().filter((s) => s.status === 'error').length, 2);
+  assert.equal(swarm.metrics.total('subagent.failed'), 2);
+  assert.equal(swarm.metrics.total('subagent.review.failed'), 2);
+  assert.equal(swarm.traces.list().filter((s) => s.status === 'error').length, 4);
   swarm.close();
   assert.throws(
     () => new SubagentSwarm(
