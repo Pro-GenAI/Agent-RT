@@ -57,6 +57,7 @@ export class SubagentScope {
     readonly permissions: Readonly<Record<string, ToolPermission>>,
     readonly spanId: string,
     readonly parentAgent: string,
+    readonly ownerAgent: string,
   ) {}
 
   async spawn(
@@ -104,7 +105,7 @@ export class SubagentScope {
     const spanId = randomUUID();
     const scope = new SubagentScope(
       this.swarm, this.depth + 1, [...this.history, message(task)],
-      permissions, spanId, agent.name,
+      permissions, spanId, this.ownerAgent, agent.name,
     );
     this.swarm.traces.start({
       spanId, traceId: this.swarm.traceId, parentSpanId: this.spanId,
@@ -152,6 +153,8 @@ export class SubagentSwarm {
         throw new Error('invalid parent tool permission: ' + name);
       if (level === 'read' && !['none', 'read'].includes(definition.sideEffect ?? 'none'))
         throw new Error('tool is not read-only: ' + name);
+      if (options.capabilityGrant && !options.capabilityGrant.allowsTool(name))
+        throw new Error('parent grant denies tool: ' + name);
     }
     this.traces = options.traces ?? new TraceRecorder();
     this.metrics = options.metrics ?? new RuntimeMetrics();
@@ -162,7 +165,7 @@ export class SubagentSwarm {
     });
     this.root = new SubagentScope(
       this, 1, [...options.chatHistory], { ...options.parentPermissions },
-      rootId, 'main-agent',
+      rootId, 'main-agent', 'main-agent',
     );
   }
 
