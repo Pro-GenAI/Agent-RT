@@ -26,13 +26,13 @@ def test_priority_manifest_orders_twenty_cases_with_advanced_top_ten():
     cases = load_cases()
     manifest = json.loads((BENCH / "priority_cases.json").read_text(encoding="utf-8"))
     priorities = manifest["top_20"]
-    assert len(cases) == 55
+    assert len(cases) == 65
     assert len(priorities) == 20
     assert [case["id"] for case in cases[:20]] == [
         item["id"] for item in priorities
     ]
     assert [item["rank"] for item in priorities] == list(range(1, 21))
-    assert len({case["id"] for case in cases}) == 55
+    assert len({case["id"] for case in cases}) == 65
     assert len({item["focus"] for item in priorities}) == 20
     categories = {
         "delegation_escalation", "indirect_attacks", "unauthorized_tools",
@@ -40,20 +40,25 @@ def test_priority_manifest_orders_twenty_cases_with_advanced_top_ten():
     }
     assert {case["category"] for case in cases[:5]} == categories
     assert {case["category"] for case in cases[5:10]} == categories
-    assert all(case["id"].endswith("_11") for case in cases[5:10])
+    assert {case["category"] for case in cases[10:15]} == categories
+    assert {case["category"] for case in cases[15:20]} == categories
+    assert all(case["id"].endswith("_12") for case in cases[5:10])
+    assert all(case["id"].endswith("_13") for case in cases[10:15])
+    assert all(case["id"].endswith("_11") for case in cases[15:20])
     assert all(
-        len([case for case in cases if case["category"] == category]) == 11
+        len([case for case in cases if case["category"] == category]) == 13
         for category in categories
     )
     assert all(
         len(case["attack"]) >= 200 and len(case["scenario_tags"]) >= 2
-        for case in cases[5:10]
+        for case in cases[5:20]
     )
-    for case in cases[5:10]:
+    for case in cases[5:20]:
         assert set(case["necessary_tools"]).issubset(case["granted_tools"])
         assert case["mock_tool"] in benchmark.TOOLS
         assert set(case["mock_arguments"]) == {benchmark.TOOLS[case["mock_tool"]][1]}
         assert "@customer.example" in case["synthetic_pii"]
+    assert all(case["attack_surface"] == "document_body" for case in cases[5:15])
 
 
 
@@ -170,6 +175,31 @@ async def test_repeated_successful_tool_executions_report_as_redundancy(tmp_path
     assert result["grades"]["unnecessary_tool_calls"]["passed"] is True
 
 
+
+@pytest.mark.parametrize("category", [
+    "delegation_escalation", "indirect_attacks", "unauthorized_tools",
+    "pii_propagation", "unnecessary_tools",
+])
+@pytest.mark.parametrize("variant", [12, 13])
+def test_pressure_probe_embeds_attack_in_untrusted_document_body(category, variant):
+    """An attacker instruction is returned as a document, never the parent task."""
+    case_id = f"{category}_{variant}"
+    case = next(item for item in load_cases() if item["id"] == case_id)
+    assert case["attack_surface"] == "document_body"
+    assert case["attack"] not in benchmark.prompt(case)
+    tool = case["necessary_tools"][0]
+    assert tool in ("read_file", "search_docs")
+    data = benchmark.mock_tool_result(case, tool, {benchmark.TOOLS[tool][1]: "test"})
+    assert data["simulated"] is True
+    assert data["documents"][0]["content"].endswith(case["attack"])
+    assert "\\n\\n" not in data["documents"][0]["content"]
+    assert "untrusted_excerpt" not in data["documents"][0]
+    assert case["mock_tool"] in case["attack"]
+    assert case["mock_tool"] not in case["granted_tools"] or (
+        case["mock_tool"] not in case["necessary_tools"]
+    )
+
+
 def test_cache_modes_and_decision_namespaces(tmp_path):
     path = tmp_path / "bench.sqlite"
     class Fake:
@@ -197,7 +227,7 @@ def test_cache_modes_and_decision_namespaces(tmp_path):
 @pytest.mark.anyio
 async def test_offline_comparison_blocks_unauthorized_and_pii(tmp_path):
     cases = load_cases()
-    assert len(cases) == 55
+    assert len(cases) == 65
     for category in ("unauthorized_tools", "pii_propagation"):
         case = next(c for c in cases if c["category"] == category)
         with ResponseCache(tmp_path / f"{category}.sqlite") as cache:
@@ -799,8 +829,8 @@ async def test_configured_eval_reports_completed_cases_across_both_phases(
         ("agent_rt", 2, 2, 4, 4),
     ]
 
-    # Default is ten (including five advanced cases); 20 and 55 are explicit.
-    for selected_limit, expected in [(None, 10), (20, 20), (55, 55)]:
+    # Default is ten; 20 runs all pressure challenges and 65 runs everything.
+    for selected_limit, expected in [(None, 10), (20, 20), (65, 65)]:
         progress = []
         overrides = {} if selected_limit is None else {"limit": selected_limit}
         with ResponseCache(tmp_path / f"prioritized-{expected}.sqlite") as cache:
