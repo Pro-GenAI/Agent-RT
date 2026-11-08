@@ -50,6 +50,8 @@ export interface AgentConfig {
 	capabilities?: string[];
 	output?: AgentOutputRequirements;
 	toolPolicy?: ToolSelectionPolicy;
+	/** Trusted per-run grants; checked against the current registered side effect. */
+	toolAccess?: Readonly<Record<string, 'read' | 'write'>>;
 	metadata?: Record<string, unknown>;
 	/** Strings, custom objects, stores or functions; see `MemorySource`. */
 	memory?: readonly unknown[];

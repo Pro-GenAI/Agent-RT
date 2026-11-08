@@ -136,6 +136,24 @@ export async function executeToolCall(
 		}
 	}
 
+	// The registered handler may have been replaced after the grant was made.
+	const access = run.agent.toolAccess;
+	if (access !== undefined) {
+		const effect = registered ? (registered.definition.sideEffect ?? 'none') : undefined;
+		const level = Object.hasOwn(access, call.name) ? access[call.name] : undefined;
+		if ((level !== 'read' && level !== 'write') || effect === undefined ||
+			(level === 'read' && !['none', 'read'].includes(effect))) {
+			return {
+				message: {
+					role: 'tool',
+					content: [{ type: 'json', data: toolValidationErrorPayload(call,
+						['tool access level denies current registered side effect']) }],
+					toolCallId: call.id,
+				},
+			};
+		}
+	}
+
 	if (eventsEnabled) {
 		emitEvent('tool_requested', {
 			tool: call.name,

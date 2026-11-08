@@ -4,7 +4,6 @@
  * The runtime lives in themed modules under `src/runtime/` (see
  * https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html); this barrel only re-exports their public names.
  */
-
 export {
 	ConfigError,
 	ConfigNotFoundError,
@@ -19,13 +18,11 @@ export {
 	type ModelDeployment,
 	type VectorStoreConfig,
 } from './ext/config.js';
-
 export {
 	MemoryBackend,
 	loadMemory,
 	type LoadMemoryOptions,
 } from './ext/memory_backends.js';
-
 export {
 	DEFAULT_BLOCKED_COMMANDS,
 	DEFAULT_COMMAND_ARGUMENT_NAMES,
@@ -43,7 +40,6 @@ export {
 	type ActionBlockerToolDefinition,
 	type DecisionActionBlockerProvider,
 } from './ext/action_blockers.js';
-
 export {
 	RegistrationSafetyError,
 	enforceRegistrationSafety,
@@ -56,19 +52,16 @@ export {
 	type RegistrationSafetyReport,
 	type RegistrationSafetySubject,
 } from './ext/registration_safety.js';
-
 export {
 	type OpenLLMetryConfig,
 	openLLMetryConfigFromEnv,
 	initializeOpenLLMetryFromEnv,
 } from './runtime/observability/openllmetry.js';
-
 export {
 	runtimeSettings,
 	configureRuntime,
 	hello,
 } from './runtime/settings.js';
-
 export {
 	type JSONScalar,
 	type JSONValue,
@@ -82,13 +75,11 @@ export {
 	type ToolCall,
 	type ModelMessage,
 } from './runtime/types.js';
-
 export {
 	type SessionSnapshot,
 	ShortTermSessionMemory,
 	TenantSessionMemory,
 } from './runtime/memory/sessions.js';
-
 export {
 	type MemoryKind,
 	type MemoryRecord,
@@ -97,14 +88,12 @@ export {
 	type LongTermMemoryStore,
 	InMemoryLongTermMemoryStore,
 } from './runtime/memory/long_term.js';
-
 export {
 	type EmbeddingProvider,
 	SemanticMemory,
 	type Episode,
 	EpisodicMemory,
 } from './runtime/memory/semantic.js';
-
 export {
 	type MemoryMigration,
 	type MemoryLifecyclePolicy,
@@ -112,7 +101,6 @@ export {
 	type Procedure,
 	ProceduralMemory,
 } from './runtime/memory/lifecycle.js';
-
 export {
 	type MemoryWriteCandidate,
 	type MemoryWriteDecision,
@@ -120,7 +108,6 @@ export {
 	MemoryRetrievalPolicy,
 	ScopedMemoryStore,
 } from './runtime/memory/policies.js';
-
 export {
 	type ToolSideEffect,
 	type ToolErrorBehavior,
@@ -138,7 +125,6 @@ export {
 	type ToolSelectionPolicy,
 	type ToolSelectionRequirement,
 } from './runtime/tools/definitions.js';
-
 export {
 	type AuditAction,
 	type AuditOutcome,
@@ -150,7 +136,6 @@ export {
 	type ToolLifecycleHooks,
 	makeAuditTrailHook,
 } from './runtime/observability/audit.js';
-
 export {
 	PII_MORPHER_DISABLE_ENV,
 	type PIIEntity,
@@ -159,7 +144,6 @@ export {
 	type PrivacyRedactionPolicy,
 	PrivacyRedactor,
 } from './runtime/guardrails/privacy.js';
-
 export {
 	type ApprovalDecision,
 	type ApprovalScope,
@@ -175,14 +159,12 @@ export {
 	ChatApprovals,
 	ntfySender,
 } from './runtime/authorization/chat_approvals.js';
-
 export {
 	type DryRunResult,
 	type TransactionStep,
 	type TransactionResult,
 	SideEffectTransaction,
 } from './runtime/resilience/transactions.js';
-
 export {
 	type FailureKind,
 	type FailureDisposition,
@@ -433,6 +415,7 @@ export {
 	HandoffManager,
 	type SubagentSpec,
 	IsolatedSubagentRunner,
+	AgentLoopInvoker,
 	type WorkerAssignment,
 	type WorkerResult,
 	SupervisorWorkerTeam,
@@ -789,11 +772,16 @@ export {
 	SandboxSession,
 	sandboxShellTool,
 } from './runtime/sandbox/session.js';
-
 export {
 	ToolTimeoutError,
 	type ToolProgramResult,
 	ToolProgramExecutor,
 } from './runtime/tools/programs.js';
-
 export { AgentLoop } from './runtime/agent/loop.js';
+export {
+	SubagentSwarm,
+	SubagentScope,
+	type SubagentOutcome,
+	type ReviewerReport,
+	type ToolPermission,
+} from './runtime/agent/subagents.js';

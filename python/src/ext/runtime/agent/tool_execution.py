@@ -39,6 +39,35 @@ else:
     from ext.runtime.types import asyncio
 
 
+def _completed_parent_history(
+    history: list[ModelMessage],
+) -> tuple[tuple[ModelMessage, ...], tuple[ModelMessage, ...]]:
+    """Keep completed tool/result pairs; isolate any pending tool-call turn.
+
+    An assistant message containing calls cannot be replayed into a child
+    until *all* of its tool results exist. Pending calls and any later tool
+    results are passed separately as untrusted evidence.
+    """
+    pending: set[str] = set()
+    start: int | None = None
+    for index, message in enumerate(history):
+        if message.role == "assistant" and message.tool_calls:
+            if pending and start is not None:
+                return tuple(history[:start]), tuple(history[start:])
+            pending = {call.id for call in message.tool_calls}
+            start = index
+        elif message.role == "tool":
+            if not pending or message.tool_call_id not in pending:
+                cutoff = index if start is None else start
+                return tuple(history[:cutoff]), tuple(history[cutoff:])
+            pending.remove(message.tool_call_id)
+            if not pending:
+                start = None
+    if start is not None:
+        return tuple(history[:start]), tuple(history[start:])
+    return tuple(history), ()
+
+
 async def execute_tool_call(
     self: AgentLoop,
     run: _RunState,
@@ -147,6 +176,25 @@ async def execute_tool_call(
                 None,
             )
 
+    # Check the live definition, not the catalog captured when delegated.
+    # No registry means there is no trustworthy side-effect classification.
+    if run.agent.tool_access is not None:
+        level = run.agent.tool_access.get(call.name)
+        effect = registered.definition.side_effect if registered is not None else None
+        if level not in ("read", "write") or effect is None or (
+            level == "read" and effect not in ("none", "read")
+        ):
+            return (
+                ModelMessage(
+                    role="tool",
+                    content=(ContentPart(type="json", data=_tool_validation_error_payload(
+                        call, ("tool access level denies current registered side effect",)
+                    )),),
+                    tool_call_id=call.id,
+                ),
+                None,
+            )
+
     run.emit_event(
         "tool_requested",
         {"tool": call.name, "tool_call_id": call.id},
@@ -201,6 +249,11 @@ async def execute_tool_call(
         ):
             effective_tool_context = dict(run.tool_context)
             effective_tool_context["user_prompt"] = run.user_prompt
+            complete, in_flight = _completed_parent_history(run.history)
+            effective_tool_context["conversation_messages"] = complete
+            effective_tool_context["inflight_turn"] = in_flight
+            if run.agent.tool_access is not None:
+                effective_tool_context["_agent_rt_tool_access"] = dict(run.agent.tool_access)
             if run.active_deadline is not None:
                 effective_tool_context["deadline"] = run.active_deadline
                 effective_tool_context["deadline_remaining_seconds"] = (

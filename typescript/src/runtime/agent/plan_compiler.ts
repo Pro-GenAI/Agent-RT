@@ -24,6 +24,14 @@ export function compilePlan(
 	let visibleTools = this.toolRegistry?.definitions() ?? [];
 	if (this.capabilityGrant)
 		visibleTools = this.capabilityGrant.filterTools(visibleTools);
+	if (agent.toolAccess !== undefined) {
+		visibleTools = visibleTools.filter((tool) => {
+			if (!Object.hasOwn(agent.toolAccess!, tool.name)) return false;
+			const level = agent.toolAccess![tool.name];
+			return level === 'write' ||
+				(level === 'read' && ['none', 'read'].includes(tool.sideEffect ?? 'none'));
+		});
+	}
 	visibleTools = this.promptInjectionDefense.filterTools(
 		contextItems,
 		visibleTools,

@@ -416,6 +416,16 @@ class ToolRegistry:
         request_context: Mapping[str, Any] | None = None,
     ) -> Any:
         registered = self.get(call.name)
+        # Invocation-scoped access must be rechecked on the actual live handler.
+        # This closes replacement races between plan compilation and dispatch.
+        access = (request_context or {}).get("_agent_rt_tool_access")
+        if access is not None:
+            level = access.get(call.name) if isinstance(access, Mapping) else None
+            if level not in ("read", "write") or (
+                level == "read"
+                and registered.definition.side_effect not in ("none", "read")
+            ):
+                raise PermissionError("subagent tool access denies registered side effect")
         if not registered.enabled:
             raise RuntimeError(f"tool is disabled: {call.name}")
 

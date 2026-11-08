@@ -383,6 +383,18 @@ export class ToolRegistry {
 		requestContext: Record<string, unknown> = {},
 	): Promise<unknown> {
 		const registered = this.get(call.name);
+		// Re-evaluate against the actual registration even after a replacement.
+		const access = requestContext.subagentToolAccess;
+		if (access !== undefined) {
+			const grants = access as Record<string, unknown>;
+			const level = grants && typeof grants === 'object' &&
+				Object.hasOwn(grants, call.name) ? grants[call.name] : undefined;
+			if ((level !== 'read' && level !== 'write') ||
+				(level === 'read' &&
+				 !['none', 'read'].includes(registered.definition.sideEffect ?? 'none'))) {
+				throw new Error('subagent tool access denies registered side effect');
+			}
+		}
 		if (!registered.enabled) {
 			throw new Error(`tool is disabled: ${call.name}`);
 		}

@@ -42,6 +42,15 @@ def compile_plan(
     )
     if self.capability_grant is not None:
         visible_tools = self.capability_grant.filter_tools(visible_tools)
+    if agent.tool_access is not None:
+        visible_tools = tuple(
+            tool for tool in visible_tools
+            if agent.tool_access.get(tool.name) == "write"
+            or (
+                agent.tool_access.get(tool.name) == "read"
+                and tool.side_effect in ("none", "read")
+            )
+        )
     visible_tools = self.prompt_injection_defense.filter_tools(
         context_items,
         visible_tools,

@@ -79,6 +79,7 @@ from agent_rt import (
 from ext.runtime.agent.delegation import (
     AgentInvocation,
     AgentInvoker,
+    AgentLoopInvoker,
     AgentTool,
     HandoffManager,
     HandoffRequest,
@@ -89,6 +90,13 @@ from ext.runtime.agent.delegation import (
     WorkerAssignment,
     WorkerResult,
     agent_as_tool,
+)
+from ext.runtime.agent.subagents import (
+    ReviewerReport,
+    SubagentOutcome,
+    SubagentScope,
+    SubagentSwarm,
+    ToolPermission,
 )
 from ext.runtime.agent.planning import (
     Plan,

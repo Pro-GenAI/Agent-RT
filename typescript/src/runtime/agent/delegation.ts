@@ -11,10 +11,17 @@ import {
 import { type CapabilityGrant } from '../authorization/grants.js';
 import { type ContextItem } from '../context/items.js';
 import { type AgentConfig } from './config.js';
-import { type ExecutionBudget } from '../resilience/budgets.js';
+import { AgentLoop } from './loop.js';
+import { type ModelProvider } from '../models/interfaces.js';
+import { type ToolRegistry } from '../tools/registry.js';
+import { type Deadline, type ExecutionBudget } from '../resilience/budgets.js';
 import { type AgentRunResult } from './limits.js';
+import { type SubagentScope } from './subagents.js';
 
 export interface AgentInvocation {
+	subagents?: SubagentScope;
+	signal?: AbortSignal;
+	deadline?: Deadline;
 	messages: ModelMessage[];
 	contextItems?: ContextItem[];
 	workflowState?: WorkflowState;
@@ -29,6 +36,32 @@ export interface AgentInvoker {
 		agent: AgentConfig,
 		invocation: AgentInvocation,
 	): Promise<AgentRunResult>;
+}
+
+
+/** AgentLoop adapter that isolates budget, deadline and grants per invocation. */
+export class AgentLoopInvoker implements AgentInvoker {
+  constructor(
+    readonly provider: ModelProvider,
+    readonly registry?: ToolRegistry,
+  ) {}
+
+  async invoke(agent: AgentConfig, invocation: AgentInvocation): Promise<AgentRunResult> {
+    const loop = new AgentLoop(
+      this.provider, undefined, this.registry, undefined, undefined,
+      undefined, undefined, invocation.capabilityGrant,
+      undefined, undefined, undefined, undefined, invocation.executionBudget,
+      invocation.deadline,
+    );
+    return loop.run(
+      agent, [...invocation.messages], {}, undefined, undefined, invocation.signal,
+      { subagents: invocation.subagents }, invocation.workflowState,
+      [...(invocation.contextItems ?? [])], undefined, invocation.metadata ?? {},
+      undefined,
+      typeof invocation.metadata?.taskId === 'string'
+        ? invocation.metadata.taskId : undefined,
+    );
+  }
 }
 
 export interface AgentTool {
@@ -136,6 +169,7 @@ export class HandoffManager {
 }
 
 export interface SubagentSpec {
+	subagents?: SubagentScope;
 	agent: AgentConfig;
 	messages: ModelMessage[];
 	contextItems?: ContextItem[];
@@ -144,6 +178,8 @@ export interface SubagentSpec {
 	capabilityGrant?: CapabilityGrant;
 	executionBudget?: ExecutionBudget;
 	metadata?: Record<string, unknown>;
+	signal?: AbortSignal;
+	deadline?: Deadline;
 }
 
 export class IsolatedSubagentRunner {
@@ -162,6 +198,9 @@ export class IsolatedSubagentRunner {
 			capabilityGrant: spec.capabilityGrant,
 			executionBudget: spec.executionBudget,
 			metadata: { ...(spec.metadata ?? {}), isolatedSubagent: true },
+			subagents: spec.subagents,
+			signal: spec.signal,
+			deadline: spec.deadline,
 		});
 	}
 }

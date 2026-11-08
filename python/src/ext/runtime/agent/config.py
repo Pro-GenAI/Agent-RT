@@ -55,6 +55,8 @@ class AgentConfig:
     metadata: Mapping[str, Any] = field(default_factory=dict)
     # Strings, custom objects, stores or callables; see MemorySource.
     memory: Sequence[Any] = ()
+    # Invocation-specific access; appended to preserve older positional fields.
+    tool_access: Mapping[str, Literal["read", "write"]] | None = None
 
 
 @dataclass(frozen=True)

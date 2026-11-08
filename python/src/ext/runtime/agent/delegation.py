@@ -4,19 +4,24 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from ext.runtime.agent.subagents import SubagentScope
 
 from ext.runtime.agent.config import AgentConfig
+from ext.runtime.models.interfaces import ModelProvider
+from ext.runtime.tools.registry import ToolRegistry
 from ext.runtime.agent.limits import AgentRunResult
 from ext.runtime.authorization.grants import CapabilityGrant
 from ext.runtime.context.items import ContextItem
-from ext.runtime.resilience.budgets import ExecutionBudget
+from ext.runtime.resilience.budgets import Deadline, ExecutionBudget
 from ext.runtime.tools.definitions import (
     ContextualToolHandler,
     ToolDefinition,
     ToolExecutionContext,
 )
-from ext.runtime.types import ContentPart, ModelMessage, WorkflowState
+from ext.runtime.types import CancellationToken, ContentPart, ModelMessage, WorkflowState
 
 
 @dataclass(frozen=True)
@@ -28,6 +33,9 @@ class AgentInvocation:
     capability_grant: CapabilityGrant | None = None
     execution_budget: ExecutionBudget | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    subagents: SubagentScope | None = None
+    cancellation_token: CancellationToken | None = None
+    deadline: Deadline | None = None
 
 
 @runtime_checkable
@@ -37,6 +45,43 @@ class AgentInvoker(Protocol):
         agent: AgentConfig,
         invocation: AgentInvocation,
     ) -> AgentRunResult: ...
+
+
+class AgentLoopInvoker:
+    """Native, per-invocation AgentLoop adapter for governed subagent calls.
+
+    Recreates the loop for each concurrent child so grants, budget and deadline
+    are never shared through mutable loop fields.
+    """
+
+    def __init__(
+        self, provider: ModelProvider, tool_registry: ToolRegistry | None = None
+    ) -> None:
+        self.provider = provider
+        self.tool_registry = tool_registry
+
+    async def invoke(
+        self, agent: AgentConfig, invocation: AgentInvocation
+    ) -> AgentRunResult:
+        from ext.runtime.agent.loop import AgentLoop
+
+        runtime = AgentLoop(
+            self.provider,
+            tool_registry=self.tool_registry,
+            capability_grant=invocation.capability_grant,
+            execution_budget=invocation.execution_budget,
+            deadline=invocation.deadline,
+        )
+        task_id = invocation.metadata.get("task_id")
+        return await runtime.run(
+            agent, invocation.messages,
+            cancellation_token=invocation.cancellation_token,
+            workflow_state=invocation.workflow_state,
+            context_items=invocation.context_items,
+            tool_context={"subagents": invocation.subagents},
+            context_metadata=invocation.metadata,
+            task_id=task_id if isinstance(task_id, str) else None,
+        )
 
 
 @dataclass(frozen=True)
@@ -167,6 +212,9 @@ class SubagentSpec:
     capability_grant: CapabilityGrant | None = None
     execution_budget: ExecutionBudget | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    subagents: SubagentScope | None = None
+    cancellation_token: CancellationToken | None = None
+    deadline: Deadline | None = None
 
 
 class IsolatedSubagentRunner:
@@ -192,6 +240,9 @@ class IsolatedSubagentRunner:
                 capability_grant=spec.capability_grant,
                 execution_budget=spec.execution_budget,
                 metadata={**dict(spec.metadata), "isolated_subagent": True},
+                subagents=spec.subagents,
+                cancellation_token=spec.cancellation_token,
+                deadline=spec.deadline,
             ),
         )
 

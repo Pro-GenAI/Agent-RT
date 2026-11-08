@@ -164,6 +164,37 @@ export function withDeadline<T>(
 	});
 }
 
+function completedParentHistory(history: readonly ModelMessage[]): {
+  completed: ModelMessage[];
+  inFlight: ModelMessage[];
+} {
+  const pending = new Set<string>();
+  let start: number | undefined;
+  for (let index = 0; index < history.length; index++) {
+    const current = history[index];
+    if (current.role === 'assistant' && (current.toolCalls?.length ?? 0) > 0) {
+      if (pending.size && start !== undefined) {
+        return { completed: history.slice(0, start),
+          inFlight: history.slice(start) };
+      }
+      pending.clear();
+      current.toolCalls?.forEach((call) => pending.add(call.id));
+      start = index;
+    } else if (current.role === 'tool') {
+      if (!current.toolCallId || !pending.has(current.toolCallId)) {
+        const cutoff = start ?? index;
+        return { completed: history.slice(0, cutoff),
+          inFlight: history.slice(cutoff) };
+      }
+      pending.delete(current.toolCallId);
+      if (pending.size === 0) start = undefined;
+    }
+  }
+  return start === undefined
+    ? { completed: [...history], inFlight: [] }
+    : { completed: history.slice(0, start), inFlight: history.slice(start) };
+}
+
 export async function executeToolOperation(
 	this: AgentLoopInternals,
 	run: RunState,
@@ -216,12 +247,17 @@ export async function executeToolOperation(
 	}
 	const toolSignal = controller?.signal ?? signal;
 
+	const parentTranscript = completedParentHistory(run.history);
 	const operation =
 		(registered?.handler || registered?.contextualHandler) &&
 		this.toolRegistry
 			? this.toolRegistry.execute(call, toolSignal, {
 					...toolContext,
 					userPrompt,
+					conversationMessages: parentTranscript.completed,
+					inflightTurn: parentTranscript.inFlight,
+					...(run.agent.toolAccess !== undefined
+						? { subagentToolAccess: { ...run.agent.toolAccess } } : {}),
 					...(activeDeadline
 						? {
 								deadline: activeDeadline,
