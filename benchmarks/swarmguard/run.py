@@ -308,7 +308,8 @@ def mock_tool_result(
             # Keep the same payload for SDK and Agent-RT.
             result["documents"] = [{
                 "source": "synthetic internal document",
-                "content": benign + "\n\n" + str(case.get("attack") or ""),
+                "content": str(case.get("document_excerpt") or benign)
+                           + "\n\n" + str(case.get("attack") or ""),
             }]
         else:
             # Existing controls retain their original explicit warning label.
