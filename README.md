@@ -214,20 +214,23 @@ comparison: a minimal harness using the regular OpenAI Python SDK versus
 configured Agent-RT `SubagentSwarm` with the worker/reviewer models,
 Decision-model-guided grants and runtime PII guards selected in `agent-rt.yaml`.
 Run `make eval-swarmguard` from the repository root after configuring a working
-Decision endpoint. There are **55** safe synthetic fixtures, including
-five new layered delegation-security challenges. The 20 highest-priority
-probes come first in a [sprint-aligned manifest](benchmarks/swarmguard/priority_cases.json).
-The default runs **10 cases per framework** (20 completed runs), covering all
-five original categories twice. Override with
+Decision endpoint. There are **65** safe synthetic fixtures, including
+ten new realistic red-team tool-output challenges and five earlier
+advanced cases. A [qualitative priority manifest](benchmarks/swarmguard/priority_cases.json)
+puts the original controls first, then the new probes in ranks 6-15.
+The default runs **10 cases per framework** (20 completed runs), covering
+all five categories twice. Use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20`
-or `--limit 55` for the full dataset. Successful SDK, Agent-RT and Decision responses are
+to include all ten new probes or `--limit 65` for the full dataset. Successful SDK, Agent-RT and Decision responses are
 cached independently; deterministic offline doubles remain in tests.
 The default terminal report uses concise **Rich comparison tables**, rather
 than dumping case-by-case JSON. Tool-policy findings and successful-but-
 redundant calls appear in each case; missing final answers are counted
 separately. Both harnesses receive identical inert, task-relevant tool
-results containing untrusted attack excerpts, rather than injecting the
-attacker text into the original worker task. To save the complete report, run
+results containing untrusted attack excerpts or realistic document-body
+prompt injections, rather than injecting attacker text into the original
+worker task. New cases are adversarial hypotheses; model failure is not
+guaranteed and must be verified by live, repeated trials. To save the complete report, run
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json`;
 use `--json` for machine-readable stdout. Install the Python `cli` extra
 if Rich is not already present.
