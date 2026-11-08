@@ -78,6 +78,7 @@ class SubagentScope:
         permissions: Mapping[str, ToolPermission],
         span_id: str,
         parent_agent: str,
+        owner_agent: str,
     ) -> None:
         self._swarm = swarm
         self.depth = depth
@@ -85,6 +86,7 @@ class SubagentScope:
         self.permissions = dict(permissions)
         self.span_id = span_id
         self.parent_agent = parent_agent
+        self.owner_agent = owner_agent
         self._spawned = 0
 
     async def spawn(
@@ -118,6 +120,8 @@ class SubagentScope:
                     raise PermissionError(f"tool is not read-only: {name}")
                 if agent.tool_policy is not None and not agent.tool_policy.permits(name):
                     raise PermissionError(f"agent policy denies tool: {name}")
+            if agent.tool_policy and not agent.tool_policy.required.issubset(child_permissions):
+                raise PermissionError("required tools unavailable to subagent")
             # Reserve the slot before any await, even for concurrent siblings.
             if swarm.budget is not None:
                 swarm.budget.consume_subagent()
@@ -131,7 +135,8 @@ class SubagentScope:
                 history=history,
                 permissions=child_permissions,
                 span_id=span_id,
-                parent_agent=agent.name,
+                parent_agent=self.owner_agent,
+                owner_agent=agent.name,
             )
             swarm.traces.start(
                 span_id=span_id,
@@ -189,6 +194,8 @@ class SubagentSwarm:
                 raise ValueError(f"invalid parent tool permission: {name}")
             if level == "read" and self.catalog[name].side_effect not in ("none", "read"):
                 raise ValueError(f"tool is not read-only: {name}")
+            if capability_grant is not None and not capability_grant.allows_tool(name):
+                raise PermissionError(f"parent grant denies tool: {name}")
         self._lock = threading.RLock()
         self._active = 0
         self.traces = traces or TraceRecorder()
@@ -209,6 +216,7 @@ class SubagentSwarm:
             permissions=parent_permissions,
             span_id=root_id,
             parent_agent="main-agent",
+            owner_agent="main-agent",
         )
 
     @property
