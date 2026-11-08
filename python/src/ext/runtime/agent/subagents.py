@@ -317,7 +317,7 @@ class SubagentSwarm:
                         tool_policy=ToolSelectionPolicy(allowed=frozenset()),
                     ),
                     AgentInvocation(
-                        messages=(*scope.history, _text(
+                        messages=(*scope.history, *(result.messages if result else ()), _text(
                             "Review the delegated task for mistakes, failed actions, "
                             "policy violations and incomplete work. Report findings "
                             "explicitly; do not perform tools or delegate.\n" + report_context
