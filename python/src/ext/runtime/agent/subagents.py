@@ -9,9 +9,8 @@ from __future__ import annotations
 import json
 import threading
 from collections.abc import Mapping, Sequence
-from typing import Any
 from dataclasses import dataclass, replace
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 from ext.runtime.agent.config import AgentConfig
@@ -105,6 +104,8 @@ class SubagentScope:
         child_permissions = dict(allowed_tools)
         swarm = self._swarm
         with swarm._lock:
+            if swarm._closed:
+                raise RuntimeError("subagent swarm is closed")
             if self.depth >= 3:
                 swarm.metrics.increment("subagent.denied", labels={"reason": "depth"})
                 raise ValueError("subagent depth limit (3) exceeded")
@@ -113,16 +114,21 @@ class SubagentScope:
                 raise ValueError("a subagent may launch only one child")
             for name, level in child_permissions.items():
                 if level not in ("read", "write") or name not in swarm.catalog:
+                    swarm.metrics.increment("subagent.denied", labels={"reason": "permission"})
                     raise PermissionError(f"unknown tool or access level: {name}")
                 parent_level = self.permissions.get(name)
                 if parent_level is None or (parent_level == "read" and level == "write"):
+                    swarm.metrics.increment("subagent.denied", labels={"reason": "permission"})
                     raise PermissionError(f"cannot escalate tool permission: {name}")
                 side_effect = swarm.catalog[name].side_effect
                 if level == "read" and side_effect not in ("none", "read"):
+                    swarm.metrics.increment("subagent.denied", labels={"reason": "permission"})
                     raise PermissionError(f"tool is not read-only: {name}")
                 if agent.tool_policy is not None and not agent.tool_policy.permits(name):
+                    swarm.metrics.increment("subagent.denied", labels={"reason": "permission"})
                     raise PermissionError(f"agent policy denies tool: {name}")
             if agent.tool_policy and not agent.tool_policy.required.issubset(child_permissions):
+                swarm.metrics.increment("subagent.denied", labels={"reason": "permission"})
                 raise PermissionError("required tools unavailable to subagent")
             # Reserve the slot before any await, even for concurrent siblings.
             if swarm.budget is not None:
@@ -248,6 +254,7 @@ class SubagentSwarm:
                 raise PermissionError(f"parent grant denies tool: {name}")
         self._lock = threading.RLock()
         self._active = 0
+        self._closed = False
         self.traces = traces or TraceRecorder()
         self.metrics = metrics or RuntimeMetrics()
         self.trace_id = uuid4().hex
@@ -435,3 +442,4 @@ class SubagentSwarm:
                 raise RuntimeError("cannot close swarm while subagents are active")
             if self.traces.get(self.root.span_id).status == "running":
                 self.traces.finish(self.root.span_id)
+            self._closed = True
