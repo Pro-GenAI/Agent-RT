@@ -132,7 +132,7 @@ async def test_permissions_fail_closed_without_consuming_slots():
     with pytest.raises(PermissionError, match="not read-only"):
         await swarm.deploy("task", config("worker"), allowed_tools={"edit": "read"})
     with pytest.raises(PermissionError, match="escalate"):
-        await swarm.deploy("task", config("worker"), allowed_tools={"missing": "write"})
+        await swarm.deploy("task", config("worker"), allowed_tools={"lookup": "write"})
     # The initial invalid attempts don't allocate a child slot.
     assert swarm.metrics.total("subagent.started") == 0
     result = await swarm.deploy("task", config("worker"), allowed_tools={"lookup": "read"})
