@@ -6,6 +6,7 @@ swarm validates permissions against a trusted tool catalog before invoking it.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import threading
 from collections.abc import Mapping, Sequence
@@ -322,6 +323,7 @@ class SubagentSwarm:
         result: AgentRunResult | None = None
         error: str | None = None
         review = ReviewerReport(None)
+        canceled = False
         try:
             try:
                 result = await IsolatedSubagentRunner(self.invoker).run(
@@ -394,6 +396,9 @@ class SubagentSwarm:
                     None if review_result.termination_reason == "completed" else
                     f"reviewer terminated: {review_result.termination_reason}",
                 )
+            except asyncio.CancelledError:
+                review = ReviewerReport(None, "reviewer cancelled")
+                raise
             except Exception as exc:
                 review = ReviewerReport(None, f"{type(exc).__name__}: {exc}")
             finally:
@@ -415,11 +420,15 @@ class SubagentSwarm:
                 review=review,
                 error=error,
             )
+        except BaseException as exc:
+            canceled = isinstance(exc, asyncio.CancelledError)
+            error = error or f"{type(exc).__name__}: {exc}"
+            raise
         finally:
             with self._lock:
                 finished = self.traces.finish(
                     scope.span_id,
-                    status="error" if error else "ok",
+                    status="canceled" if canceled else ("error" if error else "ok"),
                     attributes={
                         "termination": result.termination_reason if result else "error",
                         "review_failed": bool(review.error),
