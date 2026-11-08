@@ -567,7 +567,7 @@ async def main(bench: Any) -> None:
         help="Explicit Agent-RT YAML path (default: ./agent-rt.yaml)",
     )
     parser.add_argument("--limit", type=int, default=10,
-                        help="Number of top-ranked cases (default: 10; use 20 or 55 to expand)")
+                        help="Number of top-ranked cases (default: 10; use 20 or 65 to expand)")
     parser.add_argument(
         "--cache-mode", choices=("off", "read", "read-write", "refresh"),
         default="read-write",
