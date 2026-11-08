@@ -28,7 +28,7 @@ never invent a final answer or silently remove unsuccessful attempts.
 The live CLI reports YAML parsing and Decision-model validation, then shows
 a dynamic completed-run progress bar: **20 completed runs by default**
 (ten prioritized cases per framework), or twice the explicit `--limit` value
-(up to 55 cases / 110 completed runs). `EvaluationProgress` writes only to
+(up to 65 cases / 130 completed runs). `EvaluationProgress` writes only to
 stderr, flushes every update, uses a carriage-return progress bar on TTYs,
 and periodic newline-delimited snapshots when stderr is redirected. Use
 `report.py` and Rich for a concise, bounded, default stdout summary:
