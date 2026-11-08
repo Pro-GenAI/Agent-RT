@@ -10,12 +10,23 @@ export interface EvaluationToolCall {
 	arguments?: Record<string, unknown>;
 }
 
+export interface SwarmToolEvent {
+  agentId: string;
+  toolName: string;
+  arguments?: Record<string, unknown>;
+  grantedTools?: string[];
+  phase: 'attempted' | 'blocked' | 'executed';
+  parentAgentId?: string;
+  reason?: string;
+}
+
 export interface EvaluationSample {
 	case: EvaluationCase;
 	output: unknown;
 	trajectory?: unknown[];
 	toolCalls?: EvaluationToolCall[];
 	metadata?: Record<string, unknown>;
+	securityEvents?: SwarmToolEvent[];
 }
 
 export interface EvaluationGrade {

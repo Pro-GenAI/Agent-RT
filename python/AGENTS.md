@@ -55,3 +55,52 @@ Audit regression invariants: automatic YAML discovery loads only user-home confi
 API HTTP routes require JSON request bodies and reject foreign Origins; unauthenticated Host names are limited to loopback or explicit allowed_hosts, with IPv6 parsed correctly. Project MCP startup displays escaped argv, environment/header names and referenced host variable names, never expanded secret values; refuse PATH and runtime/loader overrides even for previously approved project server names. E2B must reject every network restriction it cannot enforce before creating a cloud sandbox.
 
 Governed subagent delegation lives in `src/ext/runtime/agent/subagents.py`; keep depth, inherited history, per-tool read/write narrowing, reviewer isolation, and concurrency-safe spans/metrics aligned with TypeScript. Ensure registered delegation validates the invocation's exact scoped owner and snapshots only completed tool-call/result pairs, with pending turns as untrusted data. Ensure live tool registration side effects are checked at dispatch, reviewer evidence strips system authority, reviewer calls reserve shared budget capacity, and cancellation/deadlines are passed to AgentLoop. Regression coverage: `tests/test_subagents.py`.
+
+## SwarmGuard configuration and benchmark contract
+
+The repo-root `make eval-swarmguard` is the **sole live SwarmGuard comparison**:
+a minimal manual OpenAI SDK worker harness versus configured Python Agent-RT
+`SubagentSwarm` (worker, independent reviewer, Decision-selected grants,
+authorization and PII tool-input guard). The project root `agent-rt.yaml`
+is explicitly loaded by `benchmarks/swarmguard/run.py` /
+`benchmarks/swarmguard/configured.py`, not auto-discovered. It is deliberately
+ignored by Git; keep `../agent-rt.example.yaml` and the website config
+reference synchronized instead. Do not read `EVAL_*` or model-selection
+environment variables in the benchmark: `model_list` routes provider/model
+aliases and `os.environ/NAME` resolves secrets. The worker alias is
+`agent_rt_settings.subagents.default_model`, with optional
+`subagents.reviewer_model` falling back to top-level `default_model`.
+Both aliases must refer to `model_list`; unknown nested settings/keys remain
+fatal and parity with TypeScript `src/ext/config.ts` is mandatory. The
+benchmark requires exactly one OpenAI-compatible worker deployment to keep
+both harnesses on the same model and endpoint. Outside SwarmGuard, declaring
+a worker alias in YAML alone does **not** automatically make generic agents
+delegate; application code must still construct the worker/delegation path.
+
+Require an explicit `agent_rt_settings.decision_model` with a real supported
+Decision endpoint/model and successfully validate a `noul` response before
+evaluating cases. A chat-completions URL does not necessarily implement the
+Decision protocol. No silent fallback to scripted models or unsafe tool
+handling. The current parent delegation, task choice and permission grants
+are fixed by the benchmark: the configured main-agent model is used as a
+**reviewer**, not as an autonomous parent planner. The dataset has 50
+synthetic cases, 10 each in unnecessary tools, unauthorized tools, unexpected
+PII propagation, delegation escalation and indirect attacks. All mock
+tools (including `delete_file` and `web_search`) remain inert.
+
+Keep successful SDK/Agent-RT/Decision response caches separate, versioned
+and replayable across identical commands. A cache key includes model,
+endpoint, prompts, tool schemas and parameters but **never** a credential
+value; canonicalize only generated task/trace identifiers when necessary.
+Network disconnects, rate limits, HTTP failures, truncated/invalid responses
+and refused Decision answers must not update the cache. The Decision
+preflight may replay a *previously successful* answer, which does not prove
+the endpoint is online now; `refresh` forces a fresh call. The live CLI
+prints immediate initialization, Decision-preflight status and a flushed
+100-step case-completion progress bar to **stderr** (TTY overwrite,
+newline snapshots for redirected logs); stdout remains parseable JSON.
+Keep `python/tests/test_swarmguard.py` and
+`python/tests/test_swarmguard_benchmark.py` deterministic/offline; their
+async tests use `pytest.mark.anyio` with the asyncio backend fixture and
+must not require network access. There is no separate test Makefile target.
+Read `../benchmarks/swarmguard/AGENTS.md` before changing the benchmark.

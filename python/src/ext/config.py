@@ -55,6 +55,7 @@ _STORE_PARAM_FIELDS = {
 }
 _SETTINGS_SECTIONS = {
     "default_model",
+    "subagents",
     "server",
     "sandbox",
     "web_search",
@@ -377,6 +378,13 @@ class AgentRTConfig:
             raise ConfigError(
                 f"agent_rt_settings.default_model {default_model!r} is not in model_list"
             )
+        subagents = settings.get("subagents") or {}
+        for key in ("default_model", "reviewer_model"):
+            name = subagents.get(key)
+            if name is not None and name not in {item.model_name for item in models}:
+                raise ConfigError(
+                    f"agent_rt_settings.subagents.{key} {name!r} is not in model_list"
+                )
         for store in stores:
             for allowed in store.allowed_models:
                 if allowed not in {item.model_name for item in models}:
@@ -550,6 +558,17 @@ def _parse_settings(raw: Any) -> dict[str, Any]:
             set(names),
             f"agent_rt_settings.{section}",
         )
+    subagents = settings.get("subagents")
+    if subagents is not None:
+        subagents = _mapping(subagents, "agent_rt_settings.subagents")
+        _check_keys(
+            subagents, {"default_model", "reviewer_model"},
+            "agent_rt_settings.subagents",
+        )
+        settings["subagents"] = {
+            key: _text(value, f"agent_rt_settings.subagents.{key}")
+            for key, value in subagents.items()
+        }
     cli = settings.get("cli")
     if cli is not None:
         _check_keys(

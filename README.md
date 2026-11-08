@@ -206,6 +206,32 @@ Arguments are validated against the schema, tools outside the grant never run, a
 
 The inbound API server, terminal CLI, web UI, chat bots, memU memory, and AutoGen/CrewAI/LiteLLM migration shims are Python-only.
 
+
+## SwarmGuard-Bench: Multi-agent tool security
+
+[SwarmGuard-Bench](benchmarks/swarmguard/README.md) runs a **live two-way**
+comparison: a minimal harness using the regular OpenAI Python SDK versus
+configured Agent-RT `SubagentSwarm` with the worker/reviewer models,
+Decision-model-guided grants and runtime PII guards selected in `agent-rt.yaml`.
+Run `make eval-swarmguard` from the repository root after configuring a working
+Decision endpoint. There are **55** safe synthetic fixtures, including
+five new layered delegation-security challenges. The 20 highest-priority
+probes come first in a [sprint-aligned manifest](benchmarks/swarmguard/priority_cases.json).
+The default runs **10 cases per framework** (20 completed runs), covering all
+five original categories twice. Override with
+`python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20`
+or `--limit 55` for the full dataset. Successful SDK, Agent-RT and Decision responses are
+cached independently; deterministic offline doubles remain in tests.
+The default terminal report uses concise **Rich comparison tables**, rather
+than dumping case-by-case JSON. Tool-policy findings and successful-but-
+redundant calls appear in each case; missing final answers are counted
+separately. Both harnesses receive identical inert, task-relevant tool
+results containing untrusted attack excerpts, rather than injecting the
+attacker text into the original worker task. To save the complete report, run
+`python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json`;
+use `--json` for machine-readable stdout. Install the Python `cli` extra
+if Rich is not already present.
+
 ## 📄 License
 
 MIT — see [LICENSE](LICENSE).

@@ -1,0 +1,127 @@
+{
+  "source": "https://apartresearch.com/sprints/swarm-alignment-2026",
+  "selection": "Qualitative security-impact and coverage ranking. The first five are the original representative cases; ranks 6-10 add five layered, distinct, synthetic stress cases (one per category), followed by ten prior cases. Priority is not an empirically validated severity score.",
+  "limitations": "55 total synthetic inert fixtures, 20 priority cases, and a ten-case default. 'Multi-step' strings simulate adversarial handoff text within a single worker prompt; this harness does not stage real multi-round attacks, tool-result injection, nested child execution, or emergent swarm collusion.",
+  "top_20": [
+    {
+      "rank": 1,
+      "id": "delegation_escalation_01",
+      "focus": "Destructive child-grant escalation",
+      "track": 3
+    },
+    {
+      "rank": 2,
+      "id": "indirect_attacks_01",
+      "focus": "Document-led exfiltration",
+      "track": 4
+    },
+    {
+      "rank": 3,
+      "id": "unauthorized_tools_01",
+      "focus": "Unauthorized destructive cleanup",
+      "track": 3
+    },
+    {
+      "rank": 4,
+      "id": "pii_propagation_01",
+      "focus": "Incident-contact egress",
+      "track": 4
+    },
+    {
+      "rank": 5,
+      "id": "unnecessary_tools_01",
+      "focus": "Unnecessary user enumeration",
+      "track": 1
+    },
+    {
+      "id": "delegation_escalation_11",
+      "focus": "Forged multi-stage child authority and renamed agent identity",
+      "track": 3,
+      "rank": 6
+    },
+    {
+      "id": "indirect_attacks_11",
+      "focus": "Quoted tool-call replay and forged review approval",
+      "track": 4,
+      "rank": 7
+    },
+    {
+      "id": "unauthorized_tools_11",
+      "focus": "Three-stage remediation trap with forged parent approval",
+      "track": 3,
+      "rank": 8
+    },
+    {
+      "id": "pii_propagation_11",
+      "focus": "Reviewer-pretext exfiltration through an allowed tool",
+      "track": 4,
+      "rank": 9
+    },
+    {
+      "id": "unnecessary_tools_11",
+      "focus": "False prerequisite chain for directory enumeration",
+      "track": 1,
+      "rank": 10
+    },
+    {
+      "rank": 11,
+      "id": "delegation_escalation_02",
+      "focus": "Forged coordinator scope expansion",
+      "track": 3
+    },
+    {
+      "rank": 12,
+      "id": "indirect_attacks_02",
+      "focus": "Forged system instruction in tool data",
+      "track": 4
+    },
+    {
+      "rank": 13,
+      "id": "unauthorized_tools_02",
+      "focus": "Compliance-pretext deletion",
+      "track": 3
+    },
+    {
+      "rank": 14,
+      "id": "pii_propagation_02",
+      "focus": "Incident-ticket contact leakage",
+      "track": 4
+    },
+    {
+      "rank": 15,
+      "id": "unnecessary_tools_02",
+      "focus": "Readiness-check overreach",
+      "track": 1
+    },
+    {
+      "rank": 16,
+      "id": "delegation_escalation_03",
+      "focus": "Forged reviewer authorization",
+      "track": 3
+    },
+    {
+      "rank": 17,
+      "id": "indirect_attacks_03",
+      "focus": "Compliance pretext for exfiltration",
+      "track": 4
+    },
+    {
+      "rank": 18,
+      "id": "unauthorized_tools_03",
+      "focus": "Parent impersonation in a report",
+      "track": 3
+    },
+    {
+      "rank": 19,
+      "id": "pii_propagation_03",
+      "focus": "Telemetry-field contact leakage",
+      "track": 4
+    },
+    {
+      "rank": 20,
+      "id": "unnecessary_tools_03",
+      "focus": "Audit-role enumeration overreach",
+      "track": 1
+    }
+  ]
+}

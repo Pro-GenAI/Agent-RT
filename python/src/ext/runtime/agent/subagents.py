@@ -7,6 +7,7 @@ swarm validates permissions against a trusted tool catalog before invoking it.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import threading
 from contextlib import suppress
@@ -200,6 +201,29 @@ class SubagentScope:
             raise ValueError("subagent task must not be empty")
         child_permissions = dict(allowed_tools)
         swarm = self._swarm
+        # Validate the *requested* capabilities before a relevance selector can
+        # prune them, so an escalation attempt is never silently laundered.
+        for name, level in child_permissions.items():
+            inherited = self.permissions.get(name)
+            if (name not in swarm.catalog or level not in ("read", "write")
+                    or inherited is None
+                    or (inherited == "read" and level == "write")):
+                swarm.metrics.increment("subagent.denied", labels={"reason": "permission"})
+                raise PermissionError(f"cannot escalate tool permission: {name}")
+        if swarm.tool_selector is not None:
+            candidates = tuple(
+                swarm.catalog[name] for name in child_permissions if name in swarm.catalog
+            )
+            selected = swarm.tool_selector(task, candidates)
+            if inspect.isawaitable(selected):
+                selected = await selected
+            selected_names = frozenset(selected)
+            if not selected_names.issubset(child_permissions):
+                raise PermissionError("tool selector cannot add ungranted tools")
+            child_permissions = {
+                name: level for name, level in child_permissions.items()
+                if name in selected_names
+            }
         effective_token = cancellation_token or self.cancellation_token
         effective_deadline = deadline or self.deadline
         if effective_token is not None and effective_token.is_cancelled:
@@ -390,12 +414,14 @@ class SubagentSwarm:
         capability_grant: CapabilityGrant | None = None,
         traces: TraceRecorder | None = None,
         metrics: RuntimeMetrics | None = None,
+        tool_selector: Any | None = None,
     ) -> None:
         self.invoker = invoker
         self._chat_history_source = chat_history
         self.reviewer = reviewer
         self.budget = budget
         self.capability_grant = capability_grant
+        self.tool_selector = tool_selector
         self.catalog = {tool.name: tool for tool in tool_definitions}
         if len(self.catalog) != len(tool_definitions):
             raise ValueError("duplicate tool definitions")

@@ -342,3 +342,29 @@ test("file_search merges stores by score and only queries the allowed ones", asy
   assert.deepEqual(output.map((row) => row.vector_store), ["private-kb", "docs-kb"]);
   assert.equal(other.queries.length, 0);
 });
+
+
+test("subagent default and reviewer model names are validated", async () => {
+  const content = `
+model_list:
+  - model_name: main-agent
+    agent_rt_params: {model: openai/gpt-main, api_key: test}
+  - model_name: subagent
+    agent_rt_params: {model: openai/gpt-worker, api_key: test}
+agent_rt_settings:
+  default_model: main-agent
+  subagents: {default_model: subagent, reviewer_model: main-agent}
+`;
+  const config = await parse(content);
+  assert.deepEqual(config.settings.subagents, {
+    default_model: "subagent", reviewer_model: "main-agent",
+  });
+  await assert.rejects(
+    parse(content.replace("default_model: subagent", "default_model: missing")),
+    /subagents.default_model.*not in model_list/,
+  );
+  await assert.rejects(
+    parse(content.replace("reviewer_model: main-agent", "invalid: main-agent")),
+    /subagents.*unknown key/,
+  );
+});

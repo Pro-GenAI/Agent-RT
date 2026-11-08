@@ -8,3 +8,12 @@ python-verify:
 
 ts-verify:
 	$(MAKE) -C typescript verify
+
+# Strict live comparison using the repository's explicitly selected YAML.
+# Both workers and the mandatory Decision endpoint are configured there.
+# No EVAL_* overrides or separate benchmark modes.
+.PHONY: eval-swarmguard
+
+eval-swarmguard:
+	@printf '[SwarmGuard] Initializing evaluation...\n' >&2
+	@python -u benchmarks/swarmguard/run.py --config ./agent-rt.yaml

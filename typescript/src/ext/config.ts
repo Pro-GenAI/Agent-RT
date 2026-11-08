@@ -46,6 +46,7 @@ const STORE_PARAM_FIELDS = new Set([
 ]);
 const SETTINGS_SECTIONS = new Set([
 	'default_model',
+	'subagents',
 	'server',
 	'sandbox',
 	'web_search',
@@ -679,6 +680,23 @@ function parseSettings(raw: unknown): Record<string, unknown> {
 			'agent_rt_settings.memory.options',
 		);
 	}
+	if (settings['subagents'] !== undefined && settings['subagents'] !== null) {
+		const workers = mapping(
+			settings['subagents'],
+			'agent_rt_settings.subagents',
+		);
+		checkKeys(
+			workers,
+			new Set(['default_model', 'reviewer_model']),
+			'agent_rt_settings.subagents',
+		);
+		settings['subagents'] = Object.fromEntries(
+			Object.entries(workers).map(([key, value]) => [
+				key,
+				text(value, `agent_rt_settings.subagents.${key}`),
+			]),
+		);
+	}
 	if (settings['default_model'] !== undefined) {
 		settings['default_model'] = text(
 			settings['default_model'],
@@ -721,6 +739,15 @@ export function configFromObject(
 		throw new ConfigError(
 			`agent_rt_settings.default_model '${configuredDefault}' is not in model_list`,
 		);
+	}
+	const subagents = (settings['subagents'] ?? {}) as Record<string, string>;
+	for (const key of ['default_model', 'reviewer_model']) {
+		const name = subagents[key];
+		if (name !== undefined && !names.has(name)) {
+			throw new ConfigError(
+				`agent_rt_settings.subagents.${key} '${name}' is not in model_list`,
+			);
+		}
 	}
 	for (const store of vectorStores) {
 		for (const allowed of store.allowedModels) {

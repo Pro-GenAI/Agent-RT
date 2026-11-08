@@ -151,3 +151,9 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/pyt
 - [Development](https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html) · [Comparisons](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
 
 For reviewed, depth-limited task delegation, use `SubagentSwarm` and `AgentLoopInvoker` with explicit per-tool read/write permissions, prepaid reviewer budgets, cancellation, and per-swarm tracing. See the [runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#governed-subagents).
+
+
+**SwarmGuard-Bench:** A two-way live OpenAI SDK versus configured Agent-RT
+`SubagentSwarm` security comparison with mandatory Decision-model validation,
+persistent successful-response caching and synthetic PII. Run `make eval-swarmguard`
+from the repository root; see [the benchmark documentation](https://github.com/Pro-GenAI/Agent-RT/tree/main/benchmarks/swarmguard).
