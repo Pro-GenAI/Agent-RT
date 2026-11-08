@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import threading
 from collections.abc import Mapping, Sequence
+from typing import Any
 from dataclasses import dataclass, replace
 from typing import Literal
 from uuid import uuid4
@@ -17,6 +18,7 @@ from ext.runtime.agent.config import AgentConfig
 from ext.runtime.agent.delegation import (
     AgentInvocation,
     AgentInvoker,
+    AgentTool,
     IsolatedSubagentRunner,
     SubagentSpec,
 )
@@ -159,6 +161,54 @@ class SubagentScope:
             task_id=task_id,
             agent=agent,
             reviewer=reviewer or swarm.reviewer,
+        )
+
+
+    def as_tool(
+        self,
+        agent: AgentConfig,
+        *,
+        allowed_tools: Mapping[str, ToolPermission],
+        reviewer: AgentConfig | None = None,
+        name: str = "delegate_subagent",
+    ) -> AgentTool:
+        """Expose scoped task delegation to an AgentLoop's ToolRegistry.
+
+        The parent must explicitly register and authorize this tool. Write
+        permission is required when the delegated worker may mutate state.
+        """
+        permissions = dict(allowed_tools)
+
+        async def handler(arguments: Mapping[str, Any], _context: Any) -> Any:
+            task = arguments.get("task")
+            if not isinstance(task, str) or not task.strip():
+                raise ValueError("delegated task must be a non-empty string")
+            outcome = await self.spawn(
+                task, agent, allowed_tools=permissions, reviewer=reviewer
+            )
+            return {
+                "task_id": outcome.task_id,
+                "response": outcome.response,
+                "error": outcome.error,
+                "review": outcome.review.response,
+                "review_error": outcome.review.error,
+            }
+
+        return AgentTool(
+            definition=ToolDefinition(
+                name=name,
+                description="Delegate a task to a bounded, reviewed subagent.",
+                input_schema={
+                    "type": "object",
+                    "properties": {"task": {"type": "string"}},
+                    "required": ["task"],
+                    "additionalProperties": False,
+                },
+                side_effect=(
+                    "write" if "write" in permissions.values() else "read"
+                ),
+            ),
+            handler=handler,
         )
 
 
