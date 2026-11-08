@@ -15,6 +15,7 @@ from agent_rt import (
     ModelSettings,
     SubagentSwarm,
     ToolDefinition,
+    ToolExecutionContext,
 )
 
 
@@ -135,6 +136,11 @@ async def test_permissions_fail_closed_without_consuming_slots():
         await swarm.deploy("task", config("worker"), allowed_tools={"lookup": "write"})
     # The initial invalid attempts don't allocate a child slot.
     assert swarm.metrics.total("subagent.started") == 0
+    assert swarm.metrics.total("subagent.denied", labels={"reason": "permission"}) == 2
+    tool = swarm.root.as_tool(config("worker"), allowed_tools={"lookup": "read"})
+    assert tool.definition.side_effect == "read"
+    called = await tool.handler({"task": "delegated"}, ToolExecutionContext())
+    assert called["response"] == '{"agent": "worker"}'
     result = await swarm.deploy("task", config("worker"), allowed_tools={"lookup": "read"})
     assert result.error is None
     assert result.result is not None
