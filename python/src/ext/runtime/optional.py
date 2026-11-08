@@ -90,6 +90,12 @@ from ext.runtime.agent.delegation import (
     WorkerResult,
     agent_as_tool,
 )
+from ext.runtime.agent.subagents import (
+    ReviewerReport,
+    SubagentOutcome,
+    SubagentScope,
+    SubagentSwarm,
+)
 from ext.runtime.agent.planning import (
     Plan,
     PlanExecutionResult,
