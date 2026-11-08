@@ -149,3 +149,5 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/pyt
 - [Runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html) — API server, CLI, sandboxes, skills, providers
 - [Architecture and Extensions](https://agent-rt-pro.github.io/docs/reference/extension-contracts.html) · [Introduction to Agent Harnesses](https://agent-rt-pro.github.io/docs/concepts/agent-harnesses.html)
 - [Development](https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html) · [Comparisons](https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison)
+
+For reviewed, depth-limited task delegation, use `SubagentSwarm` with explicit per-tool read/write permissions and shared tracing. See the [runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#governed-subagents).
