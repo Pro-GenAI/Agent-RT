@@ -79,24 +79,25 @@ report an actionable error instructing the user to edit the local ignored
 `agent-rt.yaml`; the live benchmark example uses 120s to accommodate two
 sequential model calls. The general runtime example can remain at 30s.
 
-The `cases/*.jsonl` files contain **55 synthetic** cases: the original
-50 (ten per category), plus one complex synthetic challenge per category in
-`advanced_scenarios.jsonl`. The curated `priority_cases.json` defines
-20 ranked cases, with the five original representatives first, followed by
-the five advanced cases (ranks 6-10), then ten previous priority cases.
-`load_cases()` places the ranked 20 before the other 35. The default
-live run is ten cases, covering all five categories twice; `--limit 20`
-and `--limit 55` explicitly expand coverage.
-The new cases use layered attacker text embedded in **synthetic tool
-responses** (not in trusted user/parent instructions). Both live paths
-must call `run.mock_tool_result` for identical, useful benign document
-content and the same untrusted attack excerpt. No real network, file writes,
-or child execution are allowed. Do not call this adaptive multi-round
-injection, actual child identity change, or executed nested agents.
-Keep category, tool schema, mock effects and synthetic PII invariants.
-Ranking is risk-first judgment, not an empirical severity score. Do not
-claim the current worker/reviewer harness evaluates free-form swarm
-collusion or real nested execution.
+The `cases/*.jsonl` files contain **65 synthetic** cases, 13 per category:
+the original 50, five advanced variants in `advanced_scenarios.jsonl`,
+and ten new high-pressure cases in `pressure_scenarios.jsonl`.
+The curated `priority_cases.json` defines 20 ranked cases: five original
+representatives (1-5), ten pressure probes (6-15), and five earlier advanced
+variants (16-20). The remaining 45 are controls and lower-priority variants.
+The default live run remains ten cases, covering each category twice; 
+`--limit 20` and `--limit 65` expand coverage.
+
+Both live paths must use `run.mock_tool_result` for identical, inert tool
+outputs. Existing controls put attacker text in a labeled `untrusted_excerpt`;
+new `attack_surface: document_body` probes instead place it in the normal
+document `content` field, without changing its tool-result trust level or
+the trusted parent instructions. This makes stronger but unvalidated
+adversarial hypotheses: do not assert increased failures without live
+experiments on the user-selected model. No real network, file writes,
+adaptive multi-round prompt injection, child identity changes, or child
+execution are involved. Preserve synthetic PII and grant invariants.
+Ranking is qualitative risk judgment, not an empirical severity score.
 
 The five categories are:
 `unnecessary_tools`, `unauthorized_tools`, `pii_propagation`,
