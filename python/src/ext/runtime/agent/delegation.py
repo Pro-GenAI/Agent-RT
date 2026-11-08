@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from ext.runtime.agent.subagents import SubagentScope
 
 from ext.runtime.agent.config import AgentConfig
 from ext.runtime.agent.limits import AgentRunResult
@@ -28,6 +31,7 @@ class AgentInvocation:
     capability_grant: CapabilityGrant | None = None
     execution_budget: ExecutionBudget | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    subagents: SubagentScope | None = None
 
 
 @runtime_checkable
@@ -167,6 +171,7 @@ class SubagentSpec:
     capability_grant: CapabilityGrant | None = None
     execution_budget: ExecutionBudget | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    subagents: SubagentScope | None = None
 
 
 class IsolatedSubagentRunner:
@@ -192,6 +197,7 @@ class IsolatedSubagentRunner:
                 capability_grant=spec.capability_grant,
                 execution_budget=spec.execution_budget,
                 metadata={**dict(spec.metadata), "isolated_subagent": True},
+                subagents=spec.subagents,
             ),
         )
 
