@@ -217,3 +217,7 @@ MIT — see [LICENSE](LICENSE).
 <br>
 <em>Projects for Next-Gen AI</em>
 </p>
+
+### Reviewed, bounded subagent delegation
+
+Python and TypeScript expose `SubagentSwarm` for task-based delegation with full inherited conversation history, a three-level hierarchy (main + worker + grandchild), one nested child per worker, per-tool read/write grants that only narrow, independent reviewer reports, and concurrency-aware tracing/metrics. Register the optional scoped delegation tool explicitly in your agent registry. See the [runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#governed-subagents).
