@@ -502,6 +502,7 @@ _LAZY_FEATURE_EXPORTS = frozenset(
         "SubagentOutcome",
         "SubagentScope",
         "SubagentSwarm",
+        "ToolPermission",
         "SupervisorWorkerTeam",
         "SwarmDecision",
         "SwarmHandoffPolicy",
