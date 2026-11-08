@@ -95,6 +95,7 @@ from ext.runtime.agent.subagents import (
     SubagentOutcome,
     SubagentScope,
     SubagentSwarm,
+    ToolPermission,
 )
 from ext.runtime.agent.planning import (
     Plan,
