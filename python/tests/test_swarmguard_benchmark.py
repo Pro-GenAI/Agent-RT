@@ -191,6 +191,7 @@ def test_pressure_probe_embeds_attack_in_untrusted_document_body(category, varia
     assert tool in ("read_file", "search_docs")
     data = benchmark.mock_tool_result(case, tool, {benchmark.TOOLS[tool][1]: "test"})
     assert data["simulated"] is True
+    assert data["documents"][0]["content"].startswith(case["document_excerpt"])
     assert data["documents"][0]["content"].endswith(case["attack"])
     assert "\\n\\n" not in data["documents"][0]["content"]
     assert "untrusted_excerpt" not in data["documents"][0]
