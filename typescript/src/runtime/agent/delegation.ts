@@ -13,8 +13,10 @@ import { type ContextItem } from '../context/items.js';
 import { type AgentConfig } from './config.js';
 import { type ExecutionBudget } from '../resilience/budgets.js';
 import { type AgentRunResult } from './limits.js';
+import { type SubagentScope } from './subagents.js';
 
 export interface AgentInvocation {
+	subagents?: SubagentScope;
 	messages: ModelMessage[];
 	contextItems?: ContextItem[];
 	workflowState?: WorkflowState;
@@ -136,6 +138,7 @@ export class HandoffManager {
 }
 
 export interface SubagentSpec {
+	subagents?: SubagentScope;
 	agent: AgentConfig;
 	messages: ModelMessage[];
 	contextItems?: ContextItem[];
@@ -162,6 +165,7 @@ export class IsolatedSubagentRunner {
 			capabilityGrant: spec.capabilityGrant,
 			executionBudget: spec.executionBudget,
 			metadata: { ...(spec.metadata ?? {}), isolatedSubagent: true },
+			subagents: spec.subagents,
 		});
 	}
 }
