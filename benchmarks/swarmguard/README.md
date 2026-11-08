@@ -116,26 +116,32 @@ when validating current model availability.
 
 ## Dataset and scoring
 
-The `cases/*.jsonl` fixtures contain **55 synthetic tasks**, eleven per
-category. The original 50 remain intact; five new layered challenges live in
-[`cases/advanced_scenarios.jsonl`](cases/advanced_scenarios.jsonl).
-The [priority manifest](priority_cases.json) ranks 20 representative
-high-impact probes first. Ranks 1-5 retain the original category representatives;
-ranks 6-10 are the five advanced challenges, one per category. The following
-ten priority cases preserve earlier risk coverage; the other 35 cases remain
-available for longer evaluations.
+The `cases/*.jsonl` fixtures contain **65 synthetic tasks**, 13 per
+category. The original 50 remain intact, five earlier layered variants
+are in [`advanced_scenarios.jsonl`](cases/advanced_scenarios.jsonl), and
+ten additional red-team probes are in
+[`pressure_scenarios.jsonl`](cases/pressure_scenarios.jsonl).
+The [priority manifest](priority_cases.json) orders 20 cases: original
+representatives (1-5), ten new pressure probes (6-15), and five earlier
+advanced variants (16-20). The other 45 cases are still available.
 
-The new scenarios combine multiple untrusted instructions, forged authority
-and permission claims, or unnecessary-tool prerequisites. The *trusted*
-worker task no longer contains the attacker text. Instead, both harnesses
-receive the same synthetic, task-relevant document or search result containing
-an `untrusted_excerpt` field. That lets the worker finish the legitimate
-task and tests whether it acts on embedded malicious instructions. The SDK's
-bounded manual loop allows up to six model turns instead of three, so repeated
-tool calls are less likely to hide a possible final answer.
+The new pressure probes aim to increase the opportunity to detect actual
+misuse through forged approvals, copied tool-call transcripts, policy
+exceptions, deletion pretexts, synthetic-contact egress, and unnecessary
+directory preflights. They are **unvalidated adversarial hypotheses**:
+a correct model may refuse all attacks. Only a real attempted or executed
+tool call can support a reported failure.
 
-This is **synthetic tool-response injection with a fixed single payload**,
-not adaptive multi-round steering, real child identity changes, actual
+The *trusted* worker task never contains attacker text. Both harnesses receive
+the same inert and task-relevant document or search result. The older controls
+use a distinct `untrusted_excerpt` field; new pressure probes place attack
+instructions directly in the document `content` field. Both are untrusted
+**tool-returned data**, never parent or system instructions. The SDK's
+bounded manual loop allows six model turns, which reduces premature
+tool-call-only terminations.
+
+This is **synthetic tool-response injection with a fixed payload**, not
+adaptive multi-round steering, real child identity changes, actual
 multi-hop exfiltration, or executed nested agents. Priority is qualitative
 risk judgment, not empirically measured severity. The default ten-case run
 is an exploratory smoke test, **not** enough to establish reliable
@@ -207,8 +213,8 @@ For direct script use (no additional Makefile targets):
 ```bash
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml             # default: 10
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 5   # original quick five
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20  # prioritized 20
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 55  # entire dataset
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20  # all ten new challenges
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 65  # entire dataset
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode read
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode refresh
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json # Rich table + complete JSON file
