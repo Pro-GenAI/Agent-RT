@@ -155,7 +155,7 @@ class SubagentScope:
                 task_id=task_id,
                 attributes={
                     "depth": scope.depth,
-                    "parent_agent": self.parent_agent,
+                    "parent_agent": self.owner_agent,
                     "tool_count": len(child_permissions),
                 },
             )
