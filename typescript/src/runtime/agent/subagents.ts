@@ -70,6 +70,7 @@ export class SubagentScope {
     },
   ): Promise<SubagentOutcome> {
     if (!task.trim()) throw new Error('subagent task must not be empty');
+    if (this.swarm.closed) throw new Error('subagent swarm is closed');
     if (this.depth >= 3) {
       this.swarm.metrics.increment('subagent.denied', 1, { reason: 'depth' });
       throw new Error('subagent depth limit (3) exceeded');
@@ -81,24 +82,34 @@ export class SubagentScope {
     const permissions = { ...options.allowedTools };
     for (const [name, level] of Object.entries(permissions)) {
       const definition = this.swarm.catalog.get(name);
-      if (!definition || (level !== 'read' && level !== 'write'))
+      if (!definition || (level !== 'read' && level !== 'write')) {
+        this.swarm.metrics.increment('subagent.denied', 1, { reason: 'permission' });
         throw new Error('unknown tool or access level: ' + name);
+      }
       const inherited = this.permissions[name];
-      if (!inherited || (inherited === 'read' && level === 'write'))
+      if (!inherited || (inherited === 'read' && level === 'write')) {
+        this.swarm.metrics.increment('subagent.denied', 1, { reason: 'permission' });
         throw new Error('cannot escalate tool permission: ' + name);
-      if (level === 'read' && !['none', 'read'].includes(definition.sideEffect ?? 'none'))
+      }
+      if (level === 'read' && !['none', 'read'].includes(definition.sideEffect ?? 'none')) {
+        this.swarm.metrics.increment('subagent.denied', 1, { reason: 'permission' });
         throw new Error('tool is not read-only: ' + name);
+      }
       if (
         agent.toolPolicy?.denied?.includes(name) ||
         (agent.toolPolicy?.allowed !== undefined &&
           !agent.toolPolicy.allowed.includes(name))
-      )
+      ) {
+        this.swarm.metrics.increment('subagent.denied', 1, { reason: 'permission' });
         throw new Error('agent policy denies tool: ' + name);
+      }
     }
     const missingRequired = (agent.toolPolicy?.required ?? [])
       .filter((name) => !(name in permissions));
-    if (missingRequired.length)
+    if (missingRequired.length) {
+      this.swarm.metrics.increment('subagent.denied', 1, { reason: 'permission' });
       throw new Error('required tools unavailable to subagent: ' + missingRequired.join(', '));
+    }
     // No await before reservation; concurrent sibling promises cannot reuse slots.
     this.swarm.budget?.consumeSubagent();
     this.spawned += 1;
@@ -169,6 +180,7 @@ export class SubagentSwarm {
   readonly traceId = randomUUID();
   readonly root: SubagentScope;
   private activeJobs = 0;
+  private finished = false;
 
   constructor(
     readonly invoker: AgentInvoker,
@@ -186,7 +198,9 @@ export class SubagentSwarm {
     this.reviewer = options.reviewer;
     this.budget = options.budget;
     this.capabilityGrant = options.capabilityGrant;
-    this.catalog = new Map(options.toolDefinitions.map((tool) => [tool.name, tool]));
+    this.catalog = new Map<string, ToolDefinition>(
+      options.toolDefinitions.map((tool): [string, ToolDefinition] => [tool.name, tool]),
+    );
     if (this.catalog.size !== options.toolDefinitions.length)
       throw new Error('duplicate tool definitions');
     for (const [name, level] of Object.entries(options.parentPermissions)) {
@@ -217,6 +231,10 @@ export class SubagentSwarm {
 
   get active(): number {
     return this.activeJobs;
+  }
+
+  get closed(): boolean {
+    return this.finished;
   }
 
   started(agent: string): void {
@@ -364,5 +382,6 @@ export class SubagentSwarm {
     if (this.activeJobs) throw new Error('cannot close swarm while subagents are active');
     if (this.traces.get(this.root.spanId).status === 'running')
       this.traces.finish(this.root.spanId);
+    this.finished = true;
   }
 }
