@@ -123,7 +123,7 @@ export class SubagentScope {
       spanId, traceId: this.swarm.traceId, parentSpanId: this.spanId,
       name: agent.name, kind: 'subagent', taskId,
       attributes: {
-        depth: scope.depth, parentAgent: this.parentAgent,
+        depth: scope.depth, parentAgent: this.ownerAgent,
         toolCount: Object.keys(permissions).length,
       },
     });
@@ -311,7 +311,7 @@ export class SubagentSwarm {
       this.metrics.increment('subagent.review.started');
       try {
         const context = JSON.stringify({
-          taskId, task: scope.history[scope.history.length - 1]?.content[0],
+          taskId, task: scope.history[scope.history.length - 1]?.content[0]?.text,
           worker: agent.name, termination: result?.terminationReason,
           response: response(result), error,
         });
