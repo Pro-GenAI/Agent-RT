@@ -10,6 +10,7 @@ import { type AgentConfig } from './config.js';
 import { type AgentRunResult } from './limits.js';
 import {
   type AgentInvoker,
+  type AgentTool,
   IsolatedSubagentRunner,
   type SubagentSpec,
 } from './delegation.js';
@@ -118,6 +119,47 @@ export class SubagentScope {
     this.swarm.started(agent.name);
     return this.swarm.execute(scope, taskId, agent, options.reviewer ?? this.swarm.reviewer);
   }
+
+  /** Register the returned tool in the parent runtime and authorize its name. */
+  asTool(
+    agent: AgentConfig,
+    options: {
+      allowedTools: Record<string, ToolPermission>;
+      reviewer?: AgentConfig;
+      name?: string;
+    },
+  ): AgentTool {
+    const permissions = { ...options.allowedTools };
+    return {
+      definition: {
+        name: options.name ?? 'delegate_subagent',
+        description: 'Delegate a task to a bounded, reviewed subagent.',
+        inputSchema: {
+          type: 'object',
+          properties: { task: { type: 'string' } },
+          required: ['task'],
+          additionalProperties: false,
+        },
+        sideEffect: Object.values(permissions).includes('write') ? 'write' : 'read',
+      },
+      handler: async (args) => {
+        if (typeof args.task !== 'string' || !args.task.trim())
+          throw new Error('delegated task must be a non-empty string');
+        const out = await this.spawn(
+          args.task, agent,
+          { allowedTools: permissions, reviewer: options.reviewer },
+        );
+        return {
+          taskId: out.taskId,
+          response: out.response,
+          error: out.error,
+          review: out.review.response,
+          reviewError: out.review.error,
+        };
+      },
+    };
+  }
+
 }
 
 export class SubagentSwarm {
