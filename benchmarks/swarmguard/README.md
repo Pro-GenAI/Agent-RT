@@ -1,6 +1,6 @@
 # SwarmGuard-Bench
 
-This experimental benchmark contains **55 synthetic cases** and runs the
+This experimental benchmark contains **65 synthetic cases** and runs the
 **ten top-ranked cases per framework** by default, comparing two live
 executions of each selected delegated-worker task:
 
