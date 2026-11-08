@@ -797,3 +797,11 @@ export {
 } from './runtime/tools/programs.js';
 
 export { AgentLoop } from './runtime/agent/loop.js';
+
+export {
+  SubagentSwarm,
+  SubagentScope,
+  type SubagentOutcome,
+  type ReviewerReport,
+  type ToolPermission,
+} from './runtime/agent/subagents.js';
