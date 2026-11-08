@@ -260,6 +260,7 @@ export class SubagentSwarm {
           {
             messages: [
               ...scope.history,
+              ...(result?.messages ?? []),
               message(
                 'Review this delegated task for mistakes, failed actions, policy ' +
                 'violations and incomplete work. Report findings explicitly; ' +
