@@ -554,6 +554,104 @@ async def test_error_payload_and_incomplete_sdk_responses_are_not_cached(tmp_pat
 
 
 
+
+@pytest.mark.anyio
+async def test_empty_sdk_case_is_inconclusive_and_replays_without_calls(tmp_path):
+    from configured import configured_models, run_sdk
+
+    class SDK:
+        def __init__(self):
+            self.calls = 0
+            self.chat = self
+            self.completions = self
+
+        async def create(self, **request):
+            self.calls += 1
+            return {
+                "choices": [{
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": None},
+                }],
+                "model": request["model"],
+            }
+
+    case = load_cases()[0]
+    config = configured_fixture()
+    _worker, _reviewer, deployment = configured_models(config)
+    sdk = SDK()
+    with ResponseCache(tmp_path / "empty-case.sqlite") as cache:
+        for _ in range(2):
+            trace = await run_sdk(
+                case, cache, benchmark, deployment, "test-empty-case",
+                client=sdk,
+            )
+            assert trace.capability_issue == "empty_completion"
+            assert trace.output == ""
+            graded = await evaluate_case(
+                case, "openai_sdk", cache, deployment.model, False, None, None,
+                trace_override=trace,
+            )
+            assert graded["capability_issue"] == "empty_completion"
+            assert graded["output_observed"] is False
+        assert sdk.calls == 1
+        assert cache.writes == 1
+
+
+@pytest.mark.anyio
+async def test_empty_agent_rt_worker_case_is_inconclusive_not_fatal(tmp_path):
+    from configured import (
+        configured_decisions, configured_models, run_agent_rt,
+        validate_decision_provider,
+    )
+    from ext.runtime.models.interfaces import ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    class Decisions:
+        def decide(self, state, questions):
+            return {key: {"noul": 0.95} for key in questions}
+
+    class Provider:
+        name = "gemma-shaped-worker"
+        def __init__(self):
+            self.calls = []
+
+        async def complete(self, request):
+            self.calls.append(request.model)
+            if request.model == "subagent":
+                return ModelResponse(
+                    message=ModelMessage(role="assistant", content=()),
+                    model=request.model, finish_reason="stop",
+                )
+            return ModelResponse(
+                message=ModelMessage(
+                    role="assistant", content=(ContentPart(type="text", text="reviewed"),),
+                ),
+                model=request.model, finish_reason="stop",
+            )
+
+    config = configured_fixture()
+    worker, reviewer, _deployment = configured_models(config)
+    case = load_cases()[0]
+    provider = Provider()
+    with ResponseCache(tmp_path / "empty-agent-rt-case.sqlite") as cache:
+        decisions = configured_decisions(config, cache, provider=Decisions())
+        validate_decision_provider(decisions)
+        first = await run_agent_rt(
+            case, cache, benchmark, config, worker, reviewer, decisions,
+            provider=provider,
+        )
+        assert first.capability_issue == "worker:empty_completion"
+        assert first.output == ""
+        worker_calls = provider.calls.count("subagent")
+        assert worker_calls == 1
+        second = await run_agent_rt(
+            case, cache, benchmark, config, worker, reviewer, decisions,
+            provider=provider,
+        )
+        assert second.capability_issue == first.capability_issue
+        assert provider.calls.count("subagent") == worker_calls
+
+
 @pytest.mark.anyio
 async def test_empty_agent_rt_model_completion_is_cached_as_capability_issue(tmp_path):
     from ext.runtime.models.interfaces import ModelRequest, ModelResponse
