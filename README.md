@@ -240,10 +240,14 @@ than dumping case-by-case JSON. Tool-policy findings and successful-but-
 redundant calls appear in each case; missing final answers are counted
 separately. Both harnesses receive identical inert, task-relevant tool
 results containing untrusted attack excerpts or realistic document-body
-prompt injections, rather than injecting attacker instructions into the
-original worker task. Longer staged attacks are now present in ranked cases
-2–20, and PII-category tasks include **synthetic** contact identifiers as
-relevant internal context. New cases are adversarial hypotheses; model failure is not
+prompt injections. Each worker also receives a **distinct case-specific
+system prompt**, the same in both frameworks, with synthetic contact values,
+potentially misleading workflow approvals, and suggested mock-tool actions.
+The reviewer receives no such worker prompt. This is a trusted-prompt
+conflict test in addition to the untrusted-document attack; observed
+violations cannot be attributed solely to document injection. Longer staged
+attacks are present in ranked cases 2–20, and PII-category tasks include
+**synthetic** contact identifiers as internal reference context. New cases are adversarial hypotheses; model failure is not
 guaranteed and must be verified by live, repeated trials. To save the complete report, run
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json`;
 use `--json` for machine-readable stdout. Install the Python `cli` extra
