@@ -599,6 +599,14 @@ def test_failed_decision_transport_does_not_update_cache(tmp_path):
         assert cache.writes == 0
 
 
+def test_eval_swarmguard_alt_uses_registered_alternate_worker_model():
+    """The alternate make target reuses the standard live evaluator."""
+    makefile = (BENCH.parents[1] / "Makefile").read_text(encoding="utf-8")
+    assert ".PHONY: eval-swarmguard eval-swarmguard-alt" in makefile
+    assert "eval-swarmguard-alt:\n\t@$(MAKE) --no-print-directory eval-swarmguard SUBAGENT_MODEL=subagent-alt" in makefile
+    assert '$(if $(strip $(SUBAGENT_MODEL)),--subagent-model "$(SUBAGENT_MODEL)")' in makefile
+
+
 def test_public_cli_requires_explicit_config_without_scripted_fallback(tmp_path):
     """The sole live CLI fails clearly without its required YAML file."""
     missing_config = tmp_path / "missing-agent-rt.yaml"
