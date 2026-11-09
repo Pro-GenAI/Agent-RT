@@ -55,6 +55,14 @@ validated `agent_rt_settings.subagents.default_model` selects the worker;
 optional `subagents.reviewer_model` overrides the reviewer. Both must
 exist in `model_list`. Worker must have **exactly one** OpenAI-compatible
 deployment, so the SDK baseline uses the *same upstream model and endpoint*.
+`configured_models(config, subagent_model=...)` selects an optional registered
+`model_list` alias for all benchmark worker cases; `execute` and the CLI
+pass it through without changing the reviewer or Decision model. An unknown
+alias or multi-deployment alias must fail before execution. SDK cache keys
+must incorporate the selected alias in addition to physical deployment
+identity and request model; Agent-RT already uses request.model (the worker
+alias) and its model-config identity. Never cross-replay worker responses
+from a different selected alias. Decision cache identity stays independent.
 `agent_rt_settings.decision_model` must explicitly specify a working
 `base_url` and `model`, plus `provider` (`jev` or `openai`) and
 `api_key` if required. The decision service is **not** inferred from a
