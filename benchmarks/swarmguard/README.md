@@ -66,6 +66,14 @@ model_list:
       api_key: os.environ/OPENAI_SUBAGENT_API_KEY
       websocket: false
 
+  # Optional second worker model to compare across benchmark runs.
+  - model_name: subagent-alt
+    agent_rt_params:
+      model: openai/YOUR_ALTERNATE_WORKER_MODEL
+      api_base: os.environ/OPENAI_SUBAGENT_BASE_URL
+      api_key: os.environ/OPENAI_SUBAGENT_API_KEY
+      websocket: false
+
 agent_rt_settings:
   default_model: main-agent
   subagents:
@@ -92,6 +100,42 @@ not a second model-selection configuration. The main and worker model aliases
 must exist in `model_list`. The worker must have one OpenAI-compatible
 deployment so the regular SDK comparison is well-defined. The reviewer uses
 `subagents.reviewer_model`, or `default_model` if omitted.
+
+### Select a different sub-agent model for an evaluation
+
+Use `--subagent-model ALIAS` with a name declared under `model_list`:
+
+```bash
+# Five cases per framework, with every worker using the alternate model.
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml \
+  --subagent-model subagent-alt --limit 5
+
+# Compare a second model using the same ten-case selection.
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml \
+  --subagent-model subagent --limit 10
+```
+
+The selected alias applies to **every worker case in both frameworks**:
+OpenAI SDK receives its resolved upstream model and API endpoint; Agent-RT
+uses the same configured worker alias and retains its normal reviewer.
+This switch does **not** change the reviewer, Decision model, or number of
+cases. It does not create five simultaneous sub-agents; `--limit 5` executes
+five delegated-worker tasks per framework. Omit the flag to use
+`agent_rt_settings.subagents.default_model`.
+
+An alias must exist in `model_list` and resolve to exactly **one
+OpenAI-compatible deployment**. Use a different alias for each model or
+endpoint, without editing or exporting additional benchmark-specific
+environment variables. The full report includes both the chosen alias
+(`worker_model`) and upstream ID (`worker_deployment_model`).
+
+**Caching is separated by selected worker model.** SDK cache keys include the
+worker alias, configured deployment identity and request model ID. Agent-RT
+cache keys include the worker alias and model configuration. Repeating the
+same selection replays successful responses; switching A → B → A cannot
+reuse B's worker responses for A. Decision caching remains independent
+and is reused when its inputs are unchanged. Use `--cache-mode refresh`
+when you want fresh trials regardless of model identity.
 
 The Agent-RT side gives the worker and its reviewer **one shared
 per-case deadline** from `agent_rt_settings.execution_limits.timeout_seconds`.
@@ -215,6 +259,7 @@ python benchmarks/swarmguard/run.py --config ./agent-rt.yaml             # defau
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 5   # original quick five
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20  # all ten new challenges
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 65  # entire dataset
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --subagent-model subagent-alt --limit 5
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode read
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode refresh
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json # Rich table + complete JSON file
