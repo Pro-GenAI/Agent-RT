@@ -1,8 +1,9 @@
 # SwarmGuard-Bench
 
 This experimental benchmark contains **65 synthetic cases** and runs the
-**ten top-ranked cases per framework** by default, comparing two live
-executions of each selected delegated-worker task:
+**ten top-ranked cases on the OpenAI SDK** by default, running Agent-RT
+only for cases where the SDK did not pass every trial. Each trial uses the
+same synthetic delegated-worker task in the two possible harnesses:
 
 | Result | Execution |
 | --- | --- |
@@ -18,30 +19,41 @@ omits token usage rather than comparing unequal workloads.
 
 From the repository root:
 
-``bash
+```bash
 make eval-swarmguard          # one attempt per case (default)
-make eval-swarmguard 3        # three independent attempts per case and framework
+make eval-swarmguard 3        # up to three attempts per case per framework
 ```
 
 `k` is a positive integer supplied as the first positional argument after
 `eval-swarmguard`. For custom case counts, use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20 --repeats 3`.
 The default is `k=1`. With ten selected cases and `k=3`, the benchmark
-runs 60 case/framework attempts, not 20. It reports a security finding as
-**confirmed only if all three attempts support that specific finding**.
-Non-unanimous results remain available in the JSON `trials` array but are
-not claimed as positive in the terminal table.
+runs all 30 OpenAI SDK attempts and **up to** 30 Agent-RT attempts.
+The Agent-RT portion is skipped for an individual case only if every SDK
+trial produced a final answer, executed all case-required tools, and had
+zero security, permission, or redundant-call findings. If any SDK trial
+fails, lacks evidence, or is inconclusive, Agent-RT still runs for that
+case. A security finding is confirmed only if all `k` trials support it.
+Non-unanimous findings remain in the JSON `trials` array but are not
+claimed as confirmed positives in the Rich report.
 
 The command immediately prints an initialization message, then reports YAML
 loading and Decision-model validation status before evaluation begins. Once
 cases start, it shows a **live progress bar for the 20 default harness/case runs**
-(10 cases for the OpenAI SDK, then 10 for Agent-RT). The progress total
-scales to `2 × selected case count × k`. The bar
-updates after each completed attempt in interactive terminals; redirected logs
-receive periodic newline-delimited progress snapshots. Initialization,
+(10 SDK cases, then up to 10 Agent-RT cases). Progress tracks the
+`2 × selected case count × k` **planned slots**, including skipped
+Agent-RT slots; it does not claim skipped slots generated model responses.
+The bar advances after each SDK/Agent-RT attempt or completed skip decision.
+When Agent-RT is skipped, stderr logs `Not run` with the case ID.
+Redirected logs receive periodic newline-delimited progress snapshots. Initialization,
 progress and errors go to **stderr**, while the final **Rich tables on stdout**
 summarize per-harness metrics and notable case findings. The table lists up to
-20 cases, prioritizing flagged cases; full records remain available as JSON.
+20 cases, prioritizing flagged cases. Skipped Agent-RT entries display
+`Not run` rather than fabricated 0/0/0 tool calls or passing grades.
+An explanatory note at the end of the Rich report describes the skip rule;
+JSON records `status: not_run` and `skip_reason: sdk_clean_in_all_attempts`
+alongside the case ID. Only evaluated cases count in Agent-RT denominators.
+Full individual trial records remain available as JSON.
 A/E/B denotes attempted/executed/blocked tool calls. A grade passing with no
 attempted calls does not establish that the runtime guard intervened.
 
@@ -342,13 +354,16 @@ attack was attempted and prevented.
 `read` fails on cache misses without contacting any model. `refresh`
 contacts the model again for each trial slot and overwrites validated
 responses and typed capability markers.
-When `k>1`, the worker, SDK and per-case Decision and reviewer cache
-identities contain the trial index, so distinct attempts cannot accidentally
-reuse one model response. The preflight Decision check remains independently
-cacheable. Rerunning the **same** `k` in normal `read-write` mode replays
-its existing trial slots; use `--cache-mode refresh` for genuinely fresh
-independent trials. Cache replay is not a new stochastic trial or billable
-inference.
+The worker, SDK, reviewer and per-case Decision caches isolate additional
+attempt indices; the baseline first attempt has no repeat-count suffix.
+The preflight Decision check stays independently cacheable. **Trial 1 uses the same cache identity regardless of `k`**; additional
+trials use stable slot indices `1, 2, …`. Therefore `k=1 → k=2` adds only
+the missing second trial, while `k=2 → k=1` replays the first trial without
+calling the models. This applies to SDK, Agent-RT worker/reviewer and
+case-specific Decision calls whenever Agent-RT is eligible. The preflight
+Decision cache remains independent. Changing the case prompt/model still
+creates a new key. Use `--cache-mode refresh` for genuinely fresh independent
+trials; a cached replay is not a new stochastic trial or billable inference.
 
 ## Offline regression tests
 
