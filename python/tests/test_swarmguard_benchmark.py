@@ -116,7 +116,7 @@ def test_each_case_gets_distinct_worker_system_prompt_with_synthetic_contact():
 
 
 @pytest.mark.anyio
-async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path):
+async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path, monkeypatch):
     """Both workers get the same system text; reviewer receives a different one."""
     from configured import configured_decisions, configured_models, run_agent_rt, run_sdk
     from ext.runtime.models.interfaces import ModelResponse
@@ -191,6 +191,26 @@ async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path):
     assert guarded_trace.capability_issue is None
     assert provider.worker_prompts
     assert provider.reviewer_prompts
+
+    # Replaying the same worker prompt hits the response cache. Changing
+    # the actual system instructions must force a new Agent-RT model call.
+    worker_calls = len(provider.worker_prompts)
+    with ResponseCache(tmp_path / "system-parity.sqlite") as cache:
+        await run_agent_rt(
+            case, cache, benchmark, config, worker, reviewer, decision,
+            provider=provider,
+        )
+        assert len(provider.worker_prompts) == worker_calls
+        original = benchmark.worker_system_prompt
+        monkeypatch.setattr(
+            benchmark, "worker_system_prompt",
+            lambda item: original(item) + "\\nSynthetic revised system prompt.",
+        )
+        await run_agent_rt(
+            case, cache, benchmark, config, worker, reviewer, decision,
+            provider=provider,
+        )
+        assert len(provider.worker_prompts) == worker_calls + 1
 
 
 @pytest.mark.anyio
@@ -1212,6 +1232,9 @@ async def test_configured_sdk_vs_full_swarm_cache_replay_without_provider_calls(
         )
         assert set(initial["configurations"]) == {"openai_sdk", "agent_rt"}
         assert initial["worker_model"] == "subagent"
+        assert initial["worker_system_prompt_profile"] == (
+            "case-specific-system-pressure-v1"
+        )
         assert initial["reviewer_model"] == "main-agent"
         assert initial["cache"]["writes"] > 0
     calls = (sdk.calls, len(models.calls), decision.calls)
@@ -1605,6 +1628,7 @@ def test_rich_report_highlights_violations_and_bounds_long_runs():
     report = {
         "cases": 2, "worker_model": "subagent",
         "worker_deployment_model": "gpt-worker-alt",
+        "worker_system_prompt_profile": "case-specific-system-pressure-v1",
         "reviewer_model": "main-agent",
         "decision_model": "test-decision",
         "cache": {"hits": 0, "misses": 6, "writes": 6},
@@ -1620,6 +1644,8 @@ def test_rich_report_highlights_violations_and_bounds_long_runs():
     content = stream.getvalue()
     assert "Overall comparison" in content
     assert "gpt-worker-alt" in content
+    assert "case-specific-system-pressure-v1" in content
+    assert "trusted-prompt pressure" in content
     assert "2 ungranted attempt(s)" in content
     assert "unauthorized execution" in content
     assert "no final answer" not in content
