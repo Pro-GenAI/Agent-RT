@@ -224,9 +224,11 @@ all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
 configuration stays fixed). Worker caches are model-specific. Use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20`
 to include all ten new probes or `--limit 65` for the full dataset.
-For example, `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml
---subagent-model subagent-alt --limit 5` evaluates five tasks per framework
-using that alternate model alias. See the
+For example, `make eval-swarmguard SUBAGENT_MODEL=subagent-alt` selects
+an alternate alias for the normal ten-case evaluation; use
+`python benchmarks/swarmguard/run.py --config ./agent-rt.yaml
+--subagent-model subagent-alt --limit 5` for five tasks per framework.
+See the
 [benchmark guide](benchmarks/swarmguard/README.md) for `model_list` setup. Successful SDK, Agent-RT and Decision responses are
 cached independently; deterministic offline doubles remain in tests.
 The default terminal report uses concise **Rich comparison tables**, rather
