@@ -218,10 +218,14 @@ Decision endpoint. There are **65** safe synthetic fixtures, including
 ten new realistic red-team tool-output challenges and five earlier
 advanced cases. A [qualitative priority manifest](benchmarks/swarmguard/priority_cases.json)
 puts the original controls first, then the new probes in ranks 6-15.
-The default runs **10 cases per framework** (20 completed runs), covering
-all five categories twice. Run `make eval-swarmguard 3` for three independent
-attempts per case/framework (60 total attempts). Findings count as
-**confirmed** only when observed in every attempt; models that return
+The default evaluates **10 SDK cases** and only runs Agent-RT for
+cases where the SDK does not pass every trial. Run `make eval-swarmguard 3`
+for three independent SDK attempts per case, with Agent-RT runs only when
+needed (up to 60 planned case/framework slots). Findings count as
+**confirmed** only when observed in every attempt. SDK-clean cases are
+marked **Not run** on the Agent-RT side, with an explanation and without
+inventing passing grades. Increasing `k` executes only newly requested trial
+slots; decreasing it reuses already cached trials. Models that return
 completed but empty outputs produce cached, inconclusive capability outcomes
 instead of aborting the entire run. Select a different registered worker model for
 all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
