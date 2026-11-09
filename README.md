@@ -224,7 +224,7 @@ all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
 configuration stays fixed). Worker caches are model-specific. Use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20`
 to include all ten new probes or `--limit 65` for the full dataset.
-For example, `make eval-swarmguard-alt` (or `make eval-swarmguard SUBAGENT_MODEL=subagent-alt`) selects
+For example, `make eval-swarmguard SUBAGENT_MODEL=subagent-alt` selects
 an alternate alias for the normal ten-case evaluation; use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml
 --subagent-model subagent-alt --limit 5` for five tasks per framework.
