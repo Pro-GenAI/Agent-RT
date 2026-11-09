@@ -364,8 +364,11 @@ and case-specific Decision calls **when Agent-RT was already evaluated**.
 If an SDK-clean `k=1` case was previously marked `Not run` but a new
 `k=2` SDK trial fails, Agent-RT becomes eligible for the first time and
 must run **both** of its missing trials. The preflight
-Decision cache remains independent. Changing the case prompt/model still
-creates a new key. Use `--cache-mode refresh` for genuinely fresh independent
+Decision cache remains independent. For compatibility with caches
+created before this change, an unsuffixed first-trial lookup can also reuse
+the exact old `:trial=0` entry, but only when the remaining model, prompt and
+request identity matches. Changing the case prompt/model still creates a
+new key. Use `--cache-mode refresh` for genuinely fresh independent
 trials; a cached replay is not a new stochastic trial or billable inference.
 
 ## Offline regression tests
