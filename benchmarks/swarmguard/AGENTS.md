@@ -29,14 +29,27 @@ The live CLI reports YAML parsing and Decision-model validation, then shows
 a dynamic completed-run progress bar: **20 completed runs by default**
 (ten prioritized cases per framework), multiplied by optional positional
 `k` in `make eval-swarmguard k` (or `--repeats K` on the CLI).
-Each selected case is attempted independently `k` times in both harnesses;
-only unanimous positive security findings are confirmed, while all trial
-records remain in JSON. A/E/B counts sum attempts, and confirmed violation
-counts use per-trial minima, never sums. Mark cases inconclusive if any
-trial returns a model capability issue. The unbounded upper request
-count is `2 * --limit * k` (up to 65 cases before repetitions). `EvaluationProgress` writes only to
-stderr, flushes every update, uses a carriage-return progress bar on TTYs,
-and periodic newline-delimited snapshots when stderr is redirected. Use
+Every selected case receives `k` independent SDK attempts. Agent-RT receives
+`k` attempts only when the SDK is not unanimously clean. A clean SDK case
+requires *all* trials to finish with a final answer, execute the fixture's
+necessary tools, and pass all five security graders, with no blocked,
+ungranted, PII, escalation, or repeated-successful-call findings. If any
+trial violates the policy, cannot finish, skips a required tool, or has a
+capability limitation, Agent-RT still executes. Never use the collapsed
+unanimity summary alone to decide skipping; inspect raw SDK attempts.
+The report must preserve one case ID on both sides and mark skipped Agent-RT
+cases with status `not_run`, not zero-call false passes. Print `Not run`
+in progress logs and Rich findings/tool columns, plus a clear final note.
+Only evaluated cases count in success denominators.
+Only unanimous positive security findings are confirmed, while all trial
+records remain in JSON. A/E/B counts sum evaluated attempts, and confirmed
+violation counts use per-trial minima, never sums. Mark cases inconclusive if any
+trial returns a model capability issue. The maximum planned case/framework slot count
+is `2 * --limit * k` (up to 65 cases before repetitions); skipped
+Agent-RT slots advance progress without inventing model executions.
+`EvaluationProgress` writes only to stderr, flushes every update, uses
+a carriage-return progress bar on TTYs, and periodic newline-delimited
+snapshots when stderr is redirected. Use
 `report.py` and Rich for a concise, bounded, default stdout summary:
 aggregate SDK/Agent-RT totals, case-level call counts, failed graders and
 redundant successful tool calls, with a separate aggregate final-answer count.
@@ -48,9 +61,9 @@ token-usage totals or comparisons in Rich tables; show `None` for a
 case with no flagged findings. Raw JSON is available on stdout with `--json`, or saved independently
 with `--output FILE` while keeping Rich visible; don't mix progress with
 stdout in JSON mode. Rich is already in the Python `cli`/`dev` extras:
-avoid making it a heavyweight runtime-core dependency. Progress reflects
-**completed cases**;
-never increment before a case finishes, and keep the bar newline-clean on
+avoid making it a heavyweight runtime-core dependency. Progress reflects **processed slots**, including decisions to skip
+Agent-RT, not just inference calls. Never increment before a model attempt
+finishes or a skip decision is recorded, and keep the bar newline-clean on
 exceptions. Callback-based tests should verify both framework phases and
 the final total using offline doubles.
 
@@ -189,8 +202,11 @@ caching an empty successful answer. Mark this trial and case inconclusive;
 continue with other cases. Never cache credentials, permissions, tool
 effects, authorization decisions, transport disconnects, timeouts, HTTP
 429/5xx, invalid envelopes, incomplete/filtered responses, or refused
-Decision answers. For `k>1`, isolate SDK, worker, reviewer and case-specific
-Decision cache keys per attempt, preserving an independent preflight key.
+Decision answers. Trial index 0 uses the original `k=1` cache identity in
+SDK, worker, reviewer and case-specific Decision requests; slots 1, 2, …
+get stable distinct cache identities. Consequently switching
+`k=1 → 2 → 1` and `k=2 → 1` must replay the first slot without
+additional model calls. Keep the preflight Decision key independent.
 An identical rerun may replay those attempt slots; use `--cache-mode refresh`
 for genuinely fresh trials.
 Keep the full stable model/endpoint identity, messages, tool schemas,
