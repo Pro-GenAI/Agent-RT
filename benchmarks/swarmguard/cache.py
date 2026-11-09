@@ -45,6 +45,37 @@ class NonCacheableResponse(RuntimeError):
     """A failed or incomplete provider response must never be persisted."""
 
 
+class ModelCapabilityIssue(RuntimeError):
+    """A completed but unusable model turn, cached as a typed benchmark outcome."""
+
+    def __init__(self, reason: str = "empty_completion") -> None:
+        if reason != "empty_completion":
+            raise ValueError("unsupported model capability issue")
+        self.reason = reason
+        super().__init__(reason)
+
+
+_CAPABILITY_MARKER = "_swarmguard_model_capability"
+_CAPABILITY_REASONS = frozenset({"empty_completion"})
+
+
+def _capability_record(reason: str) -> dict[str, str]:
+    return {_CAPABILITY_MARKER: reason}
+
+
+def _capability_reason(value: Any) -> str | None:
+    if not isinstance(value, Mapping) or _CAPABILITY_MARKER not in value:
+        return None
+    reason = value[_CAPABILITY_MARKER]
+    if (
+        set(value) != {_CAPABILITY_MARKER}
+        or not isinstance(reason, str)
+        or reason not in _CAPABILITY_REASONS
+    ):
+        raise NonCacheableResponse("invalid cached model capability marker")
+    return reason
+
+
 def require_successful_decision(answers: Any, questions: Mapping[str, Any]) -> None:
     """Reject error envelopes and malformed Decision-model results before caching."""
     if not isinstance(answers, Mapping) or answers.get("error") or answers.get("status") in (
@@ -78,8 +109,12 @@ def require_successful_model_response(response: Any) -> None:
         )
     if response.message.role != "assistant":
         raise NonCacheableResponse("Agent-RT provider returned a non-assistant message")
-    if not response.message.tool_calls and not response.message.content:
-        raise NonCacheableResponse("Agent-RT provider returned an empty completion")
+    if not response.message.tool_calls and not any(
+        part.type == "text" and bool(part.text and part.text.strip())
+        or part.type != "text" and part.data is not None
+        for part in response.message.content
+    ):
+        raise ModelCapabilityIssue("empty_completion")
 
 
 def require_successful_sdk_response(response: Any) -> None:
@@ -102,7 +137,7 @@ def require_successful_sdk_response(response: Any) -> None:
         if not isinstance(message, Mapping) or message.get("error"):
             raise NonCacheableResponse("OpenAI SDK completion contains an invalid message")
         if not message.get("content") and not message.get("tool_calls") and not message.get("refusal"):
-            raise NonCacheableResponse("OpenAI SDK completion contains an empty message")
+            raise ModelCapabilityIssue("empty_completion")
 
 
 class ResponseCache:
@@ -245,7 +280,12 @@ class CachedModelProvider:
 
         async def call() -> Any:
             response = await self.provider.complete(request)
-            require_successful_model_response(response)
+            try:
+                require_successful_model_response(response)
+            except ModelCapabilityIssue as exc:
+                # Successful HTTP / structured model response, but no usable
+                # content or tool calls. Cache the *limitation*, not an answer.
+                return _capability_record(exc.reason)
             return {
                 "message": dataclasses.asdict(response.message),
                 "model": response.model,
@@ -254,6 +294,8 @@ class CachedModelProvider:
             }
 
         def validate(value: Any) -> None:
+            if _capability_reason(value) is not None:
+                return
             if not isinstance(value, Mapping) or not isinstance(value.get("message"), Mapping):
                 raise NonCacheableResponse("Agent-RT cached response has an invalid envelope")
             if value.get("finish_reason") in ("error", "length", "content_filter"):
@@ -267,6 +309,9 @@ class CachedModelProvider:
         result = await self.cache.aget_or_call(
             "llm:agent-rt", identity, call, validate=validate,
         )
+        issue = _capability_reason(result)
+        if issue is not None:
+            raise ModelCapabilityIssue(issue)
         message = result["message"]
         return ModelResponse(
             message=ModelMessage(
@@ -305,10 +350,23 @@ async def cached_sdk_completion(
         request["max_completion_tokens"] = max_output_tokens
 
     async def call() -> dict[str, Any]:
-        response = await client.chat.completions.create(**request)
-        return _jsonable(response)
+        response = _jsonable(await client.chat.completions.create(**request))
+        try:
+            require_successful_sdk_response(response)
+        except ModelCapabilityIssue as exc:
+            return _capability_record(exc.reason)
+        return response
 
-    return await cache.aget_or_call(
+    def validate(response: Any) -> None:
+        if _capability_reason(response) is not None:
+            return
+        require_successful_sdk_response(response)
+
+    result = await cache.aget_or_call(
         "llm:openai-sdk", {"provider": provider_identity, "request": request},
-        call, validate=require_successful_sdk_response,
+        call, validate=validate,
     )
+    issue = _capability_reason(result)
+    if issue is not None:
+        raise ModelCapabilityIssue(issue)
+    return result
