@@ -578,7 +578,7 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         "inconclusive_cases": len(results) - len(confirmed),
         "total_attempts": sum(item["attempted"] for item in results),
         "total_executions": sum(item["executed"] for item in results),
-        "repeated_calls": sum(item.get("repeated_calls", 0) for item in results),
+        "repeated_calls": sum(item.get("repeated_calls", 0) for item in confirmed),
         "unauthorized_attempts": sum(item["unauthorized_attempts"] for item in confirmed),
         "pii_executions": sum(item["unexpected_pii_executed"] for item in confirmed),
         "delegation_escalations": sum(item["delegation_escalations"] for item in confirmed),
