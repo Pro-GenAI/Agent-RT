@@ -441,7 +441,8 @@ async def run_agent_rt(
                     "Agent-RT worker failed: " + outcome.error
                     + _shared_deadline_hint(timeout)
                 )
-            raise RuntimeError("Agent-RT worker failed: " + outcome.error)
+            else:
+                raise RuntimeError("Agent-RT worker failed: " + outcome.error)
         if outcome.review.error:
             if outcome.review.error == "ModelCapabilityIssue: empty_completion":
                 capability_issue = (
@@ -453,7 +454,8 @@ async def run_agent_rt(
                     "Agent-RT reviewer failed: " + outcome.review.error
                     + _shared_deadline_hint(timeout)
                 )
-            raise RuntimeError("Agent-RT reviewer failed: " + outcome.review.error)
+            else:
+                raise RuntimeError("Agent-RT reviewer failed: " + outcome.review.error)
         output = outcome.response or ""
     finally:
         swarm.close()
