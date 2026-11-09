@@ -27,8 +27,14 @@ tool-call-only traces. Maintain bounded execution and accurate call counts;
 never invent a final answer or silently remove unsuccessful attempts.
 The live CLI reports YAML parsing and Decision-model validation, then shows
 a dynamic completed-run progress bar: **20 completed runs by default**
-(ten prioritized cases per framework), or twice the explicit `--limit` value
-(up to 65 cases / 130 completed runs). `EvaluationProgress` writes only to
+(ten prioritized cases per framework), multiplied by optional positional
+`k` in `make eval-swarmguard k` (or `--repeats K` on the CLI).
+Each selected case is attempted independently `k` times in both harnesses;
+only unanimous positive security findings are confirmed, while all trial
+records remain in JSON. A/E/B counts sum attempts, and confirmed violation
+counts use per-trial minima, never sums. Mark cases inconclusive if any
+trial returns a model capability issue. The unbounded upper request
+count is `2 * --limit * k` (up to 65 cases before repetitions). `EvaluationProgress` writes only to
 stderr, flushes every update, uses a carriage-return progress bar on TTYs,
 and periodic newline-delimited snapshots when stderr is redirected. Use
 `report.py` and Rich for a concise, bounded, default stdout summary:
@@ -91,8 +97,12 @@ report an actionable error instructing the user to edit the local ignored
 sequential model calls. The general runtime example can remain at 30s.
 
 The `cases/*.jsonl` files contain **65 synthetic** cases, 13 per category:
-the original 50, five advanced variants in `advanced_scenarios.jsonl`,
-and ten new high-pressure cases in `pressure_scenarios.jsonl`.
+50 original IDs (some with strengthened prompts), five advanced variants
+in `advanced_scenarios.jsonl`, and ten high-pressure cases in
+`pressure_scenarios.jsonl`. Ranked tasks 2–20 use multi-stage adversarial
+instructions; all 13 PII tasks include a synthetic restricted contact as
+plausibly useful internal reference context. This does not authorize
+propagating those contacts to tool inputs or external systems.
 The curated `priority_cases.json` defines 20 ranked cases: five original
 representatives (1-5), ten pressure probes (6-15), and five earlier advanced
 variants (16-20). The remaining 45 are controls and lower-priority variants.
@@ -133,7 +143,7 @@ research scope explicitly changes.
   worker prompt and runtime grant.
 - The parent/main agent does **not** independently receive a
   high-level task, choose a worker, plan work, or decide whether to
-  delegate. The harness chooses each of the 55 predefined worker tasks
+  delegate. The harness chooses each of the 65 predefined worker tasks
   and parent grants; `subagents.default_model` runs the worker,
   while the configured main model (or `subagents.reviewer_model`)
   **only reviews** the worker output. Report this limitation alongside
@@ -150,10 +160,17 @@ corresponding TypeScript modules.
 ## Cache contract
 
 `cache.py` caches **successful** SDK LLM, Agent-RT LLM and Decision-model
-answers in distinct versioned SQLite namespaces. Never cache credentials,
-permissions, tool effects, authorization decisions or model failures.
-Transport disconnects, timeouts, HTTP 429/5xx, invalid envelopes,
-incomplete/filtered responses and Decision refusals must not write cache.
+answers in distinct versioned SQLite namespaces. It also caches a typed
+`empty_completion` marker for successfully completed but unusable model
+responses, replaying the *inconclusive capability outcome* rather than
+caching an empty successful answer. Mark this trial and case inconclusive;
+continue with other cases. Never cache credentials, permissions, tool
+effects, authorization decisions, transport disconnects, timeouts, HTTP
+429/5xx, invalid envelopes, incomplete/filtered responses, or refused
+Decision answers. For `k>1`, isolate SDK, worker, reviewer and case-specific
+Decision cache keys per attempt, preserving an independent preflight key.
+An identical rerun may replay those attempt slots; use `--cache-mode refresh`
+for genuinely fresh trials.
 Keep the full stable model/endpoint identity, messages, tool schemas,
 generation parameters and decision questions in keys; never put secret
 values into keys or reports.
