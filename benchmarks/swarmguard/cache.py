@@ -301,10 +301,24 @@ class CachedModelProvider:
             if value.get("finish_reason") in ("error", "length", "content_filter"):
                 raise NonCacheableResponse("Agent-RT cached response has a failure finish reason")
             message = value["message"]
-            if message.get("role") != "assistant" or (
-                not message.get("content") and not message.get("tool_calls")
-            ):
-                raise NonCacheableResponse("Agent-RT cached response has no assistant output")
+            if message.get("role") != "assistant":
+                raise NonCacheableResponse("Agent-RT cached response has invalid role")
+            parts = message.get("content") or ()
+            if not isinstance(parts, (tuple, list)):
+                raise NonCacheableResponse("Agent-RT cached response has invalid content")
+            usable = bool(message.get("tool_calls")) or any(
+                isinstance(part, Mapping) and (
+                    (part.get("type") == "text" and
+                     isinstance(part.get("text"), str) and
+                     bool(part["text"].strip()))
+                    or (part.get("type") != "text" and part.get("data") is not None)
+                )
+                for part in parts
+            )
+            if not usable:
+                # Older cache entries with empty/whitespace text parts are
+                # also model limitations, not successful answers.
+                raise ModelCapabilityIssue("empty_completion")
 
         result = await self.cache.aget_or_call(
             "llm:agent-rt", identity, call, validate=validate,
