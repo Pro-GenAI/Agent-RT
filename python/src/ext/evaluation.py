@@ -29,12 +29,26 @@ class EvaluationToolCall:
 
 
 @dataclass(frozen=True)
+class SwarmToolEvent:
+    """Attempted/blocked/executed synthetic tool call for a benchmark."""
+
+    agent_id: str
+    tool_name: str
+    arguments: Mapping[str, Any] = field(default_factory=dict)
+    granted_tools: tuple[str, ...] = ()
+    phase: str = "attempted"
+    parent_agent_id: str | None = None
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
 class EvaluationSample:
     case: EvaluationCase
     output: Any
     trajectory: tuple[Any, ...] = ()
     tool_calls: tuple[EvaluationToolCall, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    security_events: tuple[SwarmToolEvent, ...] = ()
 
 
 @dataclass(frozen=True)

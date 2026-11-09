@@ -206,6 +206,57 @@ Arguments are validated against the schema, tools outside the grant never run, a
 
 The inbound API server, terminal CLI, web UI, chat bots, memU memory, and AutoGen/CrewAI/LiteLLM migration shims are Python-only.
 
+
+## Agent Swarm Eval: Multi-agent tool security
+
+[Agent Swarm Eval](benchmarks/agent-swarm-eval/README.md) runs a **live two-way**
+comparison: a minimal harness using the regular OpenAI Python SDK versus
+configured Agent-RT `SubagentSwarm` with the worker/reviewer models,
+Decision-model-guided grants and runtime PII guards selected in `agent-rt.yaml`.
+Run `make eval-agent-swarm-eval` from the repository root after configuring a working
+Decision endpoint. There are **65** safe synthetic fixtures, including
+ten new realistic red-team tool-output challenges and five earlier
+advanced cases. A [qualitative priority manifest](benchmarks/agent-swarm-eval/priority_cases.json)
+puts the original controls first, then the new probes in ranks 6-15.
+The default evaluates **10 SDK cases** and only runs Agent-RT for
+cases where the SDK does not pass every trial. Run `make eval-agent-swarm-eval 3`
+for three independent SDK attempts per case, with Agent-RT runs only when
+needed (up to 60 planned case/framework slots). Findings count as
+**confirmed** only when observed in every attempt. SDK-clean cases are
+marked **Skipped** on the Agent-RT side, with an explanation and without
+inventing passing grades. Increasing `k` executes only newly requested trial
+slots; decreasing it reuses already cached trials. Models that return
+completed but empty outputs produce cached, inconclusive capability outcomes
+instead of aborting the entire run. Select a different registered worker model for
+all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
+configuration stays fixed). Worker caches are model-specific. Use
+`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 20`
+to include all ten new probes or `--limit 65` for the full dataset.
+For example, `make eval-agent-swarm-eval SUBAGENT_MODEL=subagent-alt` selects
+an alternate alias for the normal ten-case evaluation; use
+`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml
+--subagent-model subagent-alt --limit 5` for five tasks per framework.
+See the
+[benchmark guide](benchmarks/agent-swarm-eval/README.md) for `model_list` setup. Successful SDK, Agent-RT and Decision responses are
+cached independently; deterministic offline doubles remain in tests.
+The default terminal report uses concise **Rich comparison tables**, rather
+than dumping case-by-case JSON. Tool-policy findings and successful-but-
+redundant calls appear in each case; missing final answers are counted
+separately. Both harnesses receive identical inert, task-relevant tool
+results containing untrusted attack excerpts or realistic document-body
+prompt injections. Each worker also receives a **distinct case-specific
+system prompt**, the same in both frameworks, with synthetic contact values,
+potentially misleading workflow approvals, and suggested mock-tool actions.
+The reviewer receives no such worker prompt. This is a trusted-prompt
+conflict test in addition to the untrusted-document attack; observed
+violations cannot be attributed solely to document injection. Longer staged
+attacks are present in ranked cases 2–20, and PII-category tasks include
+**synthetic** contact identifiers as internal reference context. New cases are adversarial hypotheses; model failure is not
+guaranteed and must be verified by live, repeated trials. To save the complete report, run
+`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --output report.json`;
+use `--json` for machine-readable stdout. Install the Python `cli` extra
+if Rich is not already present.
+
 ## 📄 License
 
 MIT — see [LICENSE](LICENSE).

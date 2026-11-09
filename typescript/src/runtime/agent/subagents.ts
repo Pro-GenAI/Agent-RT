@@ -119,7 +119,29 @@ export class SubagentScope {
       this.swarm.metrics.increment('subagent.denied', 1, { reason: 'fanout' });
       throw new Error('a subagent may launch only one child');
     }
-    const permissions = { ...options.allowedTools };
+    let permissions = { ...options.allowedTools };
+    // Check every originally requested tool before relevance pruning.
+    for (const [name, level] of Object.entries(permissions)) {
+      const inherited = Object.hasOwn(this.permissions, name) ? this.permissions[name] : undefined;
+      if (!this.swarm.catalog.has(name) || !inherited ||
+          (inherited === 'read' && level === 'write') ||
+          (level !== 'read' && level !== 'write')) {
+        this.swarm.metrics.increment('subagent.denied', 1, { reason: 'permission' });
+        throw new Error('cannot escalate tool permission: ' + name);
+      }
+    }
+    if (this.swarm.toolSelector) {
+      const candidates = Object.keys(permissions)
+        .map((name) => this.swarm.catalog.get(name))
+        .filter((definition): definition is ToolDefinition => definition !== undefined);
+      const selected = new Set(await this.swarm.toolSelector(task, candidates));
+      if ([...selected].some((name) => !Object.hasOwn(permissions, name))) {
+        throw new Error('tool selector cannot add ungranted tools');
+      }
+      permissions = Object.fromEntries(
+        Object.entries(permissions).filter(([name]) => selected.has(name)),
+      );
+    }
     const parentSignal = options.signal ?? this.signal;
     const deadline = options.deadline ?? this.deadline;
     if (parentSignal?.aborted) throw new Error('subagent parent cancelled');
@@ -289,12 +311,15 @@ export class SubagentSwarm {
       capabilityGrant?: CapabilityGrant;
       traces?: TraceRecorder;
       metrics?: RuntimeMetrics;
+      toolSelector?: (task: string, tools: readonly ToolDefinition[]) =>
+        readonly string[] | Promise<readonly string[]>;
     },
   ) {
     this.chatHistorySource = options.chatHistory;
     this.reviewer = options.reviewer;
     this.budget = options.budget;
     this.capabilityGrant = options.capabilityGrant;
+    this.toolSelector = options.toolSelector;
     this.catalog = new Map<string, ToolDefinition>(
       options.toolDefinitions.map((tool): [string, ToolDefinition] => [tool.name, tool]),
     );
@@ -325,6 +350,8 @@ export class SubagentSwarm {
   readonly reviewer: AgentConfig;
   readonly budget?: ExecutionBudget;
   readonly capabilityGrant?: CapabilityGrant;
+  readonly toolSelector?: (task: string, tools: readonly ToolDefinition[]) =>
+    readonly string[] | Promise<readonly string[]>;
 
   get active(): number {
     return this.activeJobs;

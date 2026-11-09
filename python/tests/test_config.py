@@ -595,3 +595,26 @@ async def test_openai_agents_compat_falls_back_for_an_unconfigured_model(
     result = await Runner.run(Agent(name="a", model="gpt-4o-mini"), "hi")
     assert result.final_output == "vendor env"
     assert vendor.requests[0].model == "gpt-4o-mini"
+
+
+def test_subagent_model_names_validate_and_resolve_from_yaml():
+    from ext.config import parse_config, ConfigError
+
+    content = """
+model_list:
+  - model_name: main-agent
+    agent_rt_params: {model: openai/gpt-main, api_key: test}
+  - model_name: subagent
+    agent_rt_params: {model: openai/gpt-worker, api_key: test}
+agent_rt_settings:
+  default_model: main-agent
+  subagents: {default_model: subagent, reviewer_model: main-agent}
+"""
+    config = parse_config(content)
+    assert config.settings["subagents"] == {
+        "default_model": "subagent", "reviewer_model": "main-agent"
+    }
+    with pytest.raises(ConfigError, match="subagents.default_model.*not in model_list"):
+        parse_config(content.replace("default_model: subagent", "default_model: missing"))
+    with pytest.raises(ConfigError, match="subagents.*unknown key"):
+        parse_config(content.replace("reviewer_model: main-agent", "unexpected_model: main-agent"))

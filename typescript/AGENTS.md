@@ -51,3 +51,35 @@ Third-pass hardening invariants (covered by `tests/review-regressions.test.js`):
 Audit regression invariants: automatic YAML discovery loads only user-home configs; a project config requires an explicit path. Hosted sandbox tools must be declared in the current request, including streams and SDK stream helpers. Chat approval notifications and confirmations show every argument and full paths as escaped JSON, without truncation. Guard must inspect mixed-type argv and shell list/group/substitution boundaries. Tenant-bound ScopedMemoryStore namespaces underlying ids and restores caller ids on every returned record and search result. Cover these in the offline security-audit tests.
 
 Governed subagent delegation lives in `src/runtime/agent/subagents.ts`; keep depth, inherited history, per-tool read/write narrowing, reviewer isolation, and concurrency-safe spans/metrics aligned with Python. Ensure registered delegation validates the invocation's exact scoped owner and snapshots only completed tool-call/result pairs, with pending turns as untrusted data. Ensure own-key checks prevent prototype tool-name grants, live tool registration side effects are checked at dispatch, reviewer evidence strips system authority, reviewer calls reserve shared budget capacity, and abort/deadline signals reach AgentLoop. Regression coverage: `tests/subagents.test.js`.
+
+## Agent Swarm Eval YAML parity and evaluation contract
+
+Keep `src/ext/config.ts` schema validation synchronized with Python's
+`python/src/ext/config.py`: the YAML `agent_rt_settings.subagents` section
+accepts `default_model` (worker alias) and `reviewer_model` (optional
+reviewer alias) and both must refer to defined `model_list.model_name`
+values. Unknown nested keys stay fatal. Add corresponding offline tests to
+`tests/config.test.js` when changing the schema, and maintain the
+tracked `../agent-rt.example.yaml` and canonical website configuration
+reference. The project-root `agent-rt.yaml` is ignored by Git and must not
+contain committed credentials; the benchmark selects it explicitly.
+Alias registration does not itself auto-start sub-agent delegation in
+generic programs.
+
+The repo-root `make eval-agent-swarm-eval` is the **only** Agent Swarm Eval
+evaluation Makefile target. It calls a live **Python** comparison of the
+manual OpenAI SDK harness against actual Agent-RT `SubagentSwarm`
+delegation with a Decision-guided tool selector, least-privilege
+permissions, PII guard and reviewer. Model names, OpenAI-compatible
+worker endpoint and mandatory Decision endpoint/model come from YAML,
+not `EVAL_*` variables or `OPENAI_MODEL`. The harness fixes the parent
+delegation and grants; the main-agent model is the reviewer rather than
+an autonomous parent planner. Missing/unreachable/invalid Decision
+answers fail the run before cases, without a scripted fallback.
+Successful SDK, Agent-RT and Decision replies are cached separately;
+network, rate-limit, HTTP and malformed/incomplete responses must not
+be cached. Startup and a 100-case-run progress bar appear on flushed
+**stderr**, with the final JSON on **stdout**. Synthetic PII and mock
+tools must never become real side effects. Keep the TS shared security
+contracts and regression tests in step with Python where relevant;
+read `../benchmarks/agent-swarm-eval/AGENTS.md` for the full invariant list.

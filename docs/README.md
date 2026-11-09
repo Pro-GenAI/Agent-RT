@@ -4,6 +4,8 @@ The **canonical documentation is on the website**: **[Agent RT Docs](https://age
 
 Use the website instead of top-level Markdown copies for the complete technical guides, architecture, reference material, and contributor workflows. The same HTML pages are maintained in this repository under [`docs/website/docs/`](website/docs/).
 
+Research benchmark: [Agent Swarm Eval](https://github.com/Pro-GenAI/Agent-RT/tree/main/benchmarks/agent-swarm-eval) compares tool security and privacy propagation against a minimal OpenAI SDK harness.
+
 ## Browse the documentation
 
 | Section | Website pages |

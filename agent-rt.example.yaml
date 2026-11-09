@@ -41,8 +41,10 @@ agent_rt_settings:
     host: 127.0.0.1
     port: 8000
     api_keys: [os.environ/AGENT_RT_API_KEY]
+  # Optional named worker/reviewer model selection. Model names must exist above.
+  # subagents: {default_model: claude-sonnet-5, reviewer_model: claude-sonnet-5}
   execution_limits:
-    timeout_seconds: 30
+    timeout_seconds: 30  # For live Agent Swarm Eval worker+reviewer, raise to ~120 in local agent-rt.yaml.
   # sandbox: {backend: docker, docker_image: python:3.12-slim, network_mode: none}
   # web_search: {tool: tavily, api_key: os.environ/TAVILY_API_KEY}
   # decision_model: {base_url: https://jev.example.com, model: <model-name>}
