@@ -105,9 +105,12 @@ def render_report(
 
     out.print()
     out.print("[bold]SwarmGuard-Bench[/bold]  |  Live comparison")
+    worker_label = str(report["worker_model"])
+    if report.get("worker_deployment_model"):
+        worker_label += f" ({report['worker_deployment_model']})"
     out.print(
         f"Cases: [bold]{report['cases']}[/bold]  |  "
-        f"Worker: {report['worker_model']}  |  "
+        f"Worker: {worker_label}  |  "
         f"Reviewer: {report['reviewer_model']}  |  "
         f"Decision model: {report['decision_model']}"
     )
