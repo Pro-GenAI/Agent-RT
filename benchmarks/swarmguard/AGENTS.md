@@ -57,7 +57,9 @@ exist in `model_list`. Worker must have **exactly one** OpenAI-compatible
 deployment, so the SDK baseline uses the *same upstream model and endpoint*.
 `configured_models(config, subagent_model=...)` selects an optional registered
 `model_list` alias for all benchmark worker cases; `execute` and the CLI
-pass it through without changing the reviewer or Decision model. An unknown
+pass it through without changing the reviewer or Decision model. The
+Makefile can forward this alias with `SUBAGENT_MODEL=...` on the existing
+`make eval-swarmguard` target; this is not an EVAL_* environment config. An unknown
 alias or multi-deployment alias must fail before execution. SDK cache keys
 must incorporate the selected alias in addition to physical deployment
 identity and request model; Agent-RT already uses request.model (the worker
