@@ -89,6 +89,151 @@ def test_ranked_attacks_are_layered_after_first_case_and_pii_context_is_syntheti
     assert "untrusted_excerpt" not in result["documents"][0]
 
 
+def test_each_case_gets_distinct_worker_system_prompt_with_synthetic_contact():
+    cases = load_cases()
+    prompts = {
+        case["id"]: benchmark.worker_system_prompt(case)
+        for case in cases
+    }
+    assert len(prompts) == 65
+    assert len(set(prompts.values())) == 65
+    assert benchmark.WORKER_SYSTEM_PROMPT_PROFILE == "case-specific-system-pressure-v1"
+    for case in cases:
+        prompt = prompts[case["id"]]
+        assert case["id"] in prompt
+        assert case["synthetic_pii"] in prompt
+        assert case["mock_tool"] in prompt
+        assert json.dumps(
+            case["mock_arguments"], sort_keys=True,
+        ) in prompt
+        assert "AUTHORIZATION BOUNDARY" in prompt
+        assert case["attack"] not in prompt
+        assert case["attack"] not in benchmark.prompt(case)
+    assert (
+        prompts["pii_propagation_01"]
+        != prompts["pii_propagation_12"]
+    )
+
+
+@pytest.mark.anyio
+async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path):
+    """Both workers get the same system text; reviewer receives a different one."""
+    from configured import configured_decisions, configured_models, run_agent_rt, run_sdk
+    from ext.runtime.models.interfaces import ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    case = next(c for c in load_cases() if c["id"] == "pii_propagation_12")
+    system_text = benchmark.worker_system_prompt(case)
+    config = configured_fixture()
+    worker, reviewer, deployment = configured_models(config)
+
+    class SDK:
+        def __init__(self):
+            self.chat = self
+            self.completions = self
+            self.calls = 0
+
+        async def create(self, **request):
+            self.calls += 1
+            messages = request["messages"]
+            assert messages[0] == {"role": "system", "content": system_text}
+            assert messages[1] == {"role": "user", "content": benchmark.prompt(case)}
+            return {
+                "choices": [{
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": "Internal summary."},
+                }],
+                "model": request["model"],
+            }
+
+    class Decisions:
+        def decide(self, state, questions):
+            return {key: {"noul": 0.95} for key in questions}
+
+    class Provider:
+        name = "worker-prompt-parity"
+
+        def __init__(self):
+            self.worker_prompts = []
+            self.reviewer_prompts = []
+
+        async def complete(self, request):
+            system_contents = [
+                part.text for message in request.messages
+                if message.role == "system"
+                for part in message.content if part.type == "text"
+            ]
+            if request.model == worker:
+                assert system_text in system_contents
+                self.worker_prompts.append(system_contents)
+            elif request.model == reviewer:
+                assert system_text not in system_contents
+                self.reviewer_prompts.append(system_contents)
+            return ModelResponse(
+                message=ModelMessage(role="assistant", content=(
+                    ContentPart(type="text", text="Internal summary."),)),
+                model=request.model, finish_reason="stop",
+            )
+
+    sdk, provider = SDK(), Provider()
+    with ResponseCache(tmp_path / "system-parity.sqlite") as cache:
+        sdk_trace = await run_sdk(
+            case, cache, benchmark, deployment, "worker-system-parity",
+            client=sdk,
+        )
+        decision = configured_decisions(config, cache, provider=Decisions())
+        guarded_trace = await run_agent_rt(
+            case, cache, benchmark, config, worker, reviewer, decision,
+            provider=provider,
+        )
+    assert sdk.calls == 1
+    assert sdk_trace.output == "Internal summary."
+    assert guarded_trace.capability_issue is None
+    assert provider.worker_prompts
+    assert provider.reviewer_prompts
+
+
+@pytest.mark.anyio
+async def test_sdk_cache_key_changes_with_worker_system_prompt(tmp_path, monkeypatch):
+    from configured import configured_models, run_sdk
+
+    case = load_cases()[0]
+    config = configured_fixture()
+    _worker, _reviewer, deployment = configured_models(config)
+
+    class SDK:
+        def __init__(self):
+            self.calls = 0
+            self.chat = self
+            self.completions = self
+
+        async def create(self, **request):
+            self.calls += 1
+            return {
+                "choices": [{
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": "completed"},
+                }],
+                "model": request["model"],
+            }
+
+    sdk = SDK()
+    original = benchmark.worker_system_prompt
+    with ResponseCache(tmp_path / "system-prompt-cache.sqlite") as cache:
+        await run_sdk(case, cache, benchmark, deployment, "system-cache", client=sdk)
+        assert sdk.calls == 1
+        monkeypatch.setattr(
+            benchmark, "worker_system_prompt",
+            lambda item: original(item) + "\nSynthetic prompt revision.",
+        )
+        await run_sdk(case, cache, benchmark, deployment, "system-cache", client=sdk)
+        assert sdk.calls == 2
+        monkeypatch.setattr(benchmark, "worker_system_prompt", original)
+        await run_sdk(case, cache, benchmark, deployment, "system-cache", client=sdk)
+        assert sdk.calls == 2
+        assert cache.hits > 0
+
+
 def test_live_mock_tools_supply_document_evidence_not_trusted_prompt():
     """Untrusted attacker text is delivered through tool output, not user role."""
     case = next(c for c in load_cases() if c["id"] == "indirect_attacks_11")
