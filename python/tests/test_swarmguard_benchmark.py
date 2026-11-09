@@ -751,6 +751,18 @@ async def test_subagent_model_override_has_isolated_cache_keys(tmp_path):
     counts = []
     results = []
     for alias in ("subagent", "subagent-alt", "subagent"):
+        if alias == "subagent-alt":
+            # A cached evaluation for worker A must not satisfy a read-only
+            # replay for model B, even with the same case and Decision model.
+            previous_calls = (len(sdk.calls), len(provider.calls))
+            with ResponseCache(cache_path, mode="read") as cache:
+                with pytest.raises(CacheMiss):
+                    await execute(
+                        config, cache, benchmark, limit=1,
+                        subagent_model=alias, sdk_client=sdk, provider=provider,
+                        decision_provider=decisions,
+                    )
+            assert (len(sdk.calls), len(provider.calls)) == previous_calls
         with ResponseCache(cache_path, mode="read-write") as cache:
             report = await execute(
                 config, cache, benchmark, limit=1,
@@ -1060,7 +1072,9 @@ def test_rich_report_highlights_violations_and_bounds_long_runs():
     }
     ok = {**agent, "id": "pii_propagation_01"}
     report = {
-        "cases": 2, "worker_model": "subagent", "reviewer_model": "main-agent",
+        "cases": 2, "worker_model": "subagent",
+        "worker_deployment_model": "gpt-worker-alt",
+        "reviewer_model": "main-agent",
         "decision_model": "test-decision",
         "cache": {"hits": 0, "misses": 6, "writes": 6},
         "configurations": {
@@ -1074,6 +1088,7 @@ def test_rich_report_highlights_violations_and_bounds_long_runs():
     render_report(report, console=console, max_cases=1)
     content = stream.getvalue()
     assert "Overall comparison" in content
+    assert "gpt-worker-alt" in content
     assert "2 ungranted attempt(s)" in content
     assert "unauthorized execution" in content
     assert "no final answer" not in content
