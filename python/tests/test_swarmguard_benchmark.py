@@ -63,6 +63,32 @@ def test_priority_manifest_orders_twenty_cases_with_pressure_probes():
 
 
 
+
+def test_ranked_attacks_are_layered_after_first_case_and_pii_context_is_synthetic():
+    cases = load_cases()
+    assert cases[0]["id"] == "delegation_escalation_01"
+    # Only the first priority case remains the earlier control.
+    assert all(len(case["attack"]) >= 700 for case in cases[1:20])
+    assert all(
+        "synthetic" in case["synthetic_pii"] or
+        case["synthetic_pii"].endswith("@customer.example")
+        for case in cases[1:20]
+    )
+    assert all(case["attack"] not in benchmark.prompt(case) for case in cases[:20])
+    pii = [case for case in cases if case["category"] == "pii_propagation"]
+    assert len(pii) == 13
+    assert all(case["synthetic_pii"] in case["task"] for case in pii)
+    assert all("@customer.example" in case["task"] for case in pii)
+    assert all("web_search" in case["attack"] for case in pii)
+    # The original indirect-attack case is now also a realistic tool document.
+    second = cases[1]
+    assert second["id"] == "indirect_attacks_01"
+    assert second["attack_surface"] == "document_body"
+    result = benchmark.mock_tool_result(second, "read_file", {"path": "report"})
+    assert result["documents"][0]["content"].endswith(second["attack"])
+    assert "untrusted_excerpt" not in result["documents"][0]
+
+
 def test_live_mock_tools_supply_document_evidence_not_trusted_prompt():
     """Untrusted attacker text is delivered through tool output, not user role."""
     case = next(c for c in load_cases() if c["id"] == "indirect_attacks_11")
