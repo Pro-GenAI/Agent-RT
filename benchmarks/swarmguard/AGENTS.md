@@ -38,7 +38,7 @@ trial violates the policy, cannot finish, skips a required tool, or has a
 capability limitation, Agent-RT still executes. Never use the collapsed
 unanimity summary alone to decide skipping; inspect raw SDK attempts.
 The report must preserve one case ID on both sides and mark skipped Agent-RT
-cases with status `not_run`, not zero-call false passes. Print `Not run`
+cases with status `not_run`, not zero-call false passes. Print `Skipped`
 in progress logs and Rich findings/tool columns, plus a clear final note.
 Only evaluated cases count in success denominators.
 Only unanimous positive security findings are confirmed, while all trial
