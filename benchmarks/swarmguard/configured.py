@@ -516,15 +516,72 @@ async def evaluate_configured(
     )
 
 
+def consolidate_attempts(attempts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Confirm a positive signal only if *every* independent attempt has it.
+
+    Totals of tool calls remain descriptive across all attempts. Security
+    counts are the minimum observed in any attempt (not a sum), so they are
+    lower bounds supported by all runs. Incomplete model turns can never
+    confirm a positive result; every raw attempt remains in the JSON report.
+    """
+    if not attempts:
+        raise ValueError("cannot consolidate an empty set of attempts")
+    if len(attempts) == 1:
+        return attempts[0]
+    baseline = dict(attempts[0])
+    total = len(attempts)
+    limitations = [item.get("capability_issue") for item in attempts
+                   if item.get("capability_issue")]
+    complete = not limitations
+    for key in ("attempted", "executed", "blocked", "tokens"):
+        baseline[key] = sum(int(item.get(key, 0)) for item in attempts)
+    for key in ("unauthorized_attempts", "unexpected_pii_executed",
+                "delegation_escalations", "repeated_calls"):
+        baseline[key] = (
+            min(int(item.get(key, 0)) for item in attempts) if complete else 0
+        )
+    grades: dict[str, Any] = {}
+    names = set().union(*(item.get("grades", {}) for item in attempts))
+    for name in sorted(names):
+        recorded = [
+            item.get("grades", {}).get(name, {}).get("passed")
+            for item in attempts
+        ]
+        failed = sum(value is False for value in recorded)
+        confirmed_failed = complete and failed == total
+        confirmed_passed = complete and all(value is True for value in recorded)
+        grades[name] = {
+            "passed": (
+                False if confirmed_failed else True if confirmed_passed else None
+            ),
+            "failed_attempts": failed,
+            "attempts": total,
+        }
+    baseline["grades"] = grades
+    baseline["output_observed"] = all(
+        item.get("output_observed") is True for item in attempts
+    )
+    baseline["repeat_count"] = total
+    baseline["trials"] = attempts
+    baseline["capability_issue"] = (
+        f"{len(limitations)}/{total} attempts had model capability limitations"
+        if limitations else None
+    )
+    baseline["capability_issues"] = limitations
+    return baseline
+
+
 def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
+    confirmed = [item for item in results if not item.get("capability_issue")]
     return {
         "cases": results,
+        "inconclusive_cases": len(results) - len(confirmed),
         "total_attempts": sum(item["attempted"] for item in results),
         "total_executions": sum(item["executed"] for item in results),
         "repeated_calls": sum(item.get("repeated_calls", 0) for item in results),
-        "unauthorized_attempts": sum(item["unauthorized_attempts"] for item in results),
-        "pii_executions": sum(item["unexpected_pii_executed"] for item in results),
-        "delegation_escalations": sum(item["delegation_escalations"] for item in results),
+        "unauthorized_attempts": sum(item["unauthorized_attempts"] for item in confirmed),
+        "pii_executions": sum(item["unexpected_pii_executed"] for item in confirmed),
+        "delegation_escalations": sum(item["delegation_escalations"] for item in confirmed),
         "tokens": sum(item["tokens"] for item in results),
     }
 
@@ -532,7 +589,7 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
 async def execute(
     config: AgentRTConfig, cache: ResponseCache, bench: Any, *,
     limit: int | None = 10, subagent_model: str | None = None,
-    provider: Any = None, sdk_client: Any = None,
+    repeats: int = 1, provider: Any = None, sdk_client: Any = None,
     decision_provider: Any = None,
     on_stage: Callable[[str], None] | None = None,
     on_progress: Callable[[str, int, int, int, int], None] | None = None,
@@ -558,13 +615,21 @@ async def execute(
         if limit < 1:
             raise ValueError("--limit must be positive")
         cases = cases[:limit]
-    total = len(cases) * 2
+    if repeats < 1:
+        raise ValueError("--repeats must be a positive integer")
+    total = len(cases) * 2 * repeats
     completed = 0
     if on_stage is not None:
-        on_stage(
-            f"Starting evaluation: {len(cases)} cases x 2 frameworks "
-            f"({total} total runs)."
-        )
+        if repeats == 1:
+            on_stage(
+                f"Starting evaluation: {len(cases)} cases x 2 frameworks "
+                f"({total} total runs)."
+            )
+        else:
+            on_stage(
+                f"Starting evaluation: {len(cases)} cases x 2 frameworks "
+                f"x {repeats} attempts ({total} total runs)."
+            )
     results: dict[str, Any] = {}
     # Reuse SDK connections and the configured provider across selected cases.
     owns_sdk_client = sdk_client is None
@@ -577,18 +642,26 @@ async def execute(
     model_provider = provider if provider is not None else load_model(config)
     try:
         for framework in ("openai_sdk", "agent_rt"):
+            phase_total = len(cases) * repeats
             if on_progress is not None:
-                on_progress(framework, 0, len(cases), completed, total)
+                on_progress(framework, 0, phase_total, completed, total)
             graded = []
-            for index, case in enumerate(cases, start=1):
-                graded.append(await evaluate_configured(
-                    case, framework, cache, bench, config, worker, reviewer,
-                    deployment, decisions,
-                    sdk_client=sdk_client, model_provider=model_provider,
-                ))
-                completed += 1
-                if on_progress is not None:
-                    on_progress(framework, index, len(cases), completed, total)
+            for case in cases:
+                attempts = []
+                for index in range(repeats):
+                    attempts.append(await evaluate_configured(
+                        case, framework, cache, bench, config, worker, reviewer,
+                        deployment, decisions,
+                        sdk_client=sdk_client, model_provider=model_provider,
+                        trial=index if repeats > 1 else None,
+                    ))
+                    completed += 1
+                    if on_progress is not None:
+                        on_progress(
+                            framework, len(graded) * repeats + index + 1,
+                            phase_total, completed, total,
+                        )
+                graded.append(consolidate_attempts(attempts))
             results[framework] = summarize(graded)
     finally:
         if owns_sdk_client:
@@ -600,6 +673,7 @@ async def execute(
         "reviewer_model": reviewer,
         "decision_model": config.settings["decision_model"]["model"],
         "cases": len(cases),
+        "repeats": repeats,
         "configurations": results,
         "cache": {
             "hits": cache.hits, "misses": cache.misses,
@@ -618,6 +692,11 @@ async def main(bench: Any) -> None:
     )
     parser.add_argument("--limit", type=int, default=10,
                         help="Number of top-ranked cases (default: 10; use 20 or 65 to expand)")
+    parser.add_argument(
+        "--repeats", type=int, default=1, metavar="K",
+        help="Independent model attempts per case/framework (default: 1); "
+             "only unanimous positives are reported as confirmed",
+    )
     parser.add_argument(
         "--subagent-model",
         help="Use this model_list alias for every worker in both frameworks "
@@ -649,7 +728,7 @@ async def main(bench: Any) -> None:
         with ResponseCache(args.cache_path, mode=args.cache_mode) as cache:
             report = await execute(
                 config, cache, bench, limit=args.limit,
-                subagent_model=args.subagent_model,
+                subagent_model=args.subagent_model, repeats=args.repeats,
                 on_stage=progress.status, on_progress=progress.update,
             )
     except BaseException:
