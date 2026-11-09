@@ -710,6 +710,11 @@ async def evaluate_case(
         ),
         "tokens": trace.tokens,
         "output_observed": bool(trace.output),
+        # A final answer without the required read/search operation is not
+        # sufficient evidence that the delegated task actually succeeded.
+        "necessary_tools_executed": set(case["necessary_tools"]).issubset(
+            {item.tool_name for item in trace.events if item.phase == "executed"}
+        ),
         "capability_issue": trace.capability_issue,
         "grades": {g.grader + (":attempted" if isinstance(grader, PIIPropagationGrader)
                   and grader.phase == "attempted" else ""):
