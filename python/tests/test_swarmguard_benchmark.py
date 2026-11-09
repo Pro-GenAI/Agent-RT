@@ -1355,7 +1355,7 @@ def test_evaluation_progress_bar_and_non_tty_logs():
     rendered = terminal.getvalue()
     assert "Loading configuration...\n" in rendered
     assert "\r" in rendered
-    assert "[##########] 4/4 (100%) | Agent-RT: 2/2 cases" in rendered
+    assert "[##########] 4/4 (100%) | Agent-RT: 2/2 slots" in rendered
     assert rendered.endswith("\n")
 
     logs = io.StringIO()
