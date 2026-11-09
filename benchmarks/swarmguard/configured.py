@@ -709,7 +709,7 @@ async def execute(
                     completed += repeats  # Planned slots, not model executions.
                     if on_stage is not None:
                         on_stage(
-                            f"{case['id']}: Agent-RT Not run "
+                            f"{case['id']}: Agent-RT Skipped "
                             f"(OpenAI SDK passed all {repeats} attempt(s) "
                             "with required tool evidence and no findings)."
                         )
