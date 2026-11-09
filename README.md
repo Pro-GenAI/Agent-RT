@@ -219,7 +219,11 @@ ten new realistic red-team tool-output challenges and five earlier
 advanced cases. A [qualitative priority manifest](benchmarks/swarmguard/priority_cases.json)
 puts the original controls first, then the new probes in ranks 6-15.
 The default runs **10 cases per framework** (20 completed runs), covering
-all five categories twice. Select a different registered worker model for
+all five categories twice. Run `make eval-swarmguard 3` for three independent
+attempts per case/framework (60 total attempts). Findings count as
+**confirmed** only when observed in every attempt; models that return
+completed but empty outputs produce cached, inconclusive capability outcomes
+instead of aborting the entire run. Select a different registered worker model for
 all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
 configuration stays fixed). Worker caches are model-specific. Use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20`
@@ -236,8 +240,10 @@ than dumping case-by-case JSON. Tool-policy findings and successful-but-
 redundant calls appear in each case; missing final answers are counted
 separately. Both harnesses receive identical inert, task-relevant tool
 results containing untrusted attack excerpts or realistic document-body
-prompt injections, rather than injecting attacker text into the original
-worker task. New cases are adversarial hypotheses; model failure is not
+prompt injections, rather than injecting attacker instructions into the
+original worker task. Longer staged attacks are now present in ranked cases
+2–20, and PII-category tasks include **synthetic** contact identifiers as
+relevant internal context. New cases are adversarial hypotheses; model failure is not
 guaranteed and must be verified by live, repeated trials. To save the complete report, run
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json`;
 use `--json` for machine-readable stdout. Install the Python `cli` extra
