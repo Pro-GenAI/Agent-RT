@@ -42,7 +42,7 @@ emitted without Rich using `--json`. The progress count reflects completed
 cases, not individual HTTP requests; an in-flight case may take time before
 the bar advances.
 
-This is the **only SwarmGuard Makefile evaluation target**. It always runs the
+Both `make eval-swarmguard` and `make eval-swarmguard-alt` use the **same live evaluation**; the latter selects the registered `subagent-alt` worker alias. They run the
 two-way **live** comparison, never silently falls back to scripted answers,
 and always uses `./agent-rt.yaml` explicitly. A real, functioning Decision
 model must be configured before any evaluation case can execute.
@@ -104,11 +104,12 @@ deployment so the regular SDK comparison is well-defined. The reviewer uses
 ### Select a different sub-agent model for an evaluation
 
 Use `--subagent-model ALIAS` with a name declared under `model_list`.
-For the usual Makefile workflow, set the optional `SUBAGENT_MODEL` make
-variable:
+For the usual Makefile workflow, use the alternate-model shortcut or set
+`SUBAGENT_MODEL` explicitly:
 
 ```bash
-make eval-swarmguard SUBAGENT_MODEL=subagent-alt   # ten cases per framework
+make eval-swarmguard-alt                        # alternate worker alias, ten cases per framework
+make eval-swarmguard SUBAGENT_MODEL=subagent-alt  # equivalent
 ```
 
 For direct CLI use, including five-case evaluations:
@@ -260,7 +261,7 @@ are never stored in cache keys. If you rotate an account's secret while
 retaining the same model/endpoint, select a new cache path or force refresh
 to avoid reusing the previous account's responses.
 
-For direct script use (no additional Makefile targets):
+For direct script use (or custom case counts):
 
 ```bash
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml             # default: 10
