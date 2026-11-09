@@ -199,6 +199,7 @@ async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path, monk
     # the actual system instructions must force a new Agent-RT model call.
     worker_calls = len(provider.worker_prompts)
     with ResponseCache(tmp_path / "system-parity.sqlite") as cache:
+        decision = configured_decisions(config, cache, provider=Decisions())
         await run_agent_rt(
             case, cache, benchmark, config, worker, reviewer, decision,
             provider=provider,
