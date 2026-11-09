@@ -617,13 +617,17 @@ def test_public_cli_requires_explicit_config_without_scripted_fallback(tmp_path)
     assert not result.stdout
 
 
-def configured_fixture(*, decision=True, timeout_seconds=None):
+def configured_fixture(*, decision=True, timeout_seconds=None, alternate=False):
     from ext.config import parse_config
 
     limits = (
         f"\n  execution_limits:\n    timeout_seconds: {timeout_seconds}\n"
         if timeout_seconds is not None else ""
     )
+    alternative = """
+  - model_name: subagent-alt
+    agent_rt_params: {model: openai/gpt-worker-alt, api_key: test, api_base: https://alternative.example.test/v1}
+""" if alternate else ""
     extra = """
   decision_model:
     provider: jev
@@ -637,6 +641,7 @@ model_list:
     agent_rt_params: {model: openai/gpt-main, api_key: test, api_base: https://main.example.test/v1}
   - model_name: subagent
     agent_rt_params: {model: openai/gpt-worker, api_key: test, api_base: https://worker.example.test/v1}
+""" + alternative + """
 agent_rt_settings:
   default_model: main-agent
   subagents: {default_model: subagent}
@@ -670,6 +675,110 @@ def test_make_eval_requires_explicit_working_decision_model(tmp_path):
                 validate_decision_provider(checks)
         assert invalid.calls == 2
         assert cache.writes == 0
+
+
+def test_configured_worker_alias_override_resolves_deployment():
+    from configured import configured_models
+
+    config = configured_fixture(alternate=True)
+    assert configured_models(config)[:2] == ("subagent", "main-agent")
+    worker, reviewer, deployment = configured_models(
+        config, subagent_model="subagent-alt",
+    )
+    assert (worker, reviewer, deployment.model) == (
+        "subagent-alt", "main-agent", "gpt-worker-alt",
+    )
+    assert str(deployment.api_base) == "https://alternative.example.test/v1"
+
+    with pytest.raises(ValueError, match="not a configured model_list alias"):
+        configured_models(config, subagent_model="misspelled-worker")
+    with pytest.raises(ValueError, match="not a configured model_list alias"):
+        configured_models(config, subagent_model="")
+
+
+@pytest.mark.anyio
+async def test_subagent_model_override_has_isolated_cache_keys(tmp_path):
+    """A -> B -> A must miss only for B and reuse A for both live harnesses."""
+    from configured import execute
+    from ext.runtime.models.interfaces import ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    class Decision:
+        def __init__(self):
+            self.calls = 0
+
+        def decide(self, state, questions):
+            self.calls += 1
+            return {key: {"noul": 0.95} for key in questions}
+
+    class Provider:
+        name = "model-alias-switch-test"
+
+        def __init__(self):
+            self.calls = []
+
+        async def complete(self, request):
+            self.calls.append(request.model)
+            return ModelResponse(
+                message=ModelMessage(
+                    role="assistant",
+                    content=(ContentPart(type="text", text="done"),),
+                ),
+                model=request.model,
+                finish_reason="stop",
+            )
+
+    class SDK:
+        def __init__(self):
+            self.calls = []
+            self.chat = self
+            self.completions = self
+
+        async def create(self, **request):
+            self.calls.append(request["model"])
+            return {
+                "choices": [{
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": "done"},
+                }],
+                "model": request["model"],
+                "usage": {"total_tokens": 1},
+            }
+
+    config = configured_fixture(alternate=True)
+    sdk, provider, decisions = SDK(), Provider(), Decision()
+    cache_path = tmp_path / "worker-model-switch.sqlite"
+    counts = []
+    results = []
+    for alias in ("subagent", "subagent-alt", "subagent"):
+        with ResponseCache(cache_path, mode="read-write") as cache:
+            report = await execute(
+                config, cache, benchmark, limit=1,
+                subagent_model=alias,
+                sdk_client=sdk, provider=provider,
+                decision_provider=decisions,
+            )
+        results.append(report)
+        counts.append((len(sdk.calls), len(provider.calls), decisions.calls))
+
+    assert [r["worker_model"] for r in results] == [
+        "subagent", "subagent-alt", "subagent",
+    ]
+    assert [r["worker_deployment_model"] for r in results] == [
+        "gpt-worker", "gpt-worker-alt", "gpt-worker",
+    ]
+    assert [r["reviewer_model"] for r in results] == ["main-agent"] * 3
+    assert sdk.calls == ["gpt-worker", "gpt-worker-alt"]
+    assert "subagent" in provider.calls
+    assert "subagent-alt" in provider.calls
+    assert counts[1][0] > counts[0][0]
+    assert counts[1][1] > counts[0][1]
+    assert counts[2] == counts[1]  # Alias A responses are reusable after B.
+    assert results[1]["cache"]["writes"] > 0
+    assert results[2]["cache"]["writes"] == 0
+    assert results[2]["cache"]["hits"] > 0
+    # The unchanged Decision preflight also reuses its own cache.
+    assert counts[2][2] == counts[1][2]
 
 
 @pytest.mark.anyio
@@ -1017,6 +1126,7 @@ async def test_configured_cli_progress_only_writes_to_stderr(
 
     async def fake_execute(*args, **kwargs):
         assert kwargs["limit"] == 10  # Default also applies at the CLI boundary.
+        assert kwargs["subagent_model"] in (None, "subagent-alt")
         kwargs["on_stage"]("Validating Decision model (using cache if available)...")
         kwargs["on_stage"]("Starting evaluation: 1 cases x 2 frameworks (2 total runs).")
         kwargs["on_progress"]("openai_sdk", 0, 1, 0, 2)
@@ -1067,3 +1177,11 @@ async def test_configured_cli_progress_only_writes_to_stderr(
     captured = capsys.readouterr()
     assert "Overall comparison" in captured.out
     assert json.loads(json_path.read_text(encoding="utf-8")) == report
+    monkeypatch.setattr(
+        sys, "argv", ["run.py", "--cache-path", str(tmp_path / "cli.sqlite"),
+                      "--subagent-model", "subagent-alt", "--json"],
+    )
+    await configured.main(benchmark)
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == report
+
