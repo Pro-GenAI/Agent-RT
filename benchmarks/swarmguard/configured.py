@@ -17,8 +17,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable, TextIO
 
-from cache import (CachedDecisionProvider, CachedModelProvider, ResponseCache,
-                   cached_sdk_completion)
+from cache import (CachedDecisionProvider, CachedModelProvider, ModelCapabilityIssue,
+                   ResponseCache, cached_sdk_completion)
 from ext.config import AgentRTConfig, load_config, require_resolved
 from ext.decisions import default_decision_provider
 from ext.runtime.agent.config import AgentConfig, ModelSettings
@@ -217,6 +217,7 @@ def stable_benchmark_request_key(request: dict[str, Any]) -> dict[str, Any]:
 async def run_sdk(
     case: dict[str, Any], cache: ResponseCache, bench: Any,
     deployment: Any, route_identity: str, *, client: Any = None,
+    trial: int | None = None,
 ) -> Any:
     """Plain SDK manual tool loop; no Agent-RT grants or guardrails."""
     if client is None:
@@ -241,16 +242,22 @@ async def run_sdk(
     events = []
     tokens = 0
     output = ""
+    capability_issue = None
     try:
         # Three turns frequently ended on a tool request rather than an
         # answer. Six is still bounded and gives the worker room to use the
         # mocked document content before completing the task.
         for _ in range(6):
-            response = await cached_sdk_completion(
-                client, cache, model=deployment.model,
-                messages=messages, tools=tool_specs,
-                provider_identity="sdk-configured-v3:" + route_identity,
-            )
+            try:
+                response = await cached_sdk_completion(
+                    client, cache, model=deployment.model,
+                    messages=messages, tools=tool_specs,
+                    provider_identity="sdk-configured-v3:" + route_identity
+                    + (f":trial={trial}" if trial is not None else ""),
+                )
+            except ModelCapabilityIssue as exc:
+                capability_issue = exc.reason
+                break
             tokens += response.get("usage", {}).get("total_tokens", 0) or 0
             choice = response["choices"][0]["message"]
             calls = choice.get("tool_calls") or []
@@ -308,7 +315,10 @@ async def run_sdk(
     finally:
         if owns_client:
             await client.close()
-    return bench.RunTrace(events, output, tokens, tuple(bench.TOOLS))
+    return bench.RunTrace(
+        events, output, tokens, tuple(bench.TOOLS),
+        capability_issue=capability_issue,
+    )
 
 
 def _shared_deadline_hint(timeout: Any) -> str:
@@ -329,12 +339,14 @@ async def run_agent_rt(
     case: dict[str, Any], cache: ResponseCache, bench: Any,
     config: AgentRTConfig, worker: str, reviewer: str,
     decisions: CachedDecisionProvider, *, provider: Any = None,
+    trial: int | None = None,
 ) -> Any:
     """Real Agent-RT child delegation with Decision selection and tool guards."""
     backing_provider = provider if provider is not None else load_model(config)
     cached = CachedModelProvider(
         backing_provider, cache,
-        identity="agent-rt-configured-v3:" + model_config_identity(config),
+        identity="agent-rt-configured-v3:" + model_config_identity(config)
+        + (f":trial={trial}" if trial is not None else ""),
         key_transform=stable_benchmark_request_key,
     )
     attempted: list[tuple[str, dict[str, Any]]] = []
@@ -375,7 +387,13 @@ async def run_agent_rt(
         name: ("read" if bench.TOOLS[name][2] == "read" else "write")
         for name in case["granted_tools"]
     }
-    selector = bench.make_decision_delegation_selector(decisions)
+    selector_decisions = (
+        CachedDecisionProvider(
+            decisions.provider, cache, identity=decisions.identity + f":trial={trial}",
+        )
+        if trial is not None else decisions
+    )
+    selector = bench.make_decision_delegation_selector(selector_decisions)
     selected: tuple[str, ...] = ()
 
     def record_selection(task: str, candidates: Any) -> tuple[str, ...]:
@@ -399,6 +417,7 @@ async def run_agent_rt(
     limits = config.settings.get("execution_limits") or {}
     timeout = limits.get("timeout_seconds") if isinstance(limits, Mapping) else None
     deadline = Deadline.after(float(timeout)) if timeout is not None else None
+    capability_issue = None
     try:
         outcome = await swarm.deploy(
             bench.prompt(case),
@@ -415,14 +434,21 @@ async def run_agent_rt(
         # SubagentSwarm reports provider failures in the outcome instead of
         # raising them; fail the evaluation rather than returning a false pass.
         if outcome.error:
-            if "parent deadline expired" in outcome.error:
+            if outcome.error == "ModelCapabilityIssue: empty_completion":
+                capability_issue = "worker:empty_completion"
+            elif "parent deadline expired" in outcome.error:
                 raise RuntimeError(
                     "Agent-RT worker failed: " + outcome.error
                     + _shared_deadline_hint(timeout)
                 )
             raise RuntimeError("Agent-RT worker failed: " + outcome.error)
         if outcome.review.error:
-            if "parent deadline expired" in outcome.review.error:
+            if outcome.review.error == "ModelCapabilityIssue: empty_completion":
+                capability_issue = (
+                    (capability_issue + ", " if capability_issue else "")
+                    + "reviewer:empty_completion"
+                )
+            elif "parent deadline expired" in outcome.review.error:
                 raise RuntimeError(
                     "Agent-RT reviewer failed: " + outcome.review.error
                     + _shared_deadline_hint(timeout)
@@ -450,7 +476,10 @@ async def run_agent_rt(
         else:
             remaining.pop(match)
             events.append(bench.event(case, "executed", name, args, granted))
-    return bench.RunTrace(events, output, total_tokens, granted)
+    return bench.RunTrace(
+        events, "" if capability_issue else output, total_tokens, granted,
+        capability_issue=capability_issue,
+    )
 
 
 async def evaluate_configured(
@@ -458,17 +487,18 @@ async def evaluate_configured(
     bench: Any, config: AgentRTConfig, worker: str, reviewer: str,
     deployment: Any, decisions: CachedDecisionProvider,
     *, sdk_client: Any = None, model_provider: Any = None,
+    trial: int | None = None,
 ) -> dict[str, Any]:
     if configuration == "openai_sdk":
         trace = await run_sdk(
             case, cache, bench, deployment,
             model_config_identity(config) + ":worker=" + worker,
-            client=sdk_client,
+            client=sdk_client, trial=trial,
         )
     elif configuration == "agent_rt":
         trace = await run_agent_rt(
             case, cache, bench, config, worker, reviewer, decisions,
-            provider=model_provider,
+            provider=model_provider, trial=trial,
         )
     else:
         raise ValueError(f"unknown comparison: {configuration}")
