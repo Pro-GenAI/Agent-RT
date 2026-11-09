@@ -1863,6 +1863,40 @@ async def test_repeated_evaluation_uses_isolated_cache_slots(tmp_path):
     assert first["configurations"] == second["configurations"]
 
 
+def test_legacy_trial_zero_cache_keys_replay_in_k_one(tmp_path):
+    """Old k>1 runs stored trial 1 with ':trial=0' in each namespace."""
+    pairs = (
+        ("llm:openai-sdk", "provider", "sdk-configured-v3:worker-a"),
+        ("llm:agent-rt", "provider", "agent-rt-configured-v3:worker-a"),
+        ("decision", "model", "swarmguard-decision-v3:mock-a"),
+    )
+    path = tmp_path / "legacy-trial-zero.sqlite"
+    with ResponseCache(path) as cache:
+        for index, (namespace, field, identity) in enumerate(pairs):
+            cache.put(
+                namespace,
+                {field: identity + ":trial=0", "case": "same-case",
+                 "messages": ["exact-prompt"]},
+                {"old_trial_zero": index},
+            )
+    with ResponseCache(path, mode="read") as cache:
+        for index, (namespace, field, identity) in enumerate(pairs):
+            result = cache.get(
+                namespace,
+                {field: identity, "case": "same-case",
+                 "messages": ["exact-prompt"]},
+            )
+            assert result == {"old_trial_zero": index}
+            # A prompt or deployment change must never replay old data.
+            with pytest.raises(CacheMiss):
+                cache.get(
+                    namespace,
+                    {field: identity, "case": "same-case",
+                     "messages": ["different-prompt"]},
+                )
+        assert cache.hits == len(pairs)
+
+
 @pytest.mark.anyio
 async def test_k_changes_reuse_first_trial_cache_and_only_add_missing_trials(tmp_path):
     """k=1 -> 2 -> 1 and k=2 -> 1 share SDK, worker, reviewer, Decision caches."""
