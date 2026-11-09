@@ -599,11 +599,12 @@ def test_failed_decision_transport_does_not_update_cache(tmp_path):
         assert cache.writes == 0
 
 
-def test_eval_swarmguard_alt_uses_registered_alternate_worker_model():
-    """The alternate make target reuses the standard live evaluator."""
+def test_make_eval_swarmguard_supports_optional_worker_alias():
+    """One Makefile entry point, with an explicit model override."""
     makefile = (BENCH.parents[1] / "Makefile").read_text(encoding="utf-8")
-    assert ".PHONY: eval-swarmguard eval-swarmguard-alt" in makefile
-    assert "eval-swarmguard-alt:\n\t@$(MAKE) --no-print-directory eval-swarmguard SUBAGENT_MODEL=subagent-alt" in makefile
+    assert ".PHONY: eval-swarmguard\n" in makefile
+    assert "eval-swarmguard:" in makefile
+    assert "eval-swarmguard-alt" not in makefile
     assert '$(if $(strip $(SUBAGENT_MODEL)),--subagent-model "$(SUBAGENT_MODEL)")' in makefile
 
 
