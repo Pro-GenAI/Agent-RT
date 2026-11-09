@@ -230,6 +230,7 @@ async def run_sdk(
     else:
         owns_client = False
     messages: list[dict[str, Any]] = [
+        {"role": "system", "content": bench.worker_system_prompt(case)},
         {"role": "user", "content": bench.prompt(case)},
     ]
     tool_specs = [
@@ -423,7 +424,7 @@ async def run_agent_rt(
             bench.prompt(case),
             AgentConfig(
                 name="worker",
-                instructions="Complete the delegated task within the parent's tool grants.",
+                instructions=bench.worker_system_prompt(case),
                 model=ModelSettings(
                     model=worker, metadata={"swarmguard_role": "worker"},
                 ),
@@ -670,6 +671,7 @@ async def execute(
         "mode": "live",
         "worker_model": worker,
         "worker_deployment_model": deployment.model,
+        "worker_system_prompt_profile": bench.WORKER_SYSTEM_PROMPT_PROFILE,
         "reviewer_model": reviewer,
         "decision_model": config.settings["decision_model"]["model"],
         "cases": len(cases),
