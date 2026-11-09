@@ -37,6 +37,8 @@ def _flagged_grades(case: Mapping[str, Any]) -> list[str]:
 
 
 def _findings(case: Mapping[str, Any]) -> tuple[Text, bool]:
+    if case.get("status") == "not_run":
+        return Text("Not run", style="dim"), False
     if case.get("capability_issue"):
         return Text("Inconclusive: model capability limitation", style="yellow"), True
     issues: list[str] = []
@@ -76,6 +78,8 @@ def _grade_failure_cases(cases: list[Mapping[str, Any]]) -> int:
 
 
 def _calls(case: Mapping[str, Any]) -> str:
+    if case.get("status") == "not_run":
+        return "Not run"
     return (
         f"{int(case.get('attempted', 0))}/"
         f"{int(case.get('executed', 0))}/"
@@ -101,6 +105,11 @@ def render_report(
     sdk_cases = sdk["cases"]
     guarded_cases = guarded["cases"]
     guarded_by_id = {case["id"]: case for case in guarded_cases}
+    sdk_evaluated = [case for case in sdk_cases if case.get("status") != "not_run"]
+    agent_evaluated = [
+        case for case in guarded_cases if case.get("status") != "not_run"
+    ]
+    skipped = len(guarded_cases) - len(agent_evaluated)
     if len(guarded_by_id) != len(guarded_cases) or (
         {case["id"] for case in sdk_cases} != set(guarded_by_id)
     ):
@@ -135,10 +144,11 @@ def render_report(
     summary.add_column("OpenAI SDK", justify="right")
     summary.add_column("Agent-RT", justify="right")
     rows = [
-        ("Cases evaluated", len(sdk_cases), len(guarded_cases)),
+        ("Cases evaluated", len(sdk_evaluated), len(agent_evaluated)),
+        ("Not run (SDK passed)", 0, skipped),
         ("Model-inconclusive cases",
-         sum(bool(c.get("capability_issue")) for c in sdk_cases),
-         sum(bool(c.get("capability_issue")) for c in guarded_cases)),
+         sum(bool(c.get("capability_issue")) for c in sdk_evaluated),
+         sum(bool(c.get("capability_issue")) for c in agent_evaluated)),
         ("Tool attempts", _sum_case_field(sdk_cases, "attempted"),
          _sum_case_field(guarded_cases, "attempted")),
         ("Tools executed", _sum_case_field(sdk_cases, "executed"),
@@ -156,8 +166,9 @@ def render_report(
          _sum_case_field(guarded_cases, "delegation_escalations")),
         ("Cases with failing graders", _grade_failure_cases(sdk_cases),
          _grade_failure_cases(guarded_cases)),
-        ("Cases with a final answer", f"{_answer_count(sdk_cases)}/{len(sdk_cases)}",
-         f"{_answer_count(guarded_cases)}/{len(guarded_cases)}"),
+        ("Cases with a final answer",
+         f"{_answer_count(sdk_evaluated)}/{len(sdk_evaluated)}",
+         f"{_answer_count(agent_evaluated)}/{len(agent_evaluated)}"),
     ]
     for label, left, right in rows:
         summary.add_row(label, f"{left:,}" if isinstance(left, int) else str(left),
@@ -219,4 +230,13 @@ def render_report(
         "not a full autonomous "
         "swarm evaluation.[/dim]"
     )
+    if skipped:
+        out.print(
+            f"[dim]Not run: Agent-RT was skipped for {skipped} case(s) because "
+            f"the normal OpenAI SDK completed all {repeats} trial(s) with "
+            "final answers and no observed policy, tool-use or repeated-call "
+            "findings. If any SDK trial is inconclusive or has a finding, "
+            "Agent-RT is still evaluated. Skipped means not evaluated, "
+            "not a security pass.[/dim]"
+        )
     out.print()
