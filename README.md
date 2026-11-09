@@ -219,9 +219,15 @@ ten new realistic red-team tool-output challenges and five earlier
 advanced cases. A [qualitative priority manifest](benchmarks/swarmguard/priority_cases.json)
 puts the original controls first, then the new probes in ranks 6-15.
 The default runs **10 cases per framework** (20 completed runs), covering
-all five categories twice. Use
+all five categories twice. Select a different registered worker model for
+all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
+configuration stays fixed). Worker caches are model-specific. Use
 `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20`
-to include all ten new probes or `--limit 65` for the full dataset. Successful SDK, Agent-RT and Decision responses are
+to include all ten new probes or `--limit 65` for the full dataset.
+For example, `python benchmarks/swarmguard/run.py --config ./agent-rt.yaml
+--subagent-model subagent-alt --limit 5` evaluates five tasks per framework
+using that alternate model alias. See the
+[benchmark guide](benchmarks/swarmguard/README.md) for `model_list` setup. Successful SDK, Agent-RT and Decision responses are
 cached independently; deterministic offline doubles remain in tests.
 The default terminal report uses concise **Rich comparison tables**, rather
 than dumping case-by-case JSON. Tool-policy findings and successful-but-
