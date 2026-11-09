@@ -1141,6 +1141,157 @@ async def test_configured_eval_reports_completed_cases_across_both_phases(
 
 
 
+
+@pytest.mark.anyio
+async def test_unanimous_findings_only_and_repetition_progress(tmp_path, monkeypatch):
+    from configured import execute
+    import configured
+
+    class Decisions:
+        def decide(self, state, questions):
+            return {key: {"noul": 0.95} for key in questions}
+
+    async def fake_case(
+        case, framework, cache, bench, config, worker, reviewer, deployment,
+        decisions, *, trial=None, **kwargs,
+    ):
+        assert trial in (0, 1, 2)
+        breached = (framework == "agent_rt" or trial < 2)
+        return {
+            "id": case["id"], "category": case["category"],
+            "attempted": 1, "executed": 1, "blocked": 0,
+            "unauthorized_attempts": 1 if breached else 0,
+            "unexpected_pii_executed": 0,
+            "delegation_escalations": 0, "repeated_calls": 0,
+            "output_observed": True, "capability_issue": None,
+            "tokens": 1,
+            "grades": {
+                "unauthorized_tool_calls": {
+                    "passed": not breached, "score": 0.0 if breached else 1.0,
+                },
+            },
+        }
+
+    monkeypatch.setattr(configured, "evaluate_configured", fake_case)
+    updates = []
+    with ResponseCache(tmp_path / "unanimous-results.sqlite") as cache:
+        report = await execute(
+            configured_fixture(), cache, benchmark, limit=1, repeats=3,
+            provider=object(), sdk_client=object(),
+            decision_provider=Decisions(),
+            on_progress=lambda *args: updates.append(args),
+        )
+    assert report["repeats"] == 3
+    assert report["cases"] == 1
+    assert updates[-1] == ("agent_rt", 3, 3, 6, 6)
+    sdk = report["configurations"]["openai_sdk"]["cases"][0]
+    rt = report["configurations"]["agent_rt"]["cases"][0]
+    assert sdk["attempted"] == 3  # Call telemetry totals all attempts.
+    assert sdk["unauthorized_attempts"] == 0  # Only 2/3 were positive.
+    assert sdk["grades"]["unauthorized_tool_calls"]["passed"] is None
+    assert sdk["grades"]["unauthorized_tool_calls"]["failed_attempts"] == 2
+    assert len(sdk["trials"]) == 3
+    assert rt["unauthorized_attempts"] == 1  # Minimum over three positives.
+    assert rt["grades"]["unauthorized_tool_calls"]["passed"] is False
+    assert rt["grades"]["unauthorized_tool_calls"]["failed_attempts"] == 3
+
+
+def test_capability_gap_disqualifies_security_confirmation():
+    from configured import consolidate_attempts
+    base = {
+        "id": "capability-limited", "category": "unauthorized_tools",
+        "attempted": 2, "executed": 1, "blocked": 1, "tokens": 0,
+        "unauthorized_attempts": 1, "unexpected_pii_executed": 0,
+        "delegation_escalations": 0, "repeated_calls": 0,
+        "output_observed": False, "capability_issue": None,
+        "grades": {"unauthorized_tool_calls": {"passed": False}},
+    }
+    merged = consolidate_attempts([
+        base, {**base, "capability_issue": "worker:empty_completion"},
+    ])
+    assert merged["attempted"] == 4
+    assert merged["unauthorized_attempts"] == 0
+    assert merged["grades"]["unauthorized_tool_calls"]["passed"] is None
+    assert merged["capability_issue"]
+    assert len(merged["trials"]) == 2
+
+
+@pytest.mark.anyio
+async def test_repeated_evaluation_uses_isolated_cache_slots(tmp_path):
+    from configured import execute
+    from ext.runtime.models.interfaces import ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    class Decision:
+        def __init__(self):
+            self.calls = 0
+
+        def decide(self, state, questions):
+            self.calls += 1
+            return {key: {"noul": 0.95} for key in questions}
+
+    class Provider:
+        name = "repeat-model"
+        def __init__(self):
+            self.models = []
+
+        async def complete(self, request):
+            self.models.append(request.model)
+            return ModelResponse(
+                message=ModelMessage(
+                    role="assistant",
+                    content=(ContentPart(type="text", text="complete"),),
+                ),
+                model=request.model, finish_reason="stop",
+            )
+
+    class SDK:
+        def __init__(self):
+            self.chat = self
+            self.completions = self
+            self.calls = 0
+
+        async def create(self, **kwargs):
+            self.calls += 1
+            return {
+                "choices": [{"finish_reason": "stop",
+                             "message": {"role": "assistant", "content": "complete"}}],
+                "model": kwargs["model"],
+            }
+
+    provider, sdk, decisions = Provider(), SDK(), Decision()
+    path = tmp_path / "three-independent-trials.sqlite"
+    with ResponseCache(path, "read-write") as cache:
+        first = await execute(
+            configured_fixture(), cache, benchmark, limit=1, repeats=3,
+            provider=provider, sdk_client=sdk, decision_provider=decisions,
+        )
+        assert cache.writes > 0
+    assert sdk.calls == 3
+    assert provider.models.count("subagent") == 3
+    assert provider.models.count("main-agent") == 3
+    previous = (sdk.calls, len(provider.models), decisions.calls)
+
+    # The same k and same model may replay all three distinct trial slots.
+    with ResponseCache(path, "read-write") as cache:
+        second = await execute(
+            configured_fixture(), cache, benchmark, limit=1, repeats=3,
+            provider=provider, sdk_client=sdk, decision_provider=decisions,
+        )
+        assert cache.writes == 0
+        assert cache.hits > 0
+    assert (sdk.calls, len(provider.models), decisions.calls) == previous
+    assert first["configurations"] == second["configurations"]
+
+
+def test_make_eval_accepts_positional_repeat_argument():
+    makefile = (BENCH.parents[1] / "Makefile").read_text(encoding="utf-8")
+    assert "SWARMGUARD_REPEATS" in makefile
+    assert "$(word 2,$(MAKECMDGOALS))" in makefile
+    assert '--repeats "$(SWARMGUARD_REPEATS)"' in makefile
+    assert "eval-swarmguard-alt" not in makefile
+
+
 def test_rich_report_highlights_violations_and_bounds_long_runs():
     import io
     from rich.console import Console
