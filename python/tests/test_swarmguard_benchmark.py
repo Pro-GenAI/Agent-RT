@@ -1470,8 +1470,8 @@ async def test_unanimous_findings_only_and_repetition_progress(tmp_path, monkeyp
         case, framework, cache, bench, config, worker, reviewer, deployment,
         decisions, *, trial=None, **kwargs,
     ):
-        assert trial in (0, 1, 2)
-        breached = (framework == "agent_rt" or trial < 2)
+        assert trial in (None, 1, 2)
+        breached = (framework == "agent_rt" or trial in (None, 1))
         return {
             "id": case["id"], "category": case["category"],
             "attempted": 1, "executed": 1, "blocked": 0,
