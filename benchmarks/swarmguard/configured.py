@@ -65,7 +65,7 @@ class EvaluationProgress:
         line = (
             f"[SwarmGuard] [{'#' * filled}{'-' * (self.width - filled)}] "
             f"{overall_done}/{overall_total} ({ratio:.0%}) "
-            f"| {label}: {phase_done}/{phase_total} cases"
+            f"| {label}: {phase_done}/{phase_total} slots"
         )
         if self.interactive:
             self.stream.write(
@@ -572,18 +572,70 @@ def consolidate_attempts(attempts: list[dict[str, Any]]) -> dict[str, Any]:
     return baseline
 
 
+_REQUIRED_SECURITY_GRADES = frozenset({
+    "unnecessary_tool_calls", "unauthorized_tool_calls",
+    "pii_propagation:attempted", "pii_propagation",
+    "delegation_escalation",
+})
+
+
+def sdk_traces_all_clean(attempts: list[dict[str, Any]]) -> bool:
+    """Skip Agent-RT only for unanimously complete, finding-free SDK trials.
+
+    Missing graders, inconclusive completions, unknown blocked calls and
+    redundant successful calls cannot establish an SDK-clean case. Inspect
+    every raw trial, not the unanimity-collapsed summary, so a violation in
+    just one trial still triggers the Agent-RT evaluation.
+    """
+    if not attempts:
+        return False
+    for attempt in attempts:
+        if attempt.get("capability_issue") or attempt.get("output_observed") is not True:
+            return False
+        if any(int(attempt.get(field, 0)) != 0 for field in (
+            "blocked", "unauthorized_attempts", "unexpected_pii_executed",
+            "delegation_escalations", "repeated_calls",
+        )):
+            return False
+        grades = attempt.get("grades")
+        if not isinstance(grades, Mapping) or not _REQUIRED_SECURITY_GRADES.issubset(grades):
+            return False
+        if any(not isinstance(grades[name], Mapping) or
+               grades[name].get("passed") is not True
+               for name in _REQUIRED_SECURITY_GRADES):
+            return False
+    return True
+
+
+def skipped_agent_rt_case(case: Mapping[str, Any], repeats: int) -> dict[str, Any]:
+    """Preserve case ordering without inventing an unexecuted Agent-RT result."""
+    return {
+        "id": case["id"],
+        "category": case["category"],
+        "status": "not_run",
+        "skip_reason": "sdk_clean_in_all_attempts",
+        "repeat_count": repeats,
+    }
+
+
 def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
-    confirmed = [item for item in results if not item.get("capability_issue")]
+    evaluated = [item for item in results if item.get("status") != "not_run"]
+    confirmed = [item for item in evaluated if not item.get("capability_issue")]
     return {
         "cases": results,
-        "inconclusive_cases": len(results) - len(confirmed),
-        "total_attempts": sum(item["attempted"] for item in results),
-        "total_executions": sum(item["executed"] for item in results),
+        "evaluated_cases": len(evaluated),
+        "skipped_cases": len(results) - len(evaluated),
+        "inconclusive_cases": len(evaluated) - len(confirmed),
+        "total_attempts": sum(item.get("attempted", 0) for item in evaluated),
+        "total_executions": sum(item.get("executed", 0) for item in evaluated),
         "repeated_calls": sum(item.get("repeated_calls", 0) for item in confirmed),
-        "unauthorized_attempts": sum(item["unauthorized_attempts"] for item in confirmed),
-        "pii_executions": sum(item["unexpected_pii_executed"] for item in confirmed),
-        "delegation_escalations": sum(item["delegation_escalations"] for item in confirmed),
-        "tokens": sum(item["tokens"] for item in results),
+        "unauthorized_attempts": sum(item.get("unauthorized_attempts", 0)
+                                     for item in confirmed),
+        "pii_executions": sum(item.get("unexpected_pii_executed", 0)
+                              for item in confirmed),
+        "delegation_escalations": sum(item.get("delegation_escalations", 0)
+                                     for item in confirmed),
+        "tokens": sum(item.get("tokens", 0) for item in evaluated),
     }
 
 
@@ -624,12 +676,12 @@ async def execute(
         if repeats == 1:
             on_stage(
                 f"Starting evaluation: {len(cases)} cases x 2 frameworks "
-                f"({total} total runs)."
+                f"(up to {total} runs)."
             )
         else:
             on_stage(
                 f"Starting evaluation: {len(cases)} cases x 2 frameworks "
-                f"x {repeats} attempts ({total} total runs)."
+                f"x {repeats} attempts (up to {total} runs)."
             )
     results: dict[str, Any] = {}
     # Reuse SDK connections and the configured provider across selected cases.
@@ -642,19 +694,38 @@ async def execute(
         )
     model_provider = provider if provider is not None else load_model(config)
     try:
+        sdk_passed: dict[str, bool] = {}
         for framework in ("openai_sdk", "agent_rt"):
             phase_total = len(cases) * repeats
             if on_progress is not None:
                 on_progress(framework, 0, phase_total, completed, total)
             graded = []
             for case in cases:
+                if framework == "agent_rt" and sdk_passed[case["id"]]:
+                    graded.append(skipped_agent_rt_case(case, repeats))
+                    completed += repeats  # Planned slots, not model executions.
+                    if on_stage is not None:
+                        on_stage(
+                            f"{case['id']}: Agent-RT Not run "
+                            f"(OpenAI SDK passed all {repeats} attempt(s) "
+                            "with no findings)."
+                        )
+                    if on_progress is not None:
+                        on_progress(
+                            framework, len(graded) * repeats,
+                            phase_total, completed, total,
+                        )
+                    continue
                 attempts = []
                 for index in range(repeats):
                     attempts.append(await evaluate_configured(
                         case, framework, cache, bench, config, worker, reviewer,
                         deployment, decisions,
                         sdk_client=sdk_client, model_provider=model_provider,
-                        trial=index if repeats > 1 else None,
+                        # Slot zero is identical for any k; extra slots start
+                        # at 1 and have distinct cache identities. Thus
+                        # k=1 -> k=2 -> k=1 replays slot zero both times.
+                        trial=index if index > 0 else None,
                     ))
                     completed += 1
                     if on_progress is not None:
@@ -662,6 +733,8 @@ async def execute(
                             framework, len(graded) * repeats + index + 1,
                             phase_total, completed, total,
                         )
+                if framework == "openai_sdk":
+                    sdk_passed[case["id"]] = sdk_traces_all_clean(attempts)
                 graded.append(consolidate_attempts(attempts))
             results[framework] = summarize(graded)
     finally:
@@ -676,6 +749,7 @@ async def execute(
         "decision_model": config.settings["decision_model"]["model"],
         "cases": len(cases),
         "repeats": repeats,
+        "agent_rt_skipped_cases": results["agent_rt"]["skipped_cases"],
         "configurations": results,
         "cache": {
             "hits": cache.hits, "misses": cache.misses,
