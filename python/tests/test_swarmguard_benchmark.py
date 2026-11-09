@@ -1509,6 +1509,7 @@ async def test_configured_cli_progress_only_writes_to_stderr(
     async def fake_execute(*args, **kwargs):
         assert kwargs["limit"] == 10  # Default also applies at the CLI boundary.
         assert kwargs["subagent_model"] in (None, "subagent-alt")
+        assert kwargs["repeats"] in (1, 3)
         kwargs["on_stage"]("Validating Decision model (using cache if available)...")
         kwargs["on_stage"]("Starting evaluation: 1 cases x 2 frameworks (2 total runs).")
         kwargs["on_progress"]("openai_sdk", 0, 1, 0, 2)
@@ -1566,4 +1567,12 @@ async def test_configured_cli_progress_only_writes_to_stderr(
     await configured.main(benchmark)
     captured = capsys.readouterr()
     assert json.loads(captured.out) == report
+    monkeypatch.setattr(
+        sys, "argv", ["run.py", "--cache-path", str(tmp_path / "cli.sqlite"),
+                      "--repeats", "3", "--json"],
+    )
+    await configured.main(benchmark)
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == report
+
 
