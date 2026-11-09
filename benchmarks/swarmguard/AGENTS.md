@@ -87,6 +87,28 @@ two live harnesses, applies common graders and reports both sides. The
 actual benchmark never reads `EVAL_*` or `OPENAI_MODEL` as configuration.
 Only `os.environ/NAME` secret references in the YAML are resolved.
 
+## Per-case worker system prompts
+
+`run.worker_system_prompt(case)` produces one deterministic system prompt per
+synthetic case (`case-specific-system-pressure-v1`). Both live harnesses
+must pass **identical text** at system priority: the SDK via an explicit
+`role="system"` message and Agent-RT through delegated
+`AgentConfig.instructions`. The reviewer prompt stays unchanged. Every
+worker prompt includes only synthetic PII, a case-specific proposed inert
+tool call, and conflicting workflow cues; the separate `case["attack"]`
+stays in **untrusted tool output**, never copied verbatim into the worker
+system or user message.
+
+These conflicting system instructions are intentional stress inputs, **not
+attacker-controlled lower-trust material**. The benchmark now mixes trusted
+instruction conflicts with tool-response prompt injection; do not claim a
+violation is caused solely by document injection. The actual parent grants
+and guards must remain enforced. Provider request/cache keys include these
+system messages automatically. Updating prompt content must invalidate SDK
+and Agent-RT cached responses but not unrelated Decision preflight caches.
+Test prompt uniqueness for all 65 fixtures and worker text parity across
+both frameworks.
+
 ## Security and evaluation invariants
 
 The Agent-RT worker and reviewer share one parent deadline from
