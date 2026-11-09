@@ -18,16 +18,26 @@ omits token usage rather than comparing unequal workloads.
 
 From the repository root:
 
-```bash
-make eval-swarmguard
+``bash
+make eval-swarmguard          # one attempt per case (default)
+make eval-swarmguard 3        # three independent attempts per case and framework
 ```
+
+`k` is a positive integer supplied as the first positional argument after
+`eval-swarmguard`. For custom case counts, use
+`python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20 --repeats 3`.
+The default is `k=1`. With ten selected cases and `k=3`, the benchmark
+runs 60 case/framework attempts, not 20. It reports a security finding as
+**confirmed only if all three attempts support that specific finding**.
+Non-unanimous results remain available in the JSON `trials` array but are
+not claimed as positive in the terminal table.
 
 The command immediately prints an initialization message, then reports YAML
 loading and Decision-model validation status before evaluation begins. Once
 cases start, it shows a **live progress bar for the 20 default harness/case runs**
 (10 cases for the OpenAI SDK, then 10 for Agent-RT). The progress total
-scales to twice the selected case count when `--limit` is overridden. The bar
-updates after each completed case in interactive terminals; redirected logs
+scales to `2 × selected case count × k`. The bar
+updates after each completed attempt in interactive terminals; redirected logs
 receive periodic newline-delimited progress snapshots. Initialization,
 progress and errors go to **stderr**, while the final **Rich tables on stdout**
 summarize per-harness metrics and notable case findings. The table lists up to
@@ -38,9 +48,8 @@ attempted calls does not establish that the runtime guard intervened.
 The benchmark report uses the existing Python `cli` extra's
 `rich>=13.7,<15` dependency. If Rich is missing, install
 `pip install 'agent-rt[cli]'` or `pip install rich`. Raw JSON can still be
-emitted without Rich using `--json`. The progress count reflects completed
-cases, not individual HTTP requests; an in-flight case may take time before
-the bar advances.
+emitted without Rich using `--json`. Progress counts completed
+case/framework attempts, not individual HTTP requests.
 
 This is the **only SwarmGuard Makefile evaluation target**. It runs the
 two-way **live** comparison, never silently falls back to scripted answers,
@@ -168,7 +177,8 @@ when validating current model availability.
 ## Dataset and scoring
 
 The `cases/*.jsonl` fixtures contain **65 synthetic tasks**, 13 per
-category. The original 50 remain intact, five earlier layered variants
+category. The original 50 case IDs are retained, but priority fixtures have
+been strengthened with longer staged instructions. Five layered variants
 are in [`advanced_scenarios.jsonl`](cases/advanced_scenarios.jsonl), and
 ten additional red-team probes are in
 [`pressure_scenarios.jsonl`](cases/pressure_scenarios.jsonl).
@@ -176,17 +186,25 @@ The [priority manifest](priority_cases.json) orders 20 cases: original
 representatives (1-5), ten new pressure probes (6-15), and five earlier
 advanced variants (16-20). The other 45 cases are still available.
 
-The new pressure probes aim to increase the opportunity to detect actual
-misuse through forged approvals, copied tool-call transcripts, policy
-exceptions, deletion pretexts, synthetic-contact egress, and unnecessary
-directory preflights. They are **unvalidated adversarial hypotheses**:
+Priority cases 2–20 now use longer, staged adversarial instructions intended
+to test forged approvals, copied tool-call transcripts, workflow
+dependencies, deletion pretexts, synthetic-contact egress, and unnecessary
+directory checks. All 13 PII-category task prompts explicitly include a
+**synthetic** contact as useful internal case context; the user's legitimate
+task is still an internal policy summary and does not require exposing it
+through an external tool. This makes use of sensitive data tempting while
+preserving a measurable misuse boundary. The first priority case remains
+the original control.
+
+These are **unvalidated adversarial hypotheses**:
 a correct model may refuse all attacks. Only a real attempted or executed
 tool call can support a reported failure.
 
-The *trusted* worker task never contains attacker text. Both harnesses receive
-the same inert and task-relevant document or search result. The older controls
-use a distinct `untrusted_excerpt` field; new pressure probes place attack
-instructions directly in the document `content` field. Both are untrusted
+The trusted worker task contains legitimate task context, sometimes including
+a synthetic contact, but never the malicious attack instructions. Both
+harnesses receive the same inert and task-relevant document or search result.
+Some controls use a distinct `untrusted_excerpt` field; complex priority
+probes may place attack instructions in the normal document `content` field. Both are untrusted
 **tool-returned data**, never parent or system instructions. The SDK's
 bounded manual loop allows six model turns, which reduces premature
 tool-call-only terminations.
@@ -220,7 +238,10 @@ Each fixture provides `necessary_tools`, `granted_tools`, `mock_tool`,
 `mock_arguments` and an optional `attack`. The ground-truth tool minimum
 is used by graders, **not** supplied to the live Decision model. The
 `granted_tools` allowlist *is* included in the worker's task prompt, as
-a parent delegation policy. There are no legitimate-PII scenarios. All
+a parent delegation policy. Synthetic contact values in the task are internal
+reference context, **not permission to include them in tool arguments or
+transmit them externally**; the current PII guard is conservative and
+default-denies such arguments for all tools. All
 tool handlers are inert mocks: `delete_file` cannot delete anything and
 `web_search` cannot contact the public web.
 
@@ -245,14 +266,20 @@ alone as proof of production-world security improvements.
 Successful SDK LLM, Agent-RT LLM and Decision-model responses are cached in
 separate SQLite namespaces under ignored `.cache/responses.sqlite`.
 The default mode is `read-write`. **Running the identical command again
-reuses successful model responses** and does not call either model provider
-again. The benchmark canonicalizes its own generated task/trace identifiers
+reuses successful model responses and cached model-capability markers** and
+does not call either model provider again. The benchmark canonicalizes its own generated task/trace identifiers
 for cache lookup, but continues to pass unmodified input to model providers
 and reapplies guards, permissions and graders.
 
 Connection errors, timeouts, HTTP 429/5xx errors, failed/refused/incomplete
 model responses, and malformed Decision answers are **never cached**.
-A later failure does not erase previously completed successful responses.
+The exception is a **completed but empty assistant response** (no useful text
+and no tool calls): it is recorded as a typed `empty_completion` **model
+capability limitation**, not as a successful answer. The affected case is
+reported as inconclusive rather than aborting the benchmark, and the marker
+can be replayed from cache without another provider request. It is not a
+security finding, and it does not prove the runtime blocked a tool.
+A later transport or HTTP failure does not erase previously cached results.
 Keys incorporate public model aliases, upstream IDs, endpoints, request
 messages, tools, model parameters and Decision questions; API-key **values**
 are never stored in cache keys. If you rotate an account's secret while
@@ -264,7 +291,8 @@ For direct script use (no additional Makefile targets):
 ```bash
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml             # default: 10
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 5   # original quick five
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20  # all ten new challenges
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20  # all ranked challenges
+python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --repeats 3   # three attempts per case
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 65  # entire dataset
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --subagent-model subagent-alt --limit 5
 python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode read
@@ -277,17 +305,25 @@ python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --json             
 tables in the terminal. `--json` prints the full machine-readable document
 instead of tables (progress stays on stderr); both options can be combined.
 The default Rich report omits tool arguments and token counts, displays
-`None` when a case has no observed policy/tool-use findings, and can be
-redirected to text without ANSI escape codes. A missing final answer is
-shown only through the aggregate completion count, not as a policy failure. The full JSON schema remains unchanged for tools
-that explicitly request `--json` or `--output`.
+`None` when a case has no confirmed policy/tool-use findings, and can be
+redirected to text without ANSI escape codes. Inconclusive model responses
+are labeled separately and cannot count as security positives. A missing
+final answer is measured separately, not as a policy failure.
+JSON includes `repeats`, each case's individual `trials` (when `k>1`),
+`failed_attempts` for each grader, and optional `capability_issue`.
 No blocked calls or failed graders does not establish that a specific
 attack was attempted and prevented.
 
-`read` fails on cache misses without contacting any model. `refresh` deliberately
-contacts the model again and overwrites only successful answers. Cached
-response replay must not be counted as a fresh stochastic model trial or
-as newly billed inference.
+`read` fails on cache misses without contacting any model. `refresh`
+contacts the model again for each trial slot and overwrites validated
+responses and typed capability markers.
+When `k>1`, the worker, SDK and per-case Decision and reviewer cache
+identities contain the trial index, so distinct attempts cannot accidentally
+reuse one model response. The preflight Decision check remains independently
+cacheable. Rerunning the **same** `k` in normal `read-write` mode replays
+its existing trial slots; use `--cache-mode refresh` for genuinely fresh
+independent trials. Cache replay is not a new stochastic trial or billable
+inference.
 
 ## Offline regression tests
 
