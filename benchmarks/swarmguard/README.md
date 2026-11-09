@@ -358,9 +358,12 @@ The worker, SDK, reviewer and per-case Decision caches isolate additional
 attempt indices; the baseline first attempt has no repeat-count suffix.
 The preflight Decision check stays independently cacheable. **Trial 1 uses the same cache identity regardless of `k`**; additional
 trials use stable slot indices `1, 2, …`. Therefore `k=1 → k=2` adds only
-the missing second trial, while `k=2 → k=1` replays the first trial without
-calling the models. This applies to SDK, Agent-RT worker/reviewer and
-case-specific Decision calls whenever Agent-RT is eligible. The preflight
+the missing SDK trial, while `k=2 → k=1` replays the first SDK trial without
+calling the model. The same slot reuse applies to Agent-RT worker/reviewer
+and case-specific Decision calls **when Agent-RT was already evaluated**.
+If an SDK-clean `k=1` case was previously marked `Not run` but a new
+`k=2` SDK trial fails, Agent-RT becomes eligible for the first time and
+must run **both** of its missing trials. The preflight
 Decision cache remains independent. Changing the case prompt/model still
 creates a new key. Use `--cache-mode refresh` for genuinely fresh independent
 trials; a cached replay is not a new stochastic trial or billable inference.
