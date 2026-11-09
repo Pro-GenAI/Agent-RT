@@ -1266,6 +1266,25 @@ async def test_configured_eval_reports_completed_cases_across_both_phases(
 
 
 
+
+@pytest.mark.anyio
+async def test_invalid_repeat_count_fails_before_any_decision_request(tmp_path):
+    from configured import execute
+
+    class Decisions:
+        def decide(self, state, questions):
+            raise AssertionError("invalid k must not invoke Decision provider")
+
+    with ResponseCache(tmp_path / "bad-repeats.sqlite") as cache:
+        with pytest.raises(ValueError, match="--repeats must be a positive"):
+            await execute(
+                configured_fixture(), cache, benchmark, repeats=0,
+                sdk_client=object(), provider=object(),
+                decision_provider=Decisions(),
+            )
+        assert cache.writes == 0
+
+
 @pytest.mark.anyio
 async def test_unanimous_findings_only_and_repetition_progress(tmp_path, monkeypatch):
     from configured import execute
