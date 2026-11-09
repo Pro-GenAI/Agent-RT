@@ -103,7 +103,15 @@ deployment so the regular SDK comparison is well-defined. The reviewer uses
 
 ### Select a different sub-agent model for an evaluation
 
-Use `--subagent-model ALIAS` with a name declared under `model_list`:
+Use `--subagent-model ALIAS` with a name declared under `model_list`.
+For the usual Makefile workflow, set the optional `SUBAGENT_MODEL` make
+variable:
+
+```bash
+make eval-swarmguard SUBAGENT_MODEL=subagent-alt   # ten cases per framework
+```
+
+For direct CLI use, including five-case evaluations:
 
 ```bash
 # Five cases per framework, with every worker using the alternate model.
