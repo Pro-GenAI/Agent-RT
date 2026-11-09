@@ -120,6 +120,12 @@ def render_report(
         f"Reviewer: {report['reviewer_model']}  |  "
         f"Decision model: {report['decision_model']}"
     )
+    if report.get("worker_system_prompt_profile"):
+        out.print(
+            f"[dim]Worker system prompts: "
+            f"{report['worker_system_prompt_profile']} "
+            "(trusted-prompt pressure; not purely document-injection).[/dim]"
+        )
 
     summary = Table(
         title="Overall comparison", box=box.SIMPLE, header_style="bold",
