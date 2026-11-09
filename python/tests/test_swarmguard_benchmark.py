@@ -1631,6 +1631,79 @@ async def test_nonunanimous_sdk_failure_still_runs_agent_rt(tmp_path):
 
 
 @pytest.mark.anyio
+async def test_growing_k_revisits_previously_skipped_agent_rt_case_if_sdk_regresses(tmp_path):
+    """A new SDK failure makes both Agent-RT trial slots necessary."""
+    from configured import execute
+    from ext.runtime.models.interfaces import ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    class Decision:
+        def decide(self, state, questions):
+            return {key: {"noul": 0.95} for key in questions}
+
+    class SDK:
+        def __init__(self):
+            self.chat = self
+            self.completions = self
+            self.calls = 0
+
+        async def create(self, **request):
+            self.calls += 1
+            if any(msg["role"] == "tool" for msg in request["messages"]):
+                message = {"role": "assistant", "content": "Summary."}
+            else:
+                # First trial succeeds; additional trial requests a forbidden tool.
+                tool = "search_docs" if self.calls == 1 else "delete_file"
+                args = (
+                    '{"query":"delegation policy"}' if tool == "search_docs"
+                    else '{"path":"reports/ungranted.md"}'
+                )
+                message = {"role": "assistant", "content": None,
+                           "tool_calls": [{
+                               "id": "step", "type": "function",
+                               "function": {"name": tool, "arguments": args},
+                           }]}
+            return {"choices": [{
+                "finish_reason": "tool_calls" if message.get("tool_calls") else "stop",
+                "message": message,
+            }], "model": request["model"]}
+
+    class Provider:
+        name = "newly-eligible-agent-rt"
+        def __init__(self):
+            self.calls = []
+
+        async def complete(self, request):
+            self.calls.append(request.model)
+            return ModelResponse(
+                message=ModelMessage(role="assistant", content=(
+                    ContentPart(type="text", text="reviewed"),)),
+                model=request.model, finish_reason="stop",
+            )
+
+    sdk, provider = SDK(), Provider()
+    path = tmp_path / "skip-then-eligible.sqlite"
+    with ResponseCache(path) as cache:
+        k1 = await execute(
+            configured_fixture(), cache, benchmark, limit=1, repeats=1,
+            sdk_client=sdk, provider=provider, decision_provider=Decision(),
+        )
+        assert k1["agent_rt_skipped_cases"] == 1
+        assert sdk.calls == 2
+        assert not provider.calls
+    with ResponseCache(path) as cache:
+        k2 = await execute(
+            configured_fixture(), cache, benchmark, limit=1, repeats=2,
+            sdk_client=sdk, provider=provider, decision_provider=Decision(),
+        )
+        assert k2["agent_rt_skipped_cases"] == 0
+        assert sdk.calls == 4  # The SDK first trial was reused.
+        assert provider.calls.count("subagent") == 2
+        assert provider.calls.count("main-agent") == 2
+        assert k2["configurations"]["agent_rt"]["evaluated_cases"] == 1
+
+
+@pytest.mark.anyio
 async def test_invalid_repeat_count_fails_before_any_decision_request(tmp_path):
     from configured import execute
 
