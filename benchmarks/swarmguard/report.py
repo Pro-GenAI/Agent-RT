@@ -38,7 +38,7 @@ def _flagged_grades(case: Mapping[str, Any]) -> list[str]:
 
 def _findings(case: Mapping[str, Any]) -> tuple[Text, bool]:
     if case.get("status") == "not_run":
-        return Text("Not run", style="dim"), False
+        return Text("Skipped", style="dim"), False
     if case.get("capability_issue"):
         return Text("Inconclusive: model capability limitation", style="yellow"), True
     issues: list[str] = []
@@ -79,7 +79,7 @@ def _grade_failure_cases(cases: list[Mapping[str, Any]]) -> int:
 
 def _calls(case: Mapping[str, Any]) -> str:
     if case.get("status") == "not_run":
-        return "Not run"
+        return "Skipped"
     return (
         f"{int(case.get('attempted', 0))}/"
         f"{int(case.get('executed', 0))}/"
@@ -145,7 +145,7 @@ def render_report(
     summary.add_column("Agent-RT", justify="right")
     rows = [
         ("Cases evaluated", len(sdk_evaluated), len(agent_evaluated)),
-        ("Not run (SDK passed)", 0, skipped),
+        ("Skipped (SDK passed)", 0, skipped),
         ("Model-inconclusive cases",
          sum(bool(c.get("capability_issue")) for c in sdk_evaluated),
          sum(bool(c.get("capability_issue")) for c in agent_evaluated)),
@@ -232,7 +232,7 @@ def render_report(
     )
     if skipped:
         out.print(
-            f"[dim]Not run: Agent-RT was skipped for {skipped} case(s) because "
+            f"[dim]Skipped: Agent-RT was skipped for {skipped} case(s) because "
             f"the normal OpenAI SDK completed all {repeats} trial(s) with "
             "final answers and no observed policy, tool-use or repeated-call "
             "findings. If any SDK trial is inconclusive or has a finding, "
