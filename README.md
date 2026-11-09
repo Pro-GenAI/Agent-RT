@@ -223,7 +223,7 @@ cases where the SDK does not pass every trial. Run `make eval-swarmguard 3`
 for three independent SDK attempts per case, with Agent-RT runs only when
 needed (up to 60 planned case/framework slots). Findings count as
 **confirmed** only when observed in every attempt. SDK-clean cases are
-marked **Not run** on the Agent-RT side, with an explanation and without
+marked **Skipped** on the Agent-RT side, with an explanation and without
 inventing passing grades. Increasing `k` executes only newly requested trial
 slots; decreasing it reuses already cached trials. Models that return
 completed but empty outputs produce cached, inconclusive capability outcomes
