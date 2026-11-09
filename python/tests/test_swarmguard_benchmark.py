@@ -16,7 +16,8 @@ BENCH = Path(__file__).resolve().parents[2] / "benchmarks" / "swarmguard"
 sys.path.insert(0, str(BENCH))
 
 from cache import (CacheMiss, CachedDecisionProvider, CachedModelProvider,
-                   NonCacheableResponse, ResponseCache, cached_sdk_completion)
+                   ModelCapabilityIssue, NonCacheableResponse, ResponseCache,
+                   cached_sdk_completion)
 import run as benchmark
 from run import (evaluate_case, load_cases, model_for_case,
                  parse_subagent_model_overrides, subagent_settings_for_case)
@@ -524,6 +525,88 @@ async def test_error_payload_and_incomplete_sdk_responses_are_not_cached(tmp_pat
                     messages=[{"role": "user", "content": "same"}], tools=[],
                 )
             assert cache.writes == 0
+
+
+
+@pytest.mark.anyio
+async def test_empty_agent_rt_model_completion_is_cached_as_capability_issue(tmp_path):
+    from ext.runtime.models.interfaces import ModelRequest, ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    class EmptyWorker:
+        name = "empty-worker"
+        def __init__(self):
+            self.calls = 0
+
+        async def complete(self, request):
+            self.calls += 1
+            return ModelResponse(
+                message=ModelMessage(role="assistant", content=()),
+                model=request.model, finish_reason="stop",
+            )
+
+    req = ModelRequest(
+        messages=(ModelMessage(role="user", content=(
+            ContentPart(type="text", text="test worker"),)),),
+        model="gemma-4-31b-it",
+    )
+    worker = EmptyWorker()
+    path = tmp_path / "empty-worker.sqlite"
+    with ResponseCache(path) as cache:
+        wrapped = CachedModelProvider(worker, cache, identity="worker-gemma")
+        for _ in range(2):
+            with pytest.raises(ModelCapabilityIssue, match="empty_completion"):
+                await wrapped.complete(req)
+        assert worker.calls == 1
+        assert cache.writes == 1
+        assert cache.hits == 1
+
+    # Read-only offline replay must reproduce the same issue without calling
+    # the provider. No raw empty response is misrepresented as an answer.
+    with ResponseCache(path, "read") as cache:
+        wrapped = CachedModelProvider(worker, cache, identity="worker-gemma")
+        with pytest.raises(ModelCapabilityIssue, match="empty_completion"):
+            await wrapped.complete(req)
+        assert worker.calls == 1
+        assert cache.hits == 1
+
+
+@pytest.mark.anyio
+async def test_empty_sdk_model_completion_is_cached_as_capability_issue(tmp_path):
+    class SDK:
+        def __init__(self):
+            self.calls = 0
+            self.chat = self
+            self.completions = self
+
+        async def create(self, **request):
+            self.calls += 1
+            return {
+                "choices": [{
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": ""},
+                }],
+                "model": request["model"],
+            }
+
+    sdk = SDK()
+    path = tmp_path / "sdk-model-empty.sqlite"
+    params = {
+        "model": "gemma-4-31b-it",
+        "messages": [{"role": "user", "content": "task"}],
+        "tools": [],
+    }
+    with ResponseCache(path) as cache:
+        for _ in range(2):
+            with pytest.raises(ModelCapabilityIssue, match="empty_completion"):
+                await cached_sdk_completion(sdk, cache, **params)
+        assert sdk.calls == 1
+        assert cache.writes == 1
+    with ResponseCache(path, "read") as cache:
+        with pytest.raises(ModelCapabilityIssue, match="empty_completion"):
+            await cached_sdk_completion(sdk, cache, **params)
+        assert sdk.calls == 1
+        assert cache.hits == 1
 
 
 def test_failed_decision_answers_are_not_cached(tmp_path):
