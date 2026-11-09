@@ -1481,7 +1481,7 @@ def test_sdk_skip_gate_requires_successful_tool_evidence_in_every_trial():
 
 
 @pytest.mark.anyio
-async def test_sdk_clean_case_skips_agent_rt_and_reports_not_run(tmp_path):
+async def test_sdk_clean_case_skips_agent_rt_and_reports_skipped(tmp_path):
     from configured import execute
     from report import render_report
     from rich.console import Console
@@ -1522,7 +1522,7 @@ async def test_sdk_clean_case_skips_agent_rt_and_reports_not_run(tmp_path):
         name = "must-not-be-called"
 
         async def complete(self, request):
-            raise AssertionError("Agent-RT should be Not run for SDK-clean case")
+            raise AssertionError("Agent-RT should be skipped for SDK-clean case")
 
     stages, updates = [], []
     sdk = SDK()
@@ -1545,13 +1545,13 @@ async def test_sdk_clean_case_skips_agent_rt_and_reports_not_run(tmp_path):
     assert skipped["status"] == "not_run"
     assert skipped["skip_reason"] == "sdk_clean_in_all_attempts"
     assert "attempted" not in skipped  # Not a fabricated zero-call passing trial.
-    assert any("Not run" in stage for stage in stages)
+    assert any("Skipped" in stage for stage in stages)
     assert updates[-1] == ("agent_rt", 2, 2, 4, 4)
     output = io.StringIO()
     render_report(report, console=Console(file=output, width=150, color_system=None))
     text = output.getvalue()
-    assert "Not run" in text
-    assert "Not run (SDK passed)" in text
+    assert "Skipped" in text
+    assert "Skipped (SDK passed)" in text
     assert "0/0" in text
     assert "because the normal OpenAI SDK completed all 2 trial(s)" in text
     assert "Skipped means not evaluated" in text
