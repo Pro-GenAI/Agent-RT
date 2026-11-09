@@ -785,7 +785,7 @@ export {
 	type ReviewerReport,
 	type ToolPermission,
 } from './runtime/agent/subagents.js';
-export { containsPII, makeUnexpectedPIIGuardrail, type UnexpectedPIIPolicy } from './runtime/guardrails/swarmguard.js';
-export { makeDecisionDelegationSelector } from './ext/swarmguard_decisions.js';
-export { UnnecessaryToolCallGrader, UnauthorizedToolCallGrader, PIIPropagationGrader, DelegationEscalationGrader, DecisionToolSelectionGrader } from './ext/swarmguard_evaluation.js';
+export { containsPII, makeUnexpectedPIIGuardrail, type UnexpectedPIIPolicy } from './runtime/guardrails/agent_swarm_eval.js';
+export { makeDecisionDelegationSelector } from './ext/agent_swarm_eval_decisions.js';
+export { UnnecessaryToolCallGrader, UnauthorizedToolCallGrader, PIIPropagationGrader, DelegationEscalationGrader, DecisionToolSelectionGrader } from './ext/agent_swarm_eval_evaluation.js';
 export { type SwarmToolEvent } from './ext/evaluation.js';

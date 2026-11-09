@@ -1,4 +1,4 @@
-"""SwarmGuard-Bench: minimal OpenAI SDK versus configured Agent-RT harness.
+"""Agent Swarm Eval: minimal OpenAI SDK versus configured Agent-RT harness.
 
 The public CLI runs the live two-way benchmark through configured.py. The
 scripted test doubles remain available to deterministic offline unit tests.
@@ -24,14 +24,14 @@ sys.path.insert(0, str(ROOT / "python" / "src"))
 from cache import (CachedDecisionProvider, CachedModelProvider, ResponseCache,
                    cached_sdk_completion)
 from ext.evaluation import EvaluationCase, EvaluationSample, SwarmToolEvent
-from ext.swarmguard_evaluation import (
+from ext.agent_swarm_eval_evaluation import (
     UnnecessaryToolCallGrader, UnauthorizedToolCallGrader, PIIPropagationGrader,
     DelegationEscalationGrader,
 )
 from ext.runtime.agent.config import AgentConfig, ModelSettings
 from ext.runtime.agent.loop import AgentLoop
 from ext.runtime.authorization.grants import CapabilityGrant
-from ext.runtime.guardrails.swarmguard import (
+from ext.runtime.guardrails.agent_swarm_eval import (
     UnexpectedPIIPolicy, contains_pii, make_unexpected_pii_guardrail,
 )
 from ext.runtime.guardrails.results import GuardrailViolationError
@@ -41,7 +41,7 @@ from ext.runtime.models.provider_settings import OpenAIProviderSettings
 from ext.runtime.tools.definitions import ToolDefinition
 from ext.runtime.tools.registry import ToolRegistry
 from ext.runtime.types import ContentPart, ModelMessage, ToolCall
-from ext.swarmguard_decisions import make_decision_delegation_selector
+from ext.agent_swarm_eval_decisions import make_decision_delegation_selector
 
 
 TOOLS = {
@@ -76,7 +76,7 @@ def load_cases() -> list[dict[str, Any]]:
             if line.strip():
                 cases.append(json.loads(line))
     if not cases:
-        raise RuntimeError("SwarmGuard benchmark has no cases")
+        raise RuntimeError("Agent Swarm Eval benchmark has no cases")
     ids = [str(item["id"]) for item in cases]
     if len(set(ids)) != len(cases):
         raise ValueError("duplicate benchmark case id")
@@ -85,9 +85,9 @@ def load_cases() -> list[dict[str, Any]]:
     )["top_20"]
     priority_ids = [entry["id"] for entry in priorities]
     if len(priority_ids) != 20 or len(set(priority_ids)) != 20:
-        raise ValueError("SwarmGuard priority manifest must contain 20 unique IDs")
+        raise ValueError("Agent Swarm Eval priority manifest must contain 20 unique IDs")
     if not set(priority_ids).issubset(ids):
-        raise ValueError("SwarmGuard priority manifest references unknown case IDs")
+        raise ValueError("Agent Swarm Eval priority manifest references unknown case IDs")
     by_id = {case["id"]: case for case in cases}
     priority_set = set(priority_ids)
     return [by_id[case_id] for case_id in priority_ids] + [
@@ -188,7 +188,7 @@ def subagent_settings_for_case(
 class ScriptedModel:
     """Deterministic malicious worker; attempts a hidden tool on the first turn."""
 
-    name = "swarmguard-scripted"
+    name = "agent-swarm-eval-scripted"
 
     def __init__(self, case: dict[str, Any]) -> None:
         self.case = case
@@ -557,7 +557,7 @@ async def run_agent_rt(
     attempted: list[tuple[str, dict[str, Any]]] = []
 
     class TrackingModel:
-        name = "swarmguard-tracking"
+        name = "agent-swarm-eval-tracking"
 
         async def complete(self, request: Any) -> ModelResponse:
             result = await cached_provider.complete(request)

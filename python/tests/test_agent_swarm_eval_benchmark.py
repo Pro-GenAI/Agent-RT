@@ -12,7 +12,7 @@ def anyio_backend():
     """Run these async tests on asyncio without requiring pytest-asyncio."""
     return "asyncio"
 
-BENCH = Path(__file__).resolve().parents[2] / "benchmarks" / "swarmguard"
+BENCH = Path(__file__).resolve().parents[2] / "benchmarks" / "agent-swarm-eval"
 sys.path.insert(0, str(BENCH))
 
 from cache import (CacheMiss, CachedDecisionProvider, CachedModelProvider,
@@ -975,12 +975,12 @@ def test_failed_decision_transport_does_not_update_cache(tmp_path):
         assert cache.writes == 0
 
 
-def test_make_eval_swarmguard_supports_optional_worker_alias():
+def test_make_eval_agent_swarm_eval_supports_optional_worker_alias():
     """One Makefile entry point, with an explicit model override."""
     makefile = (BENCH.parents[1] / "Makefile").read_text(encoding="utf-8")
-    assert ".PHONY: eval-swarmguard\n" in makefile
-    assert "eval-swarmguard:" in makefile
-    assert "eval-swarmguard-alt" not in makefile
+    assert ".PHONY: eval-agent-swarm-eval\n" in makefile
+    assert "eval-agent-swarm-eval:" in makefile
+    assert "eval-agent-swarm-eval-alt" not in makefile
     assert '$(if $(strip $(SUBAGENT_MODEL)),--subagent-model "$(SUBAGENT_MODEL)")' in makefile
 
 
@@ -996,7 +996,7 @@ def test_public_cli_requires_explicit_config_without_scripted_fallback(tmp_path)
         check=False, text=True, capture_output=True,
     )
     assert result.returncode != 0
-    assert "[SwarmGuard] Loading configuration..." in result.stderr
+    assert "[Agent Swarm Eval] Loading configuration..." in result.stderr
     assert "config file not found" in result.stderr
     assert "Starting evaluation" not in result.stderr
     assert not result.stdout
@@ -1277,7 +1277,7 @@ async def test_reviewer_timeout_explains_shared_deadline_without_reset(tmp_path)
         name = "slow-reviewer-test"
 
         async def complete(self, request):
-            if request.metadata.get("swarmguard_role") == "reviewer":
+            if request.metadata.get("agent_swarm_eval_role") == "reviewer":
                 await asyncio.sleep(2)
             return ModelResponse(
                 message=ModelMessage(
@@ -1868,7 +1868,7 @@ def test_legacy_trial_zero_cache_keys_replay_in_k_one(tmp_path):
     pairs = (
         ("llm:openai-sdk", "provider", "sdk-configured-v3:worker-a"),
         ("llm:agent-rt", "provider", "agent-rt-configured-v3:worker-a"),
-        ("decision", "model", "swarmguard-decision-v3:mock-a"),
+        ("decision", "model", "agent-swarm-eval-decision-v3:mock-a"),
     )
     path = tmp_path / "legacy-trial-zero.sqlite"
     with ResponseCache(path) as cache:
@@ -1998,10 +1998,10 @@ async def test_k_changes_reuse_first_trial_cache_and_only_add_missing_trials(tmp
 
 def test_make_eval_accepts_positional_repeat_argument():
     makefile = (BENCH.parents[1] / "Makefile").read_text(encoding="utf-8")
-    assert "SWARMGUARD_REPEATS" in makefile
+    assert "AGENT_SWARM_EVAL_REPEATS" in makefile
     assert "$(word 2,$(MAKECMDGOALS))" in makefile
-    assert '--repeats "$(SWARMGUARD_REPEATS)"' in makefile
-    assert "eval-swarmguard-alt" not in makefile
+    assert '--repeats "$(AGENT_SWARM_EVAL_REPEATS)"' in makefile
+    assert "eval-agent-swarm-eval-alt" not in makefile
 
 
 def test_rich_report_highlights_violations_and_bounds_long_runs():
@@ -2124,11 +2124,11 @@ async def test_configured_cli_progress_only_writes_to_stderr(
     assert "No flagged findings" not in captured.out
     assert "no final answer" not in captured.out
     assert "configurations" not in captured.out
-    assert "[SwarmGuard] Loading configuration..." in captured.err
+    assert "[Agent Swarm Eval] Loading configuration..." in captured.err
     assert "Validating Decision model" in captured.err
     assert "100%" in captured.err
-    assert "[SwarmGuard] Evaluation complete" in captured.err
-    assert not captured.out.startswith("[SwarmGuard]")
+    assert "[Agent Swarm Eval] Evaluation complete" in captured.err
+    assert not captured.out.startswith("[Agent Swarm Eval]")
 
     # JSON remains available to automation and as a saved artifact.
     json_path = tmp_path / "complete.json"

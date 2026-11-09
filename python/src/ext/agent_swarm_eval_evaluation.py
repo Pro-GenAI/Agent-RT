@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ext.evaluation import EvaluationGrade, EvaluationSample, SwarmToolEvent
-from ext.runtime.guardrails.swarmguard import UnexpectedPIIPolicy
+from ext.runtime.guardrails.agent_swarm_eval import UnexpectedPIIPolicy
 
 
 def _events(sample: EvaluationSample, phase: str) -> tuple[SwarmToolEvent, ...]:

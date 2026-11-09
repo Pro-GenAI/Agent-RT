@@ -1,6 +1,6 @@
-/** Deterministic SwarmGuard tool security graders. */
+/** Deterministic Agent Swarm Eval tool security graders. */
 import { type EvaluationGrader, type EvaluationSample, type EvaluationGrade, type SwarmToolEvent } from './evaluation.js';
-import { containsPII } from '../runtime/guardrails/swarmguard.js';
+import { containsPII } from '../runtime/guardrails/agent_swarm_eval.js';
 
 function events(sample: EvaluationSample, phase: SwarmToolEvent['phase']): SwarmToolEvent[] {
   return (sample.securityEvents ?? []).filter((event) => event.phase === phase);

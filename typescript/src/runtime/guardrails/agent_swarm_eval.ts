@@ -1,4 +1,4 @@
-/** Opt-in SwarmGuard email/canary tool-argument guard. Never logs matched values. */
+/** Opt-in Agent Swarm Eval email/canary tool-argument guard. Never logs matched values. */
 import { type ToolInputGuardrail } from './tool_guardrails.js';
 
 const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
@@ -28,7 +28,7 @@ export function makeUnexpectedPIIGuardrail(
       return {
         action: 'block',
         reason: 'unexpected sensitive data in tool arguments',
-        classifications: ['swarmguard', 'unexpected-pii'],
+        classifications: ['agent-swarm-eval', 'unexpected-pii'],
       };
     }
     return {};

@@ -1,4 +1,4 @@
-"""Live SwarmGuard comparison driven solely by the project Agent-RT YAML.
+"""Live Agent Swarm Eval comparison driven solely by the project Agent-RT YAML.
 
 The normal OpenAI SDK baseline and Agent-RT use the same configured worker
 deployment. Agent-RT additionally uses the configured reviewer/main model, real
@@ -24,7 +24,7 @@ from ext.decisions import default_decision_provider
 from ext.runtime.agent.config import AgentConfig, ModelSettings
 from ext.runtime.agent.delegation import AgentLoopInvoker
 from ext.runtime.agent.subagents import SubagentSwarm
-from ext.runtime.guardrails.swarmguard import (
+from ext.runtime.guardrails.agent_swarm_eval import (
     UnexpectedPIIPolicy, make_unexpected_pii_guardrail,
 )
 from ext.runtime.models.configured import load_model
@@ -50,7 +50,7 @@ class EvaluationProgress:
 
     def status(self, message: str) -> None:
         self.finish()
-        self.stream.write(f"[SwarmGuard] {message}\n")
+        self.stream.write(f"[Agent Swarm Eval] {message}\n")
         self.stream.flush()
 
     def update(
@@ -63,7 +63,7 @@ class EvaluationProgress:
             framework, framework
         )
         line = (
-            f"[SwarmGuard] [{'#' * filled}{'-' * (self.width - filled)}] "
+            f"[Agent Swarm Eval] [{'#' * filled}{'-' * (self.width - filled)}] "
             f"{overall_done}/{overall_total} ({ratio:.0%}) "
             f"| {label}: {phase_done}/{phase_total} slots"
         )
@@ -104,7 +104,7 @@ def configured_models(
     aliases = {entry.model_name for entry in config.models}
     if worker not in aliases:
         raise ValueError(
-            f"SwarmGuard sub-agent model {worker!r} is not a configured model_list "
+            f"Agent Swarm Eval sub-agent model {worker!r} is not a configured model_list "
             f"alias. Available aliases: {', '.join(sorted(aliases))}"
         )
     reviewer = str(subagents.get("reviewer_model") or config.default_model or "")
@@ -115,7 +115,7 @@ def configured_models(
     deployment = config.deployments(worker)
     if len(deployment) != 1:
         raise ValueError(
-            "SwarmGuard requires exactly one worker deployment; "
+            "Agent Swarm Eval requires exactly one worker deployment; "
             "ordered fallback lists cannot be reproduced by the SDK baseline"
         )
     worker_deployment = deployment[0]
@@ -136,7 +136,7 @@ def configured_decisions(
     if not isinstance(settings, Mapping) or not settings.get("base_url") or not settings.get("model"):
         raise ValueError(
             "agent_rt_settings.decision_model must specify provider, base_url "
-            "and model before running SwarmGuard"
+            "and model before running Agent Swarm Eval"
         )
     kind = settings.get("provider", "jev")
     if kind not in ("jev", "openai"):
@@ -144,7 +144,7 @@ def configured_decisions(
     backend = provider if provider is not None else default_decision_provider(
         environ=config.runtime_environment()
     )
-    identity = f"swarmguard-decision-v3:{kind}:{settings['base_url']}:{settings['model']}"
+    identity = f"agent-swarm-eval-decision-v3:{kind}:{settings['base_url']}:{settings['model']}"
     return CachedDecisionProvider(backend, cache, identity=identity)
 
 
@@ -328,7 +328,7 @@ def _shared_deadline_hint(timeout: Any) -> str:
         f"{float(timeout):g}s" if timeout is not None else "the configured"
     )
     return (
-        f". SwarmGuard's {configured} execution deadline covers both the "
+        f". Agent Swarm Eval's {configured} execution deadline covers both the "
         "worker and its reviewer. Increase "
         "agent_rt_settings.execution_limits.timeout_seconds in the local "
         "./agent-rt.yaml (for example, to 120) and rerun. "
@@ -355,7 +355,7 @@ async def run_agent_rt(
     total_tokens = 0
 
     class TrackingModel:
-        name = "swarmguard-configured"
+        name = "agent-swarm-eval-configured"
 
         async def complete(self, request: Any) -> ModelResponse:
             nonlocal total_tokens
@@ -367,7 +367,7 @@ async def run_agent_rt(
                     else (response.usage.input_tokens or 0)
                     + (response.usage.output_tokens or 0)
                 )
-            if request.metadata.get("swarmguard_role") == "worker":
+            if request.metadata.get("agent_swarm_eval_role") == "worker":
                 attempted.extend(
                     (tool.name, dict(tool.arguments))
                     for tool in response.message.tool_calls
@@ -410,7 +410,7 @@ async def run_agent_rt(
             name="reviewer",
             instructions="Review delegated worker results; do not call tools.",
             model=ModelSettings(
-                model=reviewer, metadata={"swarmguard_role": "reviewer"},
+                model=reviewer, metadata={"agent_swarm_eval_role": "reviewer"},
             ),
         ),
         tool_selector=record_selection,
@@ -426,7 +426,7 @@ async def run_agent_rt(
                 name="worker",
                 instructions=bench.worker_system_prompt(case),
                 model=ModelSettings(
-                    model=worker, metadata={"swarmguard_role": "worker"},
+                    model=worker, metadata={"agent_swarm_eval_role": "worker"},
                 ),
             ),
             allowed_tools=permissions,
@@ -763,7 +763,7 @@ async def execute(
 
 async def main(bench: Any) -> None:
     parser = argparse.ArgumentParser(
-        description="SwarmGuard: live OpenAI SDK vs Agent-RT with mandatory Decision model"
+        description="Agent Swarm Eval: live OpenAI SDK vs Agent-RT with mandatory Decision model"
     )
     parser.add_argument(
         "--config", type=Path, default=Path("agent-rt.yaml"),
@@ -830,7 +830,7 @@ async def main(bench: Any) -> None:
             if exc.name != "rich":
                 raise
             raise RuntimeError(
-                "Rich is needed for SwarmGuard terminal tables. "
+                "Rich is needed for Agent Swarm Eval terminal tables. "
                 "Install the existing CLI extra: pip install 'agent-rt[cli]' "
                 "(or: pip install rich). Use --json for raw output."
             ) from exc

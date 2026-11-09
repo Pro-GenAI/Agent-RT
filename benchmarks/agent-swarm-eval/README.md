@@ -1,4 +1,4 @@
-# SwarmGuard-Bench
+# Agent Swarm Eval
 
 This experimental benchmark contains **65 synthetic cases** and runs the
 **ten top-ranked cases on the OpenAI SDK** by default, running Agent-RT
@@ -20,13 +20,13 @@ omits token usage rather than comparing unequal workloads.
 From the repository root:
 
 ```bash
-make eval-swarmguard          # one attempt per case (default)
-make eval-swarmguard 3        # up to three attempts per case per framework
+make eval-agent-swarm-eval          # one attempt per case (default)
+make eval-agent-swarm-eval 3        # up to three attempts per case per framework
 ```
 
 `k` is a positive integer supplied as the first positional argument after
-`eval-swarmguard`. For custom case counts, use
-`python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20 --repeats 3`.
+`eval-agent-swarm-eval`. For custom case counts, use
+`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 20 --repeats 3`.
 The default is `k=1`. With ten selected cases and `k=3`, the benchmark
 runs all 30 OpenAI SDK attempts and **up to** 30 Agent-RT attempts.
 The Agent-RT portion is skipped for an individual case only if every SDK
@@ -63,7 +63,7 @@ The benchmark report uses the existing Python `cli` extra's
 emitted without Rich using `--json`. Progress counts processed
 case/framework slots (including skips), not individual HTTP requests.
 
-This is the **only SwarmGuard Makefile evaluation target**. It runs the
+This is the **only Agent Swarm Eval Makefile evaluation target**. It runs the
 two-way **live** comparison, never silently falls back to scripted answers,
 and always uses `./agent-rt.yaml` explicitly. A real, functioning Decision
 model must be configured before any evaluation case can execute.
@@ -128,18 +128,18 @@ Use `--subagent-model ALIAS` with a name declared under `model_list`.
 For the usual Makefile workflow, set `SUBAGENT_MODEL` explicitly:
 
 ```bash
-make eval-swarmguard SUBAGENT_MODEL=subagent-alt   # ten cases per framework
+make eval-agent-swarm-eval SUBAGENT_MODEL=subagent-alt   # ten cases per framework
 ```
 
 For direct CLI use, including five-case evaluations:
 
 ```bash
 # Five cases per framework, with every worker using the alternate model.
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml \
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml \
   --subagent-model subagent-alt --limit 5
 
 # Compare a second model using the same ten-case selection.
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml \
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml \
   --subagent-model subagent --limit 10
 ```
 
@@ -175,7 +175,7 @@ For a live, two-model evaluation, start with 120 seconds rather than the
 This setting is a hard upper bound, not a guaranteed completion time: slow
 worker calls leave less time for review. If the reviewer fails with
 `TimeoutError: parent deadline expired`, increase this value in the
-**local, git-ignored** `./agent-rt.yaml`, then rerun `make eval-swarmguard`.
+**local, git-ignored** `./agent-rt.yaml`, then rerun `make eval-agent-swarm-eval`.
 Do not reset the deadline between worker and reviewer or silently treat
 timed-out cases as successful. The normal SDK comparison does not use an
 Agent-RT reviewer, so its latency is not directly comparable.
@@ -326,16 +326,16 @@ to avoid reusing the previous account's responses.
 For direct script use (no additional Makefile targets):
 
 ```bash
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml             # default: 10
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 5   # original quick five
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 20  # all ranked challenges
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --repeats 3   # three attempts per case
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --limit 65  # entire dataset
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --subagent-model subagent-alt --limit 5
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode read
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --cache-mode refresh
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --output report.json # Rich table + complete JSON file
-python benchmarks/swarmguard/run.py --config ./agent-rt.yaml --json               # complete JSON on stdout
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml             # default: 10
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 5   # original quick five
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 20  # all ranked challenges
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --repeats 3   # three attempts per case
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 65  # entire dataset
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --subagent-model subagent-alt --limit 5
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --cache-mode read
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --cache-mode refresh
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --output report.json # Rich table + complete JSON file
+python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --json               # complete JSON on stdout
 ```
 
 `--output report.json` saves all per-case grader details while retaining Rich
@@ -378,14 +378,14 @@ endpoints:
 
 ```bash
 cd python
-pytest tests/test_swarmguard.py tests/test_swarmguard_benchmark.py
+pytest tests/test_agent_swarm_eval.py tests/test_agent_swarm_eval_benchmark.py
 ```
 
 The test-only helpers in `run.py` remain available for these deterministic
 security invariants. Existing baseline code and datasets predate these priority
 and fixture improvements; distinguish preexisting work from sprint work
 explicitly in the submission. All fixtures use synthetic contact addresses
-and inert tool handlers; no live exfiltration is performed. They are **not** the user-facing `make eval-swarmguard`
+and inert tool handlers; no live exfiltration is performed. They are **not** the user-facing `make eval-agent-swarm-eval`
 execution path. Install Python package dependencies as described in the
-repository contributor handbook; the SwarmGuard tests use the AnyIO pytest
+repository contributor handbook; the Agent Swarm Eval tests use the AnyIO pytest
 plugin with the asyncio backend.

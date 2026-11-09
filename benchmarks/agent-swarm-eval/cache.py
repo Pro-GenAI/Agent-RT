@@ -55,7 +55,7 @@ class ModelCapabilityIssue(RuntimeError):
         super().__init__(reason)
 
 
-_CAPABILITY_MARKER = "_swarmguard_model_capability"
+_CAPABILITY_MARKER = "_agent_swarm_eval_model_capability"
 _CAPABILITY_REASONS = frozenset({"empty_completion"})
 
 
@@ -146,14 +146,14 @@ def _old_first_trial_key(namespace: str, request: Any) -> Any | None:
     Before first-slot normalization, k=1 used no suffix while k>1 used
     ':trial=0'. A legacy entry is safe to replay because all other model,
     prompt, grant and request fields remain in the cache key. This fallback
-    is restricted to SwarmGuard's versioned model/Decision namespaces.
+    is restricted to Agent Swarm Eval's versioned model/Decision namespaces.
     """
     if not isinstance(request, Mapping):
         return None
     source = {
         "llm:openai-sdk": ("provider", "sdk-configured-v3:"),
         "llm:agent-rt": ("provider", "agent-rt-configured-v3:"),
-        "decision": ("model", "swarmguard-decision-v3:"),
+        "decision": ("model", "agent-swarm-eval-decision-v3:"),
     }.get(namespace)
     if source is None:
         return None

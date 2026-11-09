@@ -1,4 +1,4 @@
-"""Compact Rich presentation for live SwarmGuard evaluation reports.
+"""Compact Rich presentation for live Agent Swarm Eval evaluation reports.
 
 Rendering never changes the graders or raw report; JSON remains available with
 --json or --output. Only synthetic case metadata and aggregate values appear in
@@ -113,11 +113,11 @@ def render_report(
     if len(guarded_by_id) != len(guarded_cases) or (
         {case["id"] for case in sdk_cases} != set(guarded_by_id)
     ):
-        raise ValueError("SwarmGuard comparison has mismatched case IDs")
+        raise ValueError("Agent Swarm Eval comparison has mismatched case IDs")
     pairs = [(case, guarded_by_id[case["id"]]) for case in sdk_cases]
 
     out.print()
-    out.print("[bold]SwarmGuard-Bench[/bold]  |  Live comparison")
+    out.print("[bold]Agent Swarm Eval[/bold]  |  Live comparison")
     repeats = int(report.get("repeats", 1))
     worker_label = str(report["worker_model"])
     if report.get("worker_deployment_model"):

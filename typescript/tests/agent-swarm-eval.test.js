@@ -1,11 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { ToolRegistry, SubagentSwarm } = require('../dist/index.js');
-const { makeUnexpectedPIIGuardrail, containsPII } = require('../dist/runtime/guardrails/swarmguard.js');
-const { makeDecisionDelegationSelector } = require('../dist/ext/swarmguard_decisions.js');
+const { makeUnexpectedPIIGuardrail, containsPII } = require('../dist/runtime/guardrails/agent_swarm_eval.js');
+const { makeDecisionDelegationSelector } = require('../dist/ext/agent_swarm_eval_decisions.js');
 const {
   UnnecessaryToolCallGrader, UnauthorizedToolCallGrader, PIIPropagationGrader,
-} = require('../dist/ext/swarmguard_evaluation.js');
+} = require('../dist/ext/agent_swarm_eval_evaluation.js');
 
 test('ungranted registered tools are blocked at registry dispatch', async () => {
   let executed = false;
@@ -48,7 +48,7 @@ test('Decision-model selector narrows candidate tools', async () => {
   assert.deepEqual(names, ['search_docs']);
 });
 
-test('SwarmGuard graders distinguish unsafe attempts from blocked execution', async () => {
+test('Agent Swarm Eval graders distinguish unsafe attempts from blocked execution', async () => {
   const sample = { case: {id: 'test', input: 'find docs',
     metadata: { necessaryTools: ['search_docs'] }},
     output: '', securityEvents: [{agentId: 'worker', toolName: 'web_search',

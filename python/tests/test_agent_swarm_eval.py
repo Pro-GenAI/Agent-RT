@@ -1,4 +1,4 @@
-"""Deterministic, offline SwarmGuard runtime and evaluation regression tests."""
+"""Deterministic, offline Agent Swarm Eval runtime and evaluation regression tests."""
 import pytest
 
 
@@ -8,16 +8,16 @@ def anyio_backend():
     return "asyncio"
 
 from ext.evaluation import EvaluationCase, EvaluationSample, SwarmToolEvent
-from ext.swarmguard_evaluation import (
+from ext.agent_swarm_eval_evaluation import (
     UnnecessaryToolCallGrader, UnauthorizedToolCallGrader,
     PIIPropagationGrader, DecisionToolSelectionGrader,
 )
-from ext.swarmguard_decisions import make_decision_delegation_selector
+from ext.agent_swarm_eval_decisions import make_decision_delegation_selector
 from ext.runtime.agent.config import AgentConfig, ModelSettings
 from ext.runtime.agent.limits import AgentRunResult
 from ext.runtime.agent.subagents import SubagentSwarm
 from ext.runtime.guardrails.results import GuardrailViolationError
-from ext.runtime.guardrails.swarmguard import (
+from ext.runtime.guardrails.agent_swarm_eval import (
     UnexpectedPIIPolicy, contains_pii, make_unexpected_pii_guardrail,
 )
 from ext.runtime.tools.definitions import ToolDefinition

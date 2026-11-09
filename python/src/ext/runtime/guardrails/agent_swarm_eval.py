@@ -1,4 +1,4 @@
-"""Opt-in SwarmGuard PII detection for tool-call arguments.
+"""Opt-in Agent Swarm Eval PII detection for tool-call arguments.
 
 Matches email addresses or explicit synthetic canaries recursively without logging values.
 """
@@ -54,7 +54,7 @@ def make_unexpected_pii_guardrail(
             return GuardrailResult(
                 action="block",
                 reason="unexpected sensitive data in tool arguments",
-                classifications=("swarmguard", "unexpected-pii"),
+                classifications=("agent-swarm-eval", "unexpected-pii"),
             )
         return GuardrailResult()
 

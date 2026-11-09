@@ -56,14 +56,14 @@ API HTTP routes require JSON request bodies and reject foreign Origins; unauthen
 
 Governed subagent delegation lives in `src/ext/runtime/agent/subagents.py`; keep depth, inherited history, per-tool read/write narrowing, reviewer isolation, and concurrency-safe spans/metrics aligned with TypeScript. Ensure registered delegation validates the invocation's exact scoped owner and snapshots only completed tool-call/result pairs, with pending turns as untrusted data. Ensure live tool registration side effects are checked at dispatch, reviewer evidence strips system authority, reviewer calls reserve shared budget capacity, and cancellation/deadlines are passed to AgentLoop. Regression coverage: `tests/test_subagents.py`.
 
-## SwarmGuard configuration and benchmark contract
+## Agent Swarm Eval configuration and benchmark contract
 
-The repo-root `make eval-swarmguard` is the **sole live SwarmGuard comparison**:
+The repo-root `make eval-agent-swarm-eval` is the **sole live Agent Swarm Eval comparison**:
 a minimal manual OpenAI SDK worker harness versus configured Python Agent-RT
 `SubagentSwarm` (worker, independent reviewer, Decision-selected grants,
 authorization and PII tool-input guard). The project root `agent-rt.yaml`
-is explicitly loaded by `benchmarks/swarmguard/run.py` /
-`benchmarks/swarmguard/configured.py`, not auto-discovered. It is deliberately
+is explicitly loaded by `benchmarks/agent-swarm-eval/run.py` /
+`benchmarks/agent-swarm-eval/configured.py`, not auto-discovered. It is deliberately
 ignored by Git; keep `../agent-rt.example.yaml` and the website config
 reference synchronized instead. Do not read `EVAL_*` or model-selection
 environment variables in the benchmark: `model_list` routes provider/model
@@ -73,7 +73,7 @@ aliases and `os.environ/NAME` resolves secrets. The worker alias is
 Both aliases must refer to `model_list`; unknown nested settings/keys remain
 fatal and parity with TypeScript `src/ext/config.ts` is mandatory. The
 benchmark requires exactly one OpenAI-compatible worker deployment to keep
-both harnesses on the same model and endpoint. Outside SwarmGuard, declaring
+both harnesses on the same model and endpoint. Outside Agent Swarm Eval, declaring
 a worker alias in YAML alone does **not** automatically make generic agents
 delegate; application code must still construct the worker/delegation path.
 
@@ -99,8 +99,8 @@ the endpoint is online now; `refresh` forces a fresh call. The live CLI
 prints immediate initialization, Decision-preflight status and a flushed
 100-step case-completion progress bar to **stderr** (TTY overwrite,
 newline snapshots for redirected logs); stdout remains parseable JSON.
-Keep `python/tests/test_swarmguard.py` and
-`python/tests/test_swarmguard_benchmark.py` deterministic/offline; their
+Keep `python/tests/test_agent_swarm_eval.py` and
+`python/tests/test_agent_swarm_eval_benchmark.py` deterministic/offline; their
 async tests use `pytest.mark.anyio` with the asyncio backend fixture and
 must not require network access. There is no separate test Makefile target.
-Read `../benchmarks/swarmguard/AGENTS.md` before changing the benchmark.
+Read `../benchmarks/agent-swarm-eval/AGENTS.md` before changing the benchmark.

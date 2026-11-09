@@ -52,7 +52,7 @@ Audit regression invariants: automatic YAML discovery loads only user-home confi
 
 Governed subagent delegation lives in `src/runtime/agent/subagents.ts`; keep depth, inherited history, per-tool read/write narrowing, reviewer isolation, and concurrency-safe spans/metrics aligned with Python. Ensure registered delegation validates the invocation's exact scoped owner and snapshots only completed tool-call/result pairs, with pending turns as untrusted data. Ensure own-key checks prevent prototype tool-name grants, live tool registration side effects are checked at dispatch, reviewer evidence strips system authority, reviewer calls reserve shared budget capacity, and abort/deadline signals reach AgentLoop. Regression coverage: `tests/subagents.test.js`.
 
-## SwarmGuard YAML parity and evaluation contract
+## Agent Swarm Eval YAML parity and evaluation contract
 
 Keep `src/ext/config.ts` schema validation synchronized with Python's
 `python/src/ext/config.py`: the YAML `agent_rt_settings.subagents` section
@@ -66,7 +66,7 @@ contain committed credentials; the benchmark selects it explicitly.
 Alias registration does not itself auto-start sub-agent delegation in
 generic programs.
 
-The repo-root `make eval-swarmguard` is the **only** SwarmGuard
+The repo-root `make eval-agent-swarm-eval` is the **only** Agent Swarm Eval
 evaluation Makefile target. It calls a live **Python** comparison of the
 manual OpenAI SDK harness against actual Agent-RT `SubagentSwarm`
 delegation with a Decision-guided tool selector, least-privilege
@@ -82,4 +82,4 @@ be cached. Startup and a 100-case-run progress bar appear on flushed
 **stderr**, with the final JSON on **stdout**. Synthetic PII and mock
 tools must never become real side effects. Keep the TS shared security
 contracts and regression tests in step with Python where relevant;
-read `../benchmarks/swarmguard/AGENTS.md` for the full invariant list.
+read `../benchmarks/agent-swarm-eval/AGENTS.md` for the full invariant list.

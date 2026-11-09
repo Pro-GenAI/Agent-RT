@@ -1,11 +1,11 @@
-# SwarmGuard benchmark maintenance instructions
+# Agent Swarm Eval benchmark maintenance instructions
 
-These instructions apply to `benchmarks/swarmguard/`. Read root `AGENTS.md`
+These instructions apply to `benchmarks/agent-swarm-eval/`. Read root `AGENTS.md`
 and the Python/TypeScript package instructions when changing those runtimes.
 
 ## Scope and comparison
 
-SwarmGuard investigates unexpected behavior in delegated AI agents for the
+Agent Swarm Eval investigates unexpected behavior in delegated AI agents for the
 2026 Swarm Alignment Sprint. It compares only:
 - `openai_sdk`: a *minimal reference manual harness* using the normal OpenAI
   SDK, same YAML-configured worker deployment and full inert mock tool catalog
@@ -14,7 +14,7 @@ SwarmGuard investigates unexpected behavior in delegated AI agents for the
   permission checks, Decision-model-selected worker tools, capability grants,
   registry authorization and the unexpected-PII guard.
 
-The only user-facing Makefile evaluation target is `make eval-swarmguard` from the root.
+The only user-facing Makefile evaluation target is `make eval-agent-swarm-eval` from the root.
 It must always run **live** using explicitly selected `./agent-rt.yaml`;
 it must **never silently fall back to scripted mocks** or a missing/failed
 Decision model. Keep deterministic offline model/provider doubles strictly
@@ -28,7 +28,7 @@ never invent a final answer or silently remove unsuccessful attempts.
 The live CLI reports YAML parsing and Decision-model validation, then shows
 a dynamic completed-run progress bar: **20 completed runs by default**
 (ten prioritized cases per framework), multiplied by optional positional
-`k` in `make eval-swarmguard k` (or `--repeats K` on the CLI).
+`k` in `make eval-agent-swarm-eval k` (or `--repeats K` on the CLI).
 Every selected case receives `k` independent SDK attempts. Agent-RT receives
 `k` attempts only when the SDK is not unanimously clean. A clean SDK case
 requires *all* trials to finish with a final answer, execute the fixture's
@@ -78,7 +78,7 @@ deployment, so the SDK baseline uses the *same upstream model and endpoint*.
 `model_list` alias for all benchmark worker cases; `execute` and the CLI
 pass it through without changing the reviewer or Decision model. The
 Makefile can forward this alias with `SUBAGENT_MODEL=...` on the existing
-`make eval-swarmguard` target; this does not change the reviewer or Decision
+`make eval-agent-swarm-eval` target; this does not change the reviewer or Decision
 model and does not use EVAL_* environment config. An unknown
 alias or multi-deployment alias must fail before execution. SDK cache keys
 must incorporate the selected alias in addition to physical deployment
@@ -188,8 +188,8 @@ research scope explicitly changes.
 
 Relevant enforcement lives in Python
 `ext/runtime/agent/subagents.py`, `ext/runtime/agent/delegation.py`,
-`ext/runtime/tools/registry.py`, `ext/runtime/guardrails/swarmguard.py`,
-`ext/swarmguard_decisions.py`, `ext/swarmguard_evaluation.py` and
+`ext/runtime/tools/registry.py`, `ext/runtime/guardrails/agent_swarm_eval.py`,
+`ext/agent_swarm_eval_decisions.py`, `ext/agent_swarm_eval_evaluation.py` and
 corresponding TypeScript modules.
 
 ## Cache contract
@@ -229,16 +229,16 @@ or malformed preflight must stop the evaluation before any SDK request.
 
 ## Tests and maintenance
 
-Run `cd python && pytest tests/test_swarmguard.py
-tests/test_swarmguard_benchmark.py` and the TypeScript suite when touching
+Run `cd python && pytest tests/test_agent_swarm_eval.py
+tests/test_agent_swarm_eval_benchmark.py` and the TypeScript suite when touching
 shared contracts. The CLI needs live credentials; **tests must use offline
 doubles**. Test: absent Decision model, broken Decision response/transport,
 SDK vs real swarm comparison, actual no-tool-execution enforcement, and
 two identical runs with zero second-run SDK, reviewer, worker and Decision
 calls. Check that a changed model/endpoint identity causes a cache miss.
 Use `pytest.mark.anyio` and the `anyio_backend='asyncio'` test fixture in
-SwarmGuard-specific Python tests, even when pytest-asyncio is absent.
-The retired `make eval-swarmguard-tests` target and legacy
+Agent Swarm Eval-specific Python tests, even when pytest-asyncio is absent.
+The retired `make eval-agent-swarm-eval-tests` target and legacy
 `--framework`/scripted CLI options must not be reintroduced; the
 scripted harness remains available as imported helpers for regression tests.
 

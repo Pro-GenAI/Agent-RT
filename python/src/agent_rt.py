@@ -641,11 +641,11 @@ def __dir__() -> list[str]:
 
 # Preserve the historical public identity of the moved core symbols so
 # introspection and pickle lookup continue through agent_rt.<Name>.
-from ext.runtime.guardrails.swarmguard import (
+from ext.runtime.guardrails.agent_swarm_eval import (
     UnexpectedPIIPolicy, contains_pii, make_unexpected_pii_guardrail,
 )
-from ext.swarmguard_decisions import make_decision_delegation_selector
-from ext.swarmguard_evaluation import (
+from ext.agent_swarm_eval_decisions import make_decision_delegation_selector
+from ext.agent_swarm_eval_evaluation import (
     UnnecessaryToolCallGrader, UnauthorizedToolCallGrader,
     PIIPropagationGrader, DelegationEscalationGrader, DecisionToolSelectionGrader,
 )
