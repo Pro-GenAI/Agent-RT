@@ -12,8 +12,10 @@ ts-verify:
 # Strict live comparison using the repository's explicitly selected YAML.
 # Both workers and the mandatory Decision endpoint are configured there.
 # No EVAL_* overrides or separate benchmark modes.
+# Optional SUBAGENT_MODEL=<model_list alias> selects one worker model for
+# all cases in both harnesses; the reviewer/Decision models stay configured.
 .PHONY: eval-swarmguard
 
 eval-swarmguard:
 	@printf '[SwarmGuard] Initializing evaluation...\n' >&2
-	@python -u benchmarks/swarmguard/run.py --config ./agent-rt.yaml
+	@python -u benchmarks/swarmguard/run.py --config ./agent-rt.yaml $(if $(strip $(SUBAGENT_MODEL)),--subagent-model "$(SUBAGENT_MODEL)")
