@@ -595,6 +595,10 @@ async def execute(
     on_progress: Callable[[str, int, int, int, int], None] | None = None,
 ) -> dict[str, Any]:
     """Strict live comparison. Validate Decision model first; no scripted fallback."""
+    if repeats < 1:
+        raise ValueError("--repeats must be a positive integer")
+    if limit is not None and limit < 1:
+        raise ValueError("--limit must be positive")
     if on_stage is not None:
         on_stage("Resolving configured worker and reviewer models...")
     worker, reviewer, deployment = configured_models(
@@ -612,11 +616,7 @@ async def execute(
         on_stage("Decision model ready.")
     cases = bench.load_cases()
     if limit is not None:
-        if limit < 1:
-            raise ValueError("--limit must be positive")
         cases = cases[:limit]
-    if repeats < 1:
-        raise ValueError("--repeats must be a positive integer")
     total = len(cases) * 2 * repeats
     completed = 0
     if on_stage is not None:
