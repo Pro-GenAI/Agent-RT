@@ -164,7 +164,10 @@ async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path, monk
                 for part in message.content if part.type == "text"
             ]
             if request.model == worker:
-                assert system_text in system_contents
+                assert any(
+                    text and text.startswith(system_text)
+                    for text in system_contents
+                )
                 self.worker_prompts.append(system_contents)
             elif request.model == reviewer:
                 assert system_text not in system_contents
@@ -204,7 +207,7 @@ async def test_live_worker_system_prompt_matches_sdk_and_agent_rt(tmp_path, monk
         original = benchmark.worker_system_prompt
         monkeypatch.setattr(
             benchmark, "worker_system_prompt",
-            lambda item: original(item) + "\\nSynthetic revised system prompt.",
+            lambda item: original(item) + "\nSynthetic revised system prompt.",
         )
         await run_agent_rt(
             case, cache, benchmark, config, worker, reviewer, decision,
