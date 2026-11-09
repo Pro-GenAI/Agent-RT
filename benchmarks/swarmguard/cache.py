@@ -140,6 +140,31 @@ def require_successful_sdk_response(response: Any) -> None:
             raise ModelCapabilityIssue("empty_completion")
 
 
+def _old_first_trial_key(namespace: str, request: Any) -> Any | None:
+    """Find the equivalent trial-0 request from older k>1 benchmark runs.
+
+    Before first-slot normalization, k=1 used no suffix while k>1 used
+    ':trial=0'. A legacy entry is safe to replay because all other model,
+    prompt, grant and request fields remain in the cache key. This fallback
+    is restricted to SwarmGuard's versioned model/Decision namespaces.
+    """
+    if not isinstance(request, Mapping):
+        return None
+    source = {
+        "llm:openai-sdk": ("provider", "sdk-configured-v3:"),
+        "llm:agent-rt": ("provider", "agent-rt-configured-v3:"),
+        "decision": ("model", "swarmguard-decision-v3:"),
+    }.get(namespace)
+    if source is None:
+        return None
+    field, prefix = source
+    identity = request.get(field)
+    if (not isinstance(identity, str) or
+            not identity.startswith(prefix) or ":trial=" in identity):
+        return None
+    return {**request, field: identity + ":trial=0"}
+
+
 class ResponseCache:
     def __init__(self, path: str | Path, mode: str = "read-write") -> None:
         if mode not in CACHE_MODES:
@@ -177,6 +202,13 @@ class ResponseCache:
                 "SELECT value FROM responses WHERE namespace=? AND key=?",
                 (namespace, cache_key(request)),
             ).fetchone()
+            if row is None:
+                old = _old_first_trial_key(namespace, request)
+                if old is not None:
+                    row = self._db.execute(
+                        "SELECT value FROM responses WHERE namespace=? AND key=?",
+                        (namespace, cache_key(old)),
+                    ).fetchone()
             if row is not None:
                 self.hits += 1
                 return json.loads(row[0])
