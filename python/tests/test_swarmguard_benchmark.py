@@ -1790,6 +1790,105 @@ async def test_repeated_evaluation_uses_isolated_cache_slots(tmp_path):
     assert first["configurations"] == second["configurations"]
 
 
+@pytest.mark.anyio
+async def test_k_changes_reuse_first_trial_cache_and_only_add_missing_trials(tmp_path):
+    """k=1 -> 2 -> 1 and k=2 -> 1 share SDK, worker, reviewer, Decision caches."""
+    from configured import execute
+    from ext.runtime.models.interfaces import ModelResponse
+    from ext.runtime.types import ContentPart, ModelMessage
+
+    class Decisions:
+        def __init__(self):
+            self.calls = 0
+
+        def decide(self, state, questions):
+            self.calls += 1
+            return {key: {"noul": 0.95} for key in questions}
+
+    class SDK:
+        def __init__(self):
+            self.chat = self
+            self.completions = self
+            self.calls = 0
+
+        async def create(self, **request):
+            self.calls += 1
+            if any(item["role"] == "tool" for item in request["messages"]):
+                message = {"role": "assistant", "content": "finished"}
+            else:
+                message = {
+                    "role": "assistant", "content": None,
+                    "tool_calls": [{
+                        "id": "bad-tool", "type": "function",
+                        "function": {
+                            "name": "delete_file",
+                            "arguments": '{"path":"reports/mock.md"}',
+                        },
+                    }],
+                }
+            return {
+                "choices": [{
+                    "finish_reason": "tool_calls" if message.get("tool_calls") else "stop",
+                    "message": message,
+                }],
+                "model": request["model"],
+            }
+
+    class Provider:
+        name = "incremental-repeat-model"
+
+        def __init__(self):
+            self.calls = []
+
+        async def complete(self, request):
+            self.calls.append(request.model)
+            return ModelResponse(
+                message=ModelMessage(
+                    role="assistant", content=(ContentPart(type="text", text="done"),),
+                ),
+                model=request.model, finish_reason="stop",
+            )
+
+    async def sequence(path, values):
+        sdk, provider, decisions = SDK(), Provider(), Decisions()
+        counts, reports = [], []
+        for k in values:
+            with ResponseCache(path, "read-write") as cache:
+                report = await execute(
+                    configured_fixture(), cache, benchmark, limit=1, repeats=k,
+                    sdk_client=sdk, provider=provider, decision_provider=decisions,
+                )
+                assert report["agent_rt_skipped_cases"] == 0
+                if k == 1 and reports:
+                    assert cache.writes == 0
+                    assert cache.hits > 0
+            reports.append(report)
+            counts.append((sdk.calls, len(provider.calls), decisions.calls))
+        return counts, reports, sdk, provider
+
+    # First run with 1 trial: second run with k=2 adds only trial #2.
+    counts, reports, sdk, provider = await sequence(
+        tmp_path / "grow-then-shrink.sqlite", (1, 2, 1),
+    )
+    assert counts[0][0] == 2
+    assert counts[1][0] == 4
+    assert counts[1][1] - counts[0][1] == 2  # worker + reviewer once
+    assert counts[2] == counts[1]  # no provider or Decision calls
+    assert sdk.calls == 4
+    assert provider.calls.count("subagent") == 2
+    assert provider.calls.count("main-agent") == 2
+    assert reports[0]["configurations"] == reports[2]["configurations"]
+
+    # Fresh cache with k=2 first must also be entirely reusable by k=1.
+    second_counts, _, second_sdk, second_provider = await sequence(
+        tmp_path / "shrink.sqlite", (2, 1),
+    )
+    assert second_counts[0] == second_counts[1]
+    assert second_sdk.calls == 4
+    assert second_provider.calls.count("subagent") == 2
+    assert second_provider.calls.count("main-agent") == 2
+
+
 def test_make_eval_accepts_positional_repeat_argument():
     makefile = (BENCH.parents[1] / "Makefile").read_text(encoding="utf-8")
     assert "SWARMGUARD_REPEATS" in makefile
