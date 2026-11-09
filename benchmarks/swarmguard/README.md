@@ -39,7 +39,7 @@ claimed as confirmed positives in the Rich report.
 
 The command immediately prints an initialization message, then reports YAML
 loading and Decision-model validation status before evaluation begins. Once
-cases start, it shows a **live progress bar for the 20 default harness/case runs**
+cases start, it shows a **live progress bar for 20 planned case/framework slots**
 (10 SDK cases, then up to 10 Agent-RT cases). Progress tracks the
 `2 × selected case count × k` **planned slots**, including skipped
 Agent-RT slots; it does not claim skipped slots generated model responses.
@@ -60,8 +60,8 @@ attempted calls does not establish that the runtime guard intervened.
 The benchmark report uses the existing Python `cli` extra's
 `rich>=13.7,<15` dependency. If Rich is missing, install
 `pip install 'agent-rt[cli]'` or `pip install rich`. Raw JSON can still be
-emitted without Rich using `--json`. Progress counts completed
-case/framework attempts, not individual HTTP requests.
+emitted without Rich using `--json`. Progress counts processed
+case/framework slots (including skips), not individual HTTP requests.
 
 This is the **only SwarmGuard Makefile evaluation target**. It runs the
 two-way **live** comparison, never silently falls back to scripted answers,
