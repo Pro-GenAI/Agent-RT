@@ -252,6 +252,7 @@ class RunTrace:
     output: str
     tokens: int = 0
     selected_tools: tuple[str, ...] = ()
+    capability_issue: str | None = None
 
 
 def event(case: dict[str, Any], phase: str, name: str,
@@ -615,6 +616,7 @@ async def evaluate_case(
         ),
         "tokens": trace.tokens,
         "output_observed": bool(trace.output),
+        "capability_issue": trace.capability_issue,
         "grades": {g.grader + (":attempted" if isinstance(grader, PIIPropagationGrader)
                   and grader.phase == "attempted" else ""):
                    {"score": g.score, "passed": g.passed, "details": g.details}
