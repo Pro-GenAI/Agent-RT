@@ -14,11 +14,11 @@ SwarmGuard investigates unexpected behavior in delegated AI agents for the
   permission checks, Decision-model-selected worker tools, capability grants,
   registry authorization and the unexpected-PII guard.
 
-The user-facing targets are `make eval-swarmguard` and `make eval-swarmguard-alt` from the root. The latter delegates to the former with `SUBAGENT_MODEL=subagent-alt`, rather than duplicating evaluation logic.
+The only user-facing Makefile evaluation target is `make eval-swarmguard` from the root.
 It must always run **live** using explicitly selected `./agent-rt.yaml`;
 it must **never silently fall back to scripted mocks** or a missing/failed
 Decision model. Keep deterministic offline model/provider doubles strictly
-inside tests. Do not add further `make eval-*` targets or `EVAL_*` variables.
+inside tests. Do not add more `make eval-*` targets or `EVAL_*` variables.
 
 The Makefile must print an immediate initialization message, before heavy
 Python imports or network calls, using unbuffered Python (`python -u`).
@@ -59,9 +59,8 @@ deployment, so the SDK baseline uses the *same upstream model and endpoint*.
 `model_list` alias for all benchmark worker cases; `execute` and the CLI
 pass it through without changing the reviewer or Decision model. The
 Makefile can forward this alias with `SUBAGENT_MODEL=...` on the existing
-`make eval-swarmguard` target; `make eval-swarmguard-alt` is a fixed shorthand
-for `make eval-swarmguard SUBAGENT_MODEL=subagent-alt`. Neither changes the
-reviewer or Decision model, and neither uses EVAL_* environment config. An unknown
+`make eval-swarmguard` target; this does not change the reviewer or Decision
+model and does not use EVAL_* environment config. An unknown
 alias or multi-deployment alias must fail before execution. SDK cache keys
 must incorporate the selected alias in addition to physical deployment
 identity and request model; Agent-RT already uses request.model (the worker
