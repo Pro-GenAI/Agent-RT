@@ -88,14 +88,25 @@ class EvaluationProgress:
             self._rendered_width = 0
 
 
-def configured_models(config: AgentRTConfig) -> tuple[str, str, Any]:
-    """Choose worker/reviewer aliases from validated config, not model env flags."""
+def configured_models(
+    config: AgentRTConfig, *, subagent_model: str | None = None,
+) -> tuple[str, str, Any]:
+    """Resolve one configured worker alias shared by both live harnesses."""
     subagents = config.settings.get("subagents")
-    if not isinstance(subagents, Mapping) or not subagents.get("default_model"):
+    subagents = subagents if isinstance(subagents, Mapping) else {}
+    if subagent_model is None and not subagents.get("default_model"):
         raise ValueError(
-            "agent_rt_settings.subagents.default_model must be set in agent-rt.yaml"
+            "agent_rt_settings.subagents.default_model must be set in agent-rt.yaml "
+            "unless --subagent-model names a configured model_list alias"
         )
-    worker = str(subagents["default_model"])
+    worker = (subagent_model if subagent_model is not None
+              else str(subagents["default_model"]))
+    aliases = {entry.model_name for entry in config.models}
+    if worker not in aliases:
+        raise ValueError(
+            f"SwarmGuard sub-agent model {worker!r} is not a configured model_list "
+            f"alias. Available aliases: {', '.join(sorted(aliases))}"
+        )
     reviewer = str(subagents.get("reviewer_model") or config.default_model or "")
     if not reviewer:
         raise ValueError(
@@ -450,7 +461,8 @@ async def evaluate_configured(
 ) -> dict[str, Any]:
     if configuration == "openai_sdk":
         trace = await run_sdk(
-            case, cache, bench, deployment, model_config_identity(config),
+            case, cache, bench, deployment,
+            model_config_identity(config) + ":worker=" + worker,
             client=sdk_client,
         )
     elif configuration == "agent_rt":
@@ -487,15 +499,20 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
 
 async def execute(
     config: AgentRTConfig, cache: ResponseCache, bench: Any, *,
-    limit: int | None = 10, provider: Any = None,
-    sdk_client: Any = None, decision_provider: Any = None,
+    limit: int | None = 10, subagent_model: str | None = None,
+    provider: Any = None, sdk_client: Any = None,
+    decision_provider: Any = None,
     on_stage: Callable[[str], None] | None = None,
     on_progress: Callable[[str, int, int, int, int], None] | None = None,
 ) -> dict[str, Any]:
     """Strict live comparison. Validate Decision model first; no scripted fallback."""
     if on_stage is not None:
         on_stage("Resolving configured worker and reviewer models...")
-    worker, reviewer, deployment = configured_models(config)
+    worker, reviewer, deployment = configured_models(
+        config, subagent_model=subagent_model,
+    )
+    if on_stage is not None:
+        on_stage(f"Sub-agent model: {worker} ({deployment.model})")
     decisions = configured_decisions(
         config, cache, provider=decision_provider,
     )
@@ -547,6 +564,7 @@ async def execute(
     return {
         "mode": "live",
         "worker_model": worker,
+        "worker_deployment_model": deployment.model,
         "reviewer_model": reviewer,
         "decision_model": config.settings["decision_model"]["model"],
         "cases": len(cases),
@@ -568,6 +586,12 @@ async def main(bench: Any) -> None:
     )
     parser.add_argument("--limit", type=int, default=10,
                         help="Number of top-ranked cases (default: 10; use 20 or 65 to expand)")
+    parser.add_argument(
+        "--subagent-model",
+        help="Use this model_list alias for every worker in both frameworks "
+             "(default: agent_rt_settings.subagents.default_model); "
+             "reviewer and Decision model stay unchanged",
+    )
     parser.add_argument(
         "--cache-mode", choices=("off", "read", "read-write", "refresh"),
         default="read-write",
@@ -593,6 +617,7 @@ async def main(bench: Any) -> None:
         with ResponseCache(args.cache_path, mode=args.cache_mode) as cache:
             report = await execute(
                 config, cache, bench, limit=args.limit,
+                subagent_model=args.subagent_model,
                 on_stage=progress.status, on_progress=progress.update,
             )
     except BaseException:
