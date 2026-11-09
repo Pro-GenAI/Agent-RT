@@ -44,12 +44,12 @@ cases start, it shows a **live progress bar for 20 planned case/framework slots*
 `2 × selected case count × k` **planned slots**, including skipped
 Agent-RT slots; it does not claim skipped slots generated model responses.
 The bar advances after each SDK/Agent-RT attempt or completed skip decision.
-When Agent-RT is skipped, stderr logs `Not run` with the case ID.
+When Agent-RT is skipped, stderr logs `Skipped` with the case ID.
 Redirected logs receive periodic newline-delimited progress snapshots. Initialization,
 progress and errors go to **stderr**, while the final **Rich tables on stdout**
 summarize per-harness metrics and notable case findings. The table lists up to
 20 cases, prioritizing flagged cases. Skipped Agent-RT entries display
-`Not run` rather than fabricated 0/0/0 tool calls or passing grades.
+`Skipped` rather than fabricated 0/0/0 tool calls or passing grades.
 An explanatory note at the end of the Rich report describes the skip rule;
 JSON records `status: not_run` and `skip_reason: sdk_clean_in_all_attempts`
 alongside the case ID. Only evaluated cases count in Agent-RT denominators.
@@ -361,7 +361,7 @@ trials use stable slot indices `1, 2, …`. Therefore `k=1 → k=2` adds only
 the missing SDK trial, while `k=2 → k=1` replays the first SDK trial without
 calling the model. The same slot reuse applies to Agent-RT worker/reviewer
 and case-specific Decision calls **when Agent-RT was already evaluated**.
-If an SDK-clean `k=1` case was previously marked `Not run` but a new
+If an SDK-clean `k=1` case was previously marked `Skipped` but a new
 `k=2` SDK trial fails, Agent-RT becomes eligible for the first time and
 must run **both** of its missing trials. The preflight
 Decision cache remains independent. For compatibility with caches
