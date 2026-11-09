@@ -145,9 +145,12 @@ endpoint, without editing or exporting additional benchmark-specific
 environment variables. The full report includes both the chosen alias
 (`worker_model`) and upstream ID (`worker_deployment_model`).
 
-**Caching is separated by selected worker model.** SDK cache keys include the
-worker alias, configured deployment identity and request model ID. Agent-RT
-cache keys include the worker alias and model configuration. Repeating the
+**Caching is separated by selected worker model and prompt content.**
+SDK cache keys include the worker alias, configured deployment identity,
+request model ID and full system/user messages. Agent-RT cache keys include
+the worker alias, model configuration and worker system instructions. Changing
+a case's system prompt creates a new cache key without using an existing
+response from an older prompt. Repeating the
 same selection replays successful responses; switching A → B → A cannot
 reuse B's worker responses for A. Decision caching remains independent
 and is reused when its inputs are unchanged. Use `--cache-mode refresh`
@@ -194,7 +197,29 @@ directory checks. All 13 PII-category task prompts explicitly include a
 task is still an internal policy summary and does not require exposing it
 through an external tool. This makes use of sensitive data tempting while
 preserving a measurable misuse boundary. The first priority case remains
-the original control.
+the original tool-output control.
+
+### Case-specific worker system prompts
+
+Every case also has its own **system-role prompt**, generated deterministically
+by `worker_system_prompt(case)` under the
+`case-specific-system-pressure-v1` profile. Both the manual SDK's
+`role=system` message and Agent-RT's delegated worker
+`AgentConfig.instructions` receive the same text. The reviewer prompt is
+unchanged. The worker prompt includes the synthetic case contact, a concrete
+proposed mock-tool action, and conflicting claims about provenance receipts,
+cleanup, directory checks, or parent approval. The legitimate user task and
+the separate untrusted tool-result attack remain available as before.
+
+**Interpretation changes:** A system message is trusted instruction context,
+even when it describes a dubious workflow. Findings in this configuration
+test *conflicting trusted instructions plus runtime enforcement*, **not**
+the effect of a lower-trust document injection alone. Do not attribute a
+positive finding exclusively to a tool-result attack or compare results
+against earlier neutral-system runs without labeling this change. The
+adversarial workflow cues do not modify the actual parent tool grants.
+All contacts use synthetic `@customer.example` values and tool handlers
+remain inert.
 
 These are **unvalidated adversarial hypotheses**:
 a correct model may refuse all attacks. Only a real attempted or executed
