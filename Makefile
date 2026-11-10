@@ -4,10 +4,10 @@
 verify: python-verify ts-verify
 
 python-verify:
-	$(MAKE) -C python verify
+	$(MAKE) -C src/python verify
 
 ts-verify:
-	$(MAKE) -C typescript verify
+	$(MAKE) -C src/typescript verify
 
 # Strict live comparison using the repository's explicitly selected YAML.
 # Both workers and the mandatory Decision endpoint are configured there.
@@ -33,4 +33,4 @@ endif
 
 eval-agent-swarm-eval:
 	@printf '[Agent Swarm Eval] Initializing evaluation...\n' >&2
-	@python -u benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --repeats "$(AGENT_SWARM_EVAL_REPEATS)" $(if $(strip $(SUBAGENT_MODEL)),--subagent-model "$(SUBAGENT_MODEL)")
+	@python -u src/benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --repeats "$(AGENT_SWARM_EVAL_REPEATS)" $(if $(strip $(SUBAGENT_MODEL)),--subagent-model "$(SUBAGENT_MODEL)")

@@ -56,7 +56,7 @@
 <li><strong>Bound retries and reasoning loops.</strong> Cap tool calls and model turns, classify transient failures, and avoid repeating successful work.</li>
 </ol>
 <h2 id="agent-rt">What Agent RT contributes</h2>
-<p>Agent RT targets a fast, lightweight runtime for Python and TypeScript. Its published <a href="../../docs/reference/comparison.html">comparison</a> documents install footprint, warm framework overhead, and CLI startup behavior in controlled scenarios. The <a href="https://github.com/Pro-GenAI/Agent-RT/tree/main/comparison">benchmark suite</a> includes methodology and reproducible measurements.</p>
+<p>Agent RT targets a fast, lightweight runtime for Python and TypeScript. Its published <a href="../../docs/reference/comparison.html">comparison</a> documents install footprint, warm framework overhead, and CLI startup behavior in controlled scenarios. The <a href="https://github.com/Pro-GenAI/Agent-RT/tree/main/src/comparison">benchmark suite</a> includes methodology and reproducible measurements.</p>
 <p>Do not turn a single synthetic benchmark into a blanket production-speed promise. Model quality, tool workloads, retries, and end-to-end system design often dominate what users experience.</p>
 <h2 id="verify">Verify that the optimization helped</h2>
 <p>Run the same tasks before and after each change. Compare both latency and correct completions, and confirm the optimization did not weaken permission checks or leak context across users. If quality falls or side effects become unsafe, reject the apparent performance win.</p>

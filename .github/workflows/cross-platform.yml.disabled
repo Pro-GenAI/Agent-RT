@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: typescript/package-lock.json
+          cache-dependency-path: src/typescript/package-lock.json
       - name: Runtime module size limit (800 lines)
         run: python scripts/check_module_size.py
       - name: Install Python dependencies
@@ -32,16 +32,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e "./python[dev]"
       - name: Python quality gate (mypy, Ruff, Black)
-        working-directory: python
+        working-directory: src/python
         run: |
           mypy src
           ruff check src tests scripts
           black --check src tests scripts
       - name: Install locked TypeScript dependencies
-        working-directory: typescript
+        working-directory: src/typescript
         run: npm ci
       - name: TypeScript quality gate (tsc, ESLint, Knip, Prettier)
-        working-directory: typescript
+        working-directory: src/typescript
         run: |
           npm run quality:check
           npm run format:check
@@ -67,13 +67,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e "./python[dev]"
       - name: Test Python runtime
-        working-directory: python
+        working-directory: src/python
         run: python -m pytest -q
       - name: Enforce static security threshold
-        working-directory: python
+        working-directory: src/python
         run: python scripts/security_scan.py --fail-on medium
       - name: Verify offline adversarial controls
-        working-directory: python
+        working-directory: src/python
         run: python scripts/security_attack_scan.py
 
   typescript:
@@ -91,16 +91,16 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: typescript/package-lock.json
+          cache-dependency-path: src/typescript/package-lock.json
       - name: Install locked dependencies
-        working-directory: typescript
+        working-directory: src/typescript
         run: npm ci
       - name: Test TypeScript runtime
-        working-directory: typescript
+        working-directory: src/typescript
         run: npm test
       - name: Enforce deterministic security gates
-        working-directory: typescript
+        working-directory: src/typescript
         run: npm run security:scan:gate
       - name: Verify offline adversarial controls
-        working-directory: typescript
+        working-directory: src/typescript
         run: npm run security:attacks

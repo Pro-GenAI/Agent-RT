@@ -51,15 +51,15 @@
 <p>This guide contains contributor workflows for the Python and TypeScript implementations of Agent RT. Package READMEs are intentionally focused on end users.</p>
 <h2 id="python">Python</h2>
 <h3 id="setup-and-tests">Setup and tests</h3>
-<p>Python sources live in <code>python/src/</code>, tests in <code>python/tests/</code>, and repository utilities in <code>python/scripts/</code>. Python 3.10 through 3.14 are supported.</p>
+<p>Python sources live in <code>src/python/src/</code>, tests in <code>src/python/tests/</code>, and repository utilities in <code>src/python/scripts/</code>. Python 3.10 through 3.14 are supported.</p>
 <p>The preferred workflow uses the locked <code>uv</code> environment:</p>
-<pre><code class="language-bash">cd python
+<pre><code class="language-bash">cd src/python
 uv sync --extra dev --locked
 make test</code></pre>
 <p><code>make test</code> runs pytest with pytest-xdist using an automatic worker count and work-stealing distribution:</p>
 <pre><code class="language-bash">uv run --extra dev pytest -n auto --dist worksteal</code></pre>
 <p>Equivalent editable <code>pip</code> workflow:</p>
-<pre><code class="language-bash">cd python
+<pre><code class="language-bash">cd src/python
 python -m venv .venv
 source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e &quot;.[dev]&quot;
@@ -93,11 +93,11 @@ make check</code></pre>
 <tr><td><code>make security-attacks</code></td><td>Offline adversarial runtime scan.</td></tr>
 <tr><td><code>make security</code></td><td>Both gates plus the third-party developer security scan; runs all checks and prints a final PASS/FAIL summary (failures appear in red on color terminals).</td></tr>
 <tr><td><code>make check</code></td><td><code>quality</code> + <code>test</code> + <code>security</code>.</td></tr>
-<tr><td><code>make verify</code></td><td>Runs outside conda (its variables and PATH entries are dropped). <code>install</code>, <code>test</code>, <code>test-matrix</code>, <code>test-deps-matrix</code>, <code>security</code> (in <code>python/</code>: <code>install</code>, <code>test</code>, <code>test-chromium</code>, <code>test-matrix</code>, <code>security</code>), stopping at the first failure.</td></tr>
+<tr><td><code>make verify</code></td><td>Runs outside conda (its variables and PATH entries are dropped). <code>install</code>, <code>test</code>, <code>test-matrix</code>, <code>test-deps-matrix</code>, <code>security</code> (in <code>src/python/</code>: <code>install</code>, <code>test</code>, <code>test-chromium</code>, <code>test-matrix</code>, <code>security</code>), stopping at the first failure.</td></tr>
 <tr><td><code>make verify</code> (repository root)</td><td>Runs <code>make python-verify</code> then <code>make ts-verify</code> (each runs <code>make verify</code> in its folder), stopping at the first failure.</td></tr></tbody></table></div>
 <p>To run a single test file or test: <code>uv run --extra dev pytest tests/test_agent_loop.py -k name</code>.</p>
 <p>Run the same regression suite across all supported Python versions:</p>
-<pre><code class="language-bash">cd python
+<pre><code class="language-bash">cd src/python
 ./scripts/test-matrix.sh</code></pre>
 <p>Override the matrix when needed:</p>
 <pre><code class="language-bash">PYTHON_VERSIONS=&quot;3.13 3.14&quot; ./scripts/test-matrix.sh</code></pre>
@@ -138,7 +138,7 @@ uv run --extra dev cyclonedx-py environment -o sbom.json</code></pre>
 <p>PromptFuzz is used for its local corpus and local-target workflows. AgentSec inspects installed agent/MCP configurations. Fickling, PickleScan, and ModelScan inspect local serialized model artifacts.</p>
 <h3 id="python-evaluation">Python evaluation</h3>
 <p>HarmActionsEval is the default model-backed benchmark. It calls a real model through your OpenAI-compatible endpoint, so it incurs API cost and is non-deterministic; it is not part of the deterministic security gates or CI.</p>
-<pre><code class="language-bash">cd python
+<pre><code class="language-bash">cd src/python
 export OPENAI_MODEL=&quot;your-model&quot;
 export OPENAI_API_KEY=&quot;...&quot;
 # Optional for OpenAI-compatible providers:
@@ -153,16 +153,16 @@ python scripts/evaluate_harness.py --scope tests
 python scripts/evaluate_harness.py --scope benchmark --benchmark performance --iterations 500</code></pre>
 <p>Scopes are <code>evals</code>, <code>tests</code>, <code>benchmark</code>, and <code>all</code>. The default benchmark is <code>harmactions</code>; <code>--benchmark performance</code> selects the local ToolRegistry dispatch microbenchmark. HarmActionsEval supports <code>--k</code>, <code>--offset</code>, <code>--limit</code>, <code>--cache-path</code>, <code>--output</code>, and <code>--json</code>.</p>
 <h3 id="python-packaging">Python packaging</h3>
-<p>Package metadata is defined in <code>python/pyproject.toml</code>. Validate the publish path without uploading:</p>
-<pre><code class="language-bash">cd python
+<p>Package metadata is defined in <code>src/python/pyproject.toml</code>. Validate the publish path without uploading:</p>
+<pre><code class="language-bash">cd src/python
 ./pip_publish.sh --dry-run</code></pre>
 <p><code>pip_publish.sh</code> runs the regression suite before building and validating the distribution.</p>
-<p>The banner's pixel Artie is generated, not hand-drawn: <code>python/src/ext/artie_art.py</code> comes from <code>docs/assets/logo-mark.png</code> (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with <code>uv run --with pillow python3 scripts/render_artie_art.py</code>; <code>--check</code> reports a stale module without rewriting it. Artie's mood poses (shield, celebrate) are hand-drawn ASCII in <code>python/src/ext/artie_moods.py</code> and <code>typescript/src/ext/artie.ts</code>; keep the two identical.</p>
+<p>The banner's pixel Artie is generated, not hand-drawn: <code>src/python/src/ext/artie_art.py</code> comes from <code>docs/assets/logo-mark.png</code> (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with <code>uv run --with pillow python3 scripts/render_artie_art.py</code>; <code>--check</code> reports a stale module without rewriting it. Artie's mood poses (shield, celebrate) are hand-drawn ASCII in <code>src/python/src/ext/artie_moods.py</code> and <code>src/typescript/src/ext/artie.ts</code>; keep the two identical.</p>
 <h2 id="typescript">TypeScript</h2>
 <h3 id="setup-and-tests-1">Setup and tests</h3>
-<p>TypeScript sources live in <code>typescript/src/</code> (core in <code>src/runtime/</code>, re-exported by the <code>index.ts</code> barrel, see <a href="#runtime-module-layout">Runtime module layout</a>; companion contracts, framework adapters, and transports under <code>src/ext/</code>, mirroring Python's <code>ext</code> package), tests in <code>typescript/tests/</code>, and evaluation/publishing utilities in <code>typescript/scripts/</code>. Node 20, 22, 24, and 26 are supported.</p>
+<p>TypeScript sources live in <code>src/typescript/src/</code> (core in <code>src/runtime/</code>, re-exported by the <code>index.ts</code> barrel, see <a href="#runtime-module-layout">Runtime module layout</a>; companion contracts, framework adapters, and transports under <code>src/ext/</code>, mirroring Python's <code>ext</code> package), tests in <code>src/typescript/tests/</code>, and evaluation/publishing utilities in <code>src/typescript/scripts/</code>. Node 20, 22, 24, and 26 are supported.</p>
 <p>Install reproducibly and run the runtime suite:</p>
-<pre><code class="language-bash">cd typescript
+<pre><code class="language-bash">cd src/typescript
 npm ci
 npm test</code></pre>
 <p>The TypeScript Makefile exposes the same target names as Python (<code>make help</code> lists them), backed by npm scripts: <code>make quality</code> runs <code>typecheck</code>, <code>lint</code>, <code>format-check</code>, and dead-code detection, and <code>make security</code> runs the equivalent security checks individually, prints a final PASS/FAIL summary, and highlights failures in red on color terminals.</p>
@@ -201,7 +201,7 @@ npm run security:gate</code></pre>
 <p>Development-only quality and security packages stay in <code>devDependencies</code>, not runtime dependencies or optional provider peers.</p>
 <h3 id="typescript-evaluation">TypeScript evaluation</h3>
 <p>The TypeScript benchmark runner delegates HarmActionsEval to the sibling Python runner so both runtimes use the same upstream benchmark and metrics:</p>
-<pre><code class="language-bash">cd typescript
+<pre><code class="language-bash">cd src/typescript
 export OPENAI_MODEL=&quot;your-model&quot;
 export OPENAI_API_KEY=&quot;...&quot;
 # Optional:
@@ -216,17 +216,17 @@ npm run evaluate:tests
 npm run evaluate:performance -- --iterations 500</code></pre>
 <p>The underlying runner accepts <code>--scope evals|tests|benchmark|all</code>, <code>--benchmark harmactions|performance</code>, <code>--k</code>, <code>--offset</code>, <code>--limit</code>, <code>--cache-path</code>, <code>--output</code>, <code>--iterations</code>, and <code>--json</code>. Set <code>PYTHON</code> to override the interpreter used for HarmActionsEval.</p>
 <h3 id="typescript-packaging">TypeScript packaging</h3>
-<p>Build output is written to <code>typescript/dist/</code>, with <code>dist/index.js</code> and <code>dist/index.d.ts</code> as package entry points.</p>
+<p>Build output is written to <code>src/typescript/dist/</code>, with <code>dist/index.js</code> and <code>dist/index.d.ts</code> as package entry points.</p>
 <p>Preview the package contents:</p>
-<pre><code class="language-bash">cd typescript
+<pre><code class="language-bash">cd src/typescript
 npm pack --dry-run</code></pre>
 <p><code>scripts/npm_publish.sh</code> runs <code>npm ci</code>, the regression suite, and a package preview before publishing.</p>
 <h2 id="container-image-versioning">Container image versioning</h2>
 <p>Published repositories: <a href="https://hub.docker.com/r/praneeth1v/agent-rt-python">Python on Docker Hub</a> and <a href="https://hub.docker.com/r/praneeth1v/agent-rt-typescript">TypeScript on Docker Hub</a>. User-facing pull and run commands are in the <a href="/docs/guides/runtime-reference.html#docker-hub-images">Runtime guide</a>.</p>
-<p>Both <code>python/Dockerfile</code> and <code>typescript/Dockerfile</code> set the OCI <code>org.opencontainers.image.version</code> label from <code>ARG AGENT_RT_VERSION</code>. The default build argument tracks the corresponding package version. Docker Hub releases pass the package version explicitly as a build argument and tag images with that version (and <code>latest</code>), so image metadata and published tags agree. Version bumps change source files only: rebuild and push to update existing Docker images.</p>
-<p>The TypeScript image uses a multi-stage Debian-slim Node 22 build. The final stage installs only production dependencies plus the OpenAI and Anthropic SDK peers (not the optional tracing/sandbox peers), and <code>scripts/prune-docker-deps.mjs</code> deletes ONNX Runtime's unused platform/architecture native binaries <strong>within the install layer</strong>. Keep the target platform's ONNX binary: <code>agent-action-guard</code> depends on it, so an Alpine/musl runtime image is not a drop-in replacement. <code>typescript/.dockerignore</code> limits the build context to the package metadata, TypeScript sources, and prune script. <code>temp/publish-dockerhub.sh ts</code> builds, reports the image size, runs a Node/SDK/ONNX smoke test, and offers to push it. Test the pruning behavior without Docker with <code>node --test typescript/tests/docker-prune.test.js</code>.</p>
+<p>Both <code>src/python/Dockerfile</code> and <code>src/typescript/Dockerfile</code> set the OCI <code>org.opencontainers.image.version</code> label from <code>ARG AGENT_RT_VERSION</code>. The default build argument tracks the corresponding package version. Docker Hub releases pass the package version explicitly as a build argument and tag images with that version (and <code>latest</code>), so image metadata and published tags agree. Version bumps change source files only: rebuild and push to update existing Docker images.</p>
+<p>The TypeScript image uses a multi-stage Debian-slim Node 22 build. The final stage installs only production dependencies plus the OpenAI and Anthropic SDK peers (not the optional tracing/sandbox peers), and <code>scripts/prune-docker-deps.mjs</code> deletes ONNX Runtime's unused platform/architecture native binaries <strong>within the install layer</strong>. Keep the target platform's ONNX binary: <code>agent-action-guard</code> depends on it, so an Alpine/musl runtime image is not a drop-in replacement. <code>src/typescript/.dockerignore</code> limits the build context to the package metadata, TypeScript sources, and prune script. <code>temp/publish-dockerhub.sh ts</code> builds, reports the image size, runs a Node/SDK/ONNX smoke test, and offers to push it. Test the pruning behavior without Docker with <code>node --test src/typescript/tests/docker-prune.test.js</code>.</p>
 <h2 id="runtime-module-layout">Runtime module layout</h2>
-<p>The runtime lives in themed modules with the <strong>same folder and module names in both languages</strong>: <code>python/src/ext/runtime/&lt;folder&gt;/&lt;module&gt;.py</code> and <code>typescript/src/runtime/&lt;folder&gt;/&lt;module&gt;.ts</code>. The public entrypoints only re-export them: <code>python/src/agent_rt.py</code> (re-exports the eager core; lazy names resolve through <code>__getattr__</code> from <code>ext/runtime/optional.py</code>) and <code>typescript/src/index.ts</code> (a barrel of <code>export ... from</code> lines). Import a runtime name from its module, never from the entrypoint, inside <code>ext/runtime/</code> or <code>src/runtime/</code>.</p>
+<p>The runtime lives in themed modules with the <strong>same folder and module names in both languages</strong>: <code>src/python/src/ext/runtime/&lt;folder&gt;/&lt;module&gt;.py</code> and <code>src/typescript/src/runtime/&lt;folder&gt;/&lt;module&gt;.ts</code>. The public entrypoints only re-export them: <code>src/python/src/agent_rt.py</code> (re-exports the eager core; lazy names resolve through <code>__getattr__</code> from <code>ext/runtime/optional.py</code>) and <code>src/typescript/src/index.ts</code> (a barrel of <code>export ... from</code> lines). Import a runtime name from its module, never from the entrypoint, inside <code>ext/runtime/</code> or <code>src/runtime/</code>.</p>
 <div class="table-wrap"><table><thead><tr><th>Module</th><th>Contents</th></tr></thead><tbody><tr><td><code>types</code></td><td>JSON values, messages, content parts, tool calls, sessions, cancellation (Python: the lazy <code>asyncio</code> shim)</td></tr>
 <tr><td><code>settings</code></td><td><code>runtime_settings</code> / <code>configure_runtime</code></td></tr>
 <tr><td><code>platform</code></td><td>TypeScript only: Node module loading, optional peers, byte buffers</td></tr>
@@ -256,7 +256,7 @@ npm pack --dry-run</code></pre>
 </li>
 <li>Define each helper name once per module; in Python and JavaScript a later definition silently replaces an earlier one.
 </li>
-<li>TypeScript formatting comes from <code>typescript/.prettierrc</code> (tabs, single quotes); keep it in the repository so <code>npm run format:check</code> gives the same result locally and in CI.
+<li>TypeScript formatting comes from <code>src/typescript/.prettierrc</code> (tabs, single quotes); keep it in the repository so <code>npm run format:check</code> gives the same result locally and in CI.
 </li>
 <li>Keep deterministic gates offline: tests, security scans, and adversarial scans must not call a real LLM or external model API.
 </li>

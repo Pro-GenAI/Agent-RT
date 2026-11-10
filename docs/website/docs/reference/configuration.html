@@ -137,7 +137,7 @@
 </li>
 <li>Literal keys in the file also work but are discouraged.
 </li>
-<li>YAML is parsed as YAML 1.1 with safe types only, identically in both implementations (as PyYAML's <code>safe_load</code>: <code>yes</code>/<code>no</code> are booleans, <code>0123</code> is octal); custom tags such as <code>!!python/object</code> are rejected. Quote values such as IDs that must stay strings.
+<li>YAML is parsed as YAML 1.1 with safe types only, identically in both implementations (as PyYAML's <code>safe_load</code>: <code>yes</code>/<code>no</code> are booleans, <code>0123</code> is octal); custom tags such as <code>!!src/python/object</code> are rejected. Quote values such as IDs that must stay strings.
 </li>
 <li>When no file is found, loading raises <code>ConfigNotFoundError</code> (a <code>ConfigError</code>). The OpenAI Agents compatibility layer uses the config only for an agent whose model is a declared <code>model_name</code>; when no file is found, or the agent asks for a model the file does not declare (including the upstream default <code>gpt-4o-mini</code>), it falls back to the upstream SDK's environment variables. An invalid file is always reported.
 </li>

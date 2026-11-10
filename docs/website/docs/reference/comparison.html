@@ -71,7 +71,7 @@
 <tr><td><strong><img class="language-logo" src="../../assets/typescript.svg" alt="TypeScript"> Warm latency</strong></td><td><strong>1.85 ms</strong></td><td>2.60 ms</td><td>2.23 ms</td></tr>
 <tr><td><strong><img class="language-logo" src="../../assets/typescript.svg" alt="TypeScript"> Runtime memory</strong></td><td><strong>+14.33 MiB</strong></td><td>+17.27 MiB</td><td>+16.79 MiB</td></tr>
 </tbody></table></div>
-<p>📊 For benchmark methodology, environment, raw measured outputs, startup results, tool-loop measurements, schema-token analysis, and CLI harness results, see the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/comparison/README.md">reproducible framework benchmarks ↗</a>.</p>
+<p>📊 For benchmark methodology, environment, raw measured outputs, startup results, tool-loop measurements, schema-token analysis, and CLI harness results, see the <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/src/comparison/README.md">reproducible framework benchmarks ↗</a>.</p>
 <h2 id="agent-cli">⌨️ Agent CLI comparison</h2>
 <p>The <code>agent-rt</code> terminal client compared with other agent CLIs. Each CLI was called as its plain one-shot prompt command with no extra flags and pointed at a deterministic localhost mock model, so no real model API was called. The figures are 30 clean sequential runs per CLI plus an 8-way parallel batch, measured on 2026-10-29 on 16-thread Linux x86_64.</p>
 <div class="table-wrap"><table><thead><tr><th>CLI</th><th>Command</th><th>Median time</th><th>Peak RAM</th><th>Input tokens</th><th>Cost / prompt</th><th>8 parallel</th></tr></thead><tbody>

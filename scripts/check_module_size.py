@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fail when a runtime module or public entrypoint grows past the line cap.
 
-Covers python/src/ext/runtime/ and typescript/src/runtime/ (every .py/.ts
-file) plus the two entrypoints, python/src/agent_rt.py and
-typescript/src/index.ts. Dependency-free; run from anywhere.
+Covers src/python/src/ext/runtime/ and src/typescript/src/runtime/ (every .py/.ts
+file) plus the two entrypoints, src/python/src/agent_rt.py and
+src/typescript/src/index.ts. Dependency-free; run from anywhere.
 """
 
 from __future__ import annotations
@@ -16,9 +16,9 @@ MAX_LINES = 800
 
 
 def checked_files() -> list[Path]:
-    files = [ROOT / "python/src/agent_rt.py", ROOT / "typescript/src/index.ts"]
-    files += sorted((ROOT / "python/src/ext/runtime").rglob("*.py"))
-    files += sorted((ROOT / "typescript/src/runtime").rglob("*.ts"))
+    files = [ROOT / "src/python/src/agent_rt.py", ROOT / "src/typescript/src/index.ts"]
+    files += sorted((ROOT / "src/python/src/ext/runtime").rglob("*.py"))
+    files += sorted((ROOT / "src/typescript/src/runtime").rglob("*.ts"))
     return files
 
 

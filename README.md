@@ -37,9 +37,9 @@ Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you i
 - ⚡ **5.8× less framework overhead** than LangChain in Python (1.56 ms vs 9.03 ms warm)
 - 🔄 **65+ third-party repositories** pass their tests before and after migration
 
-![Agent CLI input tokens per prompt](comparison/assets/cli-harness-tokens.svg)
+![Agent CLI input tokens per prompt](src/comparison/assets/cli-harness-tokens.svg)
 
-<sub>Measured against deterministic localhost mock models, so the numbers show runtime and harness overhead, not model latency or task quality. Part of the CLI token gap comes from Agent RT's smaller built-in tool set. Method and raw data: [`comparison/`](comparison/README.md).</sub>
+<sub>Measured against deterministic localhost mock models, so the numbers show runtime and harness overhead, not model latency or task quality. Part of the CLI token gap comes from Agent RT's smaller built-in tool set. Method and raw data: [`src/comparison/`](src/comparison/README.md).</sub>
 
 ![Agent RT CLI demo showing Artie, Guard blocking an injected shell tool call, and an approved README edit](docs/assets/agent-rt-demo.gif)
 
@@ -107,7 +107,7 @@ Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-
 
 ## ✨ Why Agent RT?
 
-- 🪶 **Lightweight and measurable** — start with the runtime core and add integrations only when needed; reproducible cross-framework benchmarks live in [`comparison/`](comparison/README.md).
+- 🪶 **Lightweight and measurable** — start with the runtime core and add integrations only when needed; reproducible cross-framework benchmarks live in [`src/comparison/`](src/comparison/README.md).
 - 🛡️ **Controlled** — permissions, composable action blockers, approvals, deterministic PII morphing, limits, guardrails, and sandbox boundaries are runtime concepts, not add-ons.
 - 🔌 **Provider-neutral, two languages** — OpenAI, Anthropic, compatible endpoints, or custom providers, with aligned contracts in <img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Python and <img src="docs/website/assets/typescript.svg" alt="TypeScript" width="18" height="18"> TypeScript.
 - 🔄 **Migration-tested** — ongoing compatibility field testing has 65+ third-party repositories passing their test suites both before and after migration to Agent RT.
@@ -150,11 +150,11 @@ Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-
 
 **✅ Built-in · ◐ Available / integration-dependent · — Not a primary focus**
 
-📊 [See reproducible benchmarks →](comparison/README.md)
+📊 [See reproducible benchmarks →](src/comparison/README.md)
 
 ## 🧪 See It in Action
 
-A tool the model may call, restricted by a capability grant and a model-call budget (Python shown; see the [TypeScript package](typescript/README.md) for the npm quick start):
+A tool the model may call, restricted by a capability grant and a model-call budget (Python shown; see the [TypeScript package](src/typescript/README.md) for the npm quick start):
 
 ```python
 registry = ToolRegistry()
@@ -182,7 +182,7 @@ loop = AgentLoop(
 result = await loop.run(agent, messages)
 ```
 
-Arguments are validated against the schema, tools outside the grant never run, and the budget stops runaway loops. Full runnable versions are in the [examples](python/examples/README.md).
+Arguments are validated against the schema, tools outside the grant never run, and the budget stops runaway loops. Full runnable versions are in the [examples](src/python/examples/README.md).
 
 ## 📚 Learn More
 
@@ -202,21 +202,21 @@ Arguments are validated against the schema, tools outside the grant never run, a
 
 ## 📦 Packages
 
-[Python](python/README.md) · [TypeScript](typescript/README.md) · [Python examples](python/examples/README.md) · [TypeScript examples](typescript/examples/README.md)
+[Python](src/python/README.md) · [TypeScript](src/typescript/README.md) · [Python examples](src/python/examples/README.md) · [TypeScript examples](src/typescript/examples/README.md)
 
 The inbound API server, terminal CLI, web UI, chat bots, memU memory, and AutoGen/CrewAI/LiteLLM migration shims are Python-only.
 
 
 ## Agent Swarm Eval: Multi-agent tool security
 
-[Agent Swarm Eval](benchmarks/agent-swarm-eval/README.md) runs a **live two-way**
+[Agent Swarm Eval](src/benchmarks/agent-swarm-eval/README.md) runs a **live two-way**
 comparison: a minimal harness using the regular OpenAI Python SDK versus
 configured Agent-RT `SubagentSwarm` with the worker/reviewer models,
 Decision-model-guided grants and runtime PII guards selected in `agent-rt.yaml`.
 Run `make eval-agent-swarm-eval` from the repository root after configuring a working
 Decision endpoint. There are **65** safe synthetic fixtures, including
 ten new realistic red-team tool-output challenges and five earlier
-advanced cases. A [qualitative priority manifest](benchmarks/agent-swarm-eval/priority_cases.json)
+advanced cases. A [qualitative priority manifest](src/benchmarks/agent-swarm-eval/priority_cases.json)
 puts the original controls first, then the new probes in ranks 6-15.
 The default evaluates **10 SDK cases** and only runs Agent-RT for
 cases where the SDK does not pass every trial. Run `make eval-agent-swarm-eval 3`
@@ -230,14 +230,14 @@ completed but empty outputs produce cached, inconclusive capability outcomes
 instead of aborting the entire run. Select a different registered worker model for
 all sub-agents with `--subagent-model ALIAS` (the reviewer/Decision
 configuration stays fixed). Worker caches are model-specific. Use
-`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 20`
+`python src/benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --limit 20`
 to include all ten new probes or `--limit 65` for the full dataset.
 For example, `make eval-agent-swarm-eval SUBAGENT_MODEL=subagent-alt` selects
 an alternate alias for the normal ten-case evaluation; use
-`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml
+`python src/benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml
 --subagent-model subagent-alt --limit 5` for five tasks per framework.
 See the
-[benchmark guide](benchmarks/agent-swarm-eval/README.md) for `model_list` setup. Successful SDK, Agent-RT and Decision responses are
+[benchmark guide](src/benchmarks/agent-swarm-eval/README.md) for `model_list` setup. Successful SDK, Agent-RT and Decision responses are
 cached independently; deterministic offline doubles remain in tests.
 The default terminal report uses concise **Rich comparison tables**, rather
 than dumping case-by-case JSON. Tool-policy findings and successful-but-
@@ -253,7 +253,7 @@ violations cannot be attributed solely to document injection. Longer staged
 attacks are present in ranked cases 2–20, and PII-category tasks include
 **synthetic** contact identifiers as internal reference context. New cases are adversarial hypotheses; model failure is not
 guaranteed and must be verified by live, repeated trials. To save the complete report, run
-`python benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --output report.json`;
+`python src/benchmarks/agent-swarm-eval/run.py --config ./agent-rt.yaml --output report.json`;
 use `--json` for machine-readable stdout. Install the Python `cli` extra
 if Rich is not already present.
 

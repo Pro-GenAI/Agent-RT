@@ -33,15 +33,15 @@ jobs:
           python -m pip install build twine
 
       - name: Build package
-        working-directory: python
+        working-directory: src/python
         run: python -m build
 
       - name: Check distributions
-        working-directory: python
+        working-directory: src/python
         run: twine check dist/*
 
       - name: Test built wheel in clean environment
-        working-directory: python
+        working-directory: src/python
         run: |
           python -m venv /tmp/pkg-test
           /tmp/pkg-test/bin/python -m pip install --upgrade pip
@@ -50,10 +50,10 @@ jobs:
           /tmp/pkg-test/bin/python -m pip install "${wheel}[api,cli]"
           /tmp/pkg-test/bin/python -m pip install pytest pytest-asyncio
           cd /tmp
-          /tmp/pkg-test/bin/python -m pytest "$GITHUB_WORKSPACE/python/tests"
+          /tmp/pkg-test/bin/python -m pytest "$GITHUB_WORKSPACE/src/python/tests"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.13.0
         with:
-          packages-dir: python/dist
+          packages-dir: src/python/dist
           verbose: true

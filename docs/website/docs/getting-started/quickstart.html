@@ -100,12 +100,12 @@ async function main() {
 main();</code></pre>
 <div class="note"><strong>Continue as a tutorial</strong>The <a href="../reference/features-defaults.html">Features &amp; defaults</a> reference now includes copyable Python and TypeScript examples for tools, streaming, structured output, limits, guardrails, permissions, approvals, state/memory, sandboxing, retrieval, budgets, and observability.</div>
 <h2>Recommended path</h2><div class="table-wrap"><table><thead><tr><th>Example</th><th>What it adds</th></tr></thead><tbody><tr><td><code>01_basic_agent</code></td><td>A minimal run against a configured provider.</td></tr><tr><td><code>02_tool_calling</code></td><td>A read-only tool and the model → tool → model continuation loop.</td></tr><tr><td><code>03_streaming</code></td><td>Provider-neutral text delta consumption.</td></tr><tr><td><code>04_structured_output</code></td><td>Schema-validated JSON with a bounded repair attempt.</td></tr><tr><td><code>05_run_limits</code></td><td>Turn, tool-call, elapsed-time, and token limits.</td></tr><tr><td><code>06_tool_registry</code></td><td>Namespaces, direct execution, and enable/disable controls without a model provider.</td></tr><tr><td><code>07_vector_db</code></td><td>Environment-driven Chroma, Milvus, Pinecone, Qdrant, or Weaviate retrieval without changing application code.</td></tr></tbody></table></div>
-<h2>Run the Python examples</h2><pre><code class="language-bash">cd python
+<h2>Run the Python examples</h2><pre><code class="language-bash">cd src/python
 uv sync
 uv run python examples/01_basic_agent.py
 uv run python examples/02_tool_calling.py
 uv run python examples/07_vector_db.py</code></pre>
-<h2>Run the TypeScript examples</h2><pre><code class="language-bash">cd typescript
+<h2>Run the TypeScript examples</h2><pre><code class="language-bash">cd src/typescript
 npm ci
 npm run build
 node examples/01_basic_agent.js

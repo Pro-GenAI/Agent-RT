@@ -1,4 +1,4 @@
-"""Bake the logo robot (Artie) into python/src/ext/artie_art.py for the CLI banner.
+"""Bake the logo robot (Artie) into src/python/src/ext/artie_art.py for the CLI banner.
 
 Usage: uv run --with pillow python3 scripts/render_artie_art.py [--check]
 The terminal prints two pixels per cell ("▀" with the top pixel as foreground and the
@@ -15,7 +15,7 @@ from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 LOGO = ROOT / "docs/assets/logo-mark.png"
-MODULE = ROOT / "python/src/ext/artie_art.py"
+MODULE = ROOT / "src/python/src/ext/artie_art.py"
 WIDTH = 16  # terminal columns; the height follows the logo's aspect ratio
 LETTERS = string.ascii_letters  # one palette entry per letter; "." is transparent
 

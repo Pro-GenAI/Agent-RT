@@ -3670,9 +3670,9 @@ def main() -> int:
     if not repo_list.is_file():
         raise SystemExit(f"Repository list not found: {repo_list}")
     if not (agent_rt_root / "python" / "pyproject.toml").is_file():
-        raise SystemExit(f"Agent RT Python package not found under {agent_rt_root / 'python'}")
+        raise SystemExit(f"Agent RT Python package not found under {agent_rt_root / 'src' / 'python'}")
     if not (agent_rt_root / "typescript" / "package.json").is_file():
-        raise SystemExit(f"Agent RT TypeScript package not found under {agent_rt_root / 'typescript'}")
+        raise SystemExit(f"Agent RT TypeScript package not found under {agent_rt_root / 'src' / 'typescript'}")
 
     # Before anything is written: reclaim work directories of killed runs, and
     # refuse to start on a nearly full disk instead of crashing mid-write.

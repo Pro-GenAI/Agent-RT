@@ -74,16 +74,16 @@ jobs:
       - install_uv
       - restore_cache:
           keys:
-            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
             - uv-v1-{{ arch }}-
       - run:
           name: Run Python 3.10-3.14 regression matrix
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             ./scripts/test-matrix.sh
       - save_cache:
-          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          key: uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
           paths:
             - ~/.cache/uv
 
@@ -95,25 +95,25 @@ jobs:
       - install_uv
       - restore_cache:
           keys:
-            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
             - uv-v1-{{ arch }}-
       # Keyed on the Makefile's pinned Playwright version; no prefix fallback, so old browser
       # builds are not restored and re-saved alongside new ones.
       - restore_cache:
           keys:
-            - browsers-v2-{{ arch }}-{{ checksum "python/Makefile" }}-{{ checksum "python/scripts/test_browsers.py" }}
+            - browsers-v2-{{ arch }}-{{ checksum "src/python/Makefile" }}-{{ checksum "src/python/scripts/test_browsers.py" }}
       - run:
           name: Run web UI tests in every macOS browser
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             make test-browsers BROWSER_ARGS="--browsers-dir $HOME/agent-rt-browsers"
       - save_cache:
-          key: browsers-v2-{{ arch }}-{{ checksum "python/Makefile" }}-{{ checksum "python/scripts/test_browsers.py" }}
+          key: browsers-v2-{{ arch }}-{{ checksum "src/python/Makefile" }}-{{ checksum "src/python/scripts/test_browsers.py" }}
           paths:
             - ~/agent-rt-browsers
       - save_cache:
-          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          key: uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
           paths:
             - ~/.cache/uv
 
@@ -125,17 +125,17 @@ jobs:
       - install_uv
       - restore_cache:
           keys:
-            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
             - uv-v1-{{ arch }}-
       - run:
           name: Run Python dependency-version matrix
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             uv python install 3.12
             make test-deps-matrix
       - save_cache:
-          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          key: uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
           paths:
             - ~/.cache/uv
 
@@ -147,26 +147,26 @@ jobs:
       - install_uv
       - restore_cache:
           keys:
-            - uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+            - uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
             - uv-v1-{{ arch }}-
       - run:
           name: Install Python 3.13 dev/security environment
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             uv python install 3.13
             uv sync --python 3.13 --extra dev --locked
       - run:
           name: Run built-in static security gate
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             uv run --python 3.13 --extra dev python scripts/security_scan.py --fail-on medium
       - run:
           name: Run offline adversarial security gate
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             uv run --python 3.13 --extra dev python scripts/security_attack_scan.py
       - run:
           name: Check website CSP hashes, third-party assets, and migration wall
@@ -179,18 +179,18 @@ jobs:
           name: Run third-party developer security gate
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             uv run --python 3.13 --extra dev python scripts/dev_security_scan.py
       - run:
           name: Run Python 3.12 security gate including ModelScan
           command: |
             set -euo pipefail
-            cd python
+            cd src/python
             uv python install 3.12
             uv sync --python 3.12 --extra dev --locked
             uv run --python 3.12 --extra dev python scripts/dev_security_scan.py
       - save_cache:
-          key: uv-v1-{{ arch }}-{{ checksum "python/uv.lock" }}
+          key: uv-v1-{{ arch }}-{{ checksum "src/python/uv.lock" }}
           paths:
             - ~/.cache/uv
 
@@ -202,16 +202,16 @@ jobs:
       - install_nvm
       - restore_cache:
           keys:
-            - npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+            - npm-v1-{{ arch }}-{{ checksum "src/typescript/package-lock.json" }}
             - npm-v1-{{ arch }}-
       - run:
           name: Run Node 20, 22, 24, and 26 regression matrix
           command: |
             set -euo pipefail
-            cd typescript
+            cd src/typescript
             ./scripts/test-matrix.sh
       - save_cache:
-          key: npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+          key: npm-v1-{{ arch }}-{{ checksum "src/typescript/package-lock.json" }}
           paths:
             - ~/.npm
             - ~/.nvm/.cache
@@ -224,7 +224,7 @@ jobs:
       - install_nvm
       - restore_cache:
           keys:
-            - npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+            - npm-v1-{{ arch }}-{{ checksum "src/typescript/package-lock.json" }}
             - npm-v1-{{ arch }}-
       - run:
           name: Install Node 22 and locked dependencies
@@ -232,17 +232,17 @@ jobs:
             set -euo pipefail
             nvm install 22 --no-progress
             nvm use 22
-            cd typescript
+            cd src/typescript
             npm ci
       - run:
           name: Run TypeScript SDK dependency-version matrix
           command: |
             set -euo pipefail
             nvm use 22
-            cd typescript
+            cd src/typescript
             make test-deps-matrix
       - save_cache:
-          key: npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+          key: npm-v1-{{ arch }}-{{ checksum "src/typescript/package-lock.json" }}
           paths:
             - ~/.npm
             - ~/.nvm/.cache
@@ -255,7 +255,7 @@ jobs:
       - install_nvm
       - restore_cache:
           keys:
-            - npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+            - npm-v1-{{ arch }}-{{ checksum "src/typescript/package-lock.json" }}
             - npm-v1-{{ arch }}-
       - run:
           name: Install Node 22 and locked dependencies
@@ -263,38 +263,38 @@ jobs:
             set -euo pipefail
             nvm install 22 --no-progress
             nvm use 22
-            cd typescript
+            cd src/typescript
             npm ci
       - run:
           name: Run TypeScript quality gate
           command: |
             set -euo pipefail
             nvm use 22
-            cd typescript
+            cd src/typescript
             npm run quality:check
       - run:
           name: Run deterministic TypeScript security gate
           command: |
             set -euo pipefail
             nvm use 22
-            cd typescript
+            cd src/typescript
             npm run security:gate
       - run:
           name: Run TypeScript AI-agent static security scan
           command: |
             set -euo pipefail
             nvm use 22
-            cd typescript
+            cd src/typescript
             npm run security:ai:static
       - run:
           name: Generate and validate TypeScript security SBOM
           command: |
             set -euo pipefail
             nvm use 22
-            cd typescript
+            cd src/typescript
             npm run security:sbom
       - save_cache:
-          key: npm-v1-{{ arch }}-{{ checksum "typescript/package-lock.json" }}
+          key: npm-v1-{{ arch }}-{{ checksum "src/typescript/package-lock.json" }}
           paths:
             - ~/.npm
             - ~/.nvm/.cache
@@ -308,7 +308,7 @@ jobs:
           command: |
             set -euo pipefail
             docker run --rm $PI_DOCKER_LIMITS --entrypoint bash \
-              -v "$PWD":/work -w /work/python \
+              -v "$PWD":/work -w /work/src/python \
               -e UV_PROJECT_ENVIRONMENT=/tmp/venv -e UV_LINK_MODE=copy \
               ghcr.io/astral-sh/uv:python3.12-bookworm -euo pipefail -c '
                 test "$(uname -m)" = aarch64
@@ -330,7 +330,7 @@ jobs:
           command: |
             set -euo pipefail
             docker run --rm $PI_DOCKER_LIMITS \
-              -v "$PWD":/work -w /work/typescript \
+              -v "$PWD":/work -w /work/src/typescript \
               node:22-bookworm bash -euo pipefail -c '
                 test "$(uname -m)" = aarch64
                 test "$(cat /sys/fs/cgroup/memory.max)" = 4294967296

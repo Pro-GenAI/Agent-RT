@@ -1,0 +1,102 @@
+.DEFAULT_GOAL := help
+
+NPM ?= npm
+
+.PHONY: help install install-dev test test-browsers test-matrix test-deps-matrix lint format format-check typecheck quality security-static security-attacks security vuln check verify require-bash
+
+# GNU Make may use cmd.exe on Windows, so check Bash using native shell syntax.
+require-bash:
+ifeq ($(OS),Windows_NT)
+	@where bash >NUL 2>&1 || (echo ERROR: Bash is required for this target. Install Bash and add it to PATH. & exit /b 1)
+else
+	@command -v bash >/dev/null 2>&1 || { echo 'ERROR: Bash is required for this target. Install Bash and add it to PATH.' >&2; exit 1; }
+endif
+
+help:
+	@printf '%s\n' \
+		'Agent RT TypeScript developer commands:' \
+		'  make install           Install locked development dependencies' \
+		'  make install-dev       Alias for make install' \
+		'  make test              Run the regression test suite' \
+		'  make test-matrix       Run tests across all supported Node versions' \
+		'  make test-deps-matrix  Run tests across supported dependency versions (mid-2024+)' \
+		'  make lint              Run ESLint checks' \
+		'  make format            Format source/scripts with Prettier' \
+		'  make format-check      Check formatting without changing files' \
+		'  make typecheck         Run TypeScript type checking' \
+		'  make quality           Run typecheck + lint + format-check/dead-code checks' \
+		'  make security-static   Run deterministic static security gate' \
+		'  make security-attacks  Run offline adversarial runtime attacks' \
+		'  make security          Run the full security/vulnerability gate' \
+		'  make vuln              Alias for make security' \
+		'  make verify            Run install + test + test-matrix + test-deps-matrix + security, stopping at the first failure' \
+		'  make check             Run quality + tests + full security gate'
+
+install:
+	$(NPM) ci
+
+install-dev: install
+
+test:
+	$(NPM) test
+
+# The web UI (agent-rt web) and its browser tests exist only in the Python package.
+# Plain echo with no quotes or shell operators, so it reads the same under sh and cmd.exe.
+test-browsers:
+	@echo ERROR: browser tests are Python-only because the web UI is. Run make test-browsers in the python folder instead. >&2
+	@exit 1
+
+test-matrix: require-bash
+	$(NPM) run test:matrix
+
+test-deps-matrix: require-bash
+	$(NPM) run test:deps-matrix
+
+lint:
+	$(NPM) run lint
+
+format:
+	$(NPM) run format
+
+format-check:
+	$(NPM) run format:check
+
+typecheck:
+	$(NPM) run typecheck
+
+quality: typecheck lint format-check
+	$(NPM) run quality:dead-code
+
+security-static:
+	$(NPM) run security:scan:gate
+
+security-attacks:
+	$(NPM) run security:attacks
+
+security: require-bash
+	@bash ../../scripts/security-summary.sh \
+		'Static scan' '$(NPM) run security:scan:gate' \
+		'Adversarial runtime scan' '$(NPM) run security:attacks' \
+		'Dependency audit' '$(NPM) run security:deps' \
+		'Secret scan' '$(NPM) run security:secrets' \
+		'MCP scan' '$(NPM) run security:mcp'
+
+vuln: security
+
+check: quality test security
+
+# `make verify` runs without conda: a child process cannot deactivate the caller's shell,
+# so drop conda's variables and its PATH entries (base and every env) for these steps.
+ifneq ($(CONDA_EXE),)
+CONDA_ROOT := $(patsubst %/,%,$(dir $(patsubst %/,%,$(dir $(CONDA_EXE)))))
+verify: export PATH := $(shell printf '%s' "$$PATH" | tr ':' '\n' | grep -v '^$(CONDA_ROOT)/' | paste -sd: -)
+NO_CONDA := env -u CONDA_EXE -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u CONDA_SHLVL -u CONDA_PYTHON_EXE -u CONDA_PROMPT_MODIFIER -u _CE_CONDA -u _CE_M
+endif
+
+# Sequential recipe lines: make stops at the first failing step.
+verify:
+	@$(NO_CONDA) $(MAKE) install
+	@$(NO_CONDA) $(MAKE) test
+	@$(NO_CONDA) $(MAKE) test-matrix
+# 	@$(NO_CONDA) $(MAKE) test-deps-matrix
+	@$(NO_CONDA) $(MAKE) security
