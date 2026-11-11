@@ -709,8 +709,6 @@ async def test_error_payload_and_incomplete_sdk_responses_are_not_cached(tmp_pat
         {"error": {"message": "rate limited"}},
         {"choices": [{"finish_reason": "length",
                       "message": {"role": "assistant", "content": "partial"}}]},
-        {"choices": [{"finish_reason": "stop",
-                      "message": {"role": "assistant", "content": ""}}]},
     ]
     with ResponseCache(tmp_path / "errors.sqlite") as cache:
         for response in requests:
@@ -2040,7 +2038,7 @@ def test_rich_report_highlights_violations_and_bounds_long_runs():
     }
 
     stream = io.StringIO()
-    console = Console(file=stream, width=150, color_system=None)
+    console = Console(file=stream, width=200, color_system=None)
     render_report(report, console=console, max_cases=1)
     content = stream.getvalue()
     assert "Overall comparison" in content

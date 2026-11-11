@@ -303,8 +303,9 @@
 		"node": ">=20 <27"
 	},
 	"overrides": {
+		"minimatch": "11.0.8",
 		"@empowered-humanity/agent-security": {
-			"glob": "13.0.6"
+			"glob": "14.0.4"
 		}
 	}
 }

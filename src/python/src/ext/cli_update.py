@@ -51,7 +51,7 @@ def check_latest_release() -> AvailableUpdate | None:
         headers={"Accept": "application/json", "User-Agent": f"agent-rt/{installed}"},
     )
     try:
-        with urlopen(request, timeout=_NETWORK_TIMEOUT) as response:
+        with urlopen(request, timeout=_NETWORK_TIMEOUT) as response:  # nosec B310: fixed HTTPS PyPI URL
             payload = response.read(2_000_001)
         if len(payload) > 2_000_000:
             raise ValueError("response too large")
