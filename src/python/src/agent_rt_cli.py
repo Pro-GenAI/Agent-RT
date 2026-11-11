@@ -2356,7 +2356,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 STARTER_CONFIG = """\
-# Agent RT starter config. Full reference: https://agent-rt-pro.github.io/docs/reference/configuration.html
+# Agent RT starter config. Full reference: https://agent-rt.pro-genai.com/docs/reference/configuration
 # With no model_list, Agent RT offers every model that OPENAI_API_KEY's /v1/models lists
 # (OPENAI_BASE_URL picks another OpenAI-compatible endpoint). Add a model_list to pin models;
 # secrets are read with `os.environ/NAME`.
@@ -2405,7 +2405,7 @@ async def discover_builtin_models(provider: Any) -> tuple[str, ...]:
         raise RuntimeError(
             f"no model_list in agent-rt.yaml, and listing OpenAI models failed ({why}); "
             "set OPENAI_API_KEY (and OPENAI_BASE_URL for another endpoint) "
-            "or add a model_list (see https://agent-rt-pro.github.io/docs/reference/configuration.html)"
+            "or add a model_list (see https://agent-rt.pro-genai.com/docs/reference/configuration)"
         )
     return models
 

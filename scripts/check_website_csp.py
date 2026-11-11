@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 SITE = Path(__file__).resolve().parent.parent / "docs" / "website"
-SITE_ORIGIN = "https://agent-rt-pro.github.io"
+SITE_ORIGIN = "https://agent-rt.pro-genai.com"
 # Search-console verification stub, not a real page.
 SKIP = {"googlefbfc85f4cce24779.html"}
 

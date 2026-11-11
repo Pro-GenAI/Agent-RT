@@ -10,7 +10,7 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 [![npm](https://img.shields.io/npm/v/agent-rt?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/agent-rt)
 [![Docker Hub Python](https://img.shields.io/badge/Docker_Hub-Python-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
 [![Docker Hub TypeScript](https://img.shields.io/badge/Docker_Hub-TypeScript-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
-[![Docs](https://img.shields.io/badge/Docs-000000?style=for-the-badge&logo=github&logoColor=white)](https://agent-rt-pro.github.io/docs/)
+[![Docs](https://img.shields.io/badge/Docs-000000?style=for-the-badge&logo=github&logoColor=white)](https://agent-rt.pro-genai.com/docs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Pro-GenAI/Agent-RT/blob/main/LICENSE)
 <a href="https://pepy.tech/projects/agent-rt"><img src="https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=PyPI%20Downloads" alt="PyPI Downloads" height="28"></a>
 ![NPM Downloads](https://img.shields.io/npm/d18m/agent-rt?style=for-the-badge&label=npm%20downloads)
@@ -25,9 +25,9 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 
 Artie (A·R·T, for Agent RT) is the running robot in the logo, and greets you in the terminal when `agent-rt` starts. `artie` is a command alias: `artie migrate`, `artie demo`, and every other `agent-rt` command and option work the same. Artie has moods: it raises a shield when Guard blocks a tool call and celebrates when a migration passes. Its three flagship features have names:
 
-- 🛡️ **Guard** — action blockers, including [Agent Action Guard](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#action-blockers), stop a harmful tool call before it runs.
+- 🛡️ **Guard** — action blockers, including [Agent Action Guard](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#action-blockers), stop a harmful tool call before it runs.
 - ♻️ **Checkpoints** — resume a run with the turn, tool-call, and token budgets it had already used.
-- 🧱 **Wall** — the [migration wall](https://agent-rt-pro.github.io/): 65+ third-party repositories that pass their tests before and after migrating.
+- 🧱 **Wall** — the [migration wall](https://agent-rt.pro-genai.com/): 65+ third-party repositories that pass their tests before and after migrating.
 
 ## 📈 By the Numbers
 
@@ -70,7 +70,7 @@ docker pull praneeth1v/agent-rt-python:latest
 docker pull praneeth1v/agent-rt-typescript:latest
 ```
 
-The [Python image](https://hub.docker.com/r/praneeth1v/agent-rt-python) launches the `agent-rt` CLI; the [TypeScript image](https://hub.docker.com/r/praneeth1v/agent-rt-typescript) contains the Node.js runtime and installed `agent-rt` package. See [container usage](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#docker-hub-images) for run commands and versioned tags.
+The [Python image](https://hub.docker.com/r/praneeth1v/agent-rt-python) launches the `agent-rt` CLI; the [TypeScript image](https://hub.docker.com/r/praneeth1v/agent-rt-typescript) contains the Node.js runtime and installed `agent-rt` package. See [container usage](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#docker-hub-images) for run commands and versioned tags.
 
 **⏱️ Try it in 10 seconds** with the API key you already use for Claude Code, Codex, opencode, or Copilot CLI (no config file needed):
 
@@ -99,9 +99,9 @@ Only API-key setups are reused; subscription sign-ins stay with the official cli
 
 The same prefix works for supported subsets of Anthropic, OpenRouter, LangChain, Deep Agents, LlamaIndex, and OpenAI Agents (plus LiteLLM, AutoGen, and CrewAI in Python). See the [migration guide](docs/website/docs/guides/migration.html).
 
-Or run `uvx agent-rt migrate` (Python) or `npx agent-rt migrate` (TypeScript/JavaScript) in your project. It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall. See [automatic migration](https://agent-rt-pro.github.io/docs/guides/migration-reference.html#automatic-migration-agent-rt-migrate).
+Or run `uvx agent-rt migrate` (Python) or `npx agent-rt migrate` (TypeScript/JavaScript) in your project. It runs your tests before and after the rewrite and keeps it only if nothing new fails: every test that fails afterwards must have failed before, in the same test at the same line. Otherwise every file is restored. It then prints a before-and-after card (tests, test time, peak memory, package size) and, for a GitHub repository, a pre-filled issue link to add it to the migration wall. See [automatic migration](https://agent-rt.pro-genai.com/docs/guides/migration-reference#automatic-migration-agent-rt-migrate).
 
-Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-agent-rt.svg)](https://agent-rt-pro.github.io/docs/guides/migration-reference.html#runs-on-agent-rt-badge) badge to your README.
+Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-agent-rt.svg)](https://agent-rt.pro-genai.com/docs/guides/migration-reference#runs-on-agent-rt-badge) badge to your README.
 
 ![65+ third-party repositories pass their tests after migrating to Agent RT](docs/website/assets/share/migration.png)
 
@@ -112,14 +112,14 @@ Migrated? Add the opt-in [![Runs on Agent RT](docs/website/assets/badge/runs-on-
 - 🔌 **Provider-neutral, two languages** — OpenAI, Anthropic, compatible endpoints, or custom providers, with aligned contracts in <img src="docs/website/assets/python.svg" alt="Python" width="18" height="18"> Python and <img src="docs/website/assets/typescript.svg" alt="TypeScript" width="18" height="18"> TypeScript.
 - 🔄 **Migration-tested** — ongoing compatibility field testing has 65+ third-party repositories passing their test suites both before and after migration to Agent RT.
 
-**Decision models** (such as Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text. `Toolbase` can combine local, deferred, and MCP tools, remove unsafe definitions with a Decision model, pass only the relevant subset to each turn, and keep `tool_search` available for safe fallback discovery; the same Decision layer also gates memory, reranks retrieval results with optional top-k selection, and classifies failures. Every Decision helper also works with the [OpenAI-compatible Decisions API](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#action-blockers) (`decision_model: {provider: openai}`). To self-host an open-source Jev-compatible endpoint, run [Ollaya](https://github.com/ollaya-dev/ollaya) and set `decision_model.base_url` to it.
+**Decision models** (such as Jev-compatible models) answer typed choice/score questions for runtime control-plane gates instead of generating text. `Toolbase` can combine local, deferred, and MCP tools, remove unsafe definitions with a Decision model, pass only the relevant subset to each turn, and keep `tool_search` available for safe fallback discovery; the same Decision layer also gates memory, reranks retrieval results with optional top-k selection, and classifies failures. Every Decision helper also works with the [OpenAI-compatible Decisions API](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#action-blockers) (`decision_model: {provider: openai}`). To self-host an open-source Jev-compatible endpoint, run [Ollaya](https://github.com/ollaya-dev/ollaya) and set `decision_model.base_url` to it.
 
 ## 🧰 Also Included
 
-- 🧠 **Agent memory** — `AgentConfig.memory` mixes strings, objects, and stores from LangChain, LangGraph, LlamaIndex, AutoGen, OpenAI Agents, or mem0. `load_memory()` / `loadMemory()` connect mem0 (default), Zep, Letta, Supermemory, or memU (Python) and store finished conversations with `remember()` ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#memory-packages)).
-- ✅ **Task lists** — `TodoList` gives a model one `todo` tool with a separate list per session; on by default in the CLI and web UI ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#task-lists-todo-tool)).
+- 🧠 **Agent memory** — `AgentConfig.memory` mixes strings, objects, and stores from LangChain, LangGraph, LlamaIndex, AutoGen, OpenAI Agents, or mem0. `load_memory()` / `loadMemory()` connect mem0 (default), Zep, Letta, Supermemory, or memU (Python) and store finished conversations with `remember()` ([details](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#memory-packages)).
+- ✅ **Task lists** — `TodoList` gives a model one `todo` tool with a separate list per session; on by default in the CLI and web UI ([details](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#task-lists-todo-tool)).
 - 🖥️ **Terminal CLI and web UI** (Python) — `agent-rt` and `agent-rt web` share sessions, so a session started in one resumes in the other; edits need in-page or terminal approval ([details](docs/website/docs/guides/runtime-guide.html#web-ui)). The CLI reads Codex and Claude Code project setup as is: `AGENTS.md`/`CLAUDE.md`, skills in `.agents/`, `.claude/`, `.codex/`, and MCP servers from `.mcp.json`, `~/.claude.json`, and `~/.codex/config.toml` ([details](docs/website/docs/guides/runtime-guide.html#project-instructions-skills-mcp)).
-- 💬 **Chat bots** (Python, beta) — `agent-rt serve telegram,discord` answers allowed users, with no workspace tools ([details](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#chat-bots-python-beta)).
+- 💬 **Chat bots** (Python, beta) — `agent-rt serve telegram,discord` answers allowed users, with no workspace tools ([details](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#chat-bots-python-beta)).
 
 ## ⚖️ Quick Comparison
 
@@ -191,14 +191,14 @@ Arguments are validated against the schema, tools outside the grant never run, a
 | Runtime model | [How Agent RT executes agents](docs/website/docs/concepts/runtime.html) |
 | Tools & safety | [Tools, policy, permissions, approvals, and guardrails](docs/website/docs/concepts/tools-policy.html) |
 | State & memory | [State, memory, checkpoints, and artifacts](docs/website/docs/concepts/state-memory.html) |
-| Production | [Sandboxing, observability, evaluation, and deployment](docs/website/docs/guides/production.html) · [Deployment privacy checklist](https://agent-rt-pro.github.io/docs/reference/deployment-privacy-checklist.html) |
+| Production | [Sandboxing, observability, evaluation, and deployment](docs/website/docs/guides/production.html) · [Deployment privacy checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist) |
 | Migration | [LangChain, LlamaIndex, OpenAI, and Anthropic migration](docs/website/docs/guides/migration.html) |
 | Runtime guide | [Providers, memory packages, API server, CLI, web UI, chat bots, sandboxes, skills, and migration entry points](docs/website/docs/guides/runtime-guide.html) |
 | Features | [Features, defaults, and configuration](docs/website/docs/reference/features-defaults.html) |
 | Architecture | [Architecture and extension contracts](docs/website/docs/reference/architecture.html) |
 | Development | [Contributor setup and test workflows](docs/website/docs/reference/development.html) |
 
-🌐 **Full documentation:** [agent-rt-pro.github.io/docs](https://agent-rt-pro.github.io/docs/)
+🌐 **Full documentation:** [agent-rt.pro-genai.com/docs](https://agent-rt.pro-genai.com/docs/)
 
 ## 📦 Packages
 
@@ -271,4 +271,4 @@ MIT — see [LICENSE](LICENSE).
 
 ### Reviewed, bounded subagent delegation
 
-Python and TypeScript expose `SubagentSwarm` for task-based delegation with full inherited conversation history, a three-level hierarchy (main + worker + grandchild), one nested child per worker, per-tool read/write grants that only narrow, independent reviewer reports, and concurrency-aware tracing/metrics. Use the native `AgentLoopInvoker` adapter to propagate per-call budgets, cancellation, deadlines, and grants. Dispatch rechecks the live registered tool side-effect class. Register the optional scoped delegation tool explicitly in your agent registry. See the [runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html#governed-subagents).
+Python and TypeScript expose `SubagentSwarm` for task-based delegation with full inherited conversation history, a three-level hierarchy (main + worker + grandchild), one nested child per worker, per-tool read/write grants that only narrow, independent reviewer reports, and concurrency-aware tracing/metrics. Use the native `AgentLoopInvoker` adapter to propagate per-call budgets, cancellation, deadlines, and grants. Dispatch rechecks the live registered tool side-effect class. Register the optional scoped delegation tool explicitly in your agent registry. See the [runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#governed-subagents).

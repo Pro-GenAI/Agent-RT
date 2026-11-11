@@ -3,7 +3,7 @@
 Project repository:
 https://github.com/Pro-GenAI/Agent-RT
 
-The website is a dependency-free static site deployed directly from this directory. Cloudflare Pages connects to `Pro-GenAI/Agent-RT`, publishes `docs/website` with no build command, and automatically deploys pushes to `main` to https://agent-rt.pages.dev; other branches receive public preview deployments.
+The website is a dependency-free static site deployed directly from this directory. Cloudflare Pages connects to `Pro-GenAI/Agent-RT`, publishes `docs/website` with no build command, and automatically deploys pushes to `main` to https://agent-rt.pro-genai.com; other branches receive public preview deployments.
 
 Pages must not load fonts, scripts, styles, or images from third-party hosts, and must not add analytics or session-replay tools. External resource requests disclose connection information, including the visitor's IP address, to another provider. Keep the site's minimal data footprint by self-hosting what is needed; do not infer a universal consent requirement or automatic liability from a single court ruling. The only vendored third-party assets are highlight.js 11.12.0 (BSD-3-Clause) in `docs/vendor/`, with its license text, and the platform logos in `docs/vendor/icons/` from Simple Icons (CC0; Windows from simple-icons 11.14.0, the rest from 13.21.0); to upgrade it, replace the three files there from the `@highlightjs/cdn-assets` npm package.
 
@@ -60,6 +60,6 @@ Long-form documentation migrated from the top-level Markdown files is maintained
 
 ## Cloudflare Pages deployment
 
-The public static site is deployed from `docs/website/` to the **existing** Cloudflare Pages Direct Upload project `agent-rt` at https://agent-rt.pages.dev. The GitHub Actions workflow at `.github/workflows/deploy-cloudflare-pages.yml` runs on every push and can also be triggered manually. A push to `main` deploys production; other branches receive Pages previews. The workflow runs the website CSP checker before deploying and does not need a frontend build or Wrangler configuration file.
+The public static site is deployed from `docs/website/` to the **existing** Cloudflare Pages Direct Upload project `agent-rt` at https://agent-rt.pro-genai.com. The GitHub Actions workflow at `.github/workflows/deploy-cloudflare-pages.yml` runs on every push and can also be triggered manually. A push to `main` deploys production; other branches receive Pages previews. The workflow runs the website CSP checker before deploying and does not need a frontend build or Wrangler configuration file.
 
 The workflow requires the GitHub Actions repository secret `CLOUDFLARE_API_TOKEN`, containing a Cloudflare API token scoped to this account with **Account → Cloudflare Pages → Edit** permission. Manage the token under the Cloudflare account's API Tokens settings and add it in the repository's **Settings → Secrets and variables → Actions**. The account ID is already specified in the workflow; do not commit the token to the repository. This is a Direct Upload project, so deployment automation uses Wrangler through GitHub Actions rather than Cloudflare Pages' native Git integration. After adding the secret, confirm a successful workflow run and published URL in GitHub Actions and Cloudflare Pages.

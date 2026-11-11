@@ -2,7 +2,7 @@
  * Agent RT public entrypoint.
  *
  * The runtime lives in themed modules under `src/runtime/` (see
- * https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html); this barrel only re-exports their public names.
+ * https://agent-rt.pro-genai.com/docs/reference/contributor-handbook); this barrel only re-exports their public names.
  */
 export {
 	ConfigError,

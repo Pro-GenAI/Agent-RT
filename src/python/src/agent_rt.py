@@ -1,7 +1,7 @@
 """Agent RT public entrypoint.
 
 The runtime core lives in themed modules under ``ext.runtime`` (see
-https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html); this module only re-exports it. Lazily loaded
+https://agent-rt.pro-genai.com/docs/reference/contributor-handbook); this module only re-exports it. Lazily loaded
 features resolve through ``__getattr__`` from ``ext.runtime.optional``.
 """
 

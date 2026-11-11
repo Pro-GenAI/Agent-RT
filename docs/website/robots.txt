@@ -65,4 +65,4 @@ Allow: /
 User-agent: Bytespider
 Allow: /
 
-Sitemap: https://agent-rt-pro.github.io/sitemap.xml
+Sitemap: https://agent-rt.pro-genai.com/sitemap.xml

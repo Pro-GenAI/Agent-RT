@@ -38,10 +38,10 @@ class WebsiteCspTests(unittest.TestCase):
         self.assertEqual(
             [],
             self.check_html("""
-<link rel='canonical' href='https://agent-rt-pro.github.io/docs/'>
+<link rel='canonical' href='https://agent-rt.pro-genai.com/docs/'>
 <link rel=alternate href='https://example.com/translated-page'>
-<link rel='stylesheet' href='https://agent-rt-pro.github.io/docs/docs.css'>
-<img src=//agent-rt-pro.github.io/logo.svg srcset='../../logo.svg 1x, /logo.svg 2x'>
+<link rel='stylesheet' href='https://agent-rt.pro-genai.com/docs/docs.css'>
+<img src=//agent-rt.pro-genai.com/logo.svg srcset='../../logo.svg 1x, /logo.svg 2x'>
 <script src="../../docs/docs.js"></script>
 """),
         )

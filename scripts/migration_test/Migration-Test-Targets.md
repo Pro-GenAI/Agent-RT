@@ -1,6 +1,6 @@
 # Migration Test Targets
 
-Third-party open-source repositories that use LangChain, LlamaIndex, the OpenAI SDK, OpenAI Agents, AutoGen, CrewAI, or the Anthropic SDK are collected as candidates for trying the compatibility layer described in [MIGRATION.md](https://agent-rt-pro.github.io/docs/guides/migration-reference.html).
+Third-party open-source repositories that use LangChain, LlamaIndex, the OpenAI SDK, OpenAI Agents, AutoGen, CrewAI, or the Anthropic SDK are collected as candidates for trying the compatibility layer described in [MIGRATION.md](https://agent-rt.pro-genai.com/docs/guides/migration-reference).
 
 The canonical target list is maintained in [repo_list.csv](./repo_list.csv). Refer to that file for the current repositories, package/language grouping, and `PLIndex` values.
 

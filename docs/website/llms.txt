@@ -10,39 +10,39 @@
 
 ## Blog — practical solutions to difficult AI agent problems
 
-- [Blog index](https://agent-rt-pro.github.io/blog/)
-- [Even the latest AI models can act unsafely. Here’s the solution.](https://agent-rt-pro.github.io/blog/latest-ai-models-unsafe-solution/)
-- [Best AI agent frameworks in 2026: a practical way to choose.](https://agent-rt-pro.github.io/blog/best-ai-agent-frameworks-2026/)
-- [Your AI agent crashed halfway through. Resume without duplicating work.](https://agent-rt-pro.github.io/blog/ai-agent-checkpoints-resume-safely/)
-- [AI agents are too slow and expensive. Fix the harness first.](https://agent-rt-pro.github.io/blog/ai-agents-too-slow-expensive/)
+- [Blog index](https://agent-rt.pro-genai.com/blog/)
+- [Even the latest AI models can act unsafely. Here’s the solution.](https://agent-rt.pro-genai.com/blog/latest-ai-models-unsafe-solution/)
+- [Best AI agent frameworks in 2026: a practical way to choose.](https://agent-rt.pro-genai.com/blog/best-ai-agent-frameworks-2026/)
+- [Your AI agent crashed halfway through. Resume without duplicating work.](https://agent-rt.pro-genai.com/blog/ai-agent-checkpoints-resume-safely/)
+- [AI agents are too slow and expensive. Fix the harness first.](https://agent-rt.pro-genai.com/blog/ai-agents-too-slow-expensive/)
 
 ## Documentation
 
-- [Official project links](https://agent-rt-pro.github.io/links/)
+- [Official project links](https://agent-rt.pro-genai.com/links/)
 
-- [Documentation home](https://agent-rt-pro.github.io/docs/)
-- [Installation and Docker Hub images](https://agent-rt-pro.github.io/docs/getting-started/installation.html)
-- [Quickstart](https://agent-rt-pro.github.io/docs/getting-started/quickstart.html)
-- [Runtime](https://agent-rt-pro.github.io/docs/concepts/runtime.html)
-- [Tools and policy](https://agent-rt-pro.github.io/docs/concepts/tools-policy.html)
-- [State and memory](https://agent-rt-pro.github.io/docs/concepts/state-memory.html)
-- [Migration guide](https://agent-rt-pro.github.io/docs/guides/migration.html)
-- [Production guide](https://agent-rt-pro.github.io/docs/guides/production.html), including the privacy and product-launch checklist for apps built with Agent RT.
-- [Vector databases](https://agent-rt-pro.github.io/docs/guides/vector-databases.html)
-- [Runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-guide.html)
-- [Features and defaults](https://agent-rt-pro.github.io/docs/reference/features-defaults.html)
-- [Comparison](https://agent-rt-pro.github.io/docs/reference/comparison.html)
-- [Architecture](https://agent-rt-pro.github.io/docs/reference/architecture.html)
-- [Development](https://agent-rt-pro.github.io/docs/reference/development.html)
-- [Privacy & terms](https://agent-rt-pro.github.io/docs/reference/privacy-terms.html)
+- [Documentation home](https://agent-rt.pro-genai.com/docs/)
+- [Installation and Docker Hub images](https://agent-rt.pro-genai.com/docs/getting-started/installation)
+- [Quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart)
+- [Runtime](https://agent-rt.pro-genai.com/docs/concepts/runtime)
+- [Tools and policy](https://agent-rt.pro-genai.com/docs/concepts/tools-policy)
+- [State and memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory)
+- [Migration guide](https://agent-rt.pro-genai.com/docs/guides/migration)
+- [Production guide](https://agent-rt.pro-genai.com/docs/guides/production), including the privacy and product-launch checklist for apps built with Agent RT.
+- [Vector databases](https://agent-rt.pro-genai.com/docs/guides/vector-databases)
+- [Runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-guide)
+- [Features and defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults)
+- [Comparison](https://agent-rt.pro-genai.com/docs/reference/comparison)
+- [Architecture](https://agent-rt.pro-genai.com/docs/reference/architecture)
+- [Development](https://agent-rt.pro-genai.com/docs/reference/development)
+- [Privacy & terms](https://agent-rt.pro-genai.com/docs/reference/privacy-terms)
 
-- [Introduction to agent harnesses](https://agent-rt-pro.github.io/docs/concepts/agent-harnesses.html)
-- [Architecture and extension contracts](https://agent-rt-pro.github.io/docs/reference/extension-contracts.html)
-- [Configuration reference](https://agent-rt-pro.github.io/docs/reference/configuration.html)
-- [Complete runtime guide](https://agent-rt-pro.github.io/docs/guides/runtime-reference.html)
-- [Complete migration API reference](https://agent-rt-pro.github.io/docs/guides/migration-reference.html)
-- [Complete developer handbook](https://agent-rt-pro.github.io/docs/reference/contributor-handbook.html)
-- [Deployment privacy and launch checklist](https://agent-rt-pro.github.io/docs/reference/deployment-privacy-checklist.html)
+- [Introduction to agent harnesses](https://agent-rt.pro-genai.com/docs/concepts/agent-harnesses)
+- [Architecture and extension contracts](https://agent-rt.pro-genai.com/docs/reference/extension-contracts)
+- [Configuration reference](https://agent-rt.pro-genai.com/docs/reference/configuration)
+- [Complete runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference)
+- [Complete migration API reference](https://agent-rt.pro-genai.com/docs/guides/migration-reference)
+- [Complete developer handbook](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook)
+- [Deployment privacy and launch checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist)
 
 ## Highlights
 
