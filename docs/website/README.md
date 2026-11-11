@@ -57,3 +57,9 @@ From the repository root, run `python -m http.server --directory docs/website 80
 ## Complete reference pages
 
 Long-form documentation migrated from the top-level Markdown files is maintained as standalone HTML pages: `docs/concepts/agent-harnesses.html`, `docs/reference/extension-contracts.html`, `docs/reference/configuration.html`, `docs/guides/runtime-reference.html`, `docs/guides/migration-reference.html`, `docs/reference/contributor-handbook.html`, `docs/reference/deployment-privacy-checklist.html`. When editing these pages, maintain the docs overview, mobile/sidebar navigation, sitemap, `llms.txt`, canonical metadata and restrictive CSP. Preserve code examples, tables, stable heading anchors, and technical cross-links.
+
+## Cloudflare Pages deployment
+
+The public static site is deployed from `docs/website/` to the **existing** Cloudflare Pages Direct Upload project `agent-rt` at https://agent-rt.pages.dev. The GitHub Actions workflow at `.github/workflows/deploy-cloudflare-pages.yml` runs on every push and can also be triggered manually. A push to `main` deploys production; other branches receive Pages previews. The workflow runs the website CSP checker before deploying and does not need a frontend build or Wrangler configuration file.
+
+The workflow requires the GitHub Actions repository secret `CLOUDFLARE_API_TOKEN`, containing a Cloudflare API token scoped to this account with **Account → Cloudflare Pages → Edit** permission. Manage the token under the Cloudflare account's API Tokens settings and add it in the repository's **Settings → Secrets and variables → Actions**. The account ID is already specified in the workflow; do not commit the token to the repository. This is a Direct Upload project, so deployment automation uses Wrangler through GitHub Actions rather than Cloudflare Pages' native Git integration. After adding the secret, confirm a successful workflow run and published URL in GitHub Actions and Cloudflare Pages.
