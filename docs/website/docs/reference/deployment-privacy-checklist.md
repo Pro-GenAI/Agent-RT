@@ -4,18 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Deployment Privacy and Launch Checklist
- Reference
+**Section:** Reference / Deployment Privacy and Launch Checklist
 
 # Deployment Privacy and Launch Checklist
 
 Maintainer checklist for public website privacy, hosting boundaries, user features, contact forms, email, billing, and hosted content.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
-
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
 Agent RT is a self-hosted library and runtime. Its public documentation site is a separate static site hosted on GitHub Pages and Cloudflare Pages. A service built with Agent RT has its own operator, users, providers, storage, and legal obligations; the website's privacy notice does not cover that service.
 
@@ -59,52 +54,22 @@ python3 scripts/check_website_csp.py
 python3 -m unittest discover -s scripts -p 'test_check_website_csp.py'
 ```
 
-The gate checks loaded HTML asset URLs, inline-script hashes, and the restrictive CSP directives, including font and connection destinations and disabled form submissions. It rejects policy overrides or new directives until deliberately reviewed. It does not certify every JavaScript data flow, legal requirement, or deployed hosting configuration. Inspect new dependencies and browser requests as part of review; update the
+The gate checks loaded HTML asset URLs, inline-script hashes, and the restrictive CSP directives, including font and connection destinations and disabled form submissions. It rejects policy overrides or new directives until deliberately reviewed. It does not certify every JavaScript data flow, legal requirement, or deployed hosting configuration. Inspect new dependencies and browser requests as part of review; update the [website notice](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html),
 
-[website notice](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html)
-
-,
-
-[website maintenance guide](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/website/README.md)
-
-, and this document when behavior changes.
+[website maintenance guide](https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/website/README.md), and this document when behavior changes.
 
 ## Primary references
 
 Reviewed 29 October 2026. Requirements depend on facts and jurisdiction; use the official guidance rather than social-media penalty estimates.
 
--
+- [FTC COPPA FAQs](https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions), including the general-audience and age-screening guidance.
 
-[FTC COPPA FAQs](https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions)
+- [Google Fonts privacy FAQ](https://developers.google.com/fonts/faq/privacy), describing requests to Google's servers.
 
-, including the general-audience and age-screening guidance.
+- [FTC CAN-SPAM compliance guide](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business), including opt-out and postal-address requirements.
 
--
+- [California Attorney General automatic-renewal guidance](https://www.oag.ca.gov/news/press-releases/attorney-general-bonta-issues-consumer-alert-california%E2%80%99s-automatic-renewal-law), including consent, reminders, and cancellation.
 
-[Google Fonts privacy FAQ](https://developers.google.com/fonts/faq/privacy)
+- [US Copyright Office DMCA directory FAQs](https://www.copyright.gov/dmca-directory/faq.html) and [section 512 overview](https://www.copyright.gov/512/), covering agent designation and other safe-harbor conditions.
 
-, describing requests to Google's servers.
-
--
-
-[FTC CAN-SPAM compliance guide](https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business)
-
-, including opt-out and postal-address requirements.
-
--
-
-[California Attorney General automatic-renewal guidance](https://www.oag.ca.gov/news/press-releases/attorney-general-bonta-issues-consumer-alert-california%E2%80%99s-automatic-renewal-law)
-
-, including consent, reminders, and cancellation.
-
--
-
-[US Copyright Office DMCA directory FAQs](https://www.copyright.gov/dmca-directory/faq.html)
-
-and
-
-[section 512 overview](https://www.copyright.gov/512/)
-
-, covering agent designation and other safe-harbor conditions.
-
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)

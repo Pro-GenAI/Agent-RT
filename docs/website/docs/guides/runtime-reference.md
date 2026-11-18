@@ -4,40 +4,19 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Guides/Complete Runtime Guide
- Guides
+**Section:** Guides / Complete Runtime Guide
 
 # Complete Runtime Guide
 
 Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
-
-Detailed usage notes for features that the package READMEs only mention briefly. Examples are shown for Python unless a section says otherwise; the TypeScript package uses the same concepts with camelCase names. For design rationale and contracts see
-
-[Architecture and Extensions](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.html)
-
-.
+Detailed usage notes for features that the package READMEs only mention briefly. Examples are shown for Python unless a section says otherwise; the TypeScript package uses the same concepts with camelCase names. For design rationale and contracts see [Architecture and Extensions](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.html).
 
 ## Docker Hub images
 
-Prebuilt images are published on Docker Hub for
-
-[Python (praneeth1v/agent-rt-python)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
-
-and
-
-[TypeScript (praneeth1v/agent-rt-typescript)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
-
-. Use `latest` or a published version tag (such as `0.1.2`); pull counts are visible on each Docker Hub repository and on the live badges in the
-
-[main README](https://github.com/Pro-GenAI/Agent-RT/blob/main/README.md)
-
-.
+Prebuilt images are published on Docker Hub for [Python (praneeth1v/agent-rt-python)](https://hub.docker.com/r/praneeth1v/agent-rt-python) and [TypeScript (praneeth1v/agent-rt-typescript)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript). Use `latest` or a published version tag (such as `0.1.2`); pull counts are visible on each Docker Hub repository and on the live badges in the [main README](https://github.com/Pro-GenAI/Agent-RT/blob/main/README.md).
 
 ```bash
 docker pull praneeth1v/agent-rt-python:latest
@@ -54,11 +33,7 @@ The Python image includes the provider, API, and web extras; the TypeScript imag
 
 ## Providers
 
-`load_model(load_config())` (Python) / `loadModel(await loadConfig())` (TypeScript) builds a provider from the `model_list` of a YAML config file (`~/.agent-rt/config.yaml`, or an explicit path such as `load_config("./agent-rt.yaml")`). It supports several models, ordered fallbacks for repeated `model_name`s, and several vector stores; see
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
-
-. The process environment is only used to resolve `os.environ/NAME` secret references.
+`load_model(load_config())` (Python) / `loadModel(await loadConfig())` (TypeScript) builds a provider from the `model_list` of a YAML config file (`~/.agent-rt/config.yaml`, or an explicit path such as `load_config("./agent-rt.yaml")`). It supports several models, ordered fallbacks for repeated `model_name`s, and several vector stores; see [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html). The process environment is only used to resolve `os.environ/NAME` secret references.
 
 The OpenAI provider uses the native OpenAI-compatible transport by default and supports HTTP/SSE plus Responses WebSocket operation where available. The Anthropic provider uses the optional official Anthropic SDK. Reasoning/thinking controls are normalized into the provider-neutral `ReasoningConfig`, and each provider translates them into vendor-specific request fields.
 
@@ -107,8 +82,6 @@ agent = AgentConfig(
 )
 ```
 
-
-
 ```ts
 const agent = {
   name: "assistant",
@@ -137,8 +110,6 @@ const agent = {
 | `letta` | `pip install 'agent-rt[letta]'` | `npm install @letta-ai/letta-client` | `api_key`, `base_url`, `agent_id` (archival passages) |
 | `supermemory` | `pip install 'agent-rt[supermemory]'` | `npm install supermemory` | `api_key`, `base_url`, `namespace` (default `default`) |
 
-
-
 ```python
 from agent_rt import AgentConfig, AgentLoop, ModelSettings, load_memory
 
@@ -152,8 +123,6 @@ result = await AgentLoop(provider).run(agent, messages)
 await memory.remember(result.messages)
 ```
 
-
-
 ```ts
 const memory = await loadMemory(undefined, { options: { user_id: 'alice' } });
 const agent = { name: 'assistant', instructions: 'Be concise.', model: { model: 'claude-sonnet-5' }, memory: [memory] };
@@ -161,9 +130,7 @@ const result = await new AgentLoop(provider).run(agent, messages);
 await memory.remember(result.messages);
 ```
 
-The backend can also be set once in `agent-rt.yaml` (`agent_rt_settings.memory: {backend, options}`, see
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
+The backend can also be set once in `agent-rt.yaml` (`agent_rt_settings.memory: {backend, options}`, see [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
 
 ); `backend`/`options` passed in code win. Unknown backends and options fail at load time, and an uninstalled package raises with the install command. These packages call their own services: mem0 and memU use an LLM and embedding model to extract and index memories (mem0's self-hosted default is OpenAI, so it needs `OPENAI_API_KEY`), and mem0 sends its own anonymous telemetry unless `MEM0_TELEMETRY=False`. Recalled memories are untrusted by default, like any store.
 
@@ -270,8 +237,6 @@ todos.register(registry)          # adds the "todo" tool
 todos.replace(saved_items)        # restore a stored list; validated
 ```
 
-
-
 ```ts
 const todos = new TodoList();
 todos.register(registry);
@@ -302,8 +267,6 @@ safe_name = morpher.morph_text(
     entities=(PIIEntity(kind="person", start=9, end=20),),
 )
 ```
-
-
 
 ```ts
 import { PIIMorpher } from "agent-rt";
@@ -339,13 +302,7 @@ In interactive terminal sessions the CLI checks the published PyPI version at st
 
 Run `agent-rt demo` (`uvx agent-rt demo` or `npx agent-rt demo`) to try Agent RT with no config or API key: a scripted mock model meets a prompt injection, tries `rm -rf ~`, and the built-in action blocker stops it before the tool runs. The demo totals tokens and prints the process's peak memory.
 
-The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `~/.agent-rt/config.yaml`; project files require an explicit path); see
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
-
-. Workspace writes require approval; Git integration is inspection-only. File writes and exact-text replacements check that the target has not changed during a pending approval and abort rather than overwriting intervening edits. The `todo` tool (see
-
-[Task lists](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#task-lists-todo-tool)
+The CLI uses the same runtime, provider routing, guardrails, tool execution, and run limits as programmatic Agent RT. `--config PATH` selects the YAML config file (default: `~/.agent-rt/config.yaml`; project files require an explicit path); see [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html). Workspace writes require approval; Git integration is inspection-only. File writes and exact-text replacements check that the target has not changed during a pending approval and abort rather than overwriting intervening edits. The `todo` tool (see [Task lists](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#task-lists-todo-tool)
 
 ) is on by default, with one list per session. Writes to `.git/` and to `.gitattributes`/`.gitmodules` are refused outright, and the Git tools fail closed when the repository's own config defines `filter.*` drivers (Git runs those commands during `status`/`diff`). Workspace tool errors (for example a non-matching `replace_in_file`) are returned to the model as tool results so the turn and its history survive; approval previews state how many characters are not shown.
 
@@ -370,8 +327,6 @@ agent-rt opencode run "explain this stack trace"
 agent-rt copilot -p "explain this stack trace"
 ```
 
-
-
 | Command | Flags | Environment variables | Config files |
 | --- | --- | --- | --- |
 | `agent-rt claude` | `-p`, `--model`, `--system-prompt`, `--append-system-prompt`, `--max-turns`, `-r/--resume`, `--session-id` | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL` / `_OPUS_` / `_HAIKU_` / `_FABLE_MODEL` (alias targets), `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, `CLAUDE_CONFIG_DIR` | `model` and `env` in `$CLAUDE_CONFIG_DIR/settings.json` (default `~/.claude`); `model` only from `.claude/settings.json` and `.claude/settings.local.json` |
@@ -381,17 +336,11 @@ agent-rt copilot -p "explain this stack trace"
 
 These are the variables each tool documents for models, endpoints, and credentials (
 
-[Claude Code](https://code.claude.com/docs/en/env-vars)
+[Claude Code](https://code.claude.com/docs/en/env-vars) ,
 
-,
+[Codex](https://learn.chatgpt.com/docs/config-file/environment-variables) ,
 
-[Codex](https://learn.chatgpt.com/docs/config-file/environment-variables)
-
-,
-
-[opencode](https://opencode.ai/docs/cli/)
-
-, and `copilot help providers` for Copilot CLI). Project-level files may only choose the model. Endpoints and keys come from user-level config or the environment, so a cloned repository cannot send your API key to its own server; Codex's project `.codex/config.toml` is not read for the same reason. Documented variables that Agent RT cannot honor are reported rather than silently dropped. `ANTHROPIC_CUSTOM_HEADERS`, `ANTHROPIC_BETAS`, Codex `http_headers`/`env_http_headers`/`query_params`, `COPILOT_PROVIDER_WIRE_API=responses`, and the permission variable `COPILOT_ALLOW_ALL` print a notice. `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY`, `CODEX_ACCESS_TOKEN`, and Copilot's `azure` provider type stop with a message saying what to set instead.
+[opencode](https://opencode.ai/docs/cli/) , and `copilot help providers` for Copilot CLI). Project-level files may only choose the model. Endpoints and keys come from user-level config or the environment, so a cloned repository cannot send your API key to its own server; Codex's project `.codex/config.toml` is not read for the same reason. Documented variables that Agent RT cannot honor are reported rather than silently dropped. `ANTHROPIC_CUSTOM_HEADERS`, `ANTHROPIC_BETAS`, Codex `http_headers`/`env_http_headers`/`query_params`, `COPILOT_PROVIDER_WIRE_API=responses`, and the permission variable `COPILOT_ALLOW_ALL` print a notice. `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY`, `CODEX_ACCESS_TOKEN`, and Copilot's `azure` provider type stop with a message saying what to set instead.
 
 Only API-key credentials are reused. Subscription and OAuth sign-ins (Claude.ai, ChatGPT, GitHub Copilot's hosted models, opencode OAuth providers) belong to the official clients and are refused with a hint about which key to set. The CLI's own `agent-rt.yaml` is not read in these modes.
 
@@ -489,19 +438,11 @@ Prepend the package name to a supported upstream import path.
 | `litellm` | `agent_rt.litellm` | Python-only |
 | `openrouter` / `@openrouter/sdk` | `agent_rt.openrouter` | `agent-rt/@openrouter/sdk` |
 
-TypeScript also keeps the historical aliases `agent-rt/langchain`, `agent-rt/llamaindex`, and `agent-rt/anthropic`. Compatibility routes model execution through Agent RT provider contracts instead of creating a second runtime; AutoGen, CrewAI, and LiteLLM compatibility are Python-only because Agent RT does not invent JavaScript APIs without an upstream surface to preserve. See
-
-[Migration](https://agent-rt.pro-genai.com/docs/guides/migration-reference.html)
-
-for the supported subset and semantic gaps.
+TypeScript also keeps the historical aliases `agent-rt/langchain`, `agent-rt/llamaindex`, and `agent-rt/anthropic`. Compatibility routes model execution through Agent RT provider contracts instead of creating a second runtime; AutoGen, CrewAI, and LiteLLM compatibility are Python-only because Agent RT does not invent JavaScript APIs without an upstream surface to preserve. See [Migration](https://agent-rt.pro-genai.com/docs/guides/migration-reference.html) for the supported subset and semantic gaps.
 
 ## Vector databases
 
-Built-in HTTP vector adapters cover Chroma, Milvus, Pinecone, Qdrant, and Weaviate; FAISS and pgvector plug in through custom registry factories. See
-
-[Features and defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
-
-for the full list.
+Built-in HTTP vector adapters cover Chroma, Milvus, Pinecone, Qdrant, and Weaviate; FAISS and pgvector plug in through custom registry factories. See [Features and defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html) for the full list.
 
 Security boundaries for these integrations:
 
@@ -517,7 +458,7 @@ Security boundaries for these integrations:
 
 - Tenant-bound `ScopedMemoryStore` keeps storage IDs in a tenant namespace and returns the original caller IDs. Existing raw records must be copied through the tenant-bound view before switching a persisted store; they are not silently adopted into the namespace. Base-store access remains trusted administrative access.
 
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)
 
 ## Governed subagent delegation
 

@@ -4,15 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Features & defaults
- Reference
+**Section:** Reference / Features & defaults
 
-# Features, defaults
-& usage
+# Features, defaults & usage
 
 A self-contained map of Agent RT. Use this page to understand what the runtime does, what happens by default, what requires explicit configuration, and which object or setting controls each capability.
 
- **Default does not always mean enabled.**Agent RT distinguishes built-in safe defaults from optional integrations. For example, conservative conversation-boundary input/output guardrails are enabled by default, while the model-backed tool-input guardrail is opt-in. When enabled, its default model is `agent-action-guard`.
+> **Default does not always mean enabled.:** Agent RT distinguishes built-in safe defaults from optional integrations. For example, conservative conversation-boundary input/output guardrails are enabled by default, while the model-backed tool-input guardrail is opt-in. When enabled, its default model is `agent-action-guard`.
 
 ## Default behavior at a glance
 
@@ -165,8 +163,6 @@ registry.register(
 loop = AgentLoop(load_model(load_config()), tool_registry=registry)
 ```
 
-
-
 ```javascript
 const { AgentLoop, ToolRegistry, loadConfig, loadModel } = require("agent-rt");
 
@@ -211,8 +207,6 @@ result = await AgentLoop(provider).run_streaming(
 )
 ```
 
-
-
 ```javascript
 const result = await new AgentLoop(provider).runStreaming(
   agent,
@@ -250,8 +244,6 @@ agent = AgentConfig(
     ),
 )
 ```
-
-
 
 ```javascript
 const agent = {
@@ -293,8 +285,6 @@ result = await AgentLoop(provider).run(
     limits=limits,
 )
 ```
-
-
 
 ```javascript
 const result = await new AgentLoop(provider).run(
@@ -344,7 +334,7 @@ result = await registry.execute(
 )
 ```
 
-**What this tutorial establishes**The basic model call, tools, streaming, structured output, run limits, and registry behavior are all separate pieces. You can adopt only the pieces you need, then add policy, persistence, orchestration, sandboxing, and observability incrementally.
+> **What this tutorial establishes:** The basic model call, tools, streaming, structured output, run limits, and registry behavior are all separate pieces. You can adopt only the pieces you need, then add policy, persistence, orchestration, sandboxing, and observability incrementally.
 
 ## 1. Agent definition and provider layer
 
@@ -379,7 +369,7 @@ A tool is a runtime capability with a name, description, argument schema, option
 
 **Execution order:** visibility → model call → tool lookup/enabled check → permissions/capability checks → pre-call transform → action blockers → tool-input guardrails → argument validation → rate limits/dry-run → approvals/policy → handler execution → tool-output guardrails → result marshaling → model continuation.
 
- **Why visibility and dispatch are separate**Hiding a tool from the model reduces capability exposure, but dispatch still re-checks execution policy. A stale or malformed call cannot rely on having seen an older schema.
+> **Why visibility and dispatch are separate:** Hiding a tool from the model reduces capability exposure, but dispatch still re-checks execution policy. A stale or malformed call cannot rely on having seen an older schema.
 
 ## 5. Tool selection, visibility, and discovery
 
@@ -575,11 +565,7 @@ print(len(snapshot.messages))
 
 Memory stores use provider-neutral read/write/update/delete/search contracts. `SemanticMemory` adds embedding-based ranking; `EpisodicMemory` records task actions and outcomes; `ProceduralMemory` stores reusable instructions, scripts, templates, and workflows. Write/retrieval policies can filter by relevance, sensitivity, confidence, duplication, scope, recency, and kind. Scoped/lifecycle wrappers enforce isolation, expiry, purge, compaction provenance, and schema migrations.
 
-`load_memory()` / `loadMemory()` connect a dedicated memory package (mem0 by default; Zep, Letta, Supermemory, or memU in Python) as an `AgentConfig.memory` source and store finished conversations with `remember()`. See
-
-[Agent memory](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.html#agent-memory)
-
-.
+`load_memory()` / `loadMemory()` connect a dedicated memory package (mem0 by default; Zep, Letta, Supermemory, or memU in Python) as an `AgentConfig.memory` source and store finished conversations with `remember()`. See [Agent memory](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.html#agent-memory).
 
 **Default:** persistent memory is not silently enabled. Choose and inject the memory layer appropriate for your application.
 
@@ -619,8 +605,6 @@ agent_rt_settings:
     gid: 1235
     network_mode: none   # network access is disabled by default
 ```
-
-
 
 ```python
 from agent_rt import (
@@ -672,11 +656,7 @@ results = await retrieval.search(
 
 ## 18. Vector databases
 
-The project supports Chroma, Milvus, Pinecone, Qdrant, and Weaviate HTTP adapters and hosted Bedrock Knowledge Bases retrieval (optional AWS SDK), with YAML configuration, lazy initialization, and LangChain/LlamaIndex-compatible imports. See the
-
-[vector database guide](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)
-
-for concrete setup.
+The project supports Chroma, Milvus, Pinecone, Qdrant, and Weaviate HTTP adapters and hosted Bedrock Knowledge Bases retrieval (optional AWS SDK), with YAML configuration, lazy initialization, and LangChain/LlamaIndex-compatible imports. See the [vector database guide](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html) for concrete setup.
 
 ## 19. Provider routing and Decision models
 
@@ -751,9 +731,7 @@ Evaluation APIs support deterministic harness assessment and regression workflow
 
 The runtime can be exposed through a CLI, a stable application API, or an optional OpenAI/Anthropic-compatible server surface. Interface layers are adapters over the same runtime rather than separate execution engines, so tools, guardrails, routing, run limits, state, and policy remain consistent.
 
-IDE integration can pass current-file, selection, diagnostics, and diff context into workspace operations. The terminal CLI and `agent-rt web` share saved sessions, so a session started in one resumes in the other. The CLI reads Codex and Claude Code project setup as is: `AGENTS.md`/`CLAUDE.md` instructions, skills in `.agents/`, `.claude/`, and `.codex/` (trusted by file hash after a full scan, and scanned again when they change), and MCP servers from `.mcp.json`, `~/.claude.json`, and `~/.codex/config.toml` (see the
-
-[runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.html#project-instructions-skills-mcp)
+IDE integration can pass current-file, selection, diagnostics, and diff context into workspace operations. The terminal CLI and `agent-rt web` share saved sessions, so a session started in one resumes in the other. The CLI reads Codex and Claude Code project setup as is: `AGENTS.md`/`CLAUDE.md` instructions, skills in `.agents/`, `.claude/`, and `.codex/` (trusted by file hash after a full scan, and scanned again when they change), and MCP servers from `.mcp.json`, `~/.claude.json`, and `~/.codex/config.toml` (see the [runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.html#project-instructions-skills-mcp)
 
 ). `agent-rt serve telegram,discord` (Python, beta) answers allowed users as a Telegram or Discord bot without workspace tools. Chat bridges preserve channel identity and thread state. Approval presentation provides standardized consequence/diff/allow-or-deny UI data.
 
@@ -778,10 +756,8 @@ Compatibility modules support common LangChain and LlamaIndex integration patter
 | Observability | Enable traces/metrics/audit while redacting sensitive data before persistence. |
 | Testing | Use deterministic provider/tool doubles for failure, security, replay, and regression tests. |
 
-**Mental model**The model proposes. Agent RT controls context, capabilities, validation, policy, execution, persistence, budgets, and observability. Optional integrations extend those boundaries; they do not replace them.
+> **Mental model:** The model proposes. Agent RT controls context, capabilities, validation, policy, execution, persistence, budgets, and observability. Optional integrations extend those boundaries; they do not replace them.
 
 [RelatedArchitecture](https://agent-rt.pro-genai.com/docs/reference/architecture.html)
 
-
-
-[NextProduction patterns →](https://agent-rt.pro-genai.com/docs/guides/production.html)
+**Next:** [Production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)

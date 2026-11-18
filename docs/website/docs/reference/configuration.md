@@ -4,26 +4,19 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Configuration Reference
- Reference
+**Section:** Reference / Configuration Reference
 
 # Configuration Reference
 
 Complete agent-rt.yaml configuration reference for model lists, vector stores, runtime controls, secrets, and compatibility adapters.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
-
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
 Agent RT is configured with one YAML file, modelled on LiteLLM's `config.yaml`. Provider selection, models, vector stores, sandbox, web search, execution limits, Decision models, observability, and server settings all live there. The process environment is **not** a configuration source: it is read only to resolve secrets written as `os.environ/NAME`.
 
 A complete annotated example is
 
-[agent-rt.example.yaml](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml)
-
-.
+[agent-rt.example.yaml](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
 
 ## Finding the file
 
@@ -157,8 +150,6 @@ configure_runtime(config)
 provider = load_model(config)        # routes by model_name, with fallbacks
 ```
 
-
-
 ```ts
 import { loadConfig, loadModel, configureRuntime } from "agent-rt";
 
@@ -177,10 +168,6 @@ or call `agent_rt_api.serve_from_config(config_path=...)`. `build_from_config` r
 
 ## Compatibility adapters
 
-The migration adapters (`agent_rt.openai`, `agent_rt.anthropic`, LangChain, LlamaIndex, OpenAI Agents) deliberately keep the upstream SDKs' environment behaviour (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `ANTHROPIC_API_KEY`, ...) so migrated code works unchanged. The CLI tool modes (`agent-rt claude`, `agent-rt codex`, `agent-rt opencode`, `agent-rt copilot`) likewise read that tool's own environment variables and config files instead of `agent-rt.yaml`; see
+The migration adapters (`agent_rt.openai`, `agent_rt.anthropic`, LangChain, LlamaIndex, OpenAI Agents) deliberately keep the upstream SDKs' environment behaviour (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `ANTHROPIC_API_KEY`, ...) so migrated code works unchanged. The CLI tool modes (`agent-rt claude`, `agent-rt codex`, `agent-rt opencode`, `agent-rt copilot`) likewise read that tool's own environment variables and config files instead of `agent-rt.yaml`; see [Runtime Guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#reuse-another-agent-clis-setup). Agent RT's own configuration is only the YAML file.
 
-[Runtime Guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#reuse-another-agent-clis-setup)
-
-. Agent RT's own configuration is only the YAML file.
-
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)
