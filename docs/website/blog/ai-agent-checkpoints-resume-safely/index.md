@@ -2,21 +2,21 @@
 
 > A practical solution to interrupted AI agent workflows using checkpoints, idempotency keys, event records, and preserved execution budgets.
 
-Reliability / Field guide 03
+**Category:** Reliability  
+**Series:** Field guide 03
 
 # Your AI agent crashed halfway through. Resume without duplicating work.
 
 A retry can finish the job—or quietly perform the same action twice.
 
- Pro-GenAI3 November 20266 min read
+**Author:** Pro-GenAI  
+**Published:** 3 November 2026  
+**Reading time:** 6 min
 
- Problem
+## At a glance
 
-A run crashes after writing to a service but before reporting completion.
-
-Solution
-
-Persist checkpoints and event history, and reconcile external side effects with idempotency keys.
+- **Problem:** A run crashes after writing to a service but before reporting completion.
+- **Solution:** Persist checkpoints and event history, and reconcile external side effects with idempotency keys.
 
 ## The failure that simple retries miss
 
@@ -24,9 +24,7 @@ Imagine an agent sending an invoice and then crashing before it stores the tool 
 
 Conversation history is not enough to resume a workflow. You also need durable workflow state, action outcomes, approvals, and the budgets already consumed by the run.
 
- **Reliability principle**
-
-A checkpoint protects progress. An idempotency key protects side effects. You generally need both.
+> **Reliability principle:** A checkpoint protects progress. An idempotency key protects side effects. You generally need both.
 
 ## The recovery pattern
 
@@ -69,15 +67,7 @@ Approval pauses deserve special care: persist what was proposed, then verify tha
 
 Simulate process termination before the write, during the tool call, just after external success, and after saving the result. Restart each time. Assert there is only one logical external operation, no silent budget reset, and an accurate final status.
 
-For design details, see
-
-[state and memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory.html)
-
-and
-
-[production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
-
-.
+For design details, see [state and memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory.html) and [production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html).
 
 ## Explore Agent RT
 

@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Getting started/Installation
- Getting started
+**Section:** Getting started / Installation
 
 # Installation
 
@@ -36,13 +35,7 @@ npm install agent-rt
 
 Prebuilt images are also available on Docker Hub:
 
-[Agent RT Python](https://hub.docker.com/r/praneeth1v/agent-rt-python)
-
-and
-
-[Agent RT TypeScript](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
-
-. Pull the latest tag, or use a published version tag such as `0.1.2`:
+[Agent RT Python](https://hub.docker.com/r/praneeth1v/agent-rt-python) and [Agent RT TypeScript](https://hub.docker.com/r/praneeth1v/agent-rt-typescript). Pull the latest tag, or use a published version tag such as `0.1.2`:
 
 ```bash
 docker pull praneeth1v/agent-rt-python:latest
@@ -56,9 +49,7 @@ docker run --rm praneeth1v/agent-rt-python:latest --help
 docker run --rm praneeth1v/agent-rt-typescript:latest node -e "console.log(typeof require('agent-rt').AgentLoop)"
 ```
 
-The Python image includes the API and web extras; the TypeScript image includes the OpenAI and Anthropic SDK peers. Docker Hub displays each image's pull count; the
-
-[GitHub README](https://github.com/Pro-GenAI/Agent-RT/blob/main/README.md)
+The Python image includes the API and web extras; the TypeScript image includes the OpenAI and Anthropic SDK peers. Docker Hub displays each image's pull count; the [GitHub README](https://github.com/Pro-GenAI/Agent-RT/blob/main/README.md)
 
 also includes live pull-count badges. Provide provider credentials/configuration at runtime, not in your image.
 
@@ -74,28 +65,14 @@ model_list:
       api_key: os.environ/OPENAI_API_KEY
 ```
 
-Repeating a `model_name` adds an ordered fallback. See the
+Repeating a `model_name` adds an ordered fallback. See the [configuration reference](https://agent-rt.pro-genai.com/docs/reference/configuration.html) and the [example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml).
 
-[configuration reference](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
-
-and the
-
-[example file](https://github.com/Pro-GenAI/Agent-RT/blob/main/agent-rt.example.yaml)
-
-.
-
- **Provider-neutral by design**Agent code is built against Agent RT contracts. OpenAI, Anthropic, compatible endpoints, Decision models, and custom providers can sit behind that boundary.
+> **Provider-neutral by design:** Agent code is built against Agent RT contracts. OpenAI, Anthropic, compatible endpoints, Decision models, and custom providers can sit behind that boundary.
 
 ## Vector databases
 
-No Chroma, Pinecone, Qdrant, Milvus, Weaviate, LangChain, or LlamaIndex package is required for Agent RT's built-in vector retrieval and compatibility adapters. Declare services in `vector_store_registry` (several are allowed), then see the
+No Chroma, Pinecone, Qdrant, Milvus, Weaviate, LangChain, or LlamaIndex package is required for Agent RT's built-in vector retrieval and compatibility adapters. Declare services in `vector_store_registry` (several are allowed), then see the [vector database guide](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html) for backend credentials and framework migration imports.
 
-[vector database guide](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)
+**Previous:** [Documentation overview](https://agent-rt.pro-genai.com/docs/)
 
-for backend credentials and framework migration imports.
-
-[PreviousDocumentation overview](https://agent-rt.pro-genai.com/docs/)
-
-
-
-[NextQuickstart →](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html)
+**Next:** [Quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html)

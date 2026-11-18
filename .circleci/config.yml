@@ -173,6 +173,7 @@ jobs:
           command: |
             set -euo pipefail
             python3 -m unittest discover -s scripts -p 'test_check_website_csp.py'
+            python3 -m unittest discover -s scripts -p 'test_check_website_markdown.py'
             python3 scripts/check_website_csp.py
             python3 scripts/check_website_markdown.py
             python3 scripts/render_migration_wall.py --check

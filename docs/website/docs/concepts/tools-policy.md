@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Core concepts/Tools & policy
-Core concepts
+**Section:** Core concepts / Tools & policy
 
 # Tools & policy
 
@@ -29,30 +28,20 @@ Action blockers are a deny-only boundary for proposed tool actions. A registry c
 
 Agent RT also has four distinct transform-capable guardrail boundaries: user/model-boundary input, model output, tool input, and tool output. The built-in conversation boundary layer is enabled by default and checks message size, content-part count, control characters, and assistant output role. The legacy model-backed tool-input screening path remains opt-in; when enabled, its default model is `agent-action-guard` (Agent Action Guard).
 
-Human-in-the-loop flows can pause execution for missing information, review, edits, or approval rather than encoding consequential authorization inside model text. See
+Human-in-the-loop flows can pause execution for missing information, review, edits, or approval rather than encoding consequential authorization inside model text. See [Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
 
-[Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
-
-
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
-
-for execution order, exact defaults, configuration examples, prompt-injection defenses, exfiltration policy, permissions, and production guidance.
+[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html) for execution order, exact defaults, configuration examples, prompt-injection defenses, exfiltration policy, permissions, and production guidance.
 
 ## Agent Swarm Eval: delegation and privacy evaluation
 
-For research on delegated tool security, the
-
-[Agent Swarm Eval benchmark](https://github.com/Pro-GenAI/Agent-RT/tree/main/src/benchmarks/agent-swarm-eval)
+For research on delegated tool security, the [Agent Swarm Eval benchmark](https://github.com/Pro-GenAI/Agent-RT/tree/main/src/benchmarks/agent-swarm-eval)
 
 compares a minimal OpenAI SDK worker harness with Agent-RT's invocation-scoped capability grants, optional task-aware Decision-model selection, and synthetic-email tool-input checks. Registry dispatch rechecks the live tool definition: a sub-agent cannot execute a tool absent from its delegated allowlist, even when the tool is registered globally. The opt-in unexpected-PII guard inspects nested arguments before invoking a handler. The benchmark reports attempted, blocked, and executed calls separately.
 
 The benchmark runs deterministically by default; live model runs and a Jev-compatible Decision endpoint are opt-in. Its persistent model-response cache does not cache tool execution. Cache-only replays are not independent model samples. PII test fixtures are synthetic and are not examples of permitted real-data exfiltration.
 
- **Least privilege**Expose only the capabilities needed for the current task. Authorization and side-effect policy should remain outside model-generated instructions.
+> **Least privilege:** Expose only the capabilities needed for the current task. Authorization and side-effect policy should remain outside model-generated instructions.
 
-[Previous← Runtime model](https://agent-rt.pro-genai.com/docs/concepts/runtime.html)
+**Previous:** [Runtime model](https://agent-rt.pro-genai.com/docs/concepts/runtime.html)
 
-
-
-[NextState & memory →](https://agent-rt.pro-genai.com/docs/concepts/state-memory.html)
+**Next:** [State & memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory.html)

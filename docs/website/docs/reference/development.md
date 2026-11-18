@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Development
-Reference
+**Section:** Reference / Development
 
 # Development
 
@@ -36,14 +35,8 @@ CI covers both runtime implementations on Linux, Windows, macOS (Intel and Apple
 
 Durable architecture and design concepts live in the website documentation under `docs/website/docs/`. User-facing capabilities, requirements, packaging, and current workflows stay aligned with the root and package READMEs. The static website under `docs/website/` remains dependency-free and has no build step.
 
- **Complete contributor handbook**See the
+> **Complete contributor handbook:** See the [full development reference](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook.html) for the test matrix, security tooling, evaluation, packaging, and CI commands.
 
-[full development reference](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook.html)
+**Previous:** [Architecture](https://agent-rt.pro-genai.com/docs/reference/architecture.html)
 
-for the test matrix, security tooling, evaluation, packaging, and CI commands.
-
-[Previous← Architecture](https://agent-rt.pro-genai.com/docs/reference/architecture.html)
-
-
-
-[NextPrivacy & terms →](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html)
+**Next:** [Privacy & terms](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html)

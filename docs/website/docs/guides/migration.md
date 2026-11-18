@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Guides/Migration
-Guides
+**Section:** Guides / Migration
 
 # Migration
 
@@ -17,75 +16,126 @@ For common imports, migration can be as small as changing the module prefix. Kee
 
 ### Python
 
-   LangChain
- −`from langchain_openai import ChatOpenAI`
- +`from agent_rt.langchain_openai import ChatOpenAI`
+#### LangChain
 
-  LlamaIndex
- −`from llama_index.llms.openai import OpenAI`
- +`from agent_rt.llama_index.llms.openai import OpenAI`
+```diff
+- from langchain_openai import ChatOpenAI
++ from agent_rt.langchain_openai import ChatOpenAI
+```
 
-  LangChain · Qdrant
- −`from langchain_qdrant import QdrantVectorStore`
- +`from agent_rt.langchain_qdrant import QdrantVectorStore`
+#### LlamaIndex
 
-  LlamaIndex · Qdrant
- −`from llama_index.vector_stores.qdrant import QdrantVectorStore`
- +`from agent_rt.llama_index.vector_stores.qdrant import QdrantVectorStore`
+```diff
+- from llama_index.llms.openai import OpenAI
++ from agent_rt.llama_index.llms.openai import OpenAI
+```
 
-  OpenAI
- −`from openai import AsyncOpenAI`
- +`from agent_rt.openai import AsyncOpenAI`
+#### LangChain · Qdrant
 
-  Anthropic
- −`from anthropic import AsyncAnthropic`
- +`from agent_rt.anthropic import AsyncAnthropic`
+```diff
+- from langchain_qdrant import QdrantVectorStore
++ from agent_rt.langchain_qdrant import QdrantVectorStore
+```
 
-  Deep Agents
- −`from deepagents import create_deep_agent`
- +`from agent_rt.deepagents import create_deep_agent`
+#### LlamaIndex · Qdrant
 
-  LiteLLM
- −`from litellm import completion`
- +`from agent_rt.litellm import completion`
+```diff
+- from llama_index.vector_stores.qdrant import QdrantVectorStore
++ from agent_rt.llama_index.vector_stores.qdrant import QdrantVectorStore
+```
 
-  OpenRouter
- −`from openrouter import OpenRouter`
- +`from agent_rt.openrouter import OpenRouter`
+#### OpenAI
+
+```diff
+- from openai import AsyncOpenAI
++ from agent_rt.openai import AsyncOpenAI
+```
+
+#### Anthropic
+
+```diff
+- from anthropic import AsyncAnthropic
++ from agent_rt.anthropic import AsyncAnthropic
+```
+
+#### Deep Agents
+
+```diff
+- from deepagents import create_deep_agent
++ from agent_rt.deepagents import create_deep_agent
+```
+
+#### LiteLLM
+
+```diff
+- from litellm import completion
++ from agent_rt.litellm import completion
+```
+
+#### OpenRouter
+
+```diff
+- from openrouter import OpenRouter
++ from agent_rt.openrouter import OpenRouter
+```
 
 ### TypeScript / JavaScript
 
-  LangChain
-−`import { ChatOpenAI } from "@langchain/openai";`
-+`import { ChatOpenAI } from "agent-rt/@langchain/openai";`
+#### LangChain
 
- LlamaIndex
-−`import { OpenAI } from "@llamaindex/openai";`
-+`import { OpenAI } from "agent-rt/@llamaindex/openai";`
+```diff
+- import { ChatOpenAI } from "@langchain/openai";
++ import { ChatOpenAI } from "agent-rt/@langchain/openai";
+```
 
- LangChain · Qdrant
-−`import { QdrantVectorStore } from "@langchain/qdrant";`
-+`import { QdrantVectorStore } from "agent-rt/@langchain/qdrant";`
+#### LlamaIndex
 
- LlamaIndex · Qdrant
-−`import { QdrantVectorStore } from "@llamaindex/qdrant";`
-+`import { QdrantVectorStore } from "agent-rt/@llamaindex/qdrant";`
+```diff
+- import { OpenAI } from "@llamaindex/openai";
++ import { OpenAI } from "agent-rt/@llamaindex/openai";
+```
 
- OpenAI
-−`import OpenAI from "openai";`
-+`import OpenAI from "agent-rt/openai";`
+#### LangChain · Qdrant
 
- Anthropic
-−`import Anthropic from "@anthropic-ai/sdk";`
-+`import Anthropic from "agent-rt/@anthropic-ai/sdk";`
+```diff
+- import { QdrantVectorStore } from "@langchain/qdrant";
++ import { QdrantVectorStore } from "agent-rt/@langchain/qdrant";
+```
 
- Deep Agents
-−`import { createDeepAgent } from "deepagents";`
-+`import { createDeepAgent } from "agent-rt/deepagents";`
+#### LlamaIndex · Qdrant
 
- OpenRouter
-−`import { OpenRouter } from "@openrouter/sdk";`
-+`import { OpenRouter } from "agent-rt/@openrouter/sdk";`
+```diff
+- import { QdrantVectorStore } from "@llamaindex/qdrant";
++ import { QdrantVectorStore } from "agent-rt/@llamaindex/qdrant";
+```
+
+#### OpenAI
+
+```diff
+- import OpenAI from "openai";
++ import OpenAI from "agent-rt/openai";
+```
+
+#### Anthropic
+
+```diff
+- import Anthropic from "@anthropic-ai/sdk";
++ import Anthropic from "agent-rt/@anthropic-ai/sdk";
+```
+
+#### Deep Agents
+
+```diff
+- import { createDeepAgent } from "deepagents";
++ import { createDeepAgent } from "agent-rt/deepagents";
+```
+
+#### OpenRouter
+
+```diff
+- import { OpenRouter } from "@openrouter/sdk";
++ import { OpenRouter } from "agent-rt/@openrouter/sdk";
+```
 
 ## Migrate with one command
 
@@ -104,8 +154,6 @@ Maintainers whose repository runs on Agent RT can add this badge to their README
 
 ![Runs on Agent RT](https://agent-rt.pro-genai.com/assets/badge/runs-on-agent-rt.svg)
 
-
-
 ```markdown
 [![Runs on Agent RT](https://agent-rt.pro-genai.com/assets/badge/runs-on-agent-rt.svg)](https://agent-rt.pro-genai.com/#migration)
 ```
@@ -120,20 +168,10 @@ Start at the compatibility entry point closest to the code you already have. Onc
 
 The migration layer covers common chat/completion entry points, streaming, tool history, OpenAI Responses continuation, file-search integration through Agent RT retrieval providers, web retrieval integration, reasoning/thinking controls, batch lifecycle compatibility, and read/query vector-store adapters for Chroma, Pinecone, Qdrant, Milvus, and Weaviate.
 
-LangChain compatibility exposes vendor-shaped imports such as `agent_rt.langchain_qdrant` and `agent-rt/@langchain/qdrant`. LlamaIndex compatibility exposes `agent_rt.llama_index.vector_stores.qdrant` and `agent-rt/@llamaindex/qdrant`, including integration with `VectorStoreIndex.from_vector_store()` / `fromVectorStore()`. These adapters query existing collections; vendor write/admin lifecycle APIs remain outside the compatibility layer. See the
+LangChain compatibility exposes vendor-shaped imports such as `agent_rt.langchain_qdrant` and `agent-rt/@langchain/qdrant`. LlamaIndex compatibility exposes `agent_rt.llama_index.vector_stores.qdrant` and `agent-rt/@llamaindex/qdrant`, including integration with `VectorStoreIndex.from_vector_store()` / `fromVectorStore()`. These adapters query existing collections; vendor write/admin lifecycle APIs remain outside the compatibility layer. See the [vector database guide](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html) for the complete mapping.
 
-[vector database guide](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)
+> **Complete migration reference:** This page is the navigation-oriented overview. Read the [full migration reference](https://agent-rt.pro-genai.com/docs/guides/migration-reference.html) for API coverage, framework-specific compatibility notes, and code examples.
 
-for the complete mapping.
+**Previous:** [State & memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory.html)
 
- **Complete migration reference**This page is the navigation-oriented overview. Read the
-
-[full migration reference](https://agent-rt.pro-genai.com/docs/guides/migration-reference.html)
-
-for API coverage, framework-specific compatibility notes, and code examples.
-
-[Previous← State & memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory.html)
-
-
-
-[NextProduction patterns →](https://agent-rt.pro-genai.com/docs/guides/production.html)
+**Next:** [Production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)

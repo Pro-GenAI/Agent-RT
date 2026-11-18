@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Guides/Runtime guide
-Guides
+**Section:** Guides / Runtime guide
 
 # Runtime guide
 
@@ -129,8 +128,6 @@ agent-rt opencode run "explain this stack trace"
 agent-rt copilot -p "explain this stack trace"
 ```
 
-
-
 | Command | Environment variables | Config files |
 | --- | --- | --- |
 | `agent-rt claude` | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`/`_OPUS_`/`_HAIKU_`/`_FABLE_MODEL`, `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, `CLAUDE_CONFIG_DIR` | User `settings.json` (`model`, `env`); project settings choose the model only |
@@ -217,11 +214,7 @@ Registration is fail-closed: deterministic scanning always runs and externally s
 
 ## Migration entry points
 
-Prepend the package name to a supported upstream import path. See the
-
-[migration guide](https://agent-rt.pro-genai.com/docs/guides/migration.html)
-
-for the supported subset and semantic gaps.
+Prepend the package name to a supported upstream import path. See the [migration guide](https://agent-rt.pro-genai.com/docs/guides/migration.html) for the supported subset and semantic gaps.
 
 | Upstream | Python | TypeScript |
 | --- | --- | --- |
@@ -236,10 +229,6 @@ for the supported subset and semantic gaps.
 | `litellm` | `agent_rt.litellm` | Python only |
 | `openrouter / @openrouter/sdk` | `agent_rt.openrouter` | `agent-rt/@openrouter/sdk` |
 
+**Previous:** [Vector databases](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)
 
-
-[Previous← Vector databases](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)
-
-
-
-[NextFeatures & defaults →](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
+**Next:** [Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)

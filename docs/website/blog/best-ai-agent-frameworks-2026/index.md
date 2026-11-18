@@ -2,21 +2,21 @@
 
 > Compare Agent RT, LangGraph, CrewAI, LlamaIndex, OpenAI Agents SDK, and Microsoft Agent Framework by use case and production requirements.
 
-Frameworks / Field guide 02
+**Category:** Frameworks  
+**Series:** Field guide 02
 
 # Best AI agent frameworks in 2026: a practical way to choose.
 
 The best framework is the one that solves your constraints, not the one with the longest feature list.
 
- Pro-GenAI3 November 20268 min read
+**Author:** Pro-GenAI  
+**Published:** 3 November 2026  
+**Reading time:** 8 min
 
- Problem
+## At a glance
 
-A framework looks impressive in demos but does not fit the workflow.
-
-Solution
-
-Choose by orchestration style, trust boundaries, persistence, and operational cost.
+- **Problem:** A framework looks impressive in demos but does not fit the workflow.
+- **Solution:** Choose by orchestration style, trust boundaries, persistence, and operational cost.
 
 ## First define “best”
 
@@ -53,45 +53,13 @@ Microsoft describes Agent Framework as the successor combining ideas from AutoGe
 
 Agent RT emphasizes the agent *runtime* rather than forcing a single orchestration metaphor. The same core ideas—tool dispatch, state, memory, policy, and sandbox backends—are implemented for Python and TypeScript. Its migration adapters can help reuse supported framework interfaces, but your own tests still need to pass.
 
-Its
-
-[published comparison](https://agent-rt.pro-genai.com/docs/reference/comparison.html)
-
-includes reproducible framework-overhead measurements. These are specific to the measured environment and deterministic localhost mock, not evidence that a particular framework solves tasks better for every workload.
+Its [published comparison](https://agent-rt.pro-genai.com/docs/reference/comparison.html) includes reproducible framework-overhead measurements. These are specific to the measured environment and deterministic localhost mock, not evidence that a particular framework solves tasks better for every workload.
 
 ## Verify against primary sources
 
-Read the teams’ own documentation:
+Read the teams’ own documentation: [LangChain/LangGraph](https://docs.langchain.com/oss/python/learn), [CrewAI](https://docs.crewai.com/), [LlamaIndex](https://docs.llamaindex.ai/), [OpenAI Agents SDK](https://developers.openai.com/api/docs/guides/agents/sdk), and [Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/overview/). Then compare two candidates with the same use case, the same safety gates, and the same success criteria.
 
-[LangChain/LangGraph](https://docs.langchain.com/oss/python/learn)
-
-,
-
-[CrewAI](https://docs.crewai.com/)
-
-,
-
-[LlamaIndex](https://docs.llamaindex.ai/)
-
-,
-
-[OpenAI Agents SDK](https://developers.openai.com/api/docs/guides/agents/sdk)
-
-, and
-
-[Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/overview/)
-
-. Then compare two candidates with the same use case, the same safety gates, and the same success criteria.
-
-For Agent RT, start with the
-
-[quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html)
-
-and
-
-[migration guide](https://agent-rt.pro-genai.com/docs/guides/migration.html)
-
-. A rigorous short prototype is more useful than an unsupported “best framework” claim.
+For Agent RT, start with the [quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html) and [migration guide](https://agent-rt.pro-genai.com/docs/guides/migration.html). A rigorous short prototype is more useful than an unsupported “best framework” claim.
 
 ## Explore Agent RT
 

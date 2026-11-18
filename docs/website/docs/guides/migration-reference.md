@@ -4,18 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Guides/Complete Migration Reference
- Guides
+**Section:** Guides / Complete Migration Reference
 
 # Complete Migration Reference
 
 Detailed Agent RT migration examples and compatibility coverage for frameworks, SDKs, tools, memory, models, and agent workflows.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
-
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
 Agent RT provides lightweight Python and TypeScript/JavaScript compatibility entry points for common migration paths. They preserve familiar entry points while translating requests into Agent RT's provider-neutral `ModelRequest` and `ModelResponse` contracts internally.
 
@@ -23,11 +18,7 @@ The compatibility layer is intentionally a focused subset, not a claim of drop-i
 
 Migration compatibility field testing is ongoing. So far, 65+ third-party repositories have passed their test suites both before and after migration to Agent RT.
 
-The adapters deliberately keep the upstream SDKs' environment behavior (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`) so migrated code runs unchanged. Agent RT's own runtime is configured with `agent-rt.yaml` instead; see
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
-
-.
+The adapters deliberately keep the upstream SDKs' environment behavior (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`) so migrated code runs unchanged. Agent RT's own runtime is configured with `agent-rt.yaml` instead; see [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html).
 
 ## Automatic migration (`agent-rt migrate`)
 
@@ -43,11 +34,7 @@ The adapters deliberately keep the upstream SDKs' environment behavior (`OPENAI_
 
 Per-test comparison reads pytest's JUnit report, Vitest's JUnit report, or Jest's JSON report. With any other JavaScript test runner only the exit code is known, so a suite that already fails before migration cannot be verified and the rewrite is restored.
 
-Both commands print a before-and-after card: tests passed, test-suite time, peak memory of the test process (Python only), and the size of the directly imported upstream packages compared with `agent-rt` (dependency trees are not counted). The project environment must already contain `agent-rt` (and `pytest` for Python). For a repository whose `origin` is on GitHub, a successful run prints a pre-filled GitHub issue link to add it to the
-
-[migration wall](https://agent-rt.pro-genai.com/)
-
-; nothing is sent automatically.
+Both commands print a before-and-after card: tests passed, test-suite time, peak memory of the test process (Python only), and the size of the directly imported upstream packages compared with `agent-rt` (dependency trees are not counted). The project environment must already contain `agent-rt` (and `pytest` for Python). For a repository whose `origin` is on GitHub, a successful run prints a pre-filled GitHub issue link to add it to the [migration wall](https://agent-rt.pro-genai.com/) ; nothing is sent automatically.
 
 ### "Runs on Agent RT" badge
 
@@ -67,9 +54,7 @@ Minimum environment for the snippets below:
 
 - OpenRouter (the OpenRouter SDK shims and LiteLLM `openrouter/` models): set `OPENROUTER_API_KEY`. It never falls back to `OPENAI_API_KEY`.
 
-- OpenAI requests use a Responses WebSocket transport by default. Custom OpenAI-compatible endpoints that do not implement it must opt out by passing an explicit provider configured with `websocket=False` (Python) or `websocket: false` (TypeScript) to the compatibility client, for example `AsyncOpenAI(provider=OpenAIModelProvider(OpenAIProviderSettings(base_url=..., websocket=False)))`. The `websocket: false` model parameter in `agent-rt.yaml` applies to native startup (see
-
-[Architecture and Extensions](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.html#provider-selection-and-transports)
+- OpenAI requests use a Responses WebSocket transport by default. Custom OpenAI-compatible endpoints that do not implement it must opt out by passing an explicit provider configured with `websocket=False` (Python) or `websocket: false` (TypeScript) to the compatibility client, for example `AsyncOpenAI(provider=OpenAIModelProvider(OpenAIProviderSettings(base_url=..., websocket=False)))`. The `websocket: false` model parameter in `agent-rt.yaml` applies to native startup (see [Architecture and Extensions](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.html#provider-selection-and-transports)
 
 ); the compatibility clients construct their provider from the settings above and do not read it.
 
@@ -697,9 +682,7 @@ team = RoundRobinGroupChat(
 team_result = await team.run(task="Complete the task")
 ```
 
-Supported: `AssistantAgent` (including `memory=[...]`: AutoGen `Memory` objects such as `ListMemory`, plus any Agent RT memory source; see
-
-[Memory from other frameworks](https://agent-rt.pro-genai.com/docs/guides/migration-reference#memory-from-other-frameworks)
+Supported: `AssistantAgent` (including `memory=[...]`: AutoGen `Memory` objects such as `ListMemory`, plus any Agent RT memory source; see [Memory from other frameworks](https://agent-rt.pro-genai.com/docs/guides/migration-reference#memory-from-other-frameworks)
 
 ), callable tools through the Agent RT tool loop, `run()` / compatibility `run_stream()`, `RoundRobinGroupChat`, `TextMentionTermination`, `MaxMessageTermination`, `TokenUsageTermination`, `TimeoutTermination`, combined termination conditions with `dump_component()` configs, `TextMessage.dump()` / `load()` / `to_text()`, `UserProxyAgent` (`on_messages()` answers from a sync or async `input_func`, optionally taking the cancellation token), `autogen_agentchat.base` (`TaskResult`, `Response`, `TerminationCondition`), `autogen_agentchat.ui.Console`, and `OpenAIChatCompletionClient` as a lightweight Agent RT provider binding. `autogen_ext.models.anthropic.AnthropicChatCompletionClient` and `autogen_ext.models.ollama.OllamaChatCompletionClient` build their Agent RT provider lazily on first use. Team turns are bounded and normalized through Agent RT.
 
@@ -748,9 +731,7 @@ There is no Agent RT TypeScript CrewAI or AutoGen compatibility surface because 
 
 ## Deep Agents
 
-Deep Agents migration (`deepagents` / npm `deepagents`) runs `create_deep_agent` / `createDeepAgent` on the LangChain compatibility agent loop, so models, tools, middleware, checkpointers, and structured output behave as in the
-
-[LangChain](https://agent-rt.pro-genai.com/docs/guides/migration-reference#langchain)
+Deep Agents migration (`deepagents` / npm `deepagents`) runs `create_deep_agent` / `createDeepAgent` on the LangChain compatibility agent loop, so models, tools, middleware, checkpointers, and structured output behave as in the [LangChain](https://agent-rt.pro-genai.com/docs/guides/migration-reference#langchain)
 
 section:
 
@@ -766,8 +747,6 @@ agent = create_deep_agent(
 result = agent.invoke({"messages": [{"role": "user", "content": "Research Agent RT"}], "files": {"/brief.md": "..."}})
 print(result["messages"][-1].content, result["files"].keys(), result["todos"])
 ```
-
-
 
 ```ts
 import { createDeepAgent } from "agent-rt/deepagents";
@@ -794,9 +773,7 @@ Supported: `completion`, `acompletion`, `embedding`, and `aembedding` (including
 
 ## OpenRouter
 
-OpenRouter's OpenAI-compatible endpoint already works with the
-
-[OpenAI SDK](https://agent-rt.pro-genai.com/docs/guides/migration-reference#openai-python-sdk)
+OpenRouter's OpenAI-compatible endpoint already works with the [OpenAI SDK](https://agent-rt.pro-genai.com/docs/guides/migration-reference#openai-python-sdk)
 
 shim (`base_url="https://openrouter.ai/api/v1"`). Code written against OpenRouter's own SDKs migrates with the prefix:
 
@@ -807,8 +784,6 @@ with OpenRouter() as client:  # reads OPENROUTER_API_KEY
     response = client.chat.send(model="openai/gpt-5", messages=[{"role": "user", "content": "Hello"}])
     print(response.choices[0].message.content)
 ```
-
-
 
 ```ts
 import { OpenRouter } from "agent-rt/@openrouter/sdk";
@@ -1792,9 +1767,7 @@ This matrix lists major OpenAI and Anthropic API/SDK capabilities that are usefu
 
 ## Memory from other frameworks
 
-`AgentConfig.memory` (see
-
-[Runtime Guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#agent-memory)
+`AgentConfig.memory` (see [Runtime Guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#agent-memory)
 
 ) accepts memory objects from other packages directly, both the real upstream objects and the Agent RT compatibility shims, so existing memory can be reused without rewriting it. Each one is searched with the latest user prompt on every run and is untrusted by default.
 
@@ -1806,8 +1779,6 @@ This matrix lists major OpenAI and Anthropic API/SDK capabilities that are usefu
 | AutoGen | `Memory` (`ListMemory`, ...) | — | `query(query)` results |
 | OpenAI Agents | `Session` | `Session` | `get_items(limit)` / `getItems(limit)` |
 | mem0 | `Memory` / `AsyncMemory` / `MemoryClient` | `Memory` / `MemoryClient` | `search(query, top_k=, **search_kwargs)` (`limit=` on mem0 1.x); scope it with `search_kwargs={"filters": {"user_id": ...}}` / `searchOptions: { filters: { user_id } }` |
-
-
 
 ```python
 from agent_rt import AgentConfig, MemorySource, ModelSettings
@@ -1827,12 +1798,10 @@ agent = AgentConfig(
 
 Documents, nodes, records and chat messages are reduced to their text (plus role, tags and metadata when present) before they reach the model. The AutoGen `AssistantAgent(memory=[...])` and the OpenAI Agents compatibility `Agent(memory=[...])` (an Agent RT extension in both languages) pass their lists to `AgentConfig.memory`. Memory is read-only here: Agent RT does not write new turns back to these stores (use
 
-[load_memory()](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#memory-packages)
-
-for a backend you can also write to), and an OpenAI Agents `Session` used this way supplies context rather than replacing the conversation history.
+[load_memory()](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#memory-packages) for a backend you can also write to), and an OpenAI Agents `Session` used this way supplies context rather than replacing the conversation history.
 
 ## Native Agent RT path
 
 Compatibility adapters are intended to reduce the first migration diff. New functionality should prefer native Agent RT contracts such as `AgentConfig`, `AgentLoop`, `ModelProvider`, `ToolRegistry`, guardrails, permissions, checkpoints, memory, and sandboxing. This keeps runtime behavior explicit and avoids carrying framework-specific abstractions into new code.
 
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)

@@ -2,21 +2,21 @@
 
 > How runtime permissions, approvals, isolation, and adversarial tests can prevent an AI model mistake from becoming a dangerous tool action.
 
-AI safety / Field guide 01
+**Category:** AI safety  
+**Series:** Field guide 01
 
 # Even the latest AI models can act unsafely. Here’s the solution.
 
 A safer model is useful. A trustworthy execution boundary is essential.
 
- Pro-GenAI3 November 20267 min read
+**Author:** Pro-GenAI  
+**Published:** 3 November 2026  
+**Reading time:** 7 min
 
- Problem
+## At a glance
 
-A model follows hostile instructions and requests a dangerous tool action.
-
-Solution
-
-Enforce tool policy, approval, and sandbox boundaries independently of model output.
+- **Problem:** A model follows hostile instructions and requests a dangerous tool action.
+- **Solution:** Enforce tool policy, approval, and sandbox boundaries independently of model output.
 
 ## The hard problem is tool execution
 
@@ -24,9 +24,7 @@ An agent can read files, call external APIs, browse untrusted pages, or run shel
 
 The practical question is not whether every recent AI model is categorically safe or unsafe. It is what your system does when **any** model proposes an unsafe action. A model response is a proposal; your runtime should remain the authority for side effects.
 
- **Security principle**
-
-Validate at the action boundary. An instruction to “ignore previous instructions” should not be able to expand a tool's permissions or bypass approval.
+> **Security principle:** Validate at the action boundary. An instruction to “ignore previous instructions” should not be able to expand a tool's permissions or bypass approval.
 
 ## Five defenses that work together
 
@@ -56,15 +54,7 @@ uvx agent-rt demo
 npx agent-rt demo
 ```
 
-These demos illustrate the attack/defense model, not a guarantee for an application with arbitrary plugins or permissions. Review the
-
-[tools and policy guide](https://agent-rt.pro-genai.com/docs/concepts/tools-policy.html)
-
-and
-
-[production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
-
-before deployment.
+These demos illustrate the attack/defense model, not a guarantee for an application with arbitrary plugins or permissions. Review the [tools and policy guide](https://agent-rt.pro-genai.com/docs/concepts/tools-policy.html) and [production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html) before deployment.
 
 ## Bottom line
 

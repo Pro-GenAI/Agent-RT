@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Architecture
-Reference
+**Section:** Reference / Architecture
 
 # Architecture
 
@@ -34,14 +33,8 @@ External vector databases implement the same Agent RT retrieval contract as othe
 
 The Python and TypeScript implementations intentionally track the same core concepts and behavior. Exact APIs differ where language conventions demand it, but the runtime model should remain recognizable across both packages.
 
- **Complete contract reference**See
+> **Complete contract reference:** See [Architecture and Extension Contracts ↗](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.html) for module-level interfaces and implementation detail.
 
-[Architecture and Extension Contracts ↗](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.html)
+**Previous:** [Production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
 
-for module-level interfaces and implementation detail.
-
-[Previous← Production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
-
-
-
-[NextDevelopment →](https://agent-rt.pro-genai.com/docs/reference/development.html)
+**Next:** [Development](https://agent-rt.pro-genai.com/docs/reference/development.html)
