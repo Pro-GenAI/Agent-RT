@@ -8,41 +8,45 @@
 - Source: https://github.com/Pro-GenAI/Agent-RT
 - License: MIT
 
-## Blog — practical solutions to difficult AI agent problems
+The canonical HTML pages below are the main website versions. Each page also has a plain Markdown equivalent for language models, answer engines, and text-based readers. Markdown pages link back to their canonical HTML pages.
 
-- [Blog index](https://agent-rt.pro-genai.com/blog/)
-- [Even the latest AI models can act unsafely. Here’s the solution.](https://agent-rt.pro-genai.com/blog/latest-ai-models-unsafe-solution/)
-- [Best AI agent frameworks in 2026: a practical way to choose.](https://agent-rt.pro-genai.com/blog/best-ai-agent-frameworks-2026/)
-- [Your AI agent crashed halfway through. Resume without duplicating work.](https://agent-rt.pro-genai.com/blog/ai-agent-checkpoints-resume-safely/)
-- [AI agents are too slow and expensive. Fix the harness first.](https://agent-rt.pro-genai.com/blog/ai-agents-too-slow-expensive/)
+## Website and official links
 
-## Documentation
+- [Agent RT — Lightweight AI Agent Runtime for Python & TypeScript (HTML)](https://agent-rt.pro-genai.com/) | [Markdown](https://agent-rt.pro-genai.com/index.md)
+- [Agent RT Links — Documentation, Packages & Source (HTML)](https://agent-rt.pro-genai.com/links/) | [Markdown](https://agent-rt.pro-genai.com/links/index.md)
 
-- [Official project links](https://agent-rt.pro-genai.com/links/)
+## Blog and solutions
 
-- [Documentation home](https://agent-rt.pro-genai.com/docs/)
-- [Installation and Docker Hub images](https://agent-rt.pro-genai.com/docs/getting-started/installation)
-- [Quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart)
-- [Runtime](https://agent-rt.pro-genai.com/docs/concepts/runtime)
-- [Tools and policy](https://agent-rt.pro-genai.com/docs/concepts/tools-policy)
-- [State and memory](https://agent-rt.pro-genai.com/docs/concepts/state-memory)
-- [Migration guide](https://agent-rt.pro-genai.com/docs/guides/migration)
-- [Production guide](https://agent-rt.pro-genai.com/docs/guides/production), including the privacy and product-launch checklist for apps built with Agent RT.
-- [Vector databases](https://agent-rt.pro-genai.com/docs/guides/vector-databases)
-- [Runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-guide)
-- [Features and defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults)
-- [Comparison](https://agent-rt.pro-genai.com/docs/reference/comparison)
-- [Architecture](https://agent-rt.pro-genai.com/docs/reference/architecture)
-- [Development](https://agent-rt.pro-genai.com/docs/reference/development)
-- [Privacy & terms](https://agent-rt.pro-genai.com/docs/reference/privacy-terms)
+- [Hard AI agent problems. Practical solutions. — Agent RT Blog (HTML)](https://agent-rt.pro-genai.com/blog/) | [Markdown](https://agent-rt.pro-genai.com/blog/index.md)
+- [Even the latest AI models can act unsafely. Here’s the solution. — Agent RT Blog (HTML)](https://agent-rt.pro-genai.com/blog/latest-ai-models-unsafe-solution/) | [Markdown](https://agent-rt.pro-genai.com/blog/latest-ai-models-unsafe-solution/index.md)
+- [Best AI agent frameworks in 2026: a practical way to choose. — Agent RT Blog (HTML)](https://agent-rt.pro-genai.com/blog/best-ai-agent-frameworks-2026/) | [Markdown](https://agent-rt.pro-genai.com/blog/best-ai-agent-frameworks-2026/index.md)
+- [Your AI agent crashed halfway through. Resume without duplicating work. — Agent RT Blog (HTML)](https://agent-rt.pro-genai.com/blog/ai-agent-checkpoints-resume-safely/) | [Markdown](https://agent-rt.pro-genai.com/blog/ai-agent-checkpoints-resume-safely/index.md)
+- [AI agents are too slow and expensive. Fix the harness first. — Agent RT Blog (HTML)](https://agent-rt.pro-genai.com/blog/ai-agents-too-slow-expensive/) | [Markdown](https://agent-rt.pro-genai.com/blog/ai-agents-too-slow-expensive/index.md)
 
-- [Introduction to agent harnesses](https://agent-rt.pro-genai.com/docs/concepts/agent-harnesses)
-- [Architecture and extension contracts](https://agent-rt.pro-genai.com/docs/reference/extension-contracts)
-- [Configuration reference](https://agent-rt.pro-genai.com/docs/reference/configuration)
-- [Complete runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference)
-- [Complete migration API reference](https://agent-rt.pro-genai.com/docs/guides/migration-reference)
-- [Complete developer handbook](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook)
-- [Deployment privacy and launch checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist)
+## Documentation and reference
+
+- [Agent RT Documentation — Python & TypeScript AI Agent Runtime (HTML)](https://agent-rt.pro-genai.com/docs/) | [Markdown](https://agent-rt.pro-genai.com/docs/index.md)
+- [Introduction to Agent Harnesses — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/concepts/agent-harnesses) | [Markdown](https://agent-rt.pro-genai.com/docs/concepts/agent-harnesses.md)
+- [AI Agent Runtime Model & Execution Loop — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/concepts/runtime) | [Markdown](https://agent-rt.pro-genai.com/docs/concepts/runtime.md)
+- [AI Agent State, Memory & Checkpoints — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/concepts/state-memory) | [Markdown](https://agent-rt.pro-genai.com/docs/concepts/state-memory.md)
+- [AI Agent Tools, Permissions & Policy — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/concepts/tools-policy) | [Markdown](https://agent-rt.pro-genai.com/docs/concepts/tools-policy.md)
+- [Install Agent RT for Python & TypeScript — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/getting-started/installation) | [Markdown](https://agent-rt.pro-genai.com/docs/getting-started/installation.md)
+- [Agent RT Quickstart — Build Your First AI Agent (HTML)](https://agent-rt.pro-genai.com/docs/getting-started/quickstart) | [Markdown](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.md)
+- [Migrate LangChain, LlamaIndex, OpenAI & Anthropic to Agent RT (HTML)](https://agent-rt.pro-genai.com/docs/guides/migration) | [Markdown](https://agent-rt.pro-genai.com/docs/guides/migration.md)
+- [Production AI Agent Patterns — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/guides/production) | [Markdown](https://agent-rt.pro-genai.com/docs/guides/production.md)
+- [Complete Migration Reference — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/guides/migration-reference) | [Markdown](https://agent-rt.pro-genai.com/docs/guides/migration-reference.md)
+- [Runtime guide — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/guides/runtime-guide) | [Markdown](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.md)
+- [Complete Runtime Guide — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/guides/runtime-reference) | [Markdown](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.md)
+- [Vector Databases — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/guides/vector-databases) | [Markdown](https://agent-rt.pro-genai.com/docs/guides/vector-databases.md)
+- [Agent RT Architecture & Extension Contracts — Reference (HTML)](https://agent-rt.pro-genai.com/docs/reference/architecture) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/architecture.md)
+- [Agent RT vs LangChain vs LlamaIndex — Comparison (HTML)](https://agent-rt.pro-genai.com/docs/reference/comparison) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/comparison.md)
+- [Configuration Reference — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/reference/configuration) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/configuration.md)
+- [Contributor Development Handbook — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook.md)
+- [Deployment Privacy and Launch Checklist — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist.md)
+- [Agent RT Development & Contributor Guide — Reference (HTML)](https://agent-rt.pro-genai.com/docs/reference/development) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/development.md)
+- [Architecture and Extension Contracts — Agent RT Docs (HTML)](https://agent-rt.pro-genai.com/docs/reference/extension-contracts) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/extension-contracts.md)
+- [Agent RT Features, Defaults & Usage Reference (HTML)](https://agent-rt.pro-genai.com/docs/reference/features-defaults) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/features-defaults.md)
+- [Agent RT Privacy, Cookies & Terms — Reference (HTML)](https://agent-rt.pro-genai.com/docs/reference/privacy-terms) | [Markdown](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.md)
 
 ## Highlights
 

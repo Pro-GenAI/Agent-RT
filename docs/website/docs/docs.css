@@ -87,3 +87,9 @@ body{transition:background-color .3s}
 /* Mobile: clip decorative glows and let inline code break instead of widening the page. */
 .docs-main{overflow-x:clip}
 :not(pre)>code{overflow-wrap:anywhere}
+
+/* Human- and machine-readable page format switcher. */
+.page-markdown-link{margin:0 0 1.25rem;text-align:right;font-size:.875rem;line-height:1.5}
+.page-markdown-link a{color:var(--accent-2);text-decoration:underline;text-underline-offset:3px}
+.page-markdown-link a:focus-visible{outline:2px solid var(--accent-2);outline-offset:4px}
+.js .content>.page-markdown-link{opacity:1;transform:none}

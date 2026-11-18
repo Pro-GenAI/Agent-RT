@@ -2846,3 +2846,9 @@ main, .site-footer { position: relative; z-index: 1; }
 .platform-badges li { display: inline-flex; align-items: center; gap: 10px; }
 .platform-badges img { filter: invert(1); }
 .platform-badges li:first-child img { filter: none; }
+
+/* Discoverable text version without loading additional assets. */
+.page-markdown-home{position:relative;z-index:5;padding-top:10px}
+.page-markdown-link{text-align:right;font-size:.875rem;line-height:1.5;margin:0}
+.page-markdown-link a{color:#b4ebff;text-decoration:underline;text-underline-offset:3px}
+.page-markdown-link a:focus-visible{outline:2px solid #b4ebff;outline-offset:4px}

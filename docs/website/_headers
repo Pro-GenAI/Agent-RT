@@ -1,0 +1,116 @@
+# Markdown variants are readable static assets; HTML is the canonical search result.
+/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/>; rel="canonical"
+
+/links/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/links/>; rel="canonical"
+
+/blog/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/blog/>; rel="canonical"
+
+/blog/latest-ai-models-unsafe-solution/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/blog/latest-ai-models-unsafe-solution/>; rel="canonical"
+
+/blog/best-ai-agent-frameworks-2026/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/blog/best-ai-agent-frameworks-2026/>; rel="canonical"
+
+/blog/ai-agent-checkpoints-resume-safely/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/blog/ai-agent-checkpoints-resume-safely/>; rel="canonical"
+
+/blog/ai-agents-too-slow-expensive/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/blog/ai-agents-too-slow-expensive/>; rel="canonical"
+
+/docs/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/>; rel="canonical"
+
+/docs/concepts/agent-harnesses.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/concepts/agent-harnesses>; rel="canonical"
+
+/docs/concepts/runtime.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/concepts/runtime>; rel="canonical"
+
+/docs/concepts/state-memory.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/concepts/state-memory>; rel="canonical"
+
+/docs/concepts/tools-policy.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/concepts/tools-policy>; rel="canonical"
+
+/docs/getting-started/installation.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/getting-started/installation>; rel="canonical"
+
+/docs/getting-started/quickstart.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/getting-started/quickstart>; rel="canonical"
+
+/docs/guides/migration.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/guides/migration>; rel="canonical"
+
+/docs/guides/production.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/guides/production>; rel="canonical"
+
+/docs/guides/migration-reference.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/guides/migration-reference>; rel="canonical"
+
+/docs/guides/runtime-guide.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/guides/runtime-guide>; rel="canonical"
+
+/docs/guides/runtime-reference.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/guides/runtime-reference>; rel="canonical"
+
+/docs/guides/vector-databases.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/guides/vector-databases>; rel="canonical"
+
+/docs/reference/architecture.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/architecture>; rel="canonical"
+
+/docs/reference/comparison.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/comparison>; rel="canonical"
+
+/docs/reference/configuration.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/configuration>; rel="canonical"
+
+/docs/reference/contributor-handbook.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/contributor-handbook>; rel="canonical"
+
+/docs/reference/deployment-privacy-checklist.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist>; rel="canonical"
+
+/docs/reference/development.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/development>; rel="canonical"
+
+/docs/reference/extension-contracts.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/extension-contracts>; rel="canonical"
+
+/docs/reference/features-defaults.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/features-defaults>; rel="canonical"
+
+/docs/reference/privacy-terms.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: <https://agent-rt.pro-genai.com/docs/reference/privacy-terms>; rel="canonical"

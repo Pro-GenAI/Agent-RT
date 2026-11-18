@@ -9,6 +9,7 @@
 <meta name="author" content="Pro-GenAI">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://agent-rt.pro-genai.com/blog/ai-agent-checkpoints-resume-safely/">
+  <link rel="alternate" type="text/markdown" title="Markdown version" href="/blog/ai-agent-checkpoints-resume-safely/index.md">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Agent RT">
 <meta property="og:title" content="Your AI agent crashed halfway through. Resume without duplicating work.">
@@ -36,7 +37,8 @@
 </div></header>
 <main class="docs-main blog-main" id="main"><div class="content blog-article">
 <nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="../../">Home</a><span>/</span><a href="../">Blog</a><span>/</span>Reliability</nav>
-<article><header class="section-intro blog-article-hero"><span class="eyebrow">Reliability / Field guide 03</span>
+<article>
+<p class="page-markdown-link"><a href="/blog/ai-agent-checkpoints-resume-safely/index.md" type="text/markdown">Read this page in Markdown</a></p><header class="section-intro blog-article-hero"><span class="eyebrow">Reliability / Field guide 03</span>
 <h1 class="doc-title">Your AI agent crashed halfway through. Resume without duplicating work.</h1><p class="doc-lede">A retry can finish the job—or quietly perform the same action twice.</p>
 <div class="blog-byline"><span>Pro-GenAI</span><span aria-hidden="true">·</span><time datetime="2026-11-03">3 November 2026</time><span aria-hidden="true">·</span><span>6 min read</span></div></header>
 <div class="blog-brief"><div><small>Problem</small><p>A run crashes after writing to a service but before reporting completion.</p></div><div><small>Solution</small><p>Persist checkpoints and event history, and reconcile external side effects with idempotency keys.</p></div></div>
