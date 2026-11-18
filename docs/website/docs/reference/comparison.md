@@ -4,15 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Comparison
- Reference
+**Section:** Reference / Comparison
 
-# Framework
-comparison
+# Framework comparison
 
 A concise comparison of Agent RT, LangChain, and LlamaIndex across runtime features plus checked-in installation footprint, latency, and memory measurements, and of the Agent RT CLI against six other agent CLIs, including Pi and OpenHuman.
 
- **How to read this table**✅ means built in, ◐ means available or integration-dependent, and — means it is not a primary built-in focus. Benchmark figures are scenario-specific measurements from the repository comparison suite, not universal framework rankings. Python fresh-install footprint is the 2026-10-03 Python 3.13.13 clean-`uv venv` measurement above the empty-venv baseline. TypeScript fresh-install footprint is the 2026-10-03 Node.js 22.22.2/npm 10.9.7 clean-project measurement of logical `node_modules` bytes. Both include transitive dependencies.
+> **How to read this table:** ✅ means built in, ◐ means available or integration-dependent, and — means it is not a primary built-in focus. Benchmark figures are scenario-specific measurements from the repository comparison suite, not universal framework rankings. Python fresh-install footprint is the 2026-10-03 Python 3.13.13 clean-`uv venv` measurement above the empty-venv baseline. TypeScript fresh-install footprint is the 2026-10-03 Node.js 22.22.2/npm 10.9.7 clean-project measurement of logical `node_modules` bytes. Both include transitive dependencies.
 
 ## ⚖️ Quick comparison
 
@@ -43,11 +41,7 @@ A concise comparison of Agent RT, LangChain, and LlamaIndex across runtime featu
 | ** Warm latency** | **1.85 ms** | 2.60 ms | 2.23 ms |
 | ** Runtime memory** | **+14.33 MiB** | +17.27 MiB | +16.79 MiB |
 
-📊 For benchmark methodology, environment, raw measured outputs, startup results, tool-loop measurements, schema-token analysis, and CLI harness results, see the
-
-[reproducible framework benchmarks ↗](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/comparison/README.md)
-
-.
+📊 For benchmark methodology, environment, raw measured outputs, startup results, tool-loop measurements, schema-token analysis, and CLI harness results, see the [reproducible framework benchmarks ↗](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/comparison/README.md).
 
 ## ⌨️ Agent CLI comparison
 
@@ -63,17 +57,11 @@ The `agent-rt` terminal client compared with other agent CLIs. Each CLI was call
 | **Pi** | `pi -p "hi"` | 312 ms | 125.5 MiB | 1,330 | $0.0040 | 561 ms |
 | **OpenHuman** | `openhuman-core` headless turn¹ | 492 ms | 95.9 MiB | 4,208 | $0.0127 | 688 ms |
 
-**What this measures**Startup and per-prompt harness overhead, not task quality or capability. Input tokens are a same-tokenizer estimate (`tiktoken` `o200k_base`) of the system prompt, messages and tool schemas each CLI sends. Part of the gap comes from each CLI's default tool set (Agent RT sends 8 tools; the others 4–16). ¹OpenHuman's release one-shot command cannot run a turn without a booted core, so each run boots `openhuman-core run --headless-api`, sends one JSON-RPC turn and stops, as OpenHuman's own benchmark does; it is built to serve many agents from one warm core, which this cold-start test does not measure. Cost assumes $3 per million input and $15 per million output tokens, with no cache discount. Peak RAM covers each CLI's whole process tree.
+> **What this measures:** Startup and per-prompt harness overhead, not task quality or capability. Input tokens are a same-tokenizer estimate (`tiktoken` `o200k_base`) of the system prompt, messages and tool schemas each CLI sends. Part of the gap comes from each CLI's default tool set (Agent RT sends 8 tools; the others 4–16). ¹OpenHuman's release one-shot command cannot run a turn without a booted core, so each run boots `openhuman-core run --headless-api`, sends one JSON-RPC turn and stops, as OpenHuman's own benchmark does; it is built to serve many agents from one warm core, which this cold-start test does not measure. Cost assumes $3 per million input and $15 per million output tokens, with no cache discount. Peak RAM covers each CLI's whole process tree.
 
 ## 🧭 Pi and OpenHuman features
 
-[Pi ↗](https://github.com/earendil-works/pi)
-
-and
-
-[OpenHuman ↗](https://github.com/tinyhumansai/openhuman)
-
-are open-source agent harnesses with very different scopes. This comparison comes from each project's documentation and source as of 2026-10-29. ✅ built in · ◐ partial, via extension or add-on · — not provided.
+[Pi ↗](https://github.com/earendil-works/pi) and [OpenHuman ↗](https://github.com/tinyhumansai/openhuman) are open-source agent harnesses with very different scopes. This comparison comes from each project's documentation and source as of 2026-10-29. ✅ built in · ◐ partial, via extension or add-on · — not provided.
 
 |   | Agent RT | Pi | OpenHuman |
 | --- | --- | --- | --- |
@@ -103,8 +91,6 @@ are open-source agent harnesses with very different scopes. This comparison come
 
 Pi is the minimalist option: a small core with few tools and no permission system, extended by the user. OpenHuman is the maximalist one: a personal-assistant platform with memory, channels, browser and desktop control, voice and agent fleets. Agent RT sits between them as a runtime with production controls (Guard, approvals, sandboxing, Checkpoints) and Python and TypeScript migration paths. It has none of OpenHuman's end-user assistant features (browser control, voice, OAuth app catalog).
 
-[Previous← Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
+**Previous:** [Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
 
-
-
-[NextArchitecture →](https://agent-rt.pro-genai.com/docs/reference/architecture.html)
+**Next:** [Architecture](https://agent-rt.pro-genai.com/docs/reference/architecture.html)

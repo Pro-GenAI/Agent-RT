@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Getting started/Quickstart
-Getting started
+**Section:** Getting started / Quickstart
 
 # Quickstart
 
@@ -76,9 +75,7 @@ async function main() {
 main();
 ```
 
-**Continue as a tutorial**The
-
-[Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
+> **Continue as a tutorial:** The [Features & defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
 
 reference now includes copyable Python and TypeScript examples for tools, streaming, structured output, limits, guardrails, permissions, approvals, state/memory, sandboxing, retrieval, budgets, and observability.
 
@@ -115,14 +112,12 @@ node examples/02_tool_calling.js
 node examples/07_vector_db.js
 ```
 
-**Offline check**The tool-registry example is fully offline in both implementations, so it is useful for validating local setup without model credentials.
+> **Offline check:** The tool-registry example is fully offline in both implementations, so it is useful for validating local setup without model credentials.
 
 ## What to learn next
 
 Once the basic loop is clear, read the runtime model before adding more capabilities. It explains where Agent RT draws boundaries between model behavior, tool execution, workflow state, policy, and termination.
 
-[Previous← Installation](https://agent-rt.pro-genai.com/docs/getting-started/installation.html)
+**Previous:** [Installation](https://agent-rt.pro-genai.com/docs/getting-started/installation.html)
 
-
-
-[NextRuntime model →](https://agent-rt.pro-genai.com/docs/concepts/runtime.html)
+**Next:** [Runtime model](https://agent-rt.pro-genai.com/docs/concepts/runtime.html)

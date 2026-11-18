@@ -4,18 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Contributor Development Handbook
- Reference
+**Section:** Reference / Contributor Development Handbook
 
 # Contributor Development Handbook
 
 Complete development handbook for Python, TypeScript, testing, security tools, evaluation, CI, packaging, and native architecture.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
-
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
 This guide contains contributor workflows for the Python and TypeScript implementations of Agent RT. Package READMEs are intentionally focused on end users.
 
@@ -68,8 +63,6 @@ make security-attacks
 make security
 make check
 ```
-
-
 
 | Target | What it does |
 | --- | --- |
@@ -208,11 +201,7 @@ The banner's pixel Artie is generated, not hand-drawn: `src/python/src/ext/artie
 
 ### Setup and tests
 
-TypeScript sources live in `src/typescript/src/` (core in `src/runtime/`, re-exported by the `index.ts` barrel, see
-
-[Runtime module layout](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook#runtime-module-layout)
-
-; companion contracts, framework adapters, and transports under `src/ext/`, mirroring Python's `ext` package), tests in `src/typescript/tests/`, and evaluation/publishing utilities in `src/typescript/scripts/`. Node 20, 22, 24, and 26 are supported.
+TypeScript sources live in `src/typescript/src/` (core in `src/runtime/`, re-exported by the `index.ts` barrel, see [Runtime module layout](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook#runtime-module-layout) ; companion contracts, framework adapters, and transports under `src/ext/`, mirroring Python's `ext` package), tests in `src/typescript/tests/`, and evaluation/publishing utilities in `src/typescript/scripts/`. Node 20, 22, 24, and 26 are supported.
 
 Install reproducibly and run the runtime suite:
 
@@ -328,17 +317,7 @@ npm pack --dry-run
 
 Published repositories:
 
-[Python on Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-python)
-
-and
-
-[TypeScript on Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
-
-. User-facing pull and run commands are in the
-
-[Runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#docker-hub-images)
-
-.
+[Python on Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-python) and [TypeScript on Docker Hub](https://hub.docker.com/r/praneeth1v/agent-rt-typescript). User-facing pull and run commands are in the [Runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference.html#docker-hub-images).
 
 Both `src/python/Dockerfile` and `src/typescript/Dockerfile` set the OCI `org.opencontainers.image.version` label from `ARG AGENT_RT_VERSION`. The default build argument tracks the corresponding package version. Docker Hub releases pass the package version explicitly as a build argument and tag images with that version (and `latest`), so image metadata and published tags agree. Version bumps change source files only: rebuild and push to update existing Docker images.
 
@@ -414,4 +393,4 @@ The dependency-version matrices (`make test-deps-matrix`: Python `openai`, `anth
 
 All deterministic security gates remain offline with respect to real LLM/model endpoints.
 
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)

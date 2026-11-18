@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Guides/Vector databases
- Guides
+**Section:** Guides / Vector databases
 
 # Vector databases
 
@@ -127,8 +126,6 @@ Existing LangChain retrieval code can keep the vendor-shaped class names while m
 | `langchain_milvus.Milvus` | `agent_rt.langchain_milvus.Milvus` |
 | `langchain_weaviate.WeaviateVectorStore` | `agent_rt.langchain_weaviate.WeaviateVectorStore` |
 
-
-
 ```python
 from agent_rt.langchain_qdrant import QdrantVectorStore
 
@@ -166,8 +163,6 @@ LlamaIndex migrations preserve the upstream `vector_stores` module hierarchy in 
 | `llama_index.vector_stores.milvus.MilvusVectorStore` | `agent_rt.llama_index.vector_stores.milvus.MilvusVectorStore` |
 | `llama_index.vector_stores.weaviate.WeaviateVectorStore` | `agent_rt.llama_index.vector_stores.weaviate.WeaviateVectorStore` |
 
-
-
 ```python
 from agent_rt.llama_index.vector_stores.qdrant import QdrantVectorStore
 from agent_rt.llamaindex import VectorStoreIndex
@@ -199,7 +194,7 @@ const nodes = await index.asRetriever({
 }).retrieve("How does Agent RT migrate vector retrieval?");
 ```
 
-**Compatibility scope**LangChain and LlamaIndex adapters support read/query operations against existing collections. Collection creation, ingestion/upsert, deletion, index administration, and vendor-specific sparse/hybrid lifecycle APIs remain backend-native. Use native Agent RT retrieval with `vector_store_registry` when you want backend selection to come entirely from `agent-rt.yaml`.
+> **Compatibility scope:** LangChain and LlamaIndex adapters support read/query operations against existing collections. Collection creation, ingestion/upsert, deletion, index administration, and vendor-specific sparse/hybrid lifecycle APIs remain backend-native. Use native Agent RT retrieval with `vector_store_registry` when you want backend selection to come entirely from `agent-rt.yaml`.
 
 ## Embedding queries
 
@@ -213,8 +208,6 @@ await provider.search(
     )
 )
 ```
-
-
 
 ```javascript
 await provider.search({
@@ -236,8 +229,6 @@ await provider.search({
 
 See `python/examples/07_vector_db.py` and `typescript/examples/07_vector_db.js` in the repository. Both examples use the same environment-driven backend selection shown above.
 
-[Previous← Production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
+**Previous:** [Production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
 
-
-
-[NextRuntime guide →](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.html)
+**Next:** [Runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-guide.html)

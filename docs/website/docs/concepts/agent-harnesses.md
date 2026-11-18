@@ -4,18 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Core concepts/Introduction to Agent Harnesses
- Core concepts
+**Section:** Core concepts / Introduction to Agent Harnesses
 
 # Introduction to Agent Harnesses
 
 Complete guide to AI agent harnesses, from execution loops and tools to memory, permissions, orchestration, safety, and deployment.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
-
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
 An **agent harness** is the runtime and control layer around an AI model that turns a model from a text generator into a system that can reliably perform multi-step work.
 
@@ -450,4 +445,4 @@ The harness should prefer small composable primitives, deterministic control sur
 
 Agent RT keeps generative models separate from *Decision models* (for example Jev-compatible models), which answer typed choice and score questions with calibrated outputs. Decision models serve as optional control-plane gates, such as tool safety screening, relevance pruning, memory screening, and tool-output checks, that feed deterministic runtime policy rather than replacing it. For large tool inventories, `Toolbase` combines local/deferred and MCP-discovered tools, applies safety filtering before relevance selection, and exposes `tool_search` so the agent can recover safe tools omitted from the initial subset. Provider contracts, endpoints, and security thresholds are described in the Decision models section of `Architecture-and-Extensions.md`.
 
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)

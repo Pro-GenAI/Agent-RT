@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Guides/Production patterns
-Guides
+**Section:** Guides / Production patterns
 
 # Production patterns
 
@@ -33,15 +32,9 @@ Deployment and optimization primitives cover configuration overlays, feature fla
 
 ## Review privacy before launch
 
-Map what prompts, files, tool results, sessions, checkpoints, and traces your service sends or retains. Disclose the actual providers and retention/deletion behavior, restrict access, and redact sensitive content before exporting it. The
+Map what prompts, files, tool results, sessions, checkpoints, and traces your service sends or retains. Disclose the actual providers and retention/deletion behavior, restrict access, and redact sensitive content before exporting it. The [documentation site's privacy notice](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html)
 
-[documentation site's privacy notice](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html)
-
-
-
-[Deployment checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist.html)
-
-applies to this static site; an app built with Agent RT needs disclosures for its own data flows.
+[Deployment checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist.html) applies to this static site; an app built with Agent RT needs disclosures for its own data flows.
 
 - **Signup and children:** review the audience and applicable children's privacy rules before collecting personal data. An age checkbox is not parental consent, and general-audience sites are not universally required to ask every visitor's age.
 
@@ -55,14 +48,8 @@ applies to this static site; an app built with Agent RT needs disclosures for it
 
 - **User content:** review permissions, takedowns, counter-notices, repeat-infringer handling, and any required agent designation/registration before hosting submissions.
 
-The public Agent RT site currently has no signup, recording, marketing list, billing, or visitor uploads. See the
+The public Agent RT site currently has no signup, recording, marketing list, billing, or visitor uploads. See the [deployment privacy and launch checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist.html) for implementation review points and official references. These controls support review of your service; they do not establish legal compliance by themselves.
 
-[deployment privacy and launch checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist.html)
+**Previous:** [Migration](https://agent-rt.pro-genai.com/docs/guides/migration.html)
 
-for implementation review points and official references. These controls support review of your service; they do not establish legal compliance by themselves.
-
-[Previous← Migration](https://agent-rt.pro-genai.com/docs/guides/migration.html)
-
-
-
-[NextVector databases →](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)
+**Next:** [Vector databases](https://agent-rt.pro-genai.com/docs/guides/vector-databases.html)

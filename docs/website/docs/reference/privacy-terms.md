@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Privacy & terms
-Reference
+**Section:** Reference / Privacy & terms
 
 # Privacy & terms
 
@@ -23,17 +22,7 @@ Updated 29 October 2026
 
 - **Hosting.** The site is available on GitHub Pages and Cloudflare Pages. GitHub Pages
 
-[logs visitor IP addresses for security](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages#data-collection)
-
-, including visits by people without a GitHub account. Cloudflare processes traffic information, which can include IP addresses, when serving its Pages site. See the
-
-[GitHub privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)
-
-and
-
-[Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/)
-
-for their practices.
+[logs visitor IP addresses for security](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages#data-collection) , including visits by people without a GitHub account. Cloudflare processes traffic information, which can include IP addresses, when serving its Pages site. See the [GitHub privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) and [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/) for their practices.
 
 ## Children and personal information
 
@@ -45,11 +34,7 @@ The software runs in your environment. Depending on your configuration, prompts,
 
 ## Terms
 
-- **License.** The software and these docs are released under the
-
-[MIT License](https://github.com/Pro-GenAI/Agent-RT/blob/main/LICENSE)
-
-: free to use, provided as is, without warranty of any kind.
+- **License.** The software and these docs are released under the [MIT License](https://github.com/Pro-GenAI/Agent-RT/blob/main/LICENSE) : free to use, provided as is, without warranty of any kind.
 
 - **No billing or marketing list.** This website offers no paid plans, checkout, subscriptions, trials that convert to paid plans, or newsletter signup. It does not send marketing email or charge renewal fees.
 
@@ -65,16 +50,8 @@ This site does not accept visitor uploads, comments, or hosted user content. For
 
 Agent RT is published by
 
-[Pro-GenAI](https://github.com/Pro-GenAI)
+[Pro-GenAI](https://github.com/Pro-GenAI). For questions about this page, open an issue in the [repository](https://github.com/Pro-GenAI/Agent-RT).
 
-. For questions about this page, open an issue in the
+**Previous:** [Development](https://agent-rt.pro-genai.com/docs/reference/development.html)
 
-[repository](https://github.com/Pro-GenAI/Agent-RT)
-
-.
-
-[Previous← Development](https://agent-rt.pro-genai.com/docs/reference/development.html)
-
-
-
-[NextDocumentation overview →](https://agent-rt.pro-genai.com/docs/)
+**Next:** [Documentation overview](https://agent-rt.pro-genai.com/docs/)

@@ -4,18 +4,13 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Reference/Architecture and Extension Contracts
- Reference
+**Section:** Reference / Architecture and Extension Contracts
 
 # Architecture and Extension Contracts
 
 Complete Agent RT module map, extension contracts, state invariants, security requirements, validation, and operational expectations.
 
- Complete reference content migrated from the repository Markdown documentation. Use the
-
-[documentation index](https://agent-rt.pro-genai.com/docs/)
-
-to browse by topic.
+ Complete reference content migrated from the repository Markdown documentation. Use the [documentation index](https://agent-rt.pro-genai.com/docs/) to browse by topic.
 
 Agent RT separates the agent loop from evaluation, control-plane management, extension loading, deployment, optimization, and operations. The goal is to keep application-level agent logic portable while giving infrastructure integrations explicit contracts that can be tested and replaced independently.
 
@@ -61,9 +56,7 @@ Middleware should operate at named runtime stages and should not depend on undoc
 
 OpenAI requests default to a lightweight Responses WebSocket transport (`websockets` in Python and `ws` in TypeScript) that keeps one persistent `/v1/responses` connection and uses `previous_response_id` for incremental tool-loop continuation. The `websocket: false` model parameter (or the language-specific `websocket=False` / `websocket: false` provider setting) selects the existing OpenAI-compatible HTTP/SSE transport (`httpcore` in Python and native `fetch`/Web Streams in TypeScript); custom compatible endpoints that do not implement Responses WebSocket mode must opt out. The official OpenAI SDK is loaded only for SDK transport or SDK-backed startup validation. Anthropic's built-in client uses the optional `anthropic` Python package or `@anthropic-ai/sdk` TypeScript peer. Model-backed Agent Action Guard is optional as well. Missing integration use must fail with an actionable install instruction rather than a raw module-resolution error.
 
-Startup builds providers from the `model_list` of the YAML config file (see
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
+Startup builds providers from the `model_list` of the YAML config file (see [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
 
 ): each `model_name` maps to one or more ordered deployments (`<provider>/<model>` plus optional `api_base`), so several models and fallbacks are configured side by side. Startup rejects malformed non-HTTP(S) base URLs, and when validation is enabled every deployment's default model must be listed by its endpoint. The process environment is consulted only for `os.environ/NAME` secret references.
 
@@ -101,9 +94,7 @@ The Python coding CLI discovers global `~/.claude/skills`, `~/.codex/skills`, `~
 
 Decision providers are separate from generative `ModelProvider` implementations. For a self-hosted, open-source Jev-compatible endpoint, run
 
-[Ollaya](https://github.com/ollaya-dev/ollaya)
-
-and point `decision_model.base_url` at it. They accept state plus typed `choice`/`score`/`noul` questions and return calibrated decisions suitable for control-plane gates rather than text generation. The built-in Jev-compatible clients target `/v1/systemone` without embedding model weights or ONNX runtimes in Agent RT. The local default remains `http://127.0.0.1:8000`, while `AGENT_RT_JEV_BASE_URL` can point to any hosted Jev-compatible service and `AGENT_RT_JEV_MODEL` selects the remote Laya or other Jev-compatible Decision model. `AGENT_RT_JEV_TIMEOUT_SECONDS` controls the request timeout. Explicit constructor configuration takes precedence over environment defaults, and the configured model is included as a top-level `model` field in Jev requests.
+[Ollaya](https://github.com/ollaya-dev/ollaya) and point `decision_model.base_url` at it. They accept state plus typed `choice`/`score`/`noul` questions and return calibrated decisions suitable for control-plane gates rather than text generation. The built-in Jev-compatible clients target `/v1/systemone` without embedding model weights or ONNX runtimes in Agent RT. The local default remains `http://127.0.0.1:8000`, while `AGENT_RT_JEV_BASE_URL` can point to any hosted Jev-compatible service and `AGENT_RT_JEV_MODEL` selects the remote Laya or other Jev-compatible Decision model. `AGENT_RT_JEV_TIMEOUT_SECONDS` controls the request timeout. Explicit constructor configuration takes precedence over environment defaults, and the configured model is included as a top-level `model` field in Jev requests.
 
 Decision-backed adapters are intentionally composed with existing deterministic contracts: tool-output decisions feed `GuardrailResult` and receive the latest user prompt, tool-call arguments, and tool output as Decision-model state; tool relevance feeds runtime visibility filtering while required tools remain preserved; memory relevance/sensitivity/confidence feeds the existing write policy thresholds; `DecisionMemoryGuard` treats memory as untrusted data and scores both harmful-action influence and misleading/instruction-hijacking influence before persistence or retrieval exposure; `DecisionRetrievalReranker` scores retrieved candidates for relevance and trust before prompt assembly, with an optional top-k cap; retrieval/context decisions can otherwise filter or downgrade trust; and model-response failure decisions map into the existing `FailureDisposition` taxonomy. `DecisionMemoryWritePolicy`/`DecisionMemoryWriteGate` combine the safety questions with their existing memory-quality questions in one Decision call and reject unsafe memories before store mutation. Security and persistence thresholds remain explicit runtime policy rather than being delegated entirely to model output.
 
@@ -193,9 +184,7 @@ Health endpoints should avoid exposing secrets, credentials, raw prompts, user c
 
 ## Configuration reference
 
-Agent RT's own configuration is one YAML file (see
-
-[Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
+Agent RT's own configuration is one YAML file (see [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration.html)
 
 ); the process environment is read only to resolve `os.environ/NAME` secret references. Credentials belong at the provider/client or secret boundary and are never part of `AgentConfig`.
 
@@ -242,4 +231,4 @@ A typical production integration follows this sequence:
 
 8. Roll back prompt/plugin/config versions or deployment selection if the change regresses behavior.
 
-[Back to← Documentation index](https://agent-rt.pro-genai.com/docs/)
+**Back to:** [Documentation index](https://agent-rt.pro-genai.com/docs/)

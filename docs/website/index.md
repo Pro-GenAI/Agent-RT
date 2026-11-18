@@ -2,67 +2,50 @@
 
 > Agent RT is a lightweight AI agent runtime for Python and TypeScript with tools, streaming, memory, policy, sandboxing, orchestration, and observability.
 
-MIT The agent runtime that installs in 1.24 MiB on npm
+**License:** MIT · **npm install footprint:** 1.24 MiB (site benchmark)
 
-#  Control the loop. Ship the agent.
+# Control the loop. Ship the agent.
 
- Agent RT is a lightweight, provider-neutral runtime for Python and TypeScript. Tools, streaming, policy, memory, sandboxing, orchestration, and observability stay explicit—so your agent remains understandable when the prototype becomes a system.
+Agent RT is a lightweight, provider-neutral runtime for Python and TypeScript. Tools, streaming, policy, memory, sandboxing, orchestration, and observability stay explicit—so your agent remains understandable when the prototype becomes a system.
 
--
+- [66×smaller install than LangChain.js](https://agent-rt.pro-genai.com/#benchmarks)
 
-[66×smaller install than LangChain.js](https://agent-rt.pro-genai.com/#benchmarks)
+- [5.8×less framework overhead than LangChain in Python](https://agent-rt.pro-genai.com/#benchmarks)
 
--
-
-[5.8×less framework overhead than LangChain in Python](https://agent-rt.pro-genai.com/#benchmarks)
-
--
-
-[65+third-party repos pass their tests after migration](https://agent-rt.pro-genai.com/#migration)
-
-
+- [65+ third-party repos pass their tests after migration](https://agent-rt.pro-genai.com/#migration)
 
 [Build your first agent →](https://agent-rt.pro-genai.com/#quickstart)
-
-
 
 [Explore the runtime](https://agent-rt.pro-genai.com/#architecture)
 
 `pip install agent-rt`
 
-[Docker HubPython ↗](https://hub.docker.com/r/praneeth1v/agent-rt-python)
+[Docker Hub — Python](https://hub.docker.com/r/praneeth1v/agent-rt-python)
 
+[Docker Hub — TypeScript](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 
+### Example: approval-gated tool execution
 
-[Docker HubTypeScript ↗](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
+The following illustrative trace shows an agent reading data, checking policy, saving a checkpoint, and stopping before a sensitive external action:
 
-agent_rt · runtime.trace live
-  run_42 agent=**assistant** tools=**2** budget=**max_turns 8**
-
-1. 01text_delta"Checking the SLA first…"12ms
-
-2. 02tool_call_deltasearch_docs(query="SLA")schema ✓
-
-3. 03policy.checkside_effect=readallow
-
-4. 04tool_completedsearch_docs → 3 results38ms
-
-5. 05checkpointturn_02 committedsaved
-
-6. 06approval.requestsend_email → humanpaused
-
-7. ✓termination_reasonwaiting_for_approval
-
-  send_email is waiting for you
-   turns
+```text
+run_42: agent=assistant, tools=2, max_turns=8
+01 text_delta: "Checking the SLA first…"
+02 tool_call_delta: search_docs(query="SLA")
+03 policy.check: side_effect=read, allow
+04 tool_completed: search_docs returned 3 results
+05 checkpoint: turn_02 committed
+06 approval.request: send_email awaiting human review
+07 termination_reason: waiting_for_approval
+```
 
   **1,284** tokens **6** spans
 
-  Python**3.10—3.14**
- Node.js**20 · 22 · 24 · 26**
- License**MIT**
- Transport**WebSocket + HTTP/SSE**
- Platforms
+  Python: **3.10—3.14**
+Node.js: **20 · 22 · 24 · 26**
+License: **MIT**
+Transport: **WebSocket + HTTP/SSE**
+Platforms
 
 - Linux
 
@@ -102,10 +85,9 @@ agent_rt · runtime.trace live
 
     01 Runtime
 
-## Agent code is easy.
-Runtime semantics are not.
+## Agent code is easy. Runtime semantics are not.
 
- A production agent is more than a prompt and an API call. It has to decide what can run, preserve state, recover from failure, stream useful progress, keep side effects bounded, and explain what happened afterward. Agent RT turns those concerns into explicit contracts instead of hidden framework behavior.
+A production agent is more than a prompt and an API call. It has to decide what can run, preserve state, recover from failure, stream useful progress, keep side effects bounded, and explain what happened afterward. Agent RT turns those concerns into explicit contracts instead of hidden framework behavior.
 
     01
 
@@ -127,8 +109,7 @@ Python and TypeScript share the same conceptual runtime while provider-specific 
 
      02 Capabilities
 
-## A small core with
-serious control surfaces.
+## A small core with serious control surfaces.
 
 Use the pieces you need. Keep optional integrations optional.
 
@@ -179,8 +160,8 @@ The optional Python server package maps configured agents to OpenAI model IDs wh
   `pip install "agent-rt[api]"`
 
   GET`/v1/models`*models*
- POST`/v1/chat/completions`*SSE*
- POST`/v1/responses`*SSE · WS*
+POST`/v1/chat/completions`*SSE*
+POST`/v1/responses`*SSE · WS*
  optional bearer auth · FastAPI / Uvicorn
 
     03 Decision models
@@ -188,7 +169,7 @@ The optional Python server package maps configured agents to OpenAI model IDs wh
 ## A second model that decides.
 It never writes the reply.
 
- Decision models served over a Jev-compatible API, or the OpenAI-compatible Decisions API, answer typed choice and score questions with calibrated outputs instead of generating text. Agent RT uses them as optional gates that feed deterministic runtime policy. They never replace that policy. Prefer to self-host? Run an open-source Jev-compatible endpoint with
+Decision models served over a Jev-compatible API, or the OpenAI-compatible Decisions API, answer typed choice and score questions with calibrated outputs instead of generating text. Agent RT uses them as optional gates that feed deterministic runtime policy. They never replace that policy. Prefer to self-host? Run an open-source Jev-compatible endpoint with
 
 [Ollaya](https://github.com/ollaya-dev/ollaya)
 
@@ -233,10 +214,10 @@ Zero bypasses.
 
 Every CI run swaps the model for a deterministic attacker and checks that both runtimes contain it. No real LLM is called.
 
-  **6**attack scenarios
- **2**runtimes: Python + TypeScript
- **0**real LLM calls: fully offline
- **0**bypasses
+  **6** attack scenarios
+ **2** runtimes: Python + TypeScript
+ **0** real LLM calls: fully offline
+ **0** bypasses
 
     security_attack_scan · offline
 
@@ -307,301 +288,163 @@ Migrated? Add the opt-in
 
 ### Anthropic · Python 13
 
--
+- [arashbahrami20261-tech/ai-researcher](https://github.com/arashbahrami20261-tech/ai-researcher/tree/c9f3c66)
 
-[arashbahrami20261-tech/ai-researcher](https://github.com/arashbahrami20261-tech/ai-researcher/tree/c9f3c66)
+- [ArchanaChetan07/validation-lab-capacity-planning-copilot](https://github.com/ArchanaChetan07/validation-lab-capacity-planning-copilot/tree/515cae8)
 
--
+- [gauravsoodtech/shortlist-api](https://github.com/gauravsoodtech/shortlist-api/tree/f5b64b7)
 
-[ArchanaChetan07/validation-lab-capacity-planning-copilot](https://github.com/ArchanaChetan07/validation-lab-capacity-planning-copilot/tree/515cae8)
+- [guptrishi01/rally-ai](https://github.com/guptrishi01/rally-ai/tree/4a7f6e1)
 
--
+- [henry-hai/arthouse-ops](https://github.com/henry-hai/arthouse-ops/tree/e82acce)
 
-[gauravsoodtech/shortlist-api](https://github.com/gauravsoodtech/shortlist-api/tree/f5b64b7)
+- [JuanCamiloMendoza99/mcp-document-chat](https://github.com/JuanCamiloMendoza99/mcp-document-chat/tree/4a591af)
 
--
+- [LikithSh3tty/Askvane](https://github.com/LikithSh3tty/Askvane/tree/2ed3263)
 
-[guptrishi01/rally-ai](https://github.com/guptrishi01/rally-ai/tree/4a7f6e1)
+- [matipirro/taskmanager-python](https://github.com/matipirro/taskmanager-python/tree/e044a3a)
 
--
+- [Mini34/trailhead-claude-support-api](https://github.com/Mini34/trailhead-claude-support-api/tree/5c85c11)
 
-[henry-hai/arthouse-ops](https://github.com/henry-hai/arthouse-ops/tree/e82acce)
+- [NickTrapp/poker-coach](https://github.com/NickTrapp/poker-coach/tree/3469232)
 
--
+- [PranaPragada7/Study-Tutor-Agent](https://github.com/PranaPragada7/Study-Tutor-Agent/tree/8bbbb84)
 
-[JuanCamiloMendoza99/mcp-document-chat](https://github.com/JuanCamiloMendoza99/mcp-document-chat/tree/4a591af)
+- [rubenG1009/jobscout](https://github.com/rubenG1009/jobscout/tree/0cdbc16)
 
--
-
-[LikithSh3tty/Askvane](https://github.com/LikithSh3tty/Askvane/tree/2ed3263)
-
--
-
-[matipirro/taskmanager-python](https://github.com/matipirro/taskmanager-python/tree/e044a3a)
-
--
-
-[Mini34/trailhead-claude-support-api](https://github.com/Mini34/trailhead-claude-support-api/tree/5c85c11)
-
--
-
-[NickTrapp/poker-coach](https://github.com/NickTrapp/poker-coach/tree/3469232)
-
--
-
-[PranaPragada7/Study-Tutor-Agent](https://github.com/PranaPragada7/Study-Tutor-Agent/tree/8bbbb84)
-
--
-
-[rubenG1009/jobscout](https://github.com/rubenG1009/jobscout/tree/0cdbc16)
-
--
-
-[thomas-tahk/itsm-ticket-triage](https://github.com/thomas-tahk/itsm-ticket-triage/tree/8de7130)
+- [thomas-tahk/itsm-ticket-triage](https://github.com/thomas-tahk/itsm-ticket-triage/tree/8de7130)
 
 ### OpenAI · Python 13
 
--
+- [1dg618/pytest-fakellm](https://github.com/1dg618/pytest-fakellm/tree/03feb6e)
 
-[1dg618/pytest-fakellm](https://github.com/1dg618/pytest-fakellm/tree/03feb6e)
+- [brianshimkus/Ticket-Triage-Lab](https://github.com/brianshimkus/Ticket-Triage-Lab/tree/5182dd0)
 
--
+- [dx-corp/mocktopus](https://github.com/dx-corp/mocktopus/tree/ddfa010)
 
-[brianshimkus/Ticket-Triage-Lab](https://github.com/brianshimkus/Ticket-Triage-Lab/tree/5182dd0)
+- [EhsaN-AI13/ai-engineering-agent](https://github.com/EhsaN-AI13/ai-engineering-agent/tree/97de57f)
 
--
+- [eliv1982/customer-review-mcp-assistant](https://github.com/eliv1982/customer-review-mcp-assistant/tree/6499d0d)
 
-[dx-corp/mocktopus](https://github.com/dx-corp/mocktopus/tree/ddfa010)
+- [eliv1982/kitchen-helper-telegram-bot](https://github.com/eliv1982/kitchen-helper-telegram-bot/tree/2378115)
 
--
+- [enoorii/contract-clause-reviewer](https://github.com/enoorii/contract-clause-reviewer/tree/9904684)
 
-[EhsaN-AI13/ai-engineering-agent](https://github.com/EhsaN-AI13/ai-engineering-agent/tree/97de57f)
+- [hajar-benhadj/AI-API-TEST-Generator](https://github.com/hajar-benhadj/AI-API-TEST-Generator/tree/a88ddd5)
 
--
+- [jamps3/LeetIRCPythonBot](https://github.com/jamps3/LeetIRCPythonBot/tree/0088c81)
 
-[eliv1982/customer-review-mcp-assistant](https://github.com/eliv1982/customer-review-mcp-assistant/tree/6499d0d)
+- [neehanthreddym/ai-sales-crm-assistant](https://github.com/neehanthreddym/ai-sales-crm-assistant/tree/33f0f04)
 
--
+- [pitercoding/ai-news-scraper](https://github.com/pitercoding/ai-news-scraper/tree/3c99ed4)
 
-[eliv1982/kitchen-helper-telegram-bot](https://github.com/eliv1982/kitchen-helper-telegram-bot/tree/2378115)
+- [q1nn2/ai_qahelper](https://github.com/q1nn2/ai_qahelper/tree/2ae5c3d)
 
--
-
-[enoorii/contract-clause-reviewer](https://github.com/enoorii/contract-clause-reviewer/tree/9904684)
-
--
-
-[hajar-benhadj/AI-API-TEST-Generator](https://github.com/hajar-benhadj/AI-API-TEST-Generator/tree/a88ddd5)
-
--
-
-[jamps3/LeetIRCPythonBot](https://github.com/jamps3/LeetIRCPythonBot/tree/0088c81)
-
--
-
-[neehanthreddym/ai-sales-crm-assistant](https://github.com/neehanthreddym/ai-sales-crm-assistant/tree/33f0f04)
-
--
-
-[pitercoding/ai-news-scraper](https://github.com/pitercoding/ai-news-scraper/tree/3c99ed4)
-
--
-
-[q1nn2/ai_qahelper](https://github.com/q1nn2/ai_qahelper/tree/2ae5c3d)
-
--
-
-[Tanush1206/llm-utility-lab](https://github.com/Tanush1206/llm-utility-lab/tree/b39e046)
+- [Tanush1206/llm-utility-lab](https://github.com/Tanush1206/llm-utility-lab/tree/b39e046)
 
 ### CrewAI · Python 6
 
--
+- [Floe-Labs/floe-guard](https://github.com/Floe-Labs/floe-guard/tree/f9bf99a)
 
-[Floe-Labs/floe-guard](https://github.com/Floe-Labs/floe-guard/tree/f9bf99a)
+- [Harshit-J004/toolguard](https://github.com/Harshit-J004/toolguard/tree/1b4d4ac)
 
--
+- [mubashir72/AccessDesk-Multi-Agent-AI](https://github.com/mubashir72/AccessDesk-Multi-Agent-AI/tree/979f94c)
 
-[Harshit-J004/toolguard](https://github.com/Harshit-J004/toolguard/tree/1b4d4ac)
+- [rvira/triage-desk](https://github.com/rvira/triage-desk/tree/6be076a)
 
--
+- [sumairkhan/WebIntelX-AI](https://github.com/sumairkhan/WebIntelX-AI/tree/ec540b1)
 
-[mubashir72/AccessDesk-Multi-Agent-AI](https://github.com/mubashir72/AccessDesk-Multi-Agent-AI/tree/979f94c)
-
--
-
-[rvira/triage-desk](https://github.com/rvira/triage-desk/tree/6be076a)
-
--
-
-[sumairkhan/WebIntelX-AI](https://github.com/sumairkhan/WebIntelX-AI/tree/ec540b1)
-
--
-
-[Tonioan-0/Tiered-crew](https://github.com/Tonioan-0/Tiered-crew/tree/452a34f)
+- [Tonioan-0/Tiered-crew](https://github.com/Tonioan-0/Tiered-crew/tree/452a34f)
 
 ### LangChain · Python 6
 
--
+- [alexeymasalykin/ai-assistant-eduflow](https://github.com/alexeymasalykin/ai-assistant-eduflow/tree/23b23b6)
 
-[alexeymasalykin/ai-assistant-eduflow](https://github.com/alexeymasalykin/ai-assistant-eduflow/tree/23b23b6)
+- [eliv1982/ai-agent-toolbox](https://github.com/eliv1982/ai-agent-toolbox/tree/97fb22c)
 
--
+- [lyyxyy/PythonPlantsVsZombies](https://github.com/lyyxyy/PythonPlantsVsZombies/tree/048eae4)
 
-[eliv1982/ai-agent-toolbox](https://github.com/eliv1982/ai-agent-toolbox/tree/97fb22c)
+- [OlajuwonOkeniyi/pdf-quiz-generator](https://github.com/OlajuwonOkeniyi/pdf-quiz-generator/tree/d0bda31)
 
--
+- [zakirkun/guardian-cli](https://github.com/zakirkun/guardian-cli/tree/51864a8)
 
-[lyyxyy/PythonPlantsVsZombies](https://github.com/lyyxyy/PythonPlantsVsZombies/tree/048eae4)
-
--
-
-[OlajuwonOkeniyi/pdf-quiz-generator](https://github.com/OlajuwonOkeniyi/pdf-quiz-generator/tree/d0bda31)
-
--
-
-[zakirkun/guardian-cli](https://github.com/zakirkun/guardian-cli/tree/51864a8)
-
--
-
-[zhaozhenyu-dev/llm-app-portfolio](https://github.com/zhaozhenyu-dev/llm-app-portfolio/tree/6b073fe)
+- [zhaozhenyu-dev/llm-app-portfolio](https://github.com/zhaozhenyu-dev/llm-app-portfolio/tree/6b073fe)
 
 ### OpenAI Agents · Python 6
 
--
+- [ibrahimsamak/multi-agent-AI-travel-planner](https://github.com/ibrahimsamak/multi-agent-AI-travel-planner/tree/16be0ce)
 
-[ibrahimsamak/multi-agent-AI-travel-planner](https://github.com/ibrahimsamak/multi-agent-AI-travel-planner/tree/16be0ce)
+- [KMdotcom/agent-handoff-kit](https://github.com/KMdotcom/agent-handoff-kit/tree/b837831)
 
--
+- [panaversity/agentfactory-manufacturing](https://github.com/panaversity/agentfactory-manufacturing/tree/a82c657)
 
-[KMdotcom/agent-handoff-kit](https://github.com/KMdotcom/agent-handoff-kit/tree/b837831)
+- [rafaelpierre/openai-agents-redis](https://github.com/rafaelpierre/openai-agents-redis/tree/376603a)
 
--
+- [tahasiddiquii/soc-triage-agent](https://github.com/tahasiddiquii/soc-triage-agent/tree/eb7c0d5)
 
-[panaversity/agentfactory-manufacturing](https://github.com/panaversity/agentfactory-manufacturing/tree/a82c657)
-
--
-
-[rafaelpierre/openai-agents-redis](https://github.com/rafaelpierre/openai-agents-redis/tree/376603a)
-
--
-
-[tahasiddiquii/soc-triage-agent](https://github.com/tahasiddiquii/soc-triage-agent/tree/eb7c0d5)
-
--
-
-[Umairkhan2324/trilith](https://github.com/Umairkhan2324/trilith/tree/9db22e4)
+- [Umairkhan2324/trilith](https://github.com/Umairkhan2324/trilith/tree/9db22e4)
 
 ### OpenAI Agents · TypeScript 6
 
--
+- [dcramer/peated](https://github.com/dcramer/peated/tree/aee6890)
 
-[dcramer/peated](https://github.com/dcramer/peated/tree/aee6890)
+- [dmitryostrov/stark-document-translator](https://github.com/dmitryostrov/stark-document-translator/tree/22c0657)
 
--
+- [open-software-network/os-clovy](https://github.com/open-software-network/os-clovy/tree/8fed7ac)
 
-[dmitryostrov/stark-document-translator](https://github.com/dmitryostrov/stark-document-translator/tree/22c0657)
+- [rajudandigam/agent-inspect](https://github.com/rajudandigam/agent-inspect/tree/09838a3)
 
--
+- [runtypelabs/persona](https://github.com/runtypelabs/persona/tree/8f79eaa)
 
-[open-software-network/os-clovy](https://github.com/open-software-network/os-clovy/tree/8fed7ac)
-
--
-
-[rajudandigam/agent-inspect](https://github.com/rajudandigam/agent-inspect/tree/09838a3)
-
--
-
-[runtypelabs/persona](https://github.com/runtypelabs/persona/tree/8f79eaa)
-
--
-
-[vaultys/VaultysClaw](https://github.com/vaultys/VaultysClaw/tree/038f94d)
+- [vaultys/VaultysClaw](https://github.com/vaultys/VaultysClaw/tree/038f94d)
 
 ### LlamaIndex · Python 5
 
--
+- [benmaster82/Kwipu](https://github.com/benmaster82/Kwipu/tree/01dd7d4)
 
-[benmaster82/Kwipu](https://github.com/benmaster82/Kwipu/tree/01dd7d4)
+- [Gaallard/API-RAG-LlamaIndex](https://github.com/Gaallard/API-RAG-LlamaIndex/tree/b4b6ded)
 
--
+- [iAbhyuday/shodh](https://github.com/iAbhyuday/shodh/tree/f803964)
 
-[Gaallard/API-RAG-LlamaIndex](https://github.com/Gaallard/API-RAG-LlamaIndex/tree/b4b6ded)
+- [PhoebeHuPing/memai](https://github.com/PhoebeHuPing/memai/tree/068b151)
 
--
-
-[iAbhyuday/shodh](https://github.com/iAbhyuday/shodh/tree/f803964)
-
--
-
-[PhoebeHuPing/memai](https://github.com/PhoebeHuPing/memai/tree/068b151)
-
--
-
-[sapphireyyy/llamaIndex_rag](https://github.com/sapphireyyy/llamaIndex_rag/tree/6725aeb)
+- [sapphireyyy/llamaIndex_rag](https://github.com/sapphireyyy/llamaIndex_rag/tree/6725aeb)
 
 ### AutoGen · Python 4
 
--
+- [Divya23490/regulatory-impact-analyst](https://github.com/Divya23490/regulatory-impact-analyst/tree/99e9579)
 
-[Divya23490/regulatory-impact-analyst](https://github.com/Divya23490/regulatory-impact-analyst/tree/99e9579)
+- [Hariharan17194/autogen-support-desk](https://github.com/Hariharan17194/autogen-support-desk/tree/52c553d)
 
--
+- [natrajexplore/AutoGen_Agentic-AI](https://github.com/natrajexplore/AutoGen_Agentic-AI/tree/767a752)
 
-[Hariharan17194/autogen-support-desk](https://github.com/Hariharan17194/autogen-support-desk/tree/52c553d)
-
--
-
-[natrajexplore/AutoGen_Agentic-AI](https://github.com/natrajexplore/AutoGen_Agentic-AI/tree/767a752)
-
--
-
-[themaker00001/chaos-bringer](https://github.com/themaker00001/chaos-bringer/tree/13ff3f6)
+- [themaker00001/chaos-bringer](https://github.com/themaker00001/chaos-bringer/tree/13ff3f6)
 
 ### LangChain · TypeScript 4
 
--
+- [Martin-Bruel/nestjs-langchain](https://github.com/Martin-Bruel/nestjs-langchain/tree/4b667b9)
 
-[Martin-Bruel/nestjs-langchain](https://github.com/Martin-Bruel/nestjs-langchain/tree/4b667b9)
+- [maunappl8/recursive-langgraph-agent](https://github.com/maunappl8/recursive-langgraph-agent/tree/2c3da65)
 
--
+- [SAP/langchainjs-integration-for-sap-hana-cloud](https://github.com/SAP/langchainjs-integration-for-sap-hana-cloud/tree/bed48b5)
 
-[maunappl8/recursive-langgraph-agent](https://github.com/maunappl8/recursive-langgraph-agent/tree/2c3da65)
-
--
-
-[SAP/langchainjs-integration-for-sap-hana-cloud](https://github.com/SAP/langchainjs-integration-for-sap-hana-cloud/tree/bed48b5)
-
--
-
-[smartinezai/friendship-points-api](https://github.com/smartinezai/friendship-points-api/tree/f9465c2)
+- [smartinezai/friendship-points-api](https://github.com/smartinezai/friendship-points-api/tree/f9465c2)
 
 ### OpenAI · TypeScript 4
 
--
+- [archydre/lowdeep](https://github.com/archydre/lowdeep/tree/0e6c0f1)
 
-[archydre/lowdeep](https://github.com/archydre/lowdeep/tree/0e6c0f1)
+- [blaxsior/vitest-codegen-with-openai](https://github.com/blaxsior/vitest-codegen-with-openai/tree/8b40f85)
 
--
+- [icernigoj/llmao](https://github.com/icernigoj/llmao/tree/e90a28d)
 
-[blaxsior/vitest-codegen-with-openai](https://github.com/blaxsior/vitest-codegen-with-openai/tree/8b40f85)
-
--
-
-[icernigoj/llmao](https://github.com/icernigoj/llmao/tree/e90a28d)
-
--
-
-[thomaslnx/AIChatBackend](https://github.com/thomaslnx/AIChatBackend/tree/f46dc46)
+- [thomaslnx/AIChatBackend](https://github.com/thomaslnx/AIChatBackend/tree/f46dc46)
 
 ### Anthropic · TypeScript 2
 
--
+- [hanul442/gnomon_analytics](https://github.com/hanul442/gnomon_analytics/tree/02f90b7)
 
-[hanul442/gnomon_analytics](https://github.com/hanul442/gnomon_analytics/tree/02f90b7)
-
--
-
-[SFARPak/AliFullStack](https://github.com/SFARPak/AliFullStack/tree/c34f5cf)
+- [SFARPak/AliFullStack](https://github.com/SFARPak/AliFullStack/tree/c34f5cf)
 
 Public repositories at the tested commit. Listed as test targets only; inclusion is not an endorsement by their authors.
 
@@ -610,7 +453,7 @@ Public repositories at the tested commit. Listed as test targets only; inclusion
 ## Your agent CLI.
 Our runtime.
 
- Put `agent-rt` in front of a Claude Code, Codex, opencode, or Copilot CLI one-shot command. It accepts that tool's own flags and reads its model, provider, and API-key settings, so no `agent-rt.yaml` is needed.
+Put `agent-rt` in front of a Claude Code, Codex, opencode, or Copilot CLI one-shot command. It accepts that tool's own flags and reads its model, provider, and API-key settings, so no `agent-rt.yaml` is needed.
 
 - **Same runtime.** Guardrails, provider routing, tool execution, and run limits match programmatic Agent RT. Workspace writes need approval.
 
@@ -678,8 +521,8 @@ Median framework/transport overhead against a deterministic localhost OpenAI-com
 Median framework/transport overhead against the same class of deterministic local mock.
 
    FEATURE BENCH · 30 RUNS PYTHON / TYPESCRIPT
-  **3.34ms**Python
- **2.70ms**TypeScript
+  **3.34ms** — Python
+ **2.70ms** — TypeScript
 
 ### Tool round trip
 
@@ -703,7 +546,7 @@ One two-request tool cycle with serialized JSON tool output and common wire-leve
 
 #### Tool round trip
 
- HTTP/SSE feature benchmark
+HTTP/SSE feature benchmark
   Agent RT  **3.34 ms**
   LangChain  **9.81 ms**
   LlamaIndex  **7.31 ms**
@@ -727,7 +570,7 @@ One two-request tool cycle with serialized JSON tool output and common wire-leve
 
 #### Tool round trip
 
- HTTP/SSE feature benchmark
+HTTP/SSE feature benchmark
   Agent RT  **2.70 ms**
   LangChain.js  **3.33 ms**
   LlamaIndex.TS  **2.96 ms**
@@ -739,7 +582,7 @@ One two-request tool cycle with serialized JSON tool output and common wire-leve
   LangChain.js  **82.44 MiB**
   LlamaIndex.TS  **60.38 MiB**
 
- Bars are normalized within each metric and language; printed values use the native unit for that metric.
+Bars are normalized within each metric and language; printed values use the native unit for that metric.
 
     AGENT CLI COMPARISON
 
@@ -797,7 +640,7 @@ One two-request tool cycle with serialized JSON tool output and common wire-leve
   Pi  **1,330**
   OpenHuman  **4,208**
 
- Each CLI answered `hi` against a localhost mock model, called as its plain one-shot command. OpenHuman boots its headless core for each turn, as its own benchmark does.
+Each CLI answered `hi` against a localhost mock model, called as its plain one-shot command. OpenHuman boots its headless core for each turn, as its own benchmark does.
 
 [Full table and feature comparison](https://agent-rt.pro-genai.com/docs/reference/comparison.html#agent-cli)
 
@@ -805,16 +648,16 @@ One two-request tool cycle with serialized JSON tool output and common wire-leve
 
   Methodology
 
- Runtime and feature values are checked-in 30-run medians captured on September 28, 2026 against deterministic localhost OpenAI-compatible mocks. Warm completion comes from the retained historical HTTP/SSE runtime baseline; tool round trip comes from the HTTP/SSE feature benchmark. Fresh-install footprints were measured on October 3, 2026 and include transitive dependencies: Python uses clean Python 3.13.13 uv environments with copy mode and reports logical bytes above the empty-venv baseline; TypeScript uses clean Node.js 22.22.2/npm 10.9.7 projects and reports logical node_modules bytes, with Agent RT installed from its npm-pack tarball. Agent RT's runtime runner now defaults to the persistent Responses WebSocket path, so new WebSocket runs are not compared against that historical baseline until a new 30-run WebSocket baseline is promoted. These measurements are scenario-specific framework/adapter overhead, not model latency or an overall framework score. The agent CLI comparison uses 30 sequential runs per CLI plus an eight-way batch, measured on October 29, 2026 on 16-thread Linux x86_64 with each CLI's default tools and real credentials removed; it measures per-prompt harness overhead, not task quality.
+Runtime and feature values are checked-in 30-run medians captured on September 28, 2026 against deterministic localhost OpenAI-compatible mocks. Warm completion comes from the retained historical HTTP/SSE runtime baseline; tool round trip comes from the HTTP/SSE feature benchmark. Fresh-install footprints were measured on October 3, 2026 and include transitive dependencies: Python uses clean Python 3.13.13 uv environments with copy mode and reports logical bytes above the empty-venv baseline; TypeScript uses clean Node.js 22.22.2/npm 10.9.7 projects and reports logical node_modules bytes, with Agent RT installed from its npm-pack tarball. Agent RT's runtime runner now defaults to the persistent Responses WebSocket path, so new WebSocket runs are not compared against that historical baseline until a new 30-run WebSocket baseline is promoted. These measurements are scenario-specific framework/adapter overhead, not model latency or an overall framework score. The agent CLI comparison uses 30 sequential runs per CLI plus an eight-way batch, measured on October 29, 2026 on 16-thread Linux x86_64 with each CLI's default tools and real credentials removed; it measures per-prompt harness overhead, not task quality.
 
     09 Quickstart
 
 ## One runtime.
 Two languages.
 
- Start with the provider-neutral loop, then add tools, policies, storage, sandboxes, or orchestration only when the application needs them.
+Start with the provider-neutral loop, then add tools, policies, storage, sandboxes, or orchestration only when the application needs them.
 
- Moving an existing app?
+Moving an existing app?
 
 [Change one import](https://agent-rt.pro-genai.com/#migration)
 
@@ -863,8 +706,6 @@ async def main():
 asyncio.run(main())
 ```
 
-
-
 ```
 const {
   AgentLoop,
@@ -904,8 +745,6 @@ One configured provider, one run.
 
 [Python · 25 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/01_basic_agent.py)
 
-
-
 [JS · 25 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/01_basic_agent.js)
 
 02
@@ -915,8 +754,6 @@ One configured provider, one run.
 Register a read-only tool and let the model call it.
 
 [Python · 51 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/02_tool_calling.py)
-
-
 
 [JS · 49 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/02_tool_calling.js)
 
@@ -928,8 +765,6 @@ Consume text deltas as they arrive.
 
 [Python · 27 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/03_streaming.py)
 
-
-
 [JS · 27 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/03_streaming.js)
 
 04
@@ -939,8 +774,6 @@ Consume text deltas as they arrive.
 Schema-validated JSON with one repair attempt.
 
 [Python · 45 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/04_structured_output.py)
-
-
 
 [JS · 39 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/04_structured_output.js)
 
@@ -952,8 +785,6 @@ Bound turns, tool calls, time, and tokens.
 
 [Python · 33 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/05_run_limits.py)
 
-
-
 [JS · 31 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/05_run_limits.js)
 
 06
@@ -964,8 +795,6 @@ Namespaces, direct execution, enable and disable.
 
 [Python · 37 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/06_tool_registry.py)
 
-
-
 [JS · 43 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/06_tool_registry.js)
 
 07
@@ -975,8 +804,6 @@ Namespaces, direct execution, enable and disable.
 Query Chroma, Milvus, Pinecone, Qdrant, or Weaviate.
 
 [Python · 33 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/python/examples/07_vector_db.py)
-
-
 
 [JS · 30 lines](https://github.com/Pro-GenAI/Agent-RT/blob/main/src/typescript/examples/07_vector_db.js)
 
@@ -996,13 +823,10 @@ Recently shipped
 
 Ready when your prototype isn't
 
-## Make the runtime
-part of the design.
+## Make the runtime part of the design.
 
 Build agents with explicit state, boundaries, recovery, and observability from the first serious version.
 
 [Start with Agent RT →](https://agent-rt.pro-genai.com/#quickstart)
-
-
 
 [Read the docs](https://agent-rt.pro-genai.com/docs/)

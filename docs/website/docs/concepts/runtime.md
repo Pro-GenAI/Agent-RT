@@ -4,8 +4,7 @@
 
 [Docs](https://agent-rt.pro-genai.com/docs/)
 
-/Core concepts/Runtime model
-Core concepts
+**Section:** Core concepts / Runtime model
 
 # Runtime model
 
@@ -44,10 +43,8 @@ Logical model aliases, ordered fallbacks, and pluggable routing policies let app
 
 A run can finish normally or stop because of cancellation, turn limits, tool-call limits, elapsed-time limits, or token-budget exhaustion. These limits are part of the execution contract, which makes long-running work easier to reason about and resume safely.
 
- **Key distinction**Conversation history is not the same thing as workflow state. Agent RT keeps model-visible context and durable execution state as separate concepts.
+> **Key distinction:** Conversation history is not the same thing as workflow state. Agent RT keeps model-visible context and durable execution state as separate concepts.
 
-[Previous← Quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html)
+**Previous:** [Quickstart](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html)
 
-
-
-[NextTools & policy →](https://agent-rt.pro-genai.com/docs/concepts/tools-policy.html)
+**Next:** [Tools & policy](https://agent-rt.pro-genai.com/docs/concepts/tools-policy.html)
