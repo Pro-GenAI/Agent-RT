@@ -68,3 +68,7 @@
 @media(max-width:570px){.blog-header .header-links{gap:11px}.blog-header .header-links a{font-size:.8rem}.blog-header .header-links a:nth-child(3){display:none!important}.blog-header .brand-mark{width:28px;height:28px}.blog-hero .doc-title{font-size:clamp(2.4rem,12vw,4rem)}.blog-hero{margin-bottom:40px;padding-bottom:35px}.blog-card{padding:22px}.blog-cta{display:block;padding:23px}.blog-cta a{display:inline-block;margin-top:22px}.blog-brief,.blog-next{grid-template-columns:1fr}.blog-article{padding-top:31px}.blog-article .doc-title{font-size:clamp(2.2rem,10vw,3.1rem)}}
 @media(max-width:385px){.blog-header .header-inner{padding:0 12px;gap:8px}.blog-header .header-links{gap:10px}.blog-header .header-links a:nth-child(2){display:none!important}}
 @media(prefers-reduced-motion:reduce){.blog-card{transition:none}.blog-card:hover,.blog-card:focus-visible{transform:none}}
+
+/* A prominent homepage route after each long-form blog article. */
+.blog-home-cta{margin-top:36px}
+.blog-home-cta a:focus-visible{outline:2px solid #b4ebff;outline-offset:4px}

@@ -71,3 +71,9 @@ and the
 [features and defaults reference](https://agent-rt.pro-genai.com/docs/reference/features-defaults.html)
 
 .
+
+## Explore Agent RT
+
+Build leaner agents without losing control. Discover Agent RT's lightweight Python and TypeScript runtime, measured overhead, and tools for bounded execution.
+
+[Visit the Agent RT main website](https://agent-rt.pro-genai.com/)

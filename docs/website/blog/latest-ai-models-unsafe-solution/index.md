@@ -69,3 +69,9 @@ before deployment.
 ## Bottom line
 
 Stronger models reduce some mistakes. Runtime authorization, least privilege, isolation, and repeatable adversarial tests limit the damage when mistakes still occur. The strongest system uses all of them, rather than treating any one layer as a complete safety proof.
+
+## Explore Agent RT
+
+Move from safety principles to a safer agent runtime. See how Agent RT brings tool permissions, Guard, and bounded execution into one Python and TypeScript runtime.
+
+[Explore Agent RT on the main website](https://agent-rt.pro-genai.com/)

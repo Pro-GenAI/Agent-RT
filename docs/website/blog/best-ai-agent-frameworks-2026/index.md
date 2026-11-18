@@ -92,3 +92,9 @@ and
 [migration guide](https://agent-rt.pro-genai.com/docs/guides/migration.html)
 
 . A rigorous short prototype is more useful than an unsupported “best framework” claim.
+
+## Explore Agent RT
+
+See where Agent RT fits your project. Explore the runtime, compare its capabilities with your requirements, and find the right starting point for Python or TypeScript.
+
+[Visit the Agent RT main website](https://agent-rt.pro-genai.com/)

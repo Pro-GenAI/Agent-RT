@@ -37,8 +37,8 @@ Build smarter, without sacrificing control.
 
 From theory to production
 
-## Build an agent you can operate.
+## Ready to put these ideas into practice?
 
-Start with a working runtime, then add bounded execution, permissions, and recoverable state.
+Explore Agent RT's main website to see its lightweight Python and TypeScript runtime, safety controls, checkpoints, and ways to get started.
 
-[Agent RT quickstart ↗](https://agent-rt.pro-genai.com/docs/getting-started/quickstart.html)
+[Visit the Agent RT main website](https://agent-rt.pro-genai.com/)

@@ -78,3 +78,9 @@ and
 [production patterns](https://agent-rt.pro-genai.com/docs/guides/production.html)
 
 .
+
+## Explore Agent RT
+
+Turn recovery patterns into an agent you can operate. Explore Agent RT's Checkpoints, durable state, and practical starting points for building more recoverable agent workflows.
+
+[Explore Agent RT on the main website](https://agent-rt.pro-genai.com/)
