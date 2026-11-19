@@ -6,7 +6,7 @@ COPY src ./src
 RUN npm run build && npm pack --silent && mv agent-rt-*.tgz agent-rt.tgz
 
 FROM node:22-slim
-ARG AGENT_RT_VERSION=0.1.3
+ARG AGENT_RT_VERSION=0.1.4
 LABEL org.opencontainers.image.version="${AGENT_RT_VERSION}"
 WORKDIR /app
 COPY --from=build /build/agent-rt.tgz /build/package.json /tmp/

@@ -48,7 +48,7 @@ conflicts = [[
 
 [[package]]
 name = "agent-action-guard"
-version = "1.2.2"
+version = "1.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -62,9 +62,9 @@ dependencies = [
     { name = "openai" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/45/db3d877f7ad486e8697297e8b32f46b30e9981bd1f784f05751ca8b598ba/agent_action_guard-1.2.2.tar.gz", hash = "sha256:5ef86540f13f7f6d99c8b9a660ef3040cf33de9f728b37671e22d2de8f9acfbf", size = 112261, upload-time = "2026-10-29T13:45:05.372Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/1a/866cebabf47af05b1c88b2c4ca00a809eb641392b4d5cf7eb43a9e00e9b8/agent_action_guard-1.2.3.tar.gz", hash = "sha256:d7936a926a04ed7c54fdee496e1a94ec66a184bf3e77cc6c1a93caeee8906248", size = 112274, upload-time = "2026-11-19T11:12:57.188Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/30/2edbc727719e8a2e1623062e3c6dba018f8f58c9c7a222fb09db13225682/agent_action_guard-1.2.2-py3-none-any.whl", hash = "sha256:632eb192f8c02f5f6cc7240469166f7d3278ef40466a3dfac462e0fd5cf4b333", size = 115080, upload-time = "2026-10-29T13:45:03.756Z" },
+    { url = "https://files.pythonhosted.org/packages/55/40/1b42836c5eaa1173748bb190986964934f0a570ff41e9e2c3d99e3422902/agent_action_guard-1.2.3-py3-none-any.whl", hash = "sha256:f5fe2b2a37d311cf459a8d34b2b3dace2af1c248da3e0b35d019cd13f640d1b5", size = 115101, upload-time = "2026-11-19T11:12:55.741Z" },
 ]
 
 [package.optional-dependencies]
@@ -76,7 +76,7 @@ harmactionseval = [
 
 [[package]]
 name = "agent-rt"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
@@ -194,7 +194,7 @@ zep = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'", specifier = "==1.2.2" },
+    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'", specifier = "==1.2.3" },
     { name = "agentsec-ai", marker = "extra == 'dev'", specifier = ">=0.5,<1" },
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.29,<2" },
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.29,<2" },
