@@ -113,6 +113,19 @@ model_list:
 
 More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/src/typescript/examples).
 
+## Optional read-only ReaTerm tool
+
+Install `npm install reaterm@0.0.1` (an optional peer) and the separate [native ReaTerm Rust CLI](https://github.com/Pro-GenAI/ReaTerm). Register its read-only tool using a trusted filesystem root:
+
+```ts
+import { ToolRegistry, registerReaTermTool } from "agent-rt";
+
+const registry = new ToolRegistry();
+await registerReaTermTool(registry, { root: "/path/to/readable/project" });
+```
+
+The model cannot select the root or invoke a shell. ReaTerm enforces allowed read commands, flags and paths; restrict the root to information that may safely be returned to an LLM.
+
 ## Learn more
 
 - [Website](https://agent-rt.pro-genai.com/) and [documentation site](https://agent-rt.pro-genai.com/docs/)

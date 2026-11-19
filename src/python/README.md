@@ -145,6 +145,19 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/src
 - **Chat bots** (beta): `agent-rt serve telegram,discord` answers allowed users on Telegram and Discord ([details](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#chat-bots-python-beta)).
 - **Web UI** (`agent-rt[web]`): run `agent-rt web` in a project folder to chat in your browser, with sessions shared with the terminal CLI (`agent-rt session list`, `agent-rt session delete ID`) and in-page approval for file edits, plus a time-travel debugger (`agent-rt web --demo`: token budget, tool calls, blocked actions, and fork-from-checkpoint on the offline demo) ([details](https://agent-rt.pro-genai.com/docs/guides/runtime-guide#web-ui)).
 
+## Optional read-only ReaTerm tool
+
+On Python 3.11+, install `pip install "agent-rt[reaterm]"` (pins `reaterm==0.0.1`) and the separate [native ReaTerm Rust CLI](https://github.com/Pro-GenAI/ReaTerm). Register its read-only tool using a trusted filesystem root:
+
+```python
+from agent_rt import ToolRegistry, register_reaterm_tool
+
+registry = ToolRegistry()
+register_reaterm_tool(registry, root="/path/to/readable/project")
+```
+
+The model cannot select the root or invoke a shell. ReaTerm enforces allowed read commands, flags and paths; restrict the root to information that may safely be returned to an LLM.
+
 ## Learn more
 
 - [Website](https://agent-rt.pro-genai.com/) and [documentation site](https://agent-rt.pro-genai.com/docs/)

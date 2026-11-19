@@ -608,6 +608,8 @@ export {
 
 export { ContextAssembler } from './runtime/context/assembler.js';
 
+export { REATERM_TOOL_NAME, registerReaTermTool, type ReaTermClient, type ReaTermToolOptions } from './runtime/tools/reaterm.js';
+
 export {
 	type ToolFilterContext,
 	type ToolVisibilityFilter,

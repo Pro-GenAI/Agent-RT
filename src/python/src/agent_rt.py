@@ -321,6 +321,7 @@ from ext.runtime.tools.programs import (
     ToolProgramResult,
     ToolTimeoutError,
 )
+from ext.runtime.tools.reaterm import REATERM_TOOL_NAME, register_reaterm_tool
 from ext.runtime.tools.registry import (
     DeferredToolRegistration,
     RegisteredTool,

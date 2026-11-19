@@ -272,3 +272,5 @@ MIT — see [LICENSE](LICENSE).
 ### Reviewed, bounded subagent delegation
 
 Python and TypeScript expose `SubagentSwarm` for task-based delegation with full inherited conversation history, a three-level hierarchy (main + worker + grandchild), one nested child per worker, per-tool read/write grants that only narrow, independent reviewer reports, and concurrency-aware tracing/metrics. Use the native `AgentLoopInvoker` adapter to propagate per-call budgets, cancellation, deadlines, and grants. Dispatch rechecks the live registered tool side-effect class. Register the optional scoped delegation tool explicitly in your agent registry. See the [runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference#governed-subagents).
+
+Agent-RT also supports optional read-only terminal inspection via [ReaTerm](https://github.com/Pro-GenAI/ReaTerm) 0.0.1: install `agent-rt[reaterm]` on Python 3.11+, or the `reaterm@0.0.1` optional npm peer in TypeScript. Both require the separately installed ReaTerm native Rust CLI and an application-selected filesystem root. See each package README for usage.
