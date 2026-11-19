@@ -122,6 +122,7 @@ def test_user_level_claude_codex_and_agents_skills_are_global(tmp_path):
         agent_rt_home=tmp_path / "rt",
         user_home=home,
         decision_provider=BenignSkillDecisionProvider(),
+        skill_scanner=lambda _: 0,
     )
 
     assert [skill.name for skill in skills.active()] == ["alpha", "beta", "gamma"]
@@ -308,6 +309,7 @@ def test_scanned_skills_are_trusted_until_their_files_change(tmp_path, capsys):
             agent_rt_home=rt_home,
             user_home=tmp_path / "user",
             decision_provider=provider,
+            skill_scanner=lambda _: 0,
         )
         return [s.name for s in skills.active()], warnings, provider.calls
 

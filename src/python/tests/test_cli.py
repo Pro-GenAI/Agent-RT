@@ -639,6 +639,7 @@ class TestCliSkills:
             agent_rt_home=home,
             user_home=tmp_path / "empty-user-home",
             decision_provider=BenignSkillDecisionProvider(),
+            skill_scanner=lambda _: 0,
         )
 
         # Project precedence is by design, but shadowing a global skill is reported.
@@ -670,6 +671,7 @@ class TestCliSkills:
             agent_rt_home=tmp_path / "empty-home",
             user_home=tmp_path / "empty-user-home",
             decision_provider=BenignSkillDecisionProvider(),
+            skill_scanner=lambda _: 0,
         )
         assert warnings == ()
 
@@ -731,11 +733,50 @@ class TestCliSkills:
             agent_rt_home=tmp_path / "empty-home",
             user_home=tmp_path / "empty-user-home",
             decision_provider=BenignSkillDecisionProvider(),
+            skill_scanner=lambda _: 0,
         )
 
         assert skills.active() == ()
         assert len(warnings) == 1
         assert "prompt_injection" in warnings[0]
+
+    def test_skill_discovery_caches_scans_and_rescans_modified_content(self, tmp_path):
+        workspace = tmp_path / "workspace"
+        skill_dir = workspace / ".agent-rt" / "skills" / "review"
+        skill_dir.mkdir(parents=True)
+        skill_file = skill_dir / "SKILL.md"
+        skill_file.write_text("# Review\n", encoding="utf-8")
+        home = tmp_path / "home"
+        scans = []
+
+        def scan(path):
+            scans.append(path)
+            return 9
+
+        arguments = dict(
+            agent_rt_home=home, user_home=tmp_path / "empty-user",
+            decision_provider=BenignSkillDecisionProvider(), skill_scanner=scan,
+        )
+        skills, warnings = _discover_cli_skills(workspace, **arguments)
+        assert warnings == ()
+        assert len(skills.active()) == 1
+        assert scans == [skill_dir]
+
+        _discover_cli_skills(workspace, **arguments)
+        assert scans == [skill_dir]
+        skill_file.write_text("# Updated\n", encoding="utf-8")
+        _discover_cli_skills(workspace, **arguments)
+        assert scans == [skill_dir, skill_dir]
+
+        # A legacy record without a SkillSpector marker never bypasses first scan.
+        trust_file = home / "trusted_skills.json"
+        import json
+        trusted = json.loads(trust_file.read_text(encoding="utf-8"))
+        trust_file.write_text(json.dumps({
+            key: value.removeprefix("skillspector-v1:") for key, value in trusted.items()
+        }), encoding="utf-8")
+        _discover_cli_skills(workspace, **arguments)
+        assert len(scans) == 3
 
 
 class TestChatSession:

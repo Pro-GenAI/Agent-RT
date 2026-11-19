@@ -49,7 +49,9 @@ from ext.cli_update import (
     restart_cli,
 )
 from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
-from ext.extensions import SkillPackage, SkillRegistry, load_skill_package
+from ext.extensions import (
+    SkillPackage, SkillRegistry, load_skill_package, scan_skill_with_skillspector,
+)
 from ext.mcp_servers import MCPConnection
 from ext.project_instructions import load_project_instructions
 
@@ -951,10 +953,11 @@ def _discover_cli_skills(
     agent_rt_home: Path | None = None,
     user_home: Path | None = None,
     decision_provider: Any | None = None,
+    skill_scanner: Callable[[Path], int] | None = None,
 ) -> tuple[SkillRegistry, tuple[str, ...]]:
     """Discover global and workspace SKILL.md packages without following symlinks.
 
-    A skill that passes the full (Decision model) scan is trusted: its digest is kept in
+    A skill that passes SkillSpector and the full Decision-model scan is trusted: its digest is kept in
     ``<cli.home>/trusted_skills.json`` and later launches skip that scan while the files are
     unchanged. A changed skill loses its trust and is scanned again.
     """
@@ -1003,8 +1006,10 @@ def _discover_cli_skills(
             try:
                 skill = load_skill_package(candidate)
                 digest = _skill_digest(skill)
-                if trusted.get(key) == digest:
-                    # Unchanged since it passed the full scan: only the built-in pattern scan runs.
+                # Prefix invalidates trust records written before SkillSpector was required.
+                trusted_digest = "skillspector-v1:" + digest
+                if trusted.get(key) == trusted_digest:
+                    # Unchanged since both scans passed: still run built-in pattern checks.
                     registry.install(skill, activate=True)
                 else:
                     if trusted.pop(key, None) is not None:
@@ -1014,6 +1019,9 @@ def _discover_cli_skills(
                             f"trusted ({candidate}); scanning it again",
                             file=sys.stderr,
                         )
+                    (skill_scanner or scan_skill_with_skillspector)(candidate)
+                    if _skill_digest(load_skill_package(candidate)) != digest:
+                        raise ValueError("skill files changed during SkillSpector scan")
                     if decision_guard is None:
                         from ext.decisions import (
                             default_decision_provider,
@@ -1026,7 +1034,7 @@ def _discover_cli_skills(
                     registry.install(
                         skill, activate=True, registration_guard=decision_guard
                     )
-                    trusted[key] = digest
+                    trusted[key] = trusted_digest
                     trust_changed = True
             except (OSError, UnicodeError, ValueError) as exc:
                 # A skill that no longer loads or passes the scan is not trusted any more.

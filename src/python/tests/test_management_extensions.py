@@ -1,4 +1,8 @@
+import json
+import subprocess
+
 import pytest
+import ext.extensions as skill_extensions
 
 from ext.extensions import (
     ExtensionRegistry,
@@ -6,6 +10,7 @@ from ext.extensions import (
     SkillPackage,
     SkillRegistry,
     load_skill_package,
+    scan_skill_with_skillspector,
 )
 from ext.management import (
     ConfigurationManager,
@@ -150,6 +155,7 @@ class TestManagementAndExtension:
             activate=True,
             version="3",
             decision_provider=decision_provider,
+            scanner=lambda _: 0,
         )
         assert installed.version == "3"
         assert skills.active() == (installed,)
@@ -185,11 +191,75 @@ class TestManagementAndExtension:
             collection,
             activate=True,
             decision_provider=decision_provider,
+            scanner=lambda _: 0,
         )
         assert [skill.name for skill in installed] == ["alpha", "beta"]
         assert decision_provider.calls
         assert skills.get("alpha").instructions == "# Alpha\n"
         assert "outside-link.txt" not in skills.get("beta").resources
+
+    def test_skillspector_rejects_bad_or_incomplete_scans(self, monkeypatch, tmp_path):
+        skill = tmp_path / "review"
+        skill.mkdir()
+        (skill / "SKILL.md").write_text("# Review\n", encoding="utf-8")
+        calls = []
+
+        def passed(command, **kwargs):
+            calls.append(command)
+            return subprocess.CompletedProcess(command, 0, json.dumps({
+                "risk_assessment": {"score": 12, "recommendation": "SAFE"},
+            }), "")
+
+        monkeypatch.setattr(skill_extensions.subprocess, "run", passed)
+        assert scan_skill_with_skillspector(skill) == 12
+        assert "--no-llm" in calls[0]
+        assert "--fail-on-incomplete" in calls[0]
+
+        def reject(command, **kwargs):
+            return subprocess.CompletedProcess(command, 1, json.dumps({
+                "risk_assessment": {"score": 78, "recommendation": "DO_NOT_INSTALL"},
+            }), "")
+
+        monkeypatch.setattr(skill_extensions.subprocess, "run", reject)
+        with pytest.raises(ValueError, match="78/100"):
+            scan_skill_with_skillspector(skill)
+
+        def incomplete(command, **kwargs):
+            return subprocess.CompletedProcess(command, 1, json.dumps({
+                "risk_assessment": {"score": 5, "recommendation": "SAFE"},
+            }), "")
+
+        monkeypatch.setattr(skill_extensions.subprocess, "run", incomplete)
+        with pytest.raises(ValueError, match="scanner exit 1"):
+            scan_skill_with_skillspector(skill)
+
+    def test_filesystem_skill_scanner_blocks_install_and_detects_changes(self, tmp_path):
+        directory = tmp_path / "review"
+        directory.mkdir()
+        skill_file = directory / "SKILL.md"
+        skill_file.write_text("# Review\n", encoding="utf-8")
+        registry = SkillRegistry()
+
+        def deny(_):
+            raise ValueError("SkillSpector rejected")
+
+        with pytest.raises(ValueError, match="SkillSpector rejected"):
+            registry.install_from_path(
+                directory, scanner=deny,
+                decision_provider=BenignDecisionProvider(), activate=True,
+            )
+        assert registry.active() == ()
+
+        def mutate(_):
+            skill_file.write_text("# Changed\n", encoding="utf-8")
+            return 0
+
+        with pytest.raises(ValueError, match="changed during SkillSpector"):
+            registry.install_from_path(
+                directory, scanner=mutate,
+                decision_provider=BenignDecisionProvider(), activate=True,
+            )
+        assert registry.active() == ()
 
     def test_skill_registry_blocks_injection_advertising_and_harmful_content_before_install(
         self,

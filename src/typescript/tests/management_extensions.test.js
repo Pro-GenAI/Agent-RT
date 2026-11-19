@@ -155,6 +155,7 @@ test('skill registry installs standard SKILL.md directories', async () => {
 			activate: true,
 			version: '3',
 			decisionProvider: benignDecisionProvider,
+			scanSkill: () => 0,
 		});
 		assert.equal(installed.version, '3');
 		assert.deepEqual(skills.active(), [installed]);
@@ -202,6 +203,7 @@ test('skill registry installs a collection of agent skill directories', async ()
 		const installed = await skills.installDirectory(collection, {
 			activate: true,
 			decisionProvider: benignDecisionProvider,
+			scanSkill: () => 0,
 		});
 		assert.deepEqual(
 			installed.map((skill) => skill.name),
@@ -268,11 +270,37 @@ test('disk skill install requires Decision approval before mutation', async () =
 			skills.installFromPath(skillDir, {
 				activate: true,
 				decisionProvider: blockingDecisionProvider,
+				scanSkill: () => 0,
 			}),
 			/decision_misleading/,
 		);
 		assert.deepEqual(skills.active(), []);
 		assert.throws(() => skills.get('review'), /unknown skill/);
+	} finally {
+		fs.rmSync(temporary, { recursive: true, force: true });
+	}
+});
+
+test('SkillSpector gate rejects unsafe scans and changed skill files before registration', async () => {
+	const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-rt-gated-skill-'));
+	try {
+		const directory = path.join(temporary, 'review');
+		fs.mkdirSync(directory);
+		const file = path.join(directory, 'SKILL.md');
+		fs.writeFileSync(file, '# Review\n');
+		const skills = new SkillRegistry();
+		await assert.rejects(skills.installFromPath(directory, {
+			activate: true,
+			decisionProvider: benignDecisionProvider,
+			scanSkill: () => { throw new Error('SkillSpector rejected 78/100'); },
+		}), /SkillSpector rejected/);
+		assert.deepEqual(skills.active(), []);
+		await assert.rejects(skills.installFromPath(directory, {
+			activate: true,
+			decisionProvider: benignDecisionProvider,
+			scanSkill: () => { fs.writeFileSync(file, '# Changed\n'); return 0; },
+		}), /changed during SkillSpector scan/);
+		assert.deepEqual(skills.active(), []);
 	} finally {
 		fs.rmSync(temporary, { recursive: true, force: true });
 	}

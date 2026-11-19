@@ -33,6 +33,8 @@ Node 20, 22, 24, or 26. Runs on Linux, Windows, macOS (Intel and Apple M-series)
 npm install agent-rt
 ```
 
+**Filesystem skill security:** To load new or changed `SKILL.md` skills, install [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) as a separate Python 3.12/3.13 CLI tool (`uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git`). Agent RT requires a complete static-only scan, and blocks risky or failed scans. See [skill registration safety](https://agent-rt.pro-genai.com/docs/reference/extension-contracts#skills-and-registration-scanning).
+
 **Docker Hub:** The prebuilt [TypeScript image](https://hub.docker.com/r/praneeth1v/agent-rt-typescript) includes Agent RT and the OpenAI/Anthropic SDK peers. It starts Node.js by default:
 
 ```bash
