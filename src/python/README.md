@@ -36,7 +36,7 @@ pip install agent-rt
 pip install 'agent-rt[all]'   # or pick extras: anthropic, observability, api, cli
 ```
 
-**Filesystem skill security:** To load new or changed `SKILL.md` skills, install [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) as a separate Python 3.12/3.13 CLI tool (`uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git`). Agent RT requires a complete static-only scan, and blocks risky or failed scans. See [skill registration safety](https://agent-rt.pro-genai.com/docs/reference/extension-contracts#skills-and-registration-scanning).
+**CLI skill security:** When the Python `agent-rt` CLI discovers a new or modified `SKILL.md` skill, it requires [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) on the PATH (`uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git`). Incomplete, failing, or high-risk scans prevent that skill from loading in the CLI. The Python and TypeScript `SkillRegistry` programming APIs are unchanged. See [skill registration safety](https://agent-rt.pro-genai.com/docs/reference/extension-contracts#skills-and-registration-scanning).
 
 **Docker Hub:** The prebuilt [Python image](https://hub.docker.com/r/praneeth1v/agent-rt-python) includes the `agent-rt` CLI entrypoint and the provider, API, and web extras. Pull the latest tag (or a published version tag) and try the CLI:
 

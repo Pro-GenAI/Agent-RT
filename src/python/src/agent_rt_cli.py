@@ -49,9 +49,7 @@ from ext.cli_update import (
     restart_cli,
 )
 from ext.config import AgentRTConfig, ConfigNotFoundError, parse_config
-from ext.extensions import (
-    SkillPackage, SkillRegistry, load_skill_package, scan_skill_with_skillspector,
-)
+from ext.extensions import SkillPackage, SkillRegistry, load_skill_package
 from ext.mcp_servers import MCPConnection
 from ext.project_instructions import load_project_instructions
 
@@ -947,6 +945,47 @@ def _save_trusted_skills(path: Path, trusted: Mapping[str, str]) -> None:
     temporary.replace(path)
 
 
+def _scan_skill_with_skillspector(path: str | Path) -> int:
+    """Gate CLI-discovered skills on a complete local static SkillSpector scan."""
+    command = [
+        "skillspector", "scan", str(Path(path).expanduser().resolve()),
+        "--no-llm", "--fail-on-incomplete", "--format", "json",
+    ]
+    try:
+        result = subprocess.run(
+            command, capture_output=True, text=True, timeout=120, check=False,
+        )
+    except FileNotFoundError as exc:
+        raise ValueError(
+            "SkillSpector is required to load filesystem skills. Install it with "
+            "'uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git'"
+        ) from exc
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError("SkillSpector scan could not complete") from exc
+
+    try:
+        report = json.loads(result.stdout)
+        assessment = report["risk_assessment"]
+        score = assessment["score"]
+        recommendation = assessment["recommendation"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise ValueError(
+            f"SkillSpector did not return a valid JSON risk report (exit {result.returncode})"
+        ) from exc
+    if (
+        type(score) is not int
+        or not 0 <= score <= 100
+        or recommendation not in ("SAFE", "CAUTION", "DO_NOT_INSTALL")
+    ):
+        raise ValueError("SkillSpector returned an invalid risk assessment")
+    if result.returncode != 0 or score > 50 or recommendation == "DO_NOT_INSTALL":
+        raise ValueError(
+            f"SkillSpector rejected skill: {score}/100 ({recommendation}); "
+            f"scanner exit {result.returncode}. Review findings before installation."
+        )
+    return score
+
+
 def _discover_cli_skills(
     workspace: Path,
     *,
@@ -954,12 +993,15 @@ def _discover_cli_skills(
     user_home: Path | None = None,
     decision_provider: Any | None = None,
     skill_scanner: Callable[[Path], int] | None = None,
+    require_skillspector: bool = True,
 ) -> tuple[SkillRegistry, tuple[str, ...]]:
     """Discover global and workspace SKILL.md packages without following symlinks.
 
-    A skill that passes SkillSpector and the full Decision-model scan is trusted: its digest is kept in
-    ``<cli.home>/trusted_skills.json`` and later launches skip that scan while the files are
-    unchanged. A changed skill loses its trust and is scanned again.
+    A skill that passes SkillSpector and the Decision-model scan is trusted: its
+    digest is kept in ``<cli.home>/trusted_skills.json``. Unchanged skills
+    reuse that trust; modified skills must pass both scans again. The web UI
+    calls this loader with require_skillspector=False and uses the original
+    Decision-only trust format; it cannot grant CLI SkillSpector approval.
     """
 
     registry = SkillRegistry()
@@ -1008,8 +1050,10 @@ def _discover_cli_skills(
                 digest = _skill_digest(skill)
                 # Prefix invalidates trust records written before SkillSpector was required.
                 trusted_digest = "skillspector-v1:" + digest
-                if trusted.get(key) == trusted_digest:
-                    # Unchanged since both scans passed: still run built-in pattern checks.
+                if trusted.get(key) == trusted_digest or (
+                    not require_skillspector and trusted.get(key) == digest
+                ):
+                    # Unchanged approved skills still get built-in pattern checks.
                     registry.install(skill, activate=True)
                 else:
                     if trusted.pop(key, None) is not None:
@@ -1019,9 +1063,10 @@ def _discover_cli_skills(
                             f"trusted ({candidate}); scanning it again",
                             file=sys.stderr,
                         )
-                    (skill_scanner or scan_skill_with_skillspector)(candidate)
-                    if _skill_digest(load_skill_package(candidate)) != digest:
-                        raise ValueError("skill files changed during SkillSpector scan")
+                    if require_skillspector:
+                        (skill_scanner or _scan_skill_with_skillspector)(candidate)
+                        if _skill_digest(load_skill_package(candidate)) != digest:
+                            raise ValueError("skill files changed during SkillSpector scan")
                     if decision_guard is None:
                         from ext.decisions import (
                             default_decision_provider,
@@ -1034,7 +1079,10 @@ def _discover_cli_skills(
                     registry.install(
                         skill, activate=True, registration_guard=decision_guard
                     )
-                    trusted[key] = trusted_digest
+                    # The web UI must not grant CLI SkillSpector approval implicitly.
+                    trusted[key] = (
+                        trusted_digest if require_skillspector else digest
+                    )
                     trust_changed = True
             except (OSError, UnicodeError, ValueError) as exc:
                 # A skill that no longer loads or passes the scan is not trusted any more.

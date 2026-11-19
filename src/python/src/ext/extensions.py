@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -37,47 +36,6 @@ _MAX_SKILL_BYTES = 1_000_000
 _MAX_RESOURCE_FILES = 256
 _MAX_RESOURCE_BYTES = 16 * 1024 * 1024
 _FRONTMATTER_KEY = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*)$")
-
-
-def scan_skill_with_skillspector(path: str | Path) -> int:
-    """Require a successful, complete static SkillSpector scan before installation."""
-    command = [
-        "skillspector", "scan", str(Path(path).expanduser().resolve()),
-        "--no-llm", "--fail-on-incomplete", "--format", "json",
-    ]
-    try:
-        result = subprocess.run(
-            command, capture_output=True, text=True, timeout=120, check=False,
-        )
-    except FileNotFoundError as exc:
-        raise ValueError(
-            "SkillSpector is required to load filesystem skills. Install it with "
-            "'uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git'"
-        ) from exc
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise ValueError("SkillSpector scan could not complete") from exc
-
-    try:
-        report = json.loads(result.stdout)
-        assessment = report["risk_assessment"]
-        score = assessment["score"]
-        recommendation = assessment["recommendation"]
-    except (ValueError, KeyError, TypeError) as exc:
-        raise ValueError(
-            f"SkillSpector did not return a valid JSON risk report (exit {result.returncode})"
-        ) from exc
-    if (
-        type(score) is not int
-        or not 0 <= score <= 100
-        or recommendation not in ("SAFE", "CAUTION", "DO_NOT_INSTALL")
-    ):
-        raise ValueError("SkillSpector returned an invalid risk assessment")
-    if result.returncode != 0 or score > 50 or recommendation == "DO_NOT_INSTALL":
-        raise ValueError(
-            f"SkillSpector rejected skill: {score}/100 ({recommendation}); "
-            f"scanner exit {result.returncode}. Review findings before installation."
-        )
-    return score
 
 
 def _frontmatter_scalar(value: str) -> str:
@@ -267,12 +225,8 @@ class SkillRegistry:
         activate: bool = False,
         version: str | None = None,
         decision_provider: Any | None = None,
-        scanner: Callable[[Path], int] | None = None,
     ) -> SkillPackage:
         skill = load_skill_package(path, version=version)
-        (scanner or scan_skill_with_skillspector)(Path(path).expanduser())
-        if load_skill_package(path, version=version) != skill:
-            raise ValueError("skill files changed during SkillSpector scan")
         from ext.decisions import (
             default_decision_provider,
             make_decision_registration_guard,
@@ -289,7 +243,6 @@ class SkillRegistry:
         *,
         activate: bool = False,
         decision_provider: Any | None = None,
-        scanner: Callable[[Path], int] | None = None,
     ) -> tuple[SkillPackage, ...]:
         root = Path(path).expanduser()
         if root.is_symlink() or not root.is_dir():
@@ -302,7 +255,6 @@ class SkillRegistry:
                     root,
                     activate=activate,
                     decision_provider=decision_provider,
-                    scanner=scanner,
                 ),
             )
 
@@ -323,7 +275,6 @@ class SkillRegistry:
                 candidate,
                 activate=activate,
                 decision_provider=decision_provider,
-                scanner=scanner,
             )
             for candidate in candidates
         )

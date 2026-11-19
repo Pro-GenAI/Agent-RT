@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -30,6 +31,7 @@ from agent_rt_cli import (
     TranscriptStore,
     WorkspaceCodeTools,
     _discover_cli_skills,
+    _scan_skill_with_skillspector,
     _provider_model_ids,
     _register_skill_tools,
     _require_cli_dependencies,
@@ -718,6 +720,115 @@ class TestCliSkills:
         assert resource["encoding"] == "utf-8"
         assert resource["content"] == "Run tests before publishing.\n"
         assert resource["truncated"] is False
+
+    def test_skillspector_is_required_only_for_cli_skill_discovery(
+        self, monkeypatch, tmp_path
+    ):
+        commands = []
+
+        def scan(command, **kwargs):
+            commands.append((command, kwargs))
+            return subprocess.CompletedProcess(
+                command, 0,
+                json.dumps({
+                    "risk_assessment": {
+                        "score": 50, "recommendation": "CAUTION",
+                    }
+                }), "",
+            )
+
+        monkeypatch.setattr("agent_rt_cli.subprocess.run", scan)
+        assert _scan_skill_with_skillspector(tmp_path) == 50
+        command, kwargs = commands[0]
+        assert command[:2] == ["skillspector", "scan"]
+        assert "--no-llm" in command
+        assert "--fail-on-incomplete" in command
+        assert command[-2:] == ["--format", "json"]
+        assert kwargs["timeout"] == 120
+        assert kwargs["check"] is False
+
+        def result(score, recommendation, code):
+            return lambda command, **kwargs: subprocess.CompletedProcess(
+                command, code,
+                json.dumps({"risk_assessment": {
+                    "score": score, "recommendation": recommendation,
+                }}), "",
+            )
+
+        monkeypatch.setattr("agent_rt_cli.subprocess.run", result(51, "DO_NOT_INSTALL", 1))
+        with pytest.raises(ValueError, match="51/100"):
+            _scan_skill_with_skillspector(tmp_path)
+
+        # Even a low score is blocked if scanning was incomplete.
+        monkeypatch.setattr("agent_rt_cli.subprocess.run", result(5, "SAFE", 1))
+        with pytest.raises(ValueError, match="scanner exit 1"):
+            _scan_skill_with_skillspector(tmp_path)
+
+        monkeypatch.setattr(
+            "agent_rt_cli.subprocess.run",
+            lambda command, **kwargs: subprocess.CompletedProcess(
+                command, 0, '{"risk_assessment":{}}', ""
+            ),
+        )
+        with pytest.raises(ValueError, match="valid JSON risk report"):
+            _scan_skill_with_skillspector(tmp_path)
+
+        def missing(*args, **kwargs):
+            raise FileNotFoundError("skillspector")
+
+        monkeypatch.setattr("agent_rt_cli.subprocess.run", missing)
+        with pytest.raises(ValueError, match="SkillSpector is required"):
+            _scan_skill_with_skillspector(tmp_path)
+
+        def timeout(*args, **kwargs):
+            raise subprocess.TimeoutExpired("skillspector", 120)
+
+        monkeypatch.setattr("agent_rt_cli.subprocess.run", timeout)
+        with pytest.raises(ValueError, match="could not complete"):
+            _scan_skill_with_skillspector(tmp_path)
+
+
+    def test_web_discovery_cannot_grant_cli_scan_approval(self, tmp_path):
+        workspace = tmp_path / "workspace"
+        skill_dir = workspace / ".agent-rt" / "skills" / "docs"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Documentation\n", encoding="utf-8")
+        home = tmp_path / "agent-home"
+        calls = []
+
+        def scanner(path):
+            calls.append(path)
+            return 3
+
+        common = dict(
+            agent_rt_home=home, user_home=tmp_path / "user",
+            decision_provider=BenignSkillDecisionProvider(),
+            skill_scanner=scanner,
+        )
+        skills, warnings = _discover_cli_skills(
+            workspace, require_skillspector=False, **common
+        )
+        assert warnings == ()
+        assert [skill.name for skill in skills.active()] == ["docs"]
+        assert calls == []
+        trusted = json.loads(
+            (home / "trusted_skills.json").read_text(encoding="utf-8")
+        )
+        assert not next(iter(trusted.values())).startswith("skillspector-v1:")
+
+        # A web-approved skill still needs SkillSpector for the terminal CLI.
+        skills, warnings = _discover_cli_skills(workspace, **common)
+        assert warnings == ()
+        assert [skill.name for skill in skills.active()] == ["docs"]
+        assert calls == [skill_dir]
+        trusted = json.loads(
+            (home / "trusted_skills.json").read_text(encoding="utf-8")
+        )
+        assert next(iter(trusted.values())).startswith("skillspector-v1:")
+
+        # Later web launches preserve that CLI approval, without rescanning.
+        _discover_cli_skills(workspace, require_skillspector=False, **common)
+        assert calls == [skill_dir]
 
     def test_discovery_skips_skill_with_prompt_injection_text(self, tmp_path):
         workspace = tmp_path / "workspace"

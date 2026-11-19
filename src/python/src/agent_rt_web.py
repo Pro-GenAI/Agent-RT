@@ -729,7 +729,10 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         print(f"agent-rt web: configuration error: {exc}", file=sys.stderr)
         return 2
     workspace = Path.cwd()
-    skills, skill_warnings = _discover_cli_skills(workspace)
+    # The web UI retains existing registration checks; SkillSpector is CLI-only.
+    skills, skill_warnings = _discover_cli_skills(
+        workspace, require_skillspector=False
+    )
     for warning in skill_warnings:
         print(f"agent-rt web: skill warning: {warning}", file=sys.stderr)
     if consequences := _skill_warning_consequences("agent-rt web", skill_warnings):

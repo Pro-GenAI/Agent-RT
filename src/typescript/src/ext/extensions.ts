@@ -1,7 +1,5 @@
-import { spawnSync } from 'node:child_process';
 import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
-import { isDeepStrictEqual } from 'node:util';
 
 import {
 	defaultDecisionProvider,
@@ -30,69 +28,6 @@ const SKILL_FILE = 'SKILL.md';
 const MAX_SKILL_BYTES = 1_000_000;
 const MAX_RESOURCE_FILES = 256;
 const MAX_RESOURCE_BYTES = 16 * 1024 * 1024;
-
-/** Require a complete, static-only SkillSpector scan before filesystem installation. */
-export function scanSkillWithSkillSpector(skillPath: string): number {
-	const scan = spawnSync(
-		'skillspector',
-		[
-			'scan',
-			resolve(skillPath),
-			'--no-llm',
-			'--fail-on-incomplete',
-			'--format',
-			'json',
-		],
-		{
-			encoding: 'utf8',
-			timeout: 120_000,
-			maxBuffer: 8 * 1024 * 1024,
-			windowsHide: true,
-		},
-	);
-	if (scan.error) {
-		throw new Error(
-			'SkillSpector scan could not run (' +
-				scan.error.message +
-				'). Install with ' +
-				"'uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git'",
-		);
-	}
-	let report: { risk_assessment?: { score?: unknown; recommendation?: unknown } };
-	try {
-		report = JSON.parse(scan.stdout) as typeof report;
-	} catch {
-		throw new Error(
-			'SkillSpector did not return a valid JSON risk report (exit ' +
-				scan.status +
-				')',
-		);
-	}
-	const risk = report?.risk_assessment;
-	const score = risk?.score;
-	const recommendation = risk?.recommendation;
-	if (
-		typeof score !== 'number' ||
-		!Number.isInteger(score) ||
-		score < 0 ||
-		score > 100 ||
-		!['SAFE', 'CAUTION', 'DO_NOT_INSTALL'].includes(String(recommendation))
-	) {
-		throw new Error('SkillSpector returned an invalid risk assessment');
-	}
-	if (scan.status !== 0 || score > 50 || recommendation === 'DO_NOT_INSTALL') {
-		throw new Error(
-			'SkillSpector rejected skill: ' +
-				score +
-				'/100 (' +
-				recommendation +
-				'); scanner exit ' +
-				scan.status +
-				'. Review findings before installation.',
-		);
-	}
-	return score;
-}
 
 function frontmatterScalar(value: string): string {
 	const trimmed = value.trim();
@@ -406,16 +341,9 @@ export class SkillRegistry {
 			activate?: boolean;
 			version?: string;
 			decisionProvider?: DecisionProvider;
-			scanSkill?: (path: string) => number;
 		} = {},
 	): Promise<SkillPackage> {
 		const skill = loadSkillPackage(skillPath, options.version);
-		(options.scanSkill ?? scanSkillWithSkillSpector)(skillPath);
-		if (
-			!isDeepStrictEqual(loadSkillPackage(skillPath, options.version), skill)
-		) {
-			throw new Error('skill files changed during SkillSpector scan');
-		}
 		const decisionGuard = makeDecisionRegistrationGuard(
 			options.decisionProvider ?? defaultDecisionProvider(),
 		);
@@ -433,7 +361,6 @@ export class SkillRegistry {
 			| {
 					activate?: boolean;
 					decisionProvider?: DecisionProvider;
-					scanSkill?: (path: string) => number;
 			  } = {},
 	): Promise<SkillPackage[]> {
 		const resolvedOptions =
