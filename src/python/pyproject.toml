@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-rt"
-version = "0.1.4"
+version = "0.1.5"
 description = "Lightweight utilities for building AI agent harnesses"
 keywords = [
     "ai-agents",
@@ -34,7 +34,7 @@ dependencies = [
     "httpx>=0.27,<1",
     "PyYAML>=6,<7",
     "packaging>=23,<27",
-    "agent-action-guard[harmactionseval]==1.2.3; sys_platform != 'darwin' or platform_machine == 'arm64'",
+    "agent-action-guard[harmactionseval]==1.2.4; sys_platform != 'darwin' or platform_machine == 'arm64'",
     "onnxruntime<1.24; python_version < '3.11'",
 ]
 license = "MIT"
@@ -48,7 +48,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-reaterm = ["reaterm==0.0.1; python_version >= '3.11'"]
+reaterm = ["reaterm==0.0.2; python_version >= '3.11'"]
 openai = ["openai>=1.31,<4"]
 anthropic = ["anthropic>=0.29,<2"]
 bedrock = ["boto3>=1.34,<2"]

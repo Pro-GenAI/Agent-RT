@@ -48,7 +48,7 @@ conflicts = [[
 
 [[package]]
 name = "agent-action-guard"
-version = "1.2.3"
+version = "1.2.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -62,9 +62,9 @@ dependencies = [
     { name = "openai" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/31/1a/866cebabf47af05b1c88b2c4ca00a809eb641392b4d5cf7eb43a9e00e9b8/agent_action_guard-1.2.3.tar.gz", hash = "sha256:d7936a926a04ed7c54fdee496e1a94ec66a184bf3e77cc6c1a93caeee8906248", size = 112274, upload-time = "2026-11-19T11:12:57.188Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/4d/8fc0fce35cfdfa39736917aa327cd176535a7e3ede4437135315104cebe7/agent_action_guard-1.2.4.tar.gz", hash = "sha256:87107d6898bdd4602330ad5f9a6a9f696d0c80d5a491d42b77e1ceecee4082ac", size = 112396, upload-time = "2026-11-20T07:56:45.624Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/40/1b42836c5eaa1173748bb190986964934f0a570ff41e9e2c3d99e3422902/agent_action_guard-1.2.3-py3-none-any.whl", hash = "sha256:f5fe2b2a37d311cf459a8d34b2b3dace2af1c248da3e0b35d019cd13f640d1b5", size = 115101, upload-time = "2026-11-19T11:12:55.741Z" },
+    { url = "https://files.pythonhosted.org/packages/47/ac/b580581d37e1bb744896949beec96100553e74ead2e6992bbb70132dadc2/agent_action_guard-1.2.4-py3-none-any.whl", hash = "sha256:5e73182447166d65f0ec3bbd68fef99c4bef168e233e17d7f286dfcf2e4ba08d", size = 115159, upload-time = "2026-11-20T07:56:44.182Z" },
 ]
 
 [package.optional-dependencies]
@@ -76,7 +76,7 @@ harmactionseval = [
 
 [[package]]
 name = "agent-rt"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "." }
 dependencies = [
     { name = "agent-action-guard", extra = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'" },
@@ -197,7 +197,7 @@ zep = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'", specifier = "==1.2.3" },
+    { name = "agent-action-guard", extras = ["harmactionseval"], marker = "platform_machine == 'arm64' or sys_platform != 'darwin'", specifier = "==1.2.4" },
     { name = "agentsec-ai", marker = "extra == 'dev'", specifier = ">=0.5,<1" },
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.29,<2" },
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.29,<2" },
@@ -246,7 +246,7 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1,<2" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6,<4" },
     { name = "pyyaml", specifier = ">=6,<7" },
-    { name = "reaterm", marker = "python_full_version >= '3.11' and extra == 'reaterm'", specifier = "==0.0.1" },
+    { name = "reaterm", marker = "python_full_version >= '3.11' and extra == 'reaterm'", specifier = "==0.0.2" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "rich", marker = "extra == 'all'", specifier = ">=13.7,<15" },
     { name = "rich", marker = "extra == 'cli'", specifier = ">=13.7,<15" },
@@ -5377,11 +5377,11 @@ wheels = [
 
 [[package]]
 name = "reaterm"
-version = "0.0.1"
+version = "0.0.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b5/c7/627654a8cbe1777f6dc7fc75c76d19cab4c216abb79a446b5a8b8887166a/reaterm-0.0.1.tar.gz", hash = "sha256:d599a93ecfcd7d1d91527c718ba7391d9d39322a084aa41520987c60e07e04f1", size = 11105, upload-time = "2026-11-19T15:06:08.49Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/73/272515b1a4096496f8216cec7a630dbc53dcf1e50f3db7172bf94635597a/reaterm-0.0.2.tar.gz", hash = "sha256:3a0a2fd8bc1d03a3d24bda2e5194da3ec29a35f991d0c3885453926ab875d830", size = 17429, upload-time = "2026-11-20T08:05:39.228Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/35/15130cdc478186031eee0bff31cd49a701055c8a7a648cbf42d0fe77693a/reaterm-0.0.1-py3-none-any.whl", hash = "sha256:c2b7c313e545d2e7c238b095b9e627472152edea51dd8d3ce76242bc2f944ed8", size = 8160, upload-time = "2026-11-19T15:06:07.431Z" },
+    { url = "https://files.pythonhosted.org/packages/57/39/b723bcf5cafb49d3c6224a303031dd23af2d6f6ea28b124a95abe8b36c39/reaterm-0.0.2-py3-none-any.whl", hash = "sha256:38b6d567690aa9dbc7a8eec8b1acf905da5476d792490f559b992f9240cb07f0", size = 11467, upload-time = "2026-11-20T08:05:38.262Z" },
 ]
 
 [[package]]

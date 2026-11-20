@@ -149,7 +149,7 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/src
 
 ## Optional read-only ReaTerm tool
 
-On Python 3.11+, install `pip install "agent-rt[reaterm]"` (pins `reaterm==0.0.1`) and the separate [native ReaTerm Rust CLI](https://github.com/Pro-GenAI/ReaTerm). Register its read-only tool using a trusted filesystem root:
+On Python 3.11+, install `pip install "agent-rt[reaterm]"` (pins `reaterm==0.0.2`) and the separate [native ReaTerm Rust CLI](https://github.com/Pro-GenAI/ReaTerm). Register its read-only tool using a trusted filesystem root:
 
 ```python
 from agent_rt import ToolRegistry, register_reaterm_tool

@@ -117,7 +117,7 @@ More examples: [`examples/`](https://github.com/Pro-GenAI/Agent-RT/tree/main/src
 
 ## Optional read-only ReaTerm tool
 
-Install `npm install reaterm@0.0.1` (an optional peer) and the separate [native ReaTerm Rust CLI](https://github.com/Pro-GenAI/ReaTerm). Register its read-only tool using a trusted filesystem root:
+Install `npm install reaterm@0.0.2` (an optional peer) and the separate [native ReaTerm Rust CLI](https://github.com/Pro-GenAI/ReaTerm). Register its read-only tool using a trusted filesystem root:
 
 ```ts
 import { ToolRegistry, registerReaTermTool } from "agent-rt";

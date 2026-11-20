@@ -105,4 +105,4 @@ async tests use `pytest.mark.anyio` with the asyncio backend fixture and
 must not require network access. There is no separate test Makefile target.
 Read `../benchmarks/agent-swarm-eval/AGENTS.md` before changing the benchmark.
 
-The optional ReaTerm adapter is `src/ext/runtime/tools/reaterm.py`, exported as `register_reaterm_tool`. Keep the Python 3.10 base install intact, pin the `reaterm` extra at 0.0.1 for Python 3.11+, require the separate native Rust CLI, choose the root in trusted code, pass argv separately, and run the blocking Python wrapper with `asyncio.to_thread`. Test with a fake module offline.
+The optional ReaTerm adapter is `src/ext/runtime/tools/reaterm.py`, exported as `register_reaterm_tool`. Keep the Python 3.10 base install intact, pin the `reaterm` extra at 0.0.2 for Python 3.11+, require the separate native Rust CLI, choose the root in trusted code, pass argv separately, and run the blocking Python wrapper with `asyncio.to_thread`. Test with a fake module offline.

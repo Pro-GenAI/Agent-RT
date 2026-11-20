@@ -472,7 +472,7 @@ Every worker gets its own reviewer agent, invoked after the work completes or fa
 
 ## Optional read-only ReaTerm tool
 
-Python 3.11+: install `pip install "agent-rt[reaterm]"` (pins `reaterm==0.0.1`). TypeScript: install `npm install reaterm@0.0.1` (optional peer). Both require the separately installed [native Rust ReaTerm CLI](https://github.com/Pro-GenAI/ReaTerm). Registry publication of 0.0.1 has not been independently verified here.
+Python 3.11+: install `pip install "agent-rt[reaterm]"` (pins `reaterm==0.0.2`). TypeScript: install `npm install reaterm@0.0.2` (optional peer). Both require the separately installed [native Rust ReaTerm CLI](https://github.com/Pro-GenAI/ReaTerm).
 
 The Python adapter is `register_reaterm_tool(ToolRegistry(), root="/readable/project")`; the TypeScript adapter is `await registerReaTermTool(new ToolRegistry(), { root: "/readable/project" })`. The application selects the root; the model supplies only the `command` and literal `args` array. ReaTerm's native engine enforces its read-only command allowlist, path restrictions and resource limits. Tool output can be exposed to the model; do not grant access to confidential files.
 

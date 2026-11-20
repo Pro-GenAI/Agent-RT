@@ -1,6 +1,6 @@
 {
 	"name": "agent-rt",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"description": "Lightweight utilities for building AI agent harnesses",
 	"keywords": [
 		"ai-agents",
@@ -251,7 +251,7 @@
 		"typescript-eslint": "^8.71.0"
 	},
 	"dependencies": {
-		"agent-action-guard": "1.2.3",
+		"agent-action-guard": "1.2.4",
 		"ws": "^8.22.0",
 		"yaml": "^2.8.0"
 	},
@@ -266,7 +266,7 @@
 		"microsandbox": ">=0.7.4 <0.8",
 		"openai": ">=4.48.1",
 		"supermemory": ">=5 <6",
-		"reaterm": "0.0.1"
+		"reaterm": "0.0.2"
 	},
 	"peerDependenciesMeta": {
 		"@anthropic-ai/sdk": {

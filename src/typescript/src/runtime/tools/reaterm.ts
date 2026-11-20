@@ -18,7 +18,7 @@ export interface ReaTermToolOptions {
   client?: ReaTermClient;
 }
 
-/** Register an opt-in read-only tool; requires reaterm@0.0.1 and its native CLI. */
+/** Register an opt-in read-only tool; requires reaterm@0.0.2 and its native CLI. */
 export async function registerReaTermTool(
   registry: ToolRegistry,
   options: ReaTermToolOptions,
@@ -37,7 +37,7 @@ export async function registerReaTermTool(
     try {
       ({ ReaTerm } = await importOptionalPeer<{ ReaTerm: typeof ReaTerm }>('reaterm'));
     } catch (error) {
-      throw new Error('Install reaterm@0.0.1 and the native ReaTerm CLI', { cause: error });
+      throw new Error('Install reaterm@0.0.2 and the native ReaTerm CLI', { cause: error });
     }
     client = new ReaTerm({ root: options.root, binary: options.binary, timeoutMs });
   }

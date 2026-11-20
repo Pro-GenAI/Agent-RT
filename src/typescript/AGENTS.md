@@ -84,4 +84,4 @@ tools must never become real side effects. Keep the TS shared security
 contracts and regression tests in step with Python where relevant;
 read `../benchmarks/agent-swarm-eval/AGENTS.md` for the full invariant list.
 
-The optional ReaTerm adapter is `src/runtime/tools/reaterm.ts`, exported as `registerReaTermTool`. Keep the npm peer `reaterm` exactly `0.0.1` in package.json and the root package-lock entry; import it lazily, require a trusted host-selected root and a separately installed Rust CLI, and test with a fake client offline.
+The optional ReaTerm adapter is `src/runtime/tools/reaterm.ts`, exported as `registerReaTermTool`. Keep the npm peer `reaterm` exactly `0.0.2` in package.json and the root package-lock entry; import it lazily, require a trusted host-selected root and a separately installed Rust CLI, and test with a fake client offline.
