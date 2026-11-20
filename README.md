@@ -13,7 +13,7 @@ Agent RT gives agents a clear execution boundary for **tools, streaming, structu
 [![Docs](https://img.shields.io/badge/Docs-000000?style=for-the-badge&logo=github&logoColor=white)](https://agent-rt.pro-genai.com/docs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Pro-GenAI/Agent-RT/blob/main/LICENSE)
 <a href="https://pepy.tech/projects/agent-rt"><img src="https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=PyPI%20Downloads" alt="PyPI Downloads" height="28"></a>
-![NPM Downloads](https://img.shields.io/npm/d18m/agent-rt?style=for-the-badge&label=npm%20downloads)
+[![npm total downloads](https://img.shields.io/npm/dt/agent-rt?style=for-the-badge&label=npm%20downloads)](https://www.npmjs.com/package/agent-rt)
 [![Python Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-python?style=for-the-badge&logo=docker&label=Python%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-python)
 [![TypeScript Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-typescript?style=for-the-badge&logo=docker&label=TypeScript%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 

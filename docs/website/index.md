@@ -24,6 +24,12 @@ Agent RT is a lightweight, provider-neutral runtime for Python and TypeScript. T
 
 [Docker Hub — TypeScript](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 
+### Lifetime package downloads
+
+[![PyPI total downloads](https://agent-rt.pro-genai.com/badges/pypi)](https://pepy.tech/projects/agent-rt)
+
+[![npm total downloads](https://agent-rt.pro-genai.com/badges/npm)](https://www.npmjs.com/package/agent-rt)
+
 ### Example: approval-gated tool execution
 
 The following illustrative trace shows an agent reading data, checking policy, saving a checkpoint, and stopping before a sensitive external action:

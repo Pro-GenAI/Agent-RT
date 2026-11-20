@@ -8,6 +8,8 @@
 
 [![Docker Hub TypeScript](https://img.shields.io/badge/Docker_Hub-TypeScript-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
 [![TypeScript Docker pulls](https://img.shields.io/docker/pulls/praneeth1v/agent-rt-typescript?style=for-the-badge&logo=docker&label=TypeScript%20pulls)](https://hub.docker.com/r/praneeth1v/agent-rt-typescript)
+<a href="https://pepy.tech/projects/agent-rt"><img src="https://static.pepy.tech/personalized-badge/agent-rt?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=PyPI%20Downloads" alt="PyPI total downloads" height="28"></a>
+[![npm total downloads](https://img.shields.io/npm/dt/agent-rt?style=for-the-badge&label=npm%20downloads)](https://www.npmjs.com/package/agent-rt)
 
 Meet **Artie**, the running robot, and its flagship features: **Guard** (blocks harmful tool calls before they run), **Checkpoints** (resume with budgets intact), and the migration **Wall** (65+ repositories passing their tests after migrating).
 
