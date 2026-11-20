@@ -1,6 +1,7 @@
 /** ReaTerm read-only tool; the host application chooses the root. */
 import { type RegisteredTool, ToolRegistry } from './registry.js';
 import { type ToolDefinition } from './definitions.js';
+import { importOptionalPeer } from '../platform.js';
 
 export const REATERM_TOOL_NAME = 'reaterm';
 const READ_COMMANDS = ['pwd', 'ls', 'cat', 'head', 'tail', 'wc', 'grep', 'stat'] as const;
@@ -32,9 +33,9 @@ export async function registerReaTermTool(
 
   let client = options.client;
   if (!client) {
-    let ReaTerm: typeof import('reaterm').ReaTerm;
+    let ReaTerm: new (options: { root: string; binary?: string; timeoutMs: number }) => ReaTermClient;
     try {
-      ({ ReaTerm } = await import('reaterm'));
+      ({ ReaTerm } = await importOptionalPeer<{ ReaTerm: typeof ReaTerm }>('reaterm'));
     } catch (error) {
       throw new Error('Install reaterm@0.0.1 and the native ReaTerm CLI', { cause: error });
     }
