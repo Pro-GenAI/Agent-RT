@@ -50,8 +50,8 @@ Use this checklist when the relevant feature is introduced. Record the operator,
 Run from the repository root after website changes:
 
 ```bash
-python3 scripts/check_website_csp.py
-python3 -m unittest discover -s scripts -p 'test_check_website_csp.py'
+python3 src/scripts/check_website_csp.py
+python3 -m unittest discover -s src/scripts -p 'test_check_website_csp.py'
 ```
 
 The gate checks loaded HTML asset URLs, inline-script hashes, and the restrictive CSP directives, including font and connection destinations and disabled form submissions. It rejects policy overrides or new directives until deliberately reviewed. It does not certify every JavaScript data flow, legal requirement, or deployed hosting configuration. Inspect new dependencies and browser requests as part of review; update the [website notice](https://agent-rt.pro-genai.com/docs/reference/privacy-terms.html),

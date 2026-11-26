@@ -69,8 +69,8 @@
 <tr><td>User content and copyright</td><td>No visitor content hosting or upload endpoint on the public site.</td><td>Before hosting user submissions, define rights/permission rules, reporting and takedown procedures, a counter-notice process, and a repeat-infringer policy. If seeking US DMCA safe-harbor protection, assess eligibility and other conditions, designate and register an agent, publish matching contact details, and maintain the registration. A contact link alone is not an agent registration or safe harbor.</td></tr></tbody></table></div>
 <h2 id="maintainer-checks">Maintainer checks</h2>
 <p>Run from the repository root after website changes:</p>
-<pre><code class="language-bash">python3 scripts/check_website_csp.py
-python3 -m unittest discover -s scripts -p 'test_check_website_csp.py'</code></pre>
+<pre><code class="language-bash">python3 src/scripts/check_website_csp.py
+python3 -m unittest discover -s src/scripts -p 'test_check_website_csp.py'</code></pre>
 <p>The gate checks loaded HTML asset URLs, inline-script hashes, and the restrictive CSP directives, including font and connection destinations and disabled form submissions. It rejects policy overrides or new directives until deliberately reviewed. It does not certify every JavaScript data flow, legal requirement, or deployed hosting configuration. Inspect new dependencies and browser requests as part of review; update the <a href="/docs/reference/privacy-terms.html">website notice</a>, <a href="https://github.com/Pro-GenAI/Agent-RT/blob/main/docs/website/README.md">website maintenance guide</a>, and this document when behavior changes.</p>
 <h2 id="primary-references">Primary references</h2>
 <p>Reviewed 29 October 2026. Requirements depend on facts and jurisdiction; use the official guidance rather than social-media penalty estimates.</p>

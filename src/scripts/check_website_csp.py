@@ -1,6 +1,6 @@
 """Validate the website privacy CSP, inline-script hashes, and loaded assets.
 
-Usage: python3 scripts/check_website_csp.py  (stdlib only; exits 1 on problems)
+Usage: python3 src/scripts/check_website_csp.py  (stdlib only; exits 1 on problems)
 """
 
 import base64
@@ -11,7 +11,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
 
-SITE = Path(__file__).resolve().parent.parent / "docs" / "website"
+SITE = Path(__file__).resolve().parents[2] / "docs" / "website"
 SITE_ORIGIN = "https://agent-rt.pro-genai.com"
 # Search-console verification stub, not a real page.
 SKIP = {"googlefbfc85f4cce24779.html"}

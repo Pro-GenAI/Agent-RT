@@ -161,7 +161,7 @@ def main():
     candidates = json.load(open("/tmp/agent_rt_candidates.json"))
     existing = {
         row["RepoURL"]
-        for row in csv.DictReader(open("scripts/migration_test/repo_list.csv", encoding="utf-8"))
+        for row in csv.DictReader(open(pathlib.Path(__file__).with_name("repo_list.csv"), encoding="utf-8"))
         if row.get("RepoURL")
     }
     pool = [

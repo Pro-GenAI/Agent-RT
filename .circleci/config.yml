@@ -172,11 +172,11 @@ jobs:
           name: Check website CSP, Markdown mirrors, and migration wall
           command: |
             set -euo pipefail
-            python3 -m unittest discover -s scripts -p 'test_check_website_csp.py'
-            python3 -m unittest discover -s scripts -p 'test_check_website_markdown.py'
-            python3 scripts/check_website_csp.py
-            python3 scripts/check_website_markdown.py
-            python3 scripts/render_migration_wall.py --check
+            python3 -m unittest discover -s src/scripts -p 'test_check_website_csp.py'
+            python3 -m unittest discover -s src/scripts -p 'test_check_website_markdown.py'
+            python3 src/scripts/check_website_csp.py
+            python3 src/scripts/check_website_markdown.py
+            python3 src/scripts/render_migration_wall.py --check
       - run:
           name: Run third-party developer security gate
           command: |

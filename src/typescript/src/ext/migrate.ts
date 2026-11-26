@@ -28,7 +28,7 @@ import {
 } from 'node:path';
 import { pose } from './artie.js';
 
-// Kept in step with TS_SPECIFIER_RULES in scripts/migration_test/migration_test.py.
+// Kept in step with TS_SPECIFIER_RULES in src/scripts/migration_test/migration_test.py.
 export const TS_SPECIFIER_RULES: Record<string, Array<[string, string]>> = {
 	LangChain: [
 		['@langchain/', 'agent-rt/@langchain/'],

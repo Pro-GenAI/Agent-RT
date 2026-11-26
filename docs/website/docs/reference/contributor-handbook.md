@@ -195,7 +195,7 @@ cd src/python
 
 `pip_publish.sh` runs the regression suite before building and validating the distribution.
 
-The banner's pixel Artie is generated, not hand-drawn: `src/python/src/ext/artie_art.py` comes from `docs/assets/logo-mark.png` (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with `uv run --with pillow python3 scripts/render_artie_art.py`; `--check` reports a stale module without rewriting it. Artie's mood poses (shield, celebrate) are hand-drawn ASCII in `src/python/src/ext/artie_moods.py` and `src/typescript/src/ext/artie.ts`; keep the two identical.
+The banner's pixel Artie is generated, not hand-drawn: `src/python/src/ext/artie_art.py` comes from `docs/assets/logo-mark.png` (resized to 24 columns, two pixels per terminal row, quantized to a letter palette). After changing the logo, regenerate it with `uv run --with pillow python3 src/scripts/render_artie_art.py`; `--check` reports a stale module without rewriting it. Artie's mood poses (shield, celebrate) are hand-drawn ASCII in `src/python/src/ext/artie_moods.py` and `src/typescript/src/ext/artie.ts`; keep the two identical.
 
 ## TypeScript
 
@@ -351,7 +351,7 @@ The runtime lives in themed modules with the **same folder and module names in b
 
 Python keeps startup fast by loading only the eager core on `import agent_rt`. Modules re-exported by `ext/runtime/optional.py` (identity, secrets, policy, exfiltration, planning, reflection, delegation, teams, tracing, usage, replay, the memory stores other than `sources`, workspace stores/artifacts, and all of `protocols/`, `retrieval/`, `interfaces/`, and `sandbox/`) are lazy: core modules must not import them at module level, and new public lazy names go in `_LAZY_FEATURE_EXPORTS` in `agent_rt.py`. `tests/test_import_surface.py` guards this. Moved core symbols keep `__module__ == "agent_rt"` so pickles and introspection stay stable. Python module-level imports between runtime modules must stay acyclic; break a run-time-only cycle with a function-local import, as `configure_runtime` does.
 
-**Size rule:** every file in those folders, and both entrypoints, stays at or under 800 lines (aim for 200–600). `python3 scripts/check_module_size.py` enforces it in the CI `quality` job. The agent loop stays under it by keeping only the run orchestration in `agent/loop`: tool-call execution lives in `agent/tool_execution`, the other run steps (deadlines, model requests, token usage, pending approvals) in `agent/run_steps`, and plan compilation in `agent/plan_compiler`. The steps share one run-state object (`_RunState` / `RunState`), and values that change mid-run (Python: `deadline_hit`, `tool_policy`, `active_visible_tool_names`; TypeScript: `toolPolicy`, `activeVisibleToolNames`) are read and written there by the loop too. TypeScript step functions read `AgentLoop`'s private fields through the `AgentLoopInternals` `this` type, so the published `AgentLoop` declaration stays unchanged. When a module nears the cap, split it by theme inside the same folder, in both languages.
+**Size rule:** every file in those folders, and both entrypoints, stays at or under 800 lines (aim for 200–600). `python3 src/scripts/check_module_size.py` enforces it in the CI `quality` job. The agent loop stays under it by keeping only the run orchestration in `agent/loop`: tool-call execution lives in `agent/tool_execution`, the other run steps (deadlines, model requests, token usage, pending approvals) in `agent/run_steps`, and plan compilation in `agent/plan_compiler`. The steps share one run-state object (`_RunState` / `RunState`), and values that change mid-run (Python: `deadline_hit`, `tool_policy`, `active_visible_tool_names`; TypeScript: `toolPolicy`, `activeVisibleToolNames`) are read and written there by the loop too. TypeScript step functions read `AgentLoop`'s private fields through the `AgentLoopInternals` `this` type, so the published `AgentLoop` declaration stays unchanged. When a module nears the cap, split it by theme inside the same folder, in both languages.
 
 ## Code conventions
 
@@ -383,7 +383,7 @@ The CircleCI workflow runs:
 
 - `make test-browsers`: the `agent-rt web` page in every browser the macOS runner can run (Playwright Chromium, Firefox, and WebKit, plus any preinstalled Chrome or Edge), with the downloaded browsers cached in `~/agent-rt-browsers`. This is the only CI that runs the browser tests; GitHub cross-platform CI does not.
 
-- Python built-in static security scanning, deterministic offline adversarial scanning, the website CSP check (`scripts/check_website_csp.py`) and its regression tests (`scripts/test_check_website_csp.py`), the homepage migration-wall freshness check (`scripts/render_migration_wall.py --check`), and the third-party developer security gate.
+- Python built-in static security scanning, deterministic offline adversarial scanning, the website CSP check (`src/scripts/check_website_csp.py`) and its regression tests (`src/scripts/test_check_website_csp.py`), the homepage migration-wall freshness check (`src/scripts/render_migration_wall.py --check`), and the third-party developer security gate.
 
 - TypeScript regression tests across Node 20, 22, 24, and 26.
 

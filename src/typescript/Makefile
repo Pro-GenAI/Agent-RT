@@ -74,7 +74,7 @@ security-attacks:
 	$(NPM) run security:attacks
 
 security: require-bash
-	@bash ../../scripts/security-summary.sh \
+	@bash ../scripts/security-summary.sh \
 		'Static scan' '$(NPM) run security:scan:gate' \
 		'Adversarial runtime scan' '$(NPM) run security:attacks' \
 		'Dependency audit' '$(NPM) run security:deps' \

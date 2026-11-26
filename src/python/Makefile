@@ -80,7 +80,7 @@ security-attacks:
 	$(RUN) python scripts/security_attack_scan.py
 
 security: require-bash
-	@bash ../../scripts/security-summary.sh \
+	@bash ../scripts/security-summary.sh \
 		'Static scan' '$(RUN) python scripts/security_scan.py --fail-on medium' \
 		'Adversarial runtime scan' '$(RUN) python scripts/security_attack_scan.py' \
 		'Development security tools' '$(UV) run --python 3.12 --extra dev python scripts/dev_security_scan.py'

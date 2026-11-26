@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent / "docs" / "website"
+ROOT = Path(__file__).resolve().parents[2] / "docs" / "website"
 ORIGIN = "https://agent-rt.pro-genai.com"
 SKIP = {"googlefbfc85f4cce24779.html"}
 

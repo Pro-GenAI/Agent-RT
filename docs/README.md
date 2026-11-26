@@ -15,7 +15,7 @@ Research benchmark: [Agent Swarm Eval](https://github.com/Pro-GenAI/Agent-RT/tre
 | Guides | [Runtime overview](https://agent-rt.pro-genai.com/docs/guides/runtime-guide) · [Complete runtime guide](https://agent-rt.pro-genai.com/docs/guides/runtime-reference) · [Migration overview](https://agent-rt.pro-genai.com/docs/guides/migration) · [Complete migration reference](https://agent-rt.pro-genai.com/docs/guides/migration-reference) · [Production](https://agent-rt.pro-genai.com/docs/guides/production) · [Vector databases](https://agent-rt.pro-genai.com/docs/guides/vector-databases) |
 | Reference | [Configuration](https://agent-rt.pro-genai.com/docs/reference/configuration) · [Architecture](https://agent-rt.pro-genai.com/docs/reference/architecture) · [Extension contracts](https://agent-rt.pro-genai.com/docs/reference/extension-contracts) · [Feature defaults](https://agent-rt.pro-genai.com/docs/reference/features-defaults) · [Contributor handbook](https://agent-rt.pro-genai.com/docs/reference/contributor-handbook) · [Privacy and terms](https://agent-rt.pro-genai.com/docs/reference/privacy-terms) · [Deployment privacy checklist](https://agent-rt.pro-genai.com/docs/reference/deployment-privacy-checklist) |
 
-The [migration test targets](../scripts/migration_test/Migration-Test-Targets.md) remain in the test tooling directory. For the source website maintenance instructions, see [website README](website/README.md).
+The [migration test targets](../src/scripts/migration_test/Migration-Test-Targets.md) remain in the test tooling directory. For the source website maintenance instructions, see [website README](website/README.md).
 
 ## Preview locally
 
