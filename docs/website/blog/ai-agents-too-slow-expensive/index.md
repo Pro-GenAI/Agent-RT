@@ -9,7 +9,7 @@
 
 Your model may not be the bottleneck. The work around it might be.
 
-**Author:** Pro-GenAI  
+**Author:** Praneeth Vadlapati  
 **Published:** 3 November 2026  
 **Reading time:** 6 min
 

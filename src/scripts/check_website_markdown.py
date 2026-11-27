@@ -40,7 +40,7 @@ def readability_errors(markdown: str, page: Path) -> list[str]:
         problems.append("unformatted documentation breadcrumb")
     if re.search(r"(?m)^\[(?:Previous|Next|Back to)(?:←|[A-Z])", prose):
         problems.append("concatenated navigation label")
-    if re.search(r"Pro-GenAI\d{1,2}\s+\w+\s+\d{4}\d+\s+min read", prose):
+    if re.search(r"Praneeth Vadlapati\d{1,2}\s+\w+\s+\d{4}\d+\s+min read", prose):
         problems.append("concatenated author, date, and reading time")
     if re.search(r"(?m)^\s*\*\*[^*\n]{3,65}\*\*\S", prose):
         problems.append("bold callout label attached to its explanation")

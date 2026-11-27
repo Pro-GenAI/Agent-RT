@@ -17,7 +17,7 @@ class MarkdownReadabilityTests(unittest.TestCase):
         self.assertEqual(readability_errors(self.BASE, Path("links/index.html")), [])
 
     def test_broken_author_date_and_time(self) -> None:
-        bad = self.BASE + "\n Pro-GenAI3 November 20267 min read\n"
+        bad = self.BASE + "\n Praneeth Vadlapati3 November 20267 min read\n"
         self.assertIn(
             "concatenated author, date, and reading time",
             readability_errors(bad, Path("links/index.html")),
@@ -39,7 +39,7 @@ class MarkdownReadabilityTests(unittest.TestCase):
         self.assertEqual(len(problems), 6)
         good = (
             self.BASE
-            + "\n**Author:** Pro-GenAI  \n**Published:** 3 November 2026  \n"
+            + "\n**Author:** Praneeth Vadlapati  \n**Published:** 3 November 2026  \n"
             + "**Reading time:** 7 min\n\n## At a glance\n\n"
             + "- **Problem:** A risk.\n- **Solution:** Enforce policy.\n"
         )

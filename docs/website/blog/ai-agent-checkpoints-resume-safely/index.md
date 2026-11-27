@@ -9,7 +9,7 @@
 
 A retry can finish the job—or quietly perform the same action twice.
 
-**Author:** Pro-GenAI  
+**Author:** Praneeth Vadlapati  
 **Published:** 3 November 2026  
 **Reading time:** 6 min
 

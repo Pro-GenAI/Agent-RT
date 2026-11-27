@@ -9,7 +9,7 @@
 
 A safer model is useful. A trustworthy execution boundary is essential.
 
-**Author:** Pro-GenAI  
+**Author:** Praneeth Vadlapati  
 **Published:** 3 November 2026  
 **Reading time:** 7 min
 

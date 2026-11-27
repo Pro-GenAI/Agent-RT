@@ -9,7 +9,7 @@
 
 The best framework is the one that solves your constraints, not the one with the longest feature list.
 
-**Author:** Pro-GenAI  
+**Author:** Praneeth Vadlapati  
 **Published:** 3 November 2026  
 **Reading time:** 8 min
 

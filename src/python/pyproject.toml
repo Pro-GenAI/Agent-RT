@@ -3,6 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
+authors = [{name = "Praneeth Vadlapati"}]
 name = "agent-rt"
 version = "0.1.5"
 description = "Lightweight utilities for building AI agent harnesses"

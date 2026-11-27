@@ -1,5 +1,6 @@
 {
 	"name": "agent-rt",
+	"author": "Praneeth Vadlapati",
 	"version": "0.1.5",
 	"description": "Lightweight utilities for building AI agent harnesses",
 	"keywords": [
