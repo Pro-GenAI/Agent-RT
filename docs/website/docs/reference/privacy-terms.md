@@ -50,7 +50,7 @@ This site does not accept visitor uploads, comments, or hosted user content. For
 
 Agent RT is published by
 
-[Pro-GenAI](https://github.com/Pro-GenAI). For questions about this page, open an issue in the [repository](https://github.com/Pro-GenAI/Agent-RT).
+[Praneeth Vadlapati](https://github.com/Pro-GenAI). For questions about this page, open an issue in the [repository](https://github.com/Pro-GenAI/Agent-RT).
 
 **Previous:** [Development](https://agent-rt.pro-genai.com/docs/reference/development.html)
 

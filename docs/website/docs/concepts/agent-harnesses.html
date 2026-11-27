@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Introduction to Agent Harnesses — Agent RT Docs</title>
   <meta name="description" content="Complete guide to AI agent harnesses, from execution loops and tools to memory, permissions, orchestration, safety, and deployment.">
-  <meta name="author" content="Pro-GenAI">
+  <meta name="author" content="Praneeth Vadlapati">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <link rel="canonical" href="https://agent-rt.pro-genai.com/docs/concepts/agent-harnesses">
@@ -355,6 +355,6 @@ agent system ↔ another agent system</code></pre>
 <h3 id="decision-models">Decision models</h3>
 <p>Agent RT keeps generative models separate from <em>Decision models</em> (for example Jev-compatible models), which answer typed choice and score questions with calibrated outputs. Decision models serve as optional control-plane gates, such as tool safety screening, relevance pruning, memory screening, and tool-output checks, that feed deterministic runtime policy rather than replacing it. For large tool inventories, <code>Toolbase</code> combines local/deferred and MCP-discovered tools, applies safety filtering before relevance selection, and exposes <code>tool_search</code> so the agent can recover safe tools omitted from the initial subset. Provider contracts, endpoints, and security thresholds are described in the Decision models section of <code>Architecture-and-Extensions.md</code>.</p>
 <div class="page-nav"><a class="next-link" href="../"><small>Back to</small><strong>← Documentation index</strong></a></div></article>
-<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+<footer class="docs-footer">Agent RT documentation · © 2026 Praneeth Vadlapati · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
 </div>
 </body></html>
