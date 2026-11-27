@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Agent RT Architecture &amp; Extension Contracts — Reference</title>
   <meta name="description" content="Explore Agent RT architecture and extension contracts for model providers, tools, state, policy, execution, deployment, evaluation, and operations.">
-  <meta name="author" content="Pro-GenAI">
+  <meta name="author" content="Praneeth Vadlapati">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <link rel="canonical" href="https://agent-rt.pro-genai.com/docs/reference/architecture">
@@ -52,6 +52,6 @@
 <h2>Vector retrieval boundary</h2><p>External vector databases implement the same Agent RT retrieval contract as other knowledge providers. <code>VectorDBProviderRegistry</code> and the environment-backed provider resolve Chroma, Milvus, Pinecone, Qdrant, or Weaviate without moving vendor SDKs into core. LangChain and LlamaIndex compatibility classes are thin read/query adapters over that boundary, so framework-shaped imports do not create a second retrieval architecture.</p><h2>Cross-language alignment</h2><p>The Python and TypeScript implementations intentionally track the same core concepts and behavior. Exact APIs differ where language conventions demand it, but the runtime model should remain recognizable across both packages.</p>
 <div class="note"><strong>Complete contract reference</strong>See <a href="../reference/extension-contracts.html">Architecture and Extension Contracts ↗</a> for module-level interfaces and implementation detail.</div>
 <div class="page-nav"><a class="next-link" href="../guides/production.html"><small>Previous</small><strong>← Production patterns</strong></a><a class="next-link" href="./development.html"><small>Next</small><strong>Development →</strong></a></div></article>
-<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+<footer class="docs-footer">Agent RT documentation · © 2026 Praneeth Vadlapati · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
 </div>
 </body></html>

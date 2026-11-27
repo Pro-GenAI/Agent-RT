@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOhFsq0QMV2REqNwk5hGH5bZE9SkX6gt6yeyKdYPv+U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Complete Runtime Guide — Agent RT Docs</title>
   <meta name="description" content="Full Agent RT runtime guide with Python and TypeScript examples, providers, memory, API, CLI, chat, tools, and sandboxing.">
-  <meta name="author" content="Pro-GenAI">
+  <meta name="author" content="Praneeth Vadlapati">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <link rel="canonical" href="https://agent-rt.pro-genai.com/docs/guides/runtime-reference">
@@ -360,6 +360,6 @@ await skills.installDirectory(&quot;.agents/skills&quot;);</code></pre>
 <p>Register a Python tool with <code>register_reaterm_tool(ToolRegistry(), root="/readable/project")</code> or a TypeScript tool with <code>await registerReaTermTool(new ToolRegistry(), { root: "/readable/project" })</code>. The model supplies only a read-only <code>command</code> and literal <code>args</code>; the trusted application selects the root. Native ReaTerm enforces its command and path restrictions, but returned file contents may be sent to a model. Restrict readable files accordingly.</p>
 </section>
 </article>
-<footer class="docs-footer">Agent RT documentation · © 2026 Pro-GenAI · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
+<footer class="docs-footer">Agent RT documentation · © 2026 Praneeth Vadlapati · MIT licensed · <a href="https://github.com/Pro-GenAI/Agent-RT">Source on GitHub</a> · <a href="../reference/privacy-terms.html">Privacy &amp; terms</a><br>No cookies, analytics, or third-party requests. Product names mentioned are trademarks of their owners; Agent RT is not affiliated with them.</footer></main>
 </div>
 </body></html>
